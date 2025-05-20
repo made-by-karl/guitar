@@ -1,0 +1,58 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <a routerLink="/chords" class="btn btn-secondary mb-4">← Back to Library</a>        <div class="chord-display" *ngIf="chord && selectedVariation">
+        <div class="d-flex align-items-center mb-4">
+          <h2 class="mb-0 me-3">{{ chord.name }}</h2>
+          <button class="btn btn-primary" (click)="playChord()">
+            <i class="bi bi-play-fill"></i> Play Chord
+          </button>
+        </div>
+        
+        <div class="fretboard">
+          <!-- Strings -->
+          <div class="strings">
+            @for (string of [1,2,3,4,5,6]; track string) {
+              <div class="string"></div>
+            }
+          </div>
+          
+          <!-- Frets -->
+          @for (fret of [0,1,2,3,4,5]; track fret) {
+            <div class="fret">
+              @for (string of [1,2,3,4,5,6]; track string) {
+                <div class="position" [class.barre]="isBarreFret(fret)">
+                  @if (getFingerAtPosition(string, fret)) {
+                    <div class="finger">
+                      {{ getFingerAtPosition(string, fret) }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mt-4">
+          <p class="mb-2">
+            <strong>Type:</strong> {{ isBarreFret(parseInt(selectedVariation.positions[0])) ? 'Barre Chord' : 'Open Chord' }}
+          </p>
+          <p class="mb-0">
+            <strong>Category:</strong> {{ chord.category | titlecase }}
+          </p>
+          @if (chord.variations.length > 1) {
+            <p class="mb-0 mt-2">
+              <small class="text-muted">This chord has {{ chord.variations.length }} variations available.</small>
+            </p>
+          }
+        </div>
+      </div>
+      
+      @if (!chord) {
+        <div class="alert alert-warning">
+          Chord not found!
+        </div>
+      }
+    </div>
+  </div>
+</div>
