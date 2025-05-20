@@ -1,0 +1,51 @@
+<div class="container">
+  <h2 class="mb-4">Guitar Chord Library</h2>
+  
+  <ng-container *ngIf="!isLoaded; else chordList">
+    <div class="text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #chordList>
+    <div class="row mb-4">
+      <div class="col">
+        <div class="btn-group" role="group">
+          <button 
+            *ngFor="let cat of ['major', 'minor', '7th', 'diminished', 'augmented', 'suspended']"
+            (click)="filterByCategory(cat)"
+            class="btn"
+            [class.btn-primary]="selectedCategory === cat"
+            [class.btn-outline-primary]="selectedCategory !== cat">
+            {{ cat | titlecase }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4" *ngFor="let chord of filteredChords">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">{{ chord.name }}</h5>
+            <p class="card-text">
+              {{ chord.category | titlecase }}
+            </p>
+            @if (chord.variations.length > 1) {
+              <p class="card-text small text-muted">
+                {{ chord.variations.length }} variations
+              </p>
+            }
+            <a [routerLink]="['/chord', chord.id]" 
+              class="btn btn-primary"
+              (click)="selectChord(chord)">
+              View Chord
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</div>

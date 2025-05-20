@@ -1,0 +1,62 @@
+.chord-display {
+  margin: 20px 0;
+}
+
+.fretboard {
+  position: relative;
+  width: 300px;
+  height: 400px;
+  background: #e6d5ac;
+  padding: 20px;
+  border-radius: 5px;
+  margin: 0 auto;
+}
+
+.strings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 0 10px;
+}
+
+.string {
+  width: 2px;
+  height: 100%;
+  background: #999;
+}
+
+.fret {
+  display: flex;
+  justify-content: space-around;
+  height: 60px;
+  border-bottom: 4px solid #999;
+  position: relative;
+}
+
+.position {
+  width: 40px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.barre {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+}
+
+.finger {
+  width: 30px;
+  height: 30px;
+  background: #007bff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
