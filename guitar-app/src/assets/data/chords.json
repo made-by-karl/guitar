@@ -1,0 +1,96 @@
+{
+  "chords": [
+    {
+      "id": "a-major",
+      "name": "A Major",
+      "fingers": [
+        { "string": 2, "fret": 2, "finger": 2 },
+        { "string": 3, "fret": 2, "finger": 3 },
+        { "string": 4, "fret": 2, "finger": 4 }
+      ],
+      "isBarred": false,
+      "category": "major"
+    },
+    {
+      "id": "a-minor",
+      "name": "A Minor",
+      "fingers": [
+        { "string": 2, "fret": 1, "finger": 1 },
+        { "string": 3, "fret": 2, "finger": 2 },
+        { "string": 4, "fret": 2, "finger": 3 }
+      ],
+      "isBarred": false,
+      "category": "minor"
+    },
+    {
+      "id": "b-major",
+      "name": "B Major",
+      "fingers": [
+        { "string": 1, "fret": 2, "finger": 1 },
+        { "string": 2, "fret": 4, "finger": 3 },
+        { "string": 3, "fret": 4, "finger": 4 },
+        { "string": 4, "fret": 4, "finger": 4 }
+      ],
+      "isBarred": true,
+      "barreFret": 2,
+      "category": "major"
+    },
+    {
+      "id": "c-major",
+      "name": "C Major",
+      "fingers": [
+        { "string": 2, "fret": 1, "finger": 1 },
+        { "string": 4, "fret": 2, "finger": 2 },
+        { "string": 5, "fret": 3, "finger": 3 }
+      ],
+      "isBarred": false,
+      "category": "major"
+    },
+    {
+      "id": "d-major",
+      "name": "D Major",
+      "fingers": [
+        { "string": 1, "fret": 2, "finger": 1 },
+        { "string": 2, "fret": 3, "finger": 3 },
+        { "string": 3, "fret": 2, "finger": 2 }
+      ],
+      "isBarred": false,
+      "category": "major"
+    },
+    {
+      "id": "e-major",
+      "name": "E Major",
+      "fingers": [
+        { "string": 3, "fret": 1, "finger": 1 },
+        { "string": 4, "fret": 2, "finger": 2 },
+        { "string": 5, "fret": 2, "finger": 3 }
+      ],
+      "isBarred": false,
+      "category": "major"
+    },
+    {
+      "id": "f-major",
+      "name": "F Major",
+      "fingers": [
+        { "string": 1, "fret": 1, "finger": 1 },
+        { "string": 2, "fret": 3, "finger": 3 },
+        { "string": 3, "fret": 3, "finger": 4 },
+        { "string": 4, "fret": 2, "finger": 2 }
+      ],
+      "isBarred": true,
+      "barreFret": 1,
+      "category": "major"
+    },
+    {
+      "id": "g-major",
+      "name": "G Major",
+      "fingers": [
+        { "string": 1, "fret": 3, "finger": 2 },
+        { "string": 5, "fret": 2, "finger": 1 },
+        { "string": 6, "fret": 3, "finger": 3 }
+      ],
+      "isBarred": false,
+      "category": "major"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <a routerLink="/chords" class="btn btn-secondary mb-4">← Back to Library</a>
+      
+      <div class="chord-display" *ngIf="chord">
+        <h2>{{ chord.name }}</h2>
+        
+        <div class="fretboard">
+          <!-- Strings -->
+          <div class="strings">
+            @for (string of [1,2,3,4,5,6]; track string) {
+              <div class="string"></div>
+            }
+          </div>
+          
+          <!-- Frets -->
+          @for (fret of [0,1,2,3,4,5]; track fret) {
+            <div class="fret">
+              @for (string of [1,2,3,4,5,6]; track string) {
+                <div class="position" [class.barre]="isBarreFret(fret)">
+                  @if (getFingerAtPosition(string, fret)) {
+                    <div class="finger">
+                      {{ getFingerAtPosition(string, fret) }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      
+      @if (!chord) {
+        <div class="alert alert-warning">
+          Chord not found!
+        </div>
+      }
+    </div>
+  </div>
+</div>
