@@ -14,7 +14,7 @@
       <div class="col">
         <div class="btn-group" role="group">
           <button 
-            *ngFor="let cat of ['major', 'minor']"
+            *ngFor="let cat of ['major', 'minor', '7th', 'diminished', 'augmented', 'suspended']"
             (click)="filterByCategory(cat)"
             class="btn"
             [class.btn-primary]="selectedCategory === cat"
@@ -31,8 +31,13 @@
           <div class="card-body">
             <h5 class="card-title">{{ chord.name }}</h5>
             <p class="card-text">
-              {{ chord.isBarred ? 'Barre Chord' : 'Open Chord' }}
+              {{ chord.category | titlecase }}
             </p>
+            @if (chord.variations.length > 1) {
+              <p class="card-text small text-muted">
+                {{ chord.variations.length }} variations
+              </p>
+            }
             <a [routerLink]="['/chord', chord.id]" 
               class="btn btn-primary"
               (click)="selectChord(chord)">

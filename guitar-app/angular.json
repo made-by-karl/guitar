@@ -34,6 +34,11 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "**/*.mp3",
+                "input": "src/assets/audio",
+                "output": "assets/audio"
               }
             ],
             "styles": [

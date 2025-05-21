@@ -26,6 +26,12 @@ For a complete list of available schematics (such as `components`, `directives`,
 ng generate --help
 ```
 
+## Generating Audio
+
+```bash
+npm run generate-audio -- "C"
+```
+
 ## Building
 
 To build the project run:
