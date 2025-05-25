@@ -1,0 +1,4 @@
+{
+    "terminal.integrated.cwd": "${workspaceFolder}/guitar-app",
+    "jest.rootPath": "guitar-app"
+}

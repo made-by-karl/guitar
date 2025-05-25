@@ -1,0 +1,76 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug All Tests",
+      "program": "${workspaceFolder}/guitar-app/node_modules/.bin/jest",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "--nolazy",
+      ],
+      "args": [
+        "--runInBand",
+        "--no-cache",
+        "--config",
+        "jest.config.js"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}/guitar-app",
+      "sourceMaps": true
+    },
+    {
+      "name": "Debug Specific Test Suite",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/guitar-app/node_modules/.bin/jest",
+      "cwd": "${workspaceFolder}/guitar-app",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "--nolazy",
+      ],
+      "args": [
+        "--runInBand",
+        "--no-cache",
+        "--testNamePattern",
+        "${input:testName}",
+        "--config",
+        "jest.config.js",
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "sourceMaps": true
+    },
+    {
+      "name": "Debug current Test Suite",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/guitar-app/node_modules/.bin/jest",
+      "cwd": "${workspaceFolder}/guitar-app",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "--nolazy",
+      ],
+      "args": [
+        "--runInBand",
+        "--no-cache",
+        "--testNamePattern",
+        "${fileBasenameNoExtension}",
+        "--config",
+        "jest.config.js",
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "sourceMaps": true
+    },
+  ],
+  "inputs": [
+    {
+      "id": "testName",
+      "type": "promptString",
+      "description": "Enter the test name pattern to debug"
+    }
+  ]
+}
