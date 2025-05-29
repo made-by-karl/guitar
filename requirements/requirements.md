@@ -26,5 +26,8 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
             * some entries can contain null instead of a chord description and must be ignored
     * the library data is stored in a separate json file in the assets
 * [GA-1.3] the app allows the user to browse the library of chords and visualizes the selected chord
+    * the library view groups chords by their root note
+    * inside a group the chords are sorted by their number of modifications
 * [GA-1.4] the app allows the user to play a midi with the selected chord
-
+* [GA-1.5] the app allows to filter the chords from the library
+    * the filter offers input to filter by root note, filter by modifications or filter by bass note
