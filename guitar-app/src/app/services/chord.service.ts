@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MidiService } from './midi.service';
+import { ChordAnalysisService } from './chord-analysis.service';
 
 export interface ChordVariation {
   positions: string[];  // 'x' for muted or fret number
@@ -14,6 +15,11 @@ export interface Chord {
   name: string;
   category: string;
   variations: ChordVariation[];
+  analysis?: {
+    root: string;
+    modifiers: string[];
+    bass?: string;
+  };
 }
 
 interface ChordData {
@@ -30,7 +36,8 @@ export class ChordService {
 
   constructor(
     private http: HttpClient,
-    private midiService: MidiService
+    private midiService: MidiService,
+    private chordAnalysisService: ChordAnalysisService
   ) {
     this.loadChords();
   }
@@ -39,21 +46,20 @@ export class ChordService {
     this.http.get<ChordData>('assets/data/chords.json')
       .pipe(
         map(data => {
-          // Transform the data from {chordName: variations[]} to Chord[]
           return Object.entries(data)
             .filter(([name, variations]) => {
-            // Filter out variations that are empty or contain null values
-            return variations !== null && variations.length > 0 && variations.every(v => v !== null);
-          })
+              return variations !== null && variations.length > 0 && variations.every(v => v !== null);
+            })
             .map(([name, variations]) => {
-            // Transform the variations to the desired format
-            return {
-              id: name.toLowerCase().replace('#', 'sharp'),  // e.g., "C#" -> "csharp"
-              name: name,
-              category: this.getCategoryFromName(name),  // e.g., "major", "minor", etc.
-              variations: variations
-            };
-          });
+              const analysis = this.chordAnalysisService.parseChord(name);
+              return {
+                id: name.toLowerCase().replace('#', 'sharp'),
+                name: name,
+                category: this.getCategoryFromName(name),
+                variations: variations,
+                analysis
+              };
+            });
         })
       )
       .subscribe({
@@ -83,6 +89,73 @@ export class ChordService {
 
   getChordsByCategory(category: string): Chord[] {
     return this.chords.filter(chord => chord.category === category);
+  }
+
+  getChordsByRootNote(): Map<string, Chord[]> {
+    const grouped = new Map<string, Chord[]>();
+    for (const chord of this.chords) {
+      if (chord.analysis?.root) {
+        const root = chord.analysis.root;
+        if (!grouped.has(root)) {
+          grouped.set(root, []);
+        }
+        grouped.get(root)?.push(chord);
+      }
+    }
+    // Sort each group by number of modifiers
+    for (const [root, chords] of grouped) {
+      grouped.set(root, chords.sort((a, b) => {
+        const aModCount = a.analysis?.modifiers?.length || 0;
+        const bModCount = b.analysis?.modifiers?.length || 0;
+        return aModCount - bModCount;
+      }));
+    }
+    return grouped;
+  }
+
+  getAvailableRootNotes(): string[] {
+    const roots = new Set<string>();
+    for (const chord of this.chords) {
+      if (chord.analysis?.root) {
+        roots.add(chord.analysis.root);
+      }
+    }
+    return Array.from(roots).sort();
+  }
+
+  getAvailableModifiers(): string[] {
+    const modifiers = new Set<string>();
+    for (const chord of this.chords) {
+      if (chord.analysis?.modifiers) {
+        chord.analysis.modifiers.forEach(mod => modifiers.add(mod));
+      }
+    }
+    return Array.from(modifiers).sort();
+  }
+
+  getAvailableBassNotes(): string[] {
+    const bassNotes = new Set<string>();
+    for (const chord of this.chords) {
+      if (chord.analysis?.bass) {
+        bassNotes.add(chord.analysis.bass);
+      }
+    }
+    return Array.from(bassNotes).sort();
+  }
+
+  filterChords(filters: { root?: string; modifier?: string; bass?: string }): Chord[] {
+    return this.chords.filter(chord => {
+      if (filters.root && chord.analysis?.root !== filters.root) {
+        return false;
+      }
+      if (filters.modifier && (!chord.analysis?.modifiers || !chord.analysis.modifiers.includes(filters.modifier))) {
+        return false;
+      }
+      if (filters.bass && chord.analysis?.bass !== filters.bass) {
+        return false;
+      }
+      return true;
+    });
   }
 
   getChordById(id: string): Chord | undefined {
