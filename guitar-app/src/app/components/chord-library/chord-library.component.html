@@ -10,42 +10,80 @@
   </ng-container>
 
   <ng-template #chordList>
-    <div class="row mb-4">
-      <div class="col">
-        <div class="btn-group" role="group">
-          <button 
-            *ngFor="let cat of ['major', 'minor', '7th', 'diminished', 'augmented', 'suspended']"
-            (click)="filterByCategory(cat)"
-            class="btn"
-            [class.btn-primary]="selectedCategory === cat"
-            [class.btn-outline-primary]="selectedCategory !== cat">
-            {{ cat | titlecase }}
-          </button>
+    <!-- Filter Controls -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Filter Chords</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="rootFilter" class="form-label">Root Note</label>
+            <select class="form-select" id="rootFilter" [(ngModel)]="filterRoot" (ngModelChange)="applyFilters()">
+              <option value="">Any Root</option>
+              <option *ngFor="let root of availableRootNotes" [value]="root">{{root}}</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="modifierFilter" class="form-label">Modifier</label>
+            <select class="form-select" id="modifierFilter" [(ngModel)]="filterModifier" (ngModelChange)="applyFilters()">
+              <option value="">Any Modifier</option>
+              <option *ngFor="let mod of availableModifiers" [value]="mod">{{mod}}</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="bassFilter" class="form-label">Bass Note</label>
+            <select class="form-select" id="bassFilter" [(ngModel)]="filterBass" (ngModelChange)="applyFilters()">
+              <option value="">Any Bass</option>
+              <option *ngFor="let bass of availableBassNotes" [value]="bass">{{bass}}</option>
+            </select>
+          </div>
         </div>
+        <button class="btn btn-secondary" (click)="resetFilters()">Reset Filters</button>
       </div>
     </div>
 
-    <div class="row">
-      <div class="col-md-4" *ngFor="let chord of filteredChords">
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title">{{ chord.name }}</h5>
-            <p class="card-text">
-              {{ chord.category | titlecase }}
-            </p>
-            @if (chord.variations.length > 1) {
-              <p class="card-text small text-muted">
-                {{ chord.variations.length }} variations
-              </p>
-            }
-            <a [routerLink]="['/chord', chord.id]" 
-              class="btn btn-primary"
-              (click)="selectChord(chord)">
-              View Chord
-            </a>
-          </div>
+    <!-- No Results Message -->
+    @if (groupedChords.size === 0) {
+      <div class="alert alert-info">
+        No chords found matching the selected filters.
+      </div>
+    }
+
+    <!-- Grouped Chords -->
+    @for (entry of groupedChords | keyvalue; track entry.key) {
+      <div class="mb-4">
+        <h3 class="mb-3">{{entry.key}} Chords</h3>
+        <div class="row">
+          @for (chord of entry.value; track chord.id) {
+            <div class="col-md-4">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5 class="card-title">{{ chord.name }}</h5>
+                  <p class="card-text">
+                    @for (mod of chord.analysis?.modifiers || []; track mod) {
+                      <span class="badge bg-primary me-1">{{ mod }}</span>
+                    }
+                  </p>
+                  @if (chord.analysis?.bass) {
+                    <p class="card-text">
+                      <span class="badge bg-secondary">Bass: {{ chord.analysis?.bass }}</span>
+                    </p>
+                  }
+                  @if (chord.variations.length > 1) {
+                    <p class="card-text small text-muted">
+                      {{ chord.variations.length }} variations
+                    </p>
+                  }
+                  <a [routerLink]="['/chord', chord.id]" 
+                    class="btn btn-primary"
+                    (click)="selectChord(chord)">
+                    View Chord
+                  </a>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
   </ng-template>
 </div>

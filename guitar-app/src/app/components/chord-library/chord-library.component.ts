@@ -1,20 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ChordService, Chord } from '../../services/chord.service';
 
 @Component({
   selector: 'app-chord-library',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './chord-library.component.html',
   styleUrls: ['./chord-library.component.scss']
 })
 export class ChordLibraryComponent implements OnInit {
-  chords: Chord[] = [];
-  filteredChords: Chord[] = [];
-  selectedCategory: string = 'major';
+  protected readonly Array = Array;  // For template access
+  groupedChords: Map<string, Chord[]> = new Map();
+  availableModifiers: string[] = [];
+  availableBassNotes: string[] = [];
+  availableRootNotes: string[] = [];
   isLoaded: boolean = false;
+
+  // Filter state
+  filterRoot: string = '';
+  filterModifier: string = '';
+  filterBass: string = '';
 
   constructor(private chordService: ChordService) {}
 
@@ -33,16 +41,39 @@ export class ChordLibraryComponent implements OnInit {
   }
 
   loadChords() {
-    this.chords = this.chordService.getChords();
-    this.filterByCategory(this.selectedCategory);
+    this.groupedChords = this.chordService.getChordsByRootNote();
+    this.availableRootNotes = this.chordService.getAvailableRootNotes();
+    this.availableModifiers = this.chordService.getAvailableModifiers();
+    this.availableBassNotes = this.chordService.getAvailableBassNotes();
+    this.applyFilters();
   }
 
-  filterByCategory(category: string) {
-    this.selectedCategory = category;
-    this.filteredChords = this.chordService.getChordsByCategory(category);
+  applyFilters() {
+    const filteredChords = this.chordService.filterChords({
+      root: this.filterRoot || undefined,
+      modifier: this.filterModifier || undefined,
+      bass: this.filterBass || undefined
+    });
+
+    // Group filtered chords by root note
+    this.groupedChords = new Map();
+    for (const chord of filteredChords) {
+      if (!chord.analysis?.root) continue;
+      if (!this.groupedChords.has(chord.analysis.root)) {
+        this.groupedChords.set(chord.analysis.root, []);
+      }
+      this.groupedChords.get(chord.analysis.root)?.push(chord);
+    }
   }
 
   selectChord(chord: Chord) {
     this.chordService.setSelectedChord(chord);
+  }
+
+  resetFilters() {
+    this.filterRoot = '';
+    this.filterModifier = '';
+    this.filterBass = '';
+    this.loadChords();
   }
 }
