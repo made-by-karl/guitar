@@ -33,6 +33,10 @@
           }
         </div>
 
+        <div>
+          <app-grip-diagram *ngIf="!!grip" [grip]="grip"></app-grip-diagram>
+        </div>
+
         <div class="mt-4">
           <p class="mb-2">
             <strong>Type:</strong> {{ isBarreFret(parseInt(selectedVariation.positions[0])) ? 'Barre Chord' : 'Open Chord' }}

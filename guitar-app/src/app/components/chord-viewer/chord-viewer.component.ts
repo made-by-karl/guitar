@@ -2,23 +2,27 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChordService, Chord, ChordVariation } from '../../services/chord.service';
+import { GripGeneratorService, GuitarGrip } from '../../services/grip-generator/grip-generator.service';
+import { GripDiagramComponent } from '../grip-diagram/grip-diagram.component';
 
 @Component({
   selector: 'app-chord-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, GripDiagramComponent],
   templateUrl: './chord-viewer.component.html',
   styleUrls: ['./chord-viewer.component.scss']
 })
 export class ChordViewerComponent implements OnInit {
   chord: Chord | null = null;
+  grip: GuitarGrip | null = null;
   selectedVariation: ChordVariation | null = null;
   fretboardHeight = 5;
   strings = 6;
 
   constructor(
     private route: ActivatedRoute,
-    private chordService: ChordService
+    private chordService: ChordService,
+    private gripGenerator: GripGeneratorService
   ) {}
 
   ngOnInit() {
@@ -28,6 +32,9 @@ export class ChordViewerComponent implements OnInit {
       if (this.chord && this.chord.variations.length > 0) {
         this.selectedVariation = this.chord.variations[0];
       }
+
+      const grips = this.gripGenerator.generateGrips(['C', 'E', 'G', 'B']);
+      this.grip = grips[0];
     }
   }
 
