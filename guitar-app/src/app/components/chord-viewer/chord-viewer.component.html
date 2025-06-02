@@ -8,44 +8,19 @@
             <i class="bi bi-play-fill"></i> Play Chord
           </button>
         </div>
-        
-        <div class="fretboard">
-          <!-- Strings -->
-          <div class="strings">
-            @for (string of [1,2,3,4,5,6]; track string) {
-              <div class="string"></div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+          <div>
+            <strong>{{ grips.length }} grips</strong>
+            @for (grip of grips; track grip) {
+              <app-grip-diagram [grip]="grip"></app-grip-diagram>
+              @for (note of grip.notes; track $index) {
+                <span class="note">{{ note }},</span>
+              }
             }
           </div>
-          
-          <!-- Frets -->
-          @for (fret of [0,1,2,3,4,5]; track fret) {
-            <div class="fret">
-              @for (string of [1,2,3,4,5,6]; track string) {
-                <div class="position" [class.barre]="isBarreFret(fret)">
-                  @if (getFingerAtPosition(string, fret)) {
-                    <div class="finger">
-                      {{ getFingerAtPosition(string, fret) }}
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          }
         </div>
-
-        <div class="mt-4">
-          <p class="mb-2">
-            <strong>Type:</strong> {{ isBarreFret(parseInt(selectedVariation.positions[0])) ? 'Barre Chord' : 'Open Chord' }}
-          </p>
-          <p class="mb-0">
-            <strong>Category:</strong> {{ chord.category | titlecase }}
-          </p>
-          @if (chord.variations.length > 1) {
-            <p class="mb-0 mt-2">
-              <small class="text-muted">This chord has {{ chord.variations.length }} variations available.</small>
-            </p>
-          }
-        </div>
+        
       </div>
       
       @if (!chord) {
