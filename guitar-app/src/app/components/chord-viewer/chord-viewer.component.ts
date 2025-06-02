@@ -1,24 +1,31 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChordService, Chord, ChordVariation } from '../../services/chord.service';
+import { GripDiagramComponent } from '../grip-diagram/grip-diagram.component';
+import { ChordAnalysisService } from '../../services/chord-analysis.service';
+import { GripGeneratorService, TunedGrip} from '../../services/grip-generator/grip-generator.service';
 
 @Component({
   selector: 'app-chord-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, GripDiagramComponent],
   templateUrl: './chord-viewer.component.html',
   styleUrls: ['./chord-viewer.component.scss']
 })
 export class ChordViewerComponent implements OnInit {
   chord: Chord | null = null;
+  grips: TunedGrip[] = []
+
   selectedVariation: ChordVariation | null = null;
   fretboardHeight = 5;
   strings = 6;
 
   constructor(
     private route: ActivatedRoute,
-    private chordService: ChordService
+    private chordService: ChordService,
+    private chordAnalysis: ChordAnalysisService,
+    private gripGenerator: GripGeneratorService
   ) {}
 
   ngOnInit() {
@@ -27,6 +34,13 @@ export class ChordViewerComponent implements OnInit {
       this.chord = this.chordService.getChordById(chordId) || null;
       if (this.chord && this.chord.variations.length > 0) {
         this.selectedVariation = this.chord.variations[0];
+        console.log('Selected chord variation:', this.selectedVariation);
+      }
+
+      if (this.chord && this.chord.analysis) {
+        const chordNotes = this.chordAnalysis.calculateNotes(this.chord.analysis.root, this.chord.analysis.modifiers, this.chord.analysis.bass);
+
+        this.grips = this.gripGenerator.generateGrips(chordNotes);
       }
     }
   }

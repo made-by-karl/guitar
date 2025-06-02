@@ -1,3 +1,12 @@
+import { Injectable } from "@angular/core";
+
+export type ChordAnalysis = {
+  root: string;
+  bass?: string;
+  modifiers: string[];
+  notes: string[];
+};
+
 /**
  * Chord Analysis Service
  * This service provides functionality to parse and analyze guitar chords.
@@ -11,16 +20,6 @@
  * Alterations: b5, #5, b9, #9, #11, b13
  * Slash chords (bass note)
  */
-
-import { Injectable } from "@angular/core";
-
-export type ChordAnalysis = {
-  root: string;
-  bass?: string;
-  modifiers: string[];
-  notes: string[];
-};
-
 @Injectable({
   providedIn: 'root'
 })
@@ -49,16 +48,7 @@ export class ChordAnalysisService {
     'b13': 20, '13': 21,
   };
 
-  public parseChord(input: string): ChordAnalysis {
-    const [mainPart, bassRaw] = input.split('/');
-    const bass = bassRaw ? this.normalize(bassRaw) : undefined;
-
-    const rootMatch = mainPart.match(/^([A-G][b#]?)/);
-    if (!rootMatch) throw new Error('Invalid chord root');
-    const root = this.normalize(rootMatch[1]);
-    let rest = mainPart.slice(root.length);
-
-    const modifiers: string[] = [];
+  public calculateNotes(root: string, modifiers: string[], bass?: string): ChordAnalysis {
     const intervals: Set<number> = new Set([this.INTERVALS['1']]);
     const suppress: Set<number> = new Set();
 
@@ -74,7 +64,13 @@ export class ChordAnalysisService {
       }
     };
 
-    // Handle the chord modifiers
+    // Add default major triad if no modifiers
+    if (modifiers.length === 0) {
+      add('3');  // Major third
+      add('5');  // Perfect fifth
+    }
+
+    // Process each modifier to build up intervals
     // ø7: lower the 3rd and lower the 5th and 7th
     // dim: lower the 3rd and lower the 5th
     // dim7: lower the 3rd and lower the 5th and double-lower the 7th
@@ -86,46 +82,84 @@ export class ChordAnalysisService {
     // 7: lower the 7th
     // maj: raise the 3rd
     // maj7: raise the 3rd and raise the 7th
-    const patterns: [RegExp, () => void][] = [
-      [/^ø7/, () => { modifiers.push('ø7'); add('b3'); add('b5'); add('b7'); }],
-      [/^dim7|°7/, () => { modifiers.push('dim7'); add('b3'); add('b5'); add('6'); }],
-      [/^dim|°/, () => { modifiers.push('dim'); add('b3'); add('b5'); }],
-      [/^aug7/, () => { modifiers.push('aug7'); add('3'); add('#5'); add('b7'); }],
-      [/^aug|\+/, () => { modifiers.push('aug'); add('3'); add('#5'); }],
-      [/^maj7/, () => { modifiers.push('maj7'); add('7'); }],
-      [/^maj9/, () => { modifiers.push('maj9'); add('7'); add('9'); }],
-      [/^m7/, () => { modifiers.push('m7'); add('b3'); add('5'); add('b7'); }],
-      [/^m/, () => { modifiers.push('m'); add('b3'); add('5'); }],
-      [/^7/, () => { modifiers.push('7'); add('3'); add('5'); add('b7'); }],
-      [/^sus2/, () => { modifiers.push('sus2'); remove(['3', 'b3']); add('2'); add('5'); }],
-      [/^sus4/, () => { modifiers.push('sus4'); remove(['3', 'b3']); add('4'); add('5'); }],
-      [/^b5/, () => { modifiers.push('b5'); remove(['5']); add('b5'); }],
-      [/^#5/, () => { modifiers.push('#5'); remove(['5']); add('#5'); }],
-      [/^bb5/, () => { modifiers.push('bb5'); remove(['5']); add('4'); }],
-      [/^add9/, () => { modifiers.push('add9'); add('9'); }],
-      [/^add11/, () => { modifiers.push('add11'); add('11'); }],
-      [/^add13/, () => { modifiers.push('add13'); add('13'); }],
-      [/^b9/, () => { modifiers.push('b9'); add('b9'); }],
-      [/^#9/, () => { modifiers.push('#9'); add('#9'); }],
-      [/^#11/, () => { modifiers.push('#11'); add('#11'); }],
-      [/^b13/, () => { modifiers.push('b13'); add('b13'); }],
-      [/^no3/, () => { modifiers.push('no3'); remove(['3', 'b3']); }],
-      [/^no5/, () => { modifiers.push('no5'); remove(['5', 'b5', '#5']); }],
-      [/^no7/, () => { modifiers.push('no7'); remove(['7', 'b7']); }],
-    ];
-
-    while (rest.length > 0) {
-      let matched = false;
-      for (const [regex, action] of patterns) {
-        const match = rest.match(regex);
-        if (match) {
-          action();
-          rest = rest.slice(match[0].length);
-          matched = true;
+    for (const mod of modifiers) {
+      switch (mod) {
+        case 'ø7':
+          add('b3'); add('b5'); add('b7');
           break;
-        }
+        case 'dim7':
+          add('b3'); add('b5'); add('6');
+          break;
+        case 'dim':
+          add('b3'); add('b5');
+          break;
+        case 'aug7':
+          add('3'); add('#5'); add('b7');
+          break;
+        case 'aug':
+          add('3'); add('#5');
+          break;
+        case 'maj7':
+          add('3'); add('5'); add('7');
+          break;
+        case 'maj9':
+          add('3'); add('5'); add('7'); add('9');
+          break;
+        case 'm7':
+          add('b3'); add('5'); add('b7');
+          break;
+        case 'm':
+          add('b3'); add('5');
+          break;
+        case '7':
+          add('3'); add('5'); add('b7');
+          break;
+        case 'sus2':
+          remove(['3', 'b3']); add('2'); add('5');
+          break;
+        case 'sus4':
+          remove(['3', 'b3']); add('4'); add('5');
+          break;
+        case 'b5':
+          remove(['5']); add('b5');
+          break;
+        case '#5':
+          remove(['5']); add('#5');
+          break;
+        case 'bb5':
+          remove(['5']); add('4');
+          break;
+        case 'add9':
+          add('3'); add('5'); add('9');
+          break;
+        case 'add11':
+          add('3'); add('5'); add('11');
+          break;
+        case 'add13':
+          add('3'); add('5'); add('13');
+          break;
+        case 'b9':
+          add('b9');
+          break;
+        case '#9':
+          add('#9');
+          break;
+        case '#11':
+          add('#11');
+          break;
+        case 'b13':
+          add('b13');
+          break;
+        case 'no3':
+          remove(['3', 'b3']);
+          break;
+        case 'no5':
+          remove(['5', 'b5', '#5']);
+          break;
+        case 'no7':
+          remove(['7', 'b7']);
+          break;
       }
-      if (!matched) break;
     }
 
     const allNotes = [...intervals].filter(i => !suppress.has(i)).map(i => this.transpose(root, i));
@@ -134,5 +168,60 @@ export class ChordAnalysisService {
       : allNotes;
 
     return { root, bass, modifiers, notes };
+  }
+
+  public parseChord(input: string): ChordAnalysis {
+    const [mainPart, bassRaw] = input.split('/');
+    const bass = bassRaw ? this.normalize(bassRaw) : undefined;
+
+    const rootMatch = mainPart.match(/^([A-G][b#]?)/);
+    if (!rootMatch) throw new Error('Invalid chord root');
+    const root = this.normalize(rootMatch[1]);
+    let rest = mainPart.slice(root.length);
+
+    const modifiers: string[] = [];
+    const patterns: [RegExp, string][] = [
+      [/^ø7/, 'ø7'],
+      [/^dim7|°7/, 'dim7'],
+      [/^dim|°/, 'dim'],
+      [/^aug7/, 'aug7'],
+      [/^aug|\+/, 'aug'],
+      [/^maj7/, 'maj7'],
+      [/^maj9/, 'maj9'],
+      [/^m7/, 'm7'],
+      [/^m/, 'm'],
+      [/^7/, '7'],
+      [/^sus2/, 'sus2'],
+      [/^sus4/, 'sus4'],
+      [/^b5/, 'b5'],
+      [/^#5/, '#5'],
+      [/^bb5/, 'bb5'],
+      [/^add9/, 'add9'],
+      [/^add11/, 'add11'],
+      [/^add13/, 'add13'],
+      [/^b9/, 'b9'],
+      [/^#9/, '#9'],
+      [/^#11/, '#11'],
+      [/^b13/, 'b13'],
+      [/^no3/, 'no3'],
+      [/^no5/, 'no5'],
+      [/^no7/, 'no7'],
+    ];
+
+    while (rest.length > 0) {
+      let matched = false;
+      for (const [regex, mod] of patterns) {
+        const match = rest.match(regex);
+        if (match) {
+          modifiers.push(mod);
+          rest = rest.slice(match[0].length);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) break;
+    }
+
+    return this.calculateNotes(root, modifiers, bass);
   }
 }
