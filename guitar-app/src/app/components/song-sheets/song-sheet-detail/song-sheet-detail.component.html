@@ -18,5 +18,49 @@
       </div>
     </div>
   </div>
+  <div *ngIf="sheet.patterns && sheet.patterns.length > 0" class="mb-4">
+    <h5>Strumming & Picking Patterns</h5>
+    <div class="row">
+      <div class="col-md-6 mb-3" *ngFor="let p of sheet.patterns">
+        <div class="card card-body d-flex flex-row align-items-center justify-content-between">
+          <div>
+            <b>{{ p.pattern.name }}</b>
+            <span class="badge bg-info ms-2">{{ p.pattern.timeSignature }}</span>
+            <span class="badge bg-light text-dark ms-1">{{ p.pattern.tempo }} BPM</span>
+            <div class="small text-muted">{{ p.pattern.description }}</div>
+            <div>
+              <span *ngFor="let step of p.pattern.steps" class="me-2">
+                <ng-container [ngSwitch]="step.technique">
+                  <span *ngSwitchCase="'strum'">
+                    <span [title]="'Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on strings ' + step.strings.join(', ')">
+                      <span *ngIf="step.direction === 'D'">&#8595;</span>
+                      <span *ngIf="step.direction === 'U'">&#8593;</span>
+                      <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                    </span>
+                  </span>
+                  <span *ngSwitchCase="'pick'">
+                    <span [title]="'Pick string(s) ' + step.strings.join(', ')">
+                      <span class="bi bi-dot"></span>
+                      <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                    </span>
+                  </span>
+                  <span *ngSwitchCase="'mute'">X</span>
+                  <span *ngSwitchCase="'rest'">-</span>
+                  <span *ngSwitchCase="'accent'">A</span>
+                  <span *ngSwitchCase="'palm-mute'">PM</span>
+                  <span *ngSwitchCase="'percussive'">P</span>
+                  <span *ngSwitchDefault>?</span>
+                </ng-container>
+              </span>
+            </div>
+          </div>
+          <div class="d-flex flex-column gap-2 ms-3">
+            <button class="btn btn-outline-primary btn-sm" (click)="playPattern(p.pattern)" [disabled]="!p.pattern.steps"><i class="bi bi-play-fill"></i></button>
+            <button class="btn btn-outline-danger btn-sm" (click)="removePattern(p.id)"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <div *ngIf="!sheet" class="container py-5"><div class="alert alert-danger">Song Sheet not found.</div></div>

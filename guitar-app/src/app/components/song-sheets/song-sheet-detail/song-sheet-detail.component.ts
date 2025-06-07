@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule, NgForOf, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from '../../../services/song-sheets.service';
-import { SongSheet, SongSheetGrip } from '../../../services/song-sheets.model';
+import { SongSheet, SongSheetGrip, SongSheetPattern } from '../../../services/song-sheets.model';
 import { GripDiagramComponent } from '../../grip-diagram/grip-diagram.component';
 import { MidiService } from '../../../services/midi.service';
 import { ActivatedRoute } from '@angular/router';
@@ -55,8 +55,27 @@ export class SongSheetDetailComponent {
     }
   }
 
+  removePattern(patternId: string) {
+    if (this.sheet) {
+      this.service.removePattern(this.sheet.id, patternId);
+      this.sheet = this.service.getById(this.sheet.id);
+    }
+  }
+
   playGrip(grip: SongSheetGrip) {
     const positions = grip.grip.frets.map((f: any) => f === 'x' ? 'x' : f.toString());
     this.midi.generateAndPlayChord(positions);
+  }
+
+  async playPattern(pattern: any) {
+    const interval = 60000 / pattern.tempo;
+    for (const step of pattern.steps) {
+      if (step.technique === 'strum' || step.technique === 'pick') {
+        const all = ['0', '0', '1', '2', '2', '0'];
+        const positions = all.map((f, i) => step.strings.includes(6 - i) ? f : 'x');
+        await this.midi.generateAndPlayChord(positions);
+      }
+      await new Promise(res => setTimeout(res, interval));
+    }
   }
 }

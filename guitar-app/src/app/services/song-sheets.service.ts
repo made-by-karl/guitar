@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { SongSheet, SongSheetGrip } from './song-sheets.model';
+import { SongSheet, SongSheetGrip, SongSheetPattern } from './song-sheets.model';
 
 @Injectable({ providedIn: 'root' })
 export class SongSheetsService {
@@ -36,6 +36,7 @@ export class SongSheetsService {
       id: 'ss-' + now + '-' + Math.random().toString(36).slice(2, 8),
       name,
       grips: [],
+      patterns: [],
       created: now,
       updated: now
     };
@@ -99,5 +100,29 @@ export class SongSheetsService {
       sheet.name = newName;
       this.update(sheet);
     }
+  }
+
+  addPattern(pattern: SongSheetPattern, songSheetId?: string) {
+    const id = songSheetId || this.pinnedSongSheetId;
+    if (!id) return;
+    const sheet = this.getById(id);
+    if (sheet) {
+      sheet.patterns = sheet.patterns || [];
+      sheet.patterns.push(pattern);
+      this.update(sheet);
+    }
+  }
+
+  removePattern(sheetId: string, patternId: string) {
+    const sheet = this.getById(sheetId);
+    if (sheet && sheet.patterns) {
+      sheet.patterns = sheet.patterns.filter(p => p.id !== patternId);
+      this.update(sheet);
+    }
+  }
+
+  getPatterns(sheetId: string): SongSheetPattern[] {
+    const sheet = this.getById(sheetId);
+    return sheet?.patterns || [];
   }
 }
