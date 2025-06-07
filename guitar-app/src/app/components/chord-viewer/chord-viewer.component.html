@@ -193,10 +193,6 @@
                   }
                   }
                 </div>
-
-                <div>
-                  <!-- progression can go here -->
-                </div>
               </div>
               }
 
@@ -224,6 +220,11 @@
                           <button class="btn btn-primary" (click)="playChord(grip)">
                             <i class="bi bi-play-fill"></i> Play Chord
                           </button>
+                          @if (getPinnedSongSheet()) {
+                          <button class="btn btn-outline-success btn-sm mt-3" (click)="addGripToPinned(grip)">
+                            <i class="bi bi-plus-lg"></i> Add to Pinned Sheet
+                          </button>
+                          }
                         </div>
                       </div>
                     </div>

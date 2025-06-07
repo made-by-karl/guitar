@@ -1,0 +1,22 @@
+<div class="container py-4" *ngIf="sheet">
+  <div class="d-flex align-items-center mb-3">
+    <input [ngModel]="renaming ? tempName : sheet.name" (ngModelChange)="tempName = $event" class="form-control me-2" style="max-width: 300px; font-size: 1.5rem; font-weight: bold;" [readonly]="!renaming" />
+    <button *ngIf="!renaming" class="btn btn-outline-secondary btn-sm" (click)="startRenaming()">
+      <i class="bi bi-pencil"></i> Rename
+    </button>
+    <button *ngIf="renaming" class="btn btn-success btn-sm ms-2" (click)="saveRename()"><i class="bi bi-check-lg"></i> Save</button>
+    <button *ngIf="renaming" class="btn btn-outline-secondary btn-sm ms-2" (click)="cancelRename()"><i class="bi bi-x-lg"></i> Cancel</button>
+  </div>
+  <div *ngIf="sheet.grips.length === 0" class="alert alert-info">No grips yet. Add some from the Chords page.</div>
+  <div class="row">
+    <div class="col-md-4 mb-4" *ngFor="let grip of sheet.grips">
+      <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <span>{{ grip.chordName }}</span>
+        <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)"><i class="bi bi-play-fill"></i></button>
+        <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.id)"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="!sheet" class="container py-5"><div class="alert alert-danger">Song Sheet not found.</div></div>

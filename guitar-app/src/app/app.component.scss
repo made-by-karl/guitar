@@ -11,3 +11,33 @@
     height: calc(100vh - 66px);
   }
 }
+
+.pinned-sheet-bar {
+  position: fixed;
+  top: 56px; /* Height of navbar */
+  left: 0;
+  width: 100vw;
+  background: #e9ecef;
+  color: #333;
+  z-index: 1020; /* Above content, below modal */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  border-bottom: 1px solid #dee2e6;
+}
+
+@media (max-width: 991.98px) {
+  .edit-mode-bar {
+    top: 50px; /* Adjust for mobile navbar height */
+  }
+}
+
+.app-content-container.edit-mode-visible {
+  margin-top: 112px; /* 56px navbar + 56px edit bar */
+  height: calc(100vh - 112px);
+}
+
+@media (max-width: 991.98px) {
+  .app-content-container.edit-mode-visible {
+    margin-top: 100px; /* 50px navbar + 50px edit bar */
+    height: calc(100vh - 100px);
+  }
+}

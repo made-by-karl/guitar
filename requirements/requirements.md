@@ -48,10 +48,7 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
 * [GA-2.8] Each Song Sheet displays its name, the list of selected grips (with diagrams), and (in the future) strumming patterns
 * [GA-2.9] The user can play the MIDI sound for each grip in a Song Sheet
 * [GA-2.10] The user can have many Song Sheets, representing their personal cheat sheets for favorite songs
-* [GA-2.11] The app provides a "Song Sheet Edit Mode" that can be activated from the UI and is clearly indicated in the header area
-    * When edit mode is active, the user can add grips from the Chords feature to the currently selected Song Sheet
-    * In edit mode, the user can also (in the future) add strumming patterns and other elements
-    * Edit mode can be canceled at any time, discarding unsaved changes if desired
-    * The UI must clearly show when edit mode is active and provide a way to exit/cancel edit mode
-    * While in edit mode, actions to add grips (e.g., "Add to Song Sheet" buttons) are available in the Chords feature
-    * The user can only add elements to a Song Sheet when edit mode is active
+* [GA-2.11] The app provides the pinning of a Song Sheet that can be activated everywhere from the UI and is clearly indicated in the header area
+    * When a sheet is pinned, the user can add grips from the Chords feature to the currently selected Song Sheet
+    * With a pinned sheet the user can also (in the future) add strumming patterns and other elements
+    * While a sheet is pinned, actions to add grips (e.g., "Add to Song Sheet" buttons) are available in the Chords feature

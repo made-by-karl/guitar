@@ -12,6 +12,7 @@ import { ChordProgressionService } from 'app/services/chords/chord-progression.s
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-functions.service';
+import { SongSheetsService } from 'app/services/song-sheets.service';
 
 @Component({
   selector: 'app-chord-viewer',
@@ -31,6 +32,8 @@ export class ChordViewerComponent implements OnInit {
 
   chordAnalysis: ChordAnalysis | null = null
   progressions: Chord[][] = [];
+
+  selectedSheetId: string | null = null;
 
   readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I','V','vi','IV']
   readonly BASE_MINOR_PROGRESSION: Degree[] = ['i','VI','III','VII']
@@ -54,6 +57,7 @@ export class ChordViewerComponent implements OnInit {
     private gripScorer: GripScorerService,
     private chordProgression: ChordProgressionService,
     private harmonicFunctions: HarmonicFunctionsService,
+    private songSheets: SongSheetsService,
     private router: Router,
     private route: ActivatedRoute,
   ) { }
@@ -116,6 +120,20 @@ export class ChordViewerComponent implements OnInit {
     const chordString = this.getChordQueryString(chord);
     // Navigate to the chord route with no query params
     this.router.navigate(['/chord', chordString], { queryParams: {} });
+  }
+
+  getPinnedSongSheet() {
+    return this.songSheets.getPinnedSongSheet();
+  }
+
+  addGripToPinned(grip: any) {
+    const pinned = this.songSheets.getPinnedSongSheet();
+    if (!pinned) return;
+    this.songSheets.addGrip({
+      id: 'grip-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      chordName: this.currentChord ?? '',
+      grip
+    });
   }
 
   playChord(grip: TunedGrip) {
