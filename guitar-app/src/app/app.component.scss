@@ -1,0 +1,13 @@
+.app-content-container {
+  margin-top: 72px; /* Height of navbar (56px) + some spacing for shadow, adjust if needed */
+  height: calc(100vh - 72px);
+  overflow-y: auto;
+  padding: 24px 0 0 0;
+}
+
+@media (max-width: 991.98px) {
+  .app-content-container {
+    margin-top: 66px; /* Adjust for mobile navbar height */
+    height: calc(100vh - 66px);
+  }
+}
