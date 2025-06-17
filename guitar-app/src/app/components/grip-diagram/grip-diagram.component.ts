@@ -71,24 +71,33 @@ export class GripDiagramComponent implements OnChanges {
       : '';
 
     // Draw grip
-    this.grip.strings.forEach((s, i) => {
+    const barrees: Map<number, number[]> = new Map();
+    this.grip.strings.forEach((string, i) => {
       const x = 20 + i * stringSpacing;
-      if (s === 'x') {
+      if (string === 'x') {
         dots.push(`<text x="${x - 4}" y="25" font-size="14">x</text>`);
-      } else if (s === 'o') {
+      } else if (string === 'o') {
         dots.push(`<text x="${x - 4}" y="25" font-size="14">o</text>`);
-      } else if (Array.isArray(s)) {
-        s.forEach(f => {
-          if (f.isPartOfBarree) {
-            //TODO draw barree over all strings, workaround here:
-            const y = 40 + ((f.fret - startFret) + 0.5) * fretHeight;
-            dots.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="blue"/>`);
-          } else {
-            const y = 40 + ((f.fret - startFret) + 0.5) * fretHeight;
-            dots.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="black"/>`);
+      } else if (Array.isArray(string)) {
+        string.forEach(placement => {
+          if (placement.isPartOfBarree) {
+            if (!barrees.has(placement.fret)) {
+              barrees.set(placement.fret, []);
+            }
+            barrees.get(placement.fret)?.push(i);
           }
+
+          const y = 40 + ((placement.fret - startFret) + 0.5) * fretHeight;
+          dots.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="black"/>`);
         })
       }
+    });
+
+    barrees.forEach((strings, fret) => {
+      const y = 40 + ((fret - startFret) + 0.5) * fretHeight;
+      const x1 = 20 + strings[0] * stringSpacing;
+      const x2 = 20 + strings[strings.length - 1] * stringSpacing;
+      lines.push(`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="black" stroke-width="${barreThickness}"/>`);
     });
 
     return `

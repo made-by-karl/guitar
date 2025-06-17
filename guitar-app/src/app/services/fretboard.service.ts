@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
+import { Semitone, SEMITONES } from './constants';
 
 @Injectable({ providedIn: 'root' })
 export class FretboardService {
-  readonly semitones = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
   getGuitarFretboardConfig(): { tuning: FretBoardNote[], frets: number } {
     return {
       tuning: [
@@ -21,9 +20,9 @@ export class FretboardService {
     const fretboard: FretBoardNote[][] = Array.from({ length: frets + 1 }, () => []);
 
     tuning.forEach((note) => {
-      const index = this.semitones.indexOf(note.semitone);
+      const index = SEMITONES.indexOf(note.semitone);
       Array.from({ length: frets + 1 }, (_, fret) => {
-        const semitone = this.semitones[(index + fret) % 12];
+        const semitone = SEMITONES[(index + fret) % 12];
         const octave = Math.floor((index + fret) / 12) + note.octave;
         fretboard[fret].push({ semitone, octave });
       });
@@ -34,10 +33,10 @@ export class FretboardService {
 }
 
 export interface FretBoardNote {
-  semitone: string;
+  semitone: Semitone;
   octave: number;
 }
 
-function note(semitone: string, octave: number): FretBoardNote {
+function note(semitone: Semitone, octave: number): FretBoardNote {
   return { semitone, octave };
 }

@@ -20,16 +20,26 @@ export class GripGeneratorService {
 
   generateGrips(chord: ChordAnalysis, options: {
       allowMutedStringsInside?: boolean,
+      minFretToConsider?: number,
       maxFretToConsider?: number,
-      minimalStrings?: number,
+      minimalPlayableStrings?: number,
       allowBarree?: boolean,
-      allowInversions?: boolean
+      allowInversions?: boolean,
+      allowIncompleteChords?: boolean,
+      allowDuplicateNotes?: boolean
     } = {}): TunedGrip[] {
     const allowMutedStringsInside = options.allowMutedStringsInside ?? false;
+    const minFretToConsider = options.minFretToConsider ?? 1;
     const maxFretToConsider = options.maxFretToConsider ?? 12;
-    const minimalStrings = options.minimalStrings ?? 3;
+    const minimalPlayableStrings = options.minimalPlayableStrings ?? 3;
     const allowBarree = options.allowBarree ?? true;
     const allowInversions = options.allowInversions ?? true;
+    const allowIncompleteChords = options.allowIncompleteChords ?? false;
+    const allowDuplicateNotes = options.allowDuplicateNotes ?? false;
+
+    if (minFretToConsider < 1 || maxFretToConsider < minFretToConsider) {
+      throw new Error('Invalid fret range');
+    }
 
     const guitarConfig = this.fretboard.getGuitarFretboardConfig();
     const fretboardMatrix = this.fretboard.getFretboard(guitarConfig.tuning, maxFretToConsider);
@@ -39,11 +49,17 @@ export class GripGeneratorService {
 
     const grips: TunedGrip[] = [];
     const tryAddGrip = (strings: GuitarString[], notes: (FretBoardNote | null)[]): boolean => {
-      if (strings.filter(s => s !== 'x').length < minimalStrings) {
+      if (strings.filter(s => s !== 'x').length < minimalPlayableStrings) {
         return false; // Not enough strings
       }
       if (!allowBarree && strings.some(s => Array.isArray(s) && s.some(x => x.isPartOfBarree))) {
         return false; // Barree not allowed
+      }
+      if (!allowIncompleteChords && !expectedNotes.every(e => notes.map(n => n?.semitone).includes(e))) {
+        return false; // Incomplete chord
+      }
+      if (!allowDuplicateNotes && new Set(notes.filter(n => n !== null).map(n => n.semitone + n.octave)).size !== notes.filter(n => n !== null).length) {
+        return false; // Duplicate notes not allowed
       }
 
       const inversion = this.determineInversion(chord.notes, chord.root, notes);
@@ -141,7 +157,7 @@ export class GripGeneratorService {
     }
 
 
-    let fretWindowBase = 1;
+    let fretWindowBase = minFretToConsider;
     while (fretWindowBase <= maxFretToConsider) {
       const fretConfiguration = this.fretConfiguration(fretWindowBase);
       const fretWindowEnd = Math.min(fretWindowBase + fretConfiguration.maxSpan, maxFretToConsider +1);

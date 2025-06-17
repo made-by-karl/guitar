@@ -1,12 +1,13 @@
 import { GripGeneratorService, stringifyGrip } from './grip-generator.service';
 import { FretboardService } from '../fretboard.service';
 import type { ChordAnalysis } from '../chord-analysis.service';
+import { Modifier, Semitone } from '../constants';
 
 describe('GripGeneratorService', () => {
   let service: GripGeneratorService;
   let fretboardService: FretboardService;
 
-  const createChordAnalysis = (root: string, notes: string[], modifiers: string[] = [], bass?: string): ChordAnalysis => ({
+  const createChordAnalysis = (root: Semitone, notes: Semitone[], modifiers: Modifier[] = [], bass?: Semitone): ChordAnalysis => ({
     root,
     notes,
     modifiers,
@@ -27,6 +28,7 @@ describe('GripGeneratorService', () => {
       const commonShape = grips.find(g => 
         stringifyGrip(g) === 'x|3|2|o|1|o'
       );
+
       expect(commonShape).toBeTruthy();
       if (commonShape) {
         expect(commonShape.notes).toEqual([null, 'C3', 'E3', 'G3', 'C4', 'E4']);
