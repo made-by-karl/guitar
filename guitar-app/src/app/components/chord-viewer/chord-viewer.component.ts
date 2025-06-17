@@ -1,94 +1,85 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ChordService, Chord, ChordVariation } from '../../services/chord.service';
+import { FormsModule } from '@angular/forms';
+import { GripGeneratorService, TunedGrip } from '../../services/grip-generator/grip-generator.service';
+import { ChordAnalysis, ChordAnalysisService } from '../../services/chord-analysis.service';
 import { GripDiagramComponent } from '../grip-diagram/grip-diagram.component';
-import { ChordAnalysisService } from '../../services/chord-analysis.service';
-import { GripGeneratorService, TunedGrip} from '../../services/grip-generator/grip-generator.service';
+import { MODIFIERS, Modifier, SEMITONES, Semitone } from '../../services/constants';
+import { GripScorerService } from '../../services/grip-generator/grip-scorer.service';
 
 @Component({
   selector: 'app-chord-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink, GripDiagramComponent],
+  imports: [CommonModule, FormsModule, GripDiagramComponent],
   templateUrl: './chord-viewer.component.html',
   styleUrls: ['./chord-viewer.component.scss']
 })
 export class ChordViewerComponent implements OnInit {
-  chord: Chord | null = null;
-  grips: TunedGrip[] = []
+  grips: TunedGrip[] = [];
+  modifiers: Modifier[] = [...MODIFIERS];
+  bassNotes: Semitone[] = [...SEMITONES];
+  roots: Semitone[] = [...SEMITONES];
+  selectedRoot: Semitone = 'C';
+  selectedModifiers: Modifier[] = [];
+  selectedBass: Semitone | null = null;
 
-  selectedVariation: ChordVariation | null = null;
-  fretboardHeight = 5;
-  strings = 6;
+  chordAnalysis: ChordAnalysis | null = null
+
+  gripSettings = {
+    allowMutedStringsInside: false,
+    minFretToConsider: 1,
+    maxFretToConsider: 12,
+    minimalPlayableStrings: 3,
+    allowBarree: true,
+    allowInversions: true,
+    allowIncompleteChords: false,
+    allowDuplicateNotes: false
+  };
 
   constructor(
-    private route: ActivatedRoute,
-    private chordService: ChordService,
-    private chordAnalysis: ChordAnalysisService,
-    private gripGenerator: GripGeneratorService
+    private gripGenerator: GripGeneratorService,
+    private chordAnalyser: ChordAnalysisService,
+    private gripScorer: GripScorerService
   ) {}
 
   ngOnInit() {
-    const chordId = this.route.snapshot.paramMap.get('id');
-    if (chordId) {
-      this.chord = this.chordService.getChordById(chordId) || null;
-      if (this.chord && this.chord.variations.length > 0) {
-        this.selectedVariation = this.chord.variations[0];
-        console.log('Selected chord variation:', this.selectedVariation);
-      }
+  }
 
-      if (this.chord && this.chord.analysis) {
-        const chordNotes = this.chordAnalysis.calculateNotes(this.chord.analysis.root, this.chord.analysis.modifiers, this.chord.analysis.bass);
 
-        this.grips = this.gripGenerator.generateGrips(chordNotes);
-      }
+  toggleModifier(modifier: Modifier) {
+    if (this.selectedModifiers.includes(modifier)) {
+      this.selectedModifiers = this.selectedModifiers.filter(m => m !== modifier);
+    } else {
+      this.selectedModifiers.push(modifier);
     }
   }
 
-  playChord() {
-    if (this.chord) {
-      this.chordService.playChord(this.chord.id);
-    }
+  isModifierDisabled(modifier: Modifier): boolean {
+    return this.chordAnalyser.canAddModifier(this.selectedModifiers, modifier) !== true;
   }
 
-  parseInt(value: string): number {
-    return parseInt(value);
+  generateGrips() {
+    this.toggleChordBuilder();
+    this.chordAnalysis = this.chordAnalyser.calculateNotes(this.selectedRoot, this.selectedModifiers, this.selectedBass || undefined);
+    const grips = this.gripGenerator.generateGrips(this.chordAnalysis, this.gripSettings);
+    this.grips = this.gripScorer.sortGrips(grips);
   }
 
-  getFingerAtPosition(string: number, fret: number): string | null {
-    if (!this.selectedVariation) return null;
-    
-    // Convert 1-based string number to 0-based index (reversed)
-    const stringIndex = 6 - string;
-    
-    if (this.selectedVariation.positions[stringIndex] === 'x') return null;
-    if (parseInt(this.selectedVariation.positions[stringIndex]) !== fret) return null;
-    
-    return this.selectedVariation.fingerings[0][stringIndex];
+  playChord(grip: TunedGrip) {
+    // Implement logic to play the chord using a sound library or Web Audio API
+    console.log('Playing chord:', grip);
   }
 
-  isBarreFret(fret: number): boolean {
-    if (!this.selectedVariation?.fingerings[0]) return false;
-    
-    // Count how many times each finger number appears
-    const fingerCounts = new Map<string, number>();
-    this.selectedVariation.fingerings[0].forEach(finger => {
-      if (finger !== '0') {
-        fingerCounts.set(finger, (fingerCounts.get(finger) || 0) + 1);
+  toggleChordBuilder() {
+    const collapsibleElement = document.getElementById('chordBuilder');
+    if (collapsibleElement) {
+      collapsibleElement.classList.toggle('show');
+
+      const buttonElement = document.querySelector('[data-bs-target="#exampleCollapse"]');
+      if (buttonElement) {
+        const isExpanded = collapsibleElement.classList.contains('show');
+        buttonElement.setAttribute('aria-expanded', (!isExpanded).toString());
       }
-    });
-
-    // Check if any finger is used more than once at this fret
-    const barredFingers = Array.from(fingerCounts.entries())
-      .filter(([_, count]) => count > 1);
-    
-    if (barredFingers.length === 0) return false;
-
-    // Check if the multiple uses of a finger are at this fret
-    return this.selectedVariation.positions.some((pos, idx) => {
-      const finger = this.selectedVariation?.fingerings[0][idx];
-      return pos !== 'x' && parseInt(pos) === fret && 
-        barredFingers.some(([f]) => f === finger);
-    });
+    }
   }
 }

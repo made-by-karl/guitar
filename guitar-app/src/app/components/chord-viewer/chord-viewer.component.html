@@ -1,33 +1,192 @@
-<div class="container">
-  <div class="row">
-    <div class="col-12">
-      <a routerLink="/chords" class="btn btn-secondary mb-4">← Back to Library</a>        <div class="chord-display" *ngIf="chord && selectedVariation">
-        <div class="d-flex align-items-center mb-4">
-          <h2 class="mb-0 me-3">{{ chord.name }}</h2>
-          <button class="btn btn-primary" (click)="playChord()">
-            <i class="bi bi-play-fill"></i> Play Chord
-          </button>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
-          <div>
-            <strong>{{ grips.length }} grips</strong>
-            @for (grip of grips; track grip) {
-              <app-grip-diagram [grip]="grip"></app-grip-diagram>
-              @for (note of grip.notes; track $index) {
-                <span class="note">{{ note }},</span>
+<div class="accordion" id="accordion">
+  <div class="accordion-item chord-builder">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chordBuilder"
+        aria-expanded="true" aria-controls="chordBuilder">
+        Chord Builder
+      </button>
+    </h2>
+    <div id="chordBuilder" class="accordion-collapse collapse show" data-bs-parent="#accordion">
+      <div class="accordion-body">
+        <div class="chord-builder-content">
+          <div class="form-group mb-3">
+            <label for="root" class="form-label">Root:</label>
+            <select id="root" class="form-select" [(ngModel)]="selectedRoot">
+              @for (root of roots; track root) {
+              <option [value]="root">{{ root }}</option>
               }
-            }
+            </select>
+          </div>
+
+          <div>
+            <div>
+              <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseModifiers" aria-expanded="false" aria-controls="collapseModifiers">
+                Modifiers
+                <i class="bi bi-chevron-down"></i>
+              </button>
+              <span>
+                @for (modifier of selectedModifiers; track modifier) {
+                <span class="ms-2">{{ modifier }}</span>
+                }
+              </span>
+            </div>
+            <div>
+              <div class="collapse" id="collapseModifiers">
+                <div class="card card-body">
+                  <ng-template #modifierTemplate let-modifier>
+                    <div class="btn-group me-2 mb-2" role="group">
+                      <input type="checkbox" class="btn-check" id="modifier-{{ modifier }}"
+                        [disabled]="isModifierDisabled(modifier)" [checked]="selectedModifiers.includes(modifier)"
+                        (change)="toggleModifier(modifier)">
+                      <label class="btn btn-outline-primary" style="min-width: 5em;" for="modifier-{{ modifier }}">
+                        {{ modifier }}
+                      </label>
+                    </div>
+                  </ng-template>
+
+                  <div class="row">
+                    <div class="col">
+                      @for (modifier of modifiers | slice:0:modifiers.indexOf('ø7'); track modifier) {
+                      <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
+                      }
+                    </div>
+                    <div class="col">
+                      @for (modifier of modifiers | slice:modifiers.indexOf('ø7'); track modifier) {
+                      <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="bass" class="form-label">Bass (optional):</label>
+            <select id="bass" class="form-select" [(ngModel)]="selectedBass">
+              <option value="">None</option>
+              @for (bass of bassNotes; track bass) {
+              <option [value]="bass">{{ bass }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group mb-3">
+            <div class="row align-items-center">
+              <div class="col">
+                <button class="btn btn-primary" (click)="generateGrips()">
+                  Generate Grips
+                </button>
+              </div>
+              <div class="col-auto">
+                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#settingsMenu" aria-expanded="false" aria-controls="settingsMenu">
+                  Settings
+                  <i class="bi bi-gear"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="collapse" id="settingsMenu">
+            <div class="card card-body">
+              <div class="form-group mb-3">
+                <label for="minFretToConsider" class="form-label">Min fret:</label>
+                <input type="number" id="minFretToConsider" class="form-control" [(ngModel)]="gripSettings.minFretToConsider">
+              </div>
+              <div class="form-group mb-3">
+                <label for="maxFretToConsider" class="form-label">Max fret:</label>
+                <input type="number" id="maxFretToConsider" class="form-control" [(ngModel)]="gripSettings.maxFretToConsider">
+              </div>
+              <div class="form-group mb-3">
+                <label for="minimalPlayableStrings" class="form-label">Minimal playable strings:</label>
+                <input type="number" id="minimalPlayableStrings" class="form-control" [(ngModel)]="gripSettings.minimalPlayableStrings">
+              </div>
+              <div class="form-group form-check form-switch mb-3">
+                <label for="allowMutedStringsInside" class="form-label">Allow muted strings inside</label>
+                <input type="checkbox" id="allowMutedStringsInside" class="form-check-input" [(ngModel)]="gripSettings.allowMutedStringsInside">
+              </div>
+              <div class="form-group form-check form-switch mb-3">
+                <label for="allowBarree" class="form-label">Allow barree</label>
+                <input type="checkbox" id="allowBarree" class="form-check-input" [(ngModel)]="gripSettings.allowBarree">
+              </div>
+              <div class="form-group form-check form-switch mb-3">
+                <label for="allowInversions" class="form-label">Allow inversions</label>
+                <input type="checkbox" id="allowInversions" class="form-check-input" [(ngModel)]="gripSettings.allowInversions">
+              </div>
+              <div class="form-group form-check form-switch mb-3">
+                <label for="allowIncompleteChords" class="form-label">Allow incomplete chords</label>
+                <input type="checkbox" id="allowIncompleteChords" class="form-check-input" [(ngModel)]="gripSettings.allowIncompleteChords">
+              </div>
+              <div class="form-group form-check form-switch mb-3">
+                <label for="allowDuplicateNotes" class="form-label">Allow duplicate notes</label>
+                <input type="checkbox" id="allowDuplicateNotes" class="form-check-input" [(ngModel)]="gripSettings.allowDuplicateNotes">
+              </div>
+            </div>
           </div>
         </div>
-        
       </div>
-      
-      @if (!chord) {
-        <div class="alert alert-warning">
-          Chord not found!
-        </div>
-      }
     </div>
   </div>
 </div>
+
+  <div class="chord-viewer">
+
+    <div id="chordViewer">
+      <div class="accordion-body">
+        <div class="container">
+          <div class="row">
+            <div class="col-12">
+              @if (chordAnalysis) {
+              <div>
+                <div class="d-flex align-items-center mb-4">
+                  <h2 class="me-3">{{ chordAnalysis.root }}</h2>
+                  @for (modifier of chordAnalysis.modifiers; track modifier) {
+                  <span class="badge bg-primary ms-1">{{ modifier }}</span>
+                  }
+                  @if (chordAnalysis.bass) {
+                  <span class="badge bg-secondary ms-1">Bass: {{ chordAnalysis.bass }}</span>
+                  }
+                </div>
+                <div class="d-flex align-items-center mb-4">
+                  {{ chordAnalysis.notes }}
+                </div>
+              </div>
+              }
+
+              <div class="chord-display">
+                <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                  <div>
+                    <strong>{{ grips.length }} grips</strong>
+                    @for (grip of grips; track grip) {
+                    <div>
+                      <div style="display: flex; flex-direction: row; gap: 1rem;">
+                        <div style="flex: 1;">
+                          <app-grip-diagram [grip]="grip"></app-grip-diagram>
+                        </div>
+                        <div style="flex: 1;">
+                          <div>
+                            @for (note of grip.notes; track $index) {
+                            <span class="note">{{ note ?? '-' }},</span>
+                            }
+                          </div>
+                          @if (grip.inversion && grip.inversion !== 'root') {
+                            <div class="mb-2">
+                              <span class="badge bg-secondary ms-2">Inversion: {{ grip.inversion }}</span>
+                            </div>
+                          }
+                          <button class="btn btn-primary" (click)="playChord(grip)">
+                            <i class="bi bi-play-fill"></i> Play Chord
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

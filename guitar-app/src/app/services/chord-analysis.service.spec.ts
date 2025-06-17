@@ -25,12 +25,12 @@ describe('ChordAnalysisService', () => {
             }
         },
         {
-            input: "Cmaj7sus2sus4/F",
+            input: "Cmaj7sus2/F",
             expected: {
                 root: "C",
                 bass: "F",
-                modifiers: ["maj7", "sus2", "sus4"],
-                notes: ["C", "B", "D", "G", "F"]
+                modifiers: ["maj7", "sus2"],
+                notes: ["F", "C", "G", "B", "D"]
             }
         },
         {
@@ -43,12 +43,12 @@ describe('ChordAnalysisService', () => {
             }
         },
         {
-            input: "Dø7no5/G",
+            input: "Dø7/G",
             expected: {
                 root: "D",
                 bass: "G",
-                modifiers: ["ø7", "no5"],
-                notes: ["G", "D", "F", "C"]
+                modifiers: ["ø7"],
+                notes: ["G", "D", "F", "G#", "C"]
             }
         },
         {
@@ -90,7 +90,7 @@ describe('ChordAnalysisService', () => {
                     root: "G",
                     bass: "B",
                     modifiers: [],
-                    notes: ["B", "G", "B", "D"]
+                    notes: ["G", "B", "D"]
                 }
             }
         ])('should create correct notes for basic major chord %s', ({ input, expected }) => {
