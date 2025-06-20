@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GripGeneratorService, TunedGrip } from '../../services/grip-generator/grip-generator.service';
-import { ChordAnalysis, ChordAnalysisService } from '../../services/chord-analysis.service';
+import { GripGeneratorService, TunedGrip } from '../../services/grips/grip-generator.service';
+import { ChordAnalysis, ChordAnalysisService } from '../../services/chords/chord-analysis.service';
 import { GripDiagramComponent } from '../grip-diagram/grip-diagram.component';
-import { MODIFIERS, Modifier, SEMITONES, Semitone } from '../../services/constants';
-import { GripScorerService } from '../../services/grip-generator/grip-scorer.service';
+import { MODIFIERS, Modifier, canAddModifier } from '../../services/modifiers';
+import { SEMITONES, Semitone } from '../../services/semitones';
+import { GripScorerService } from '../../services/grips/grip-scorer.service';
 
 @Component({
   selector: 'app-chord-viewer',
@@ -55,7 +56,7 @@ export class ChordViewerComponent implements OnInit {
   }
 
   isModifierDisabled(modifier: Modifier): boolean {
-    return this.chordAnalyser.canAddModifier(this.selectedModifiers, modifier) !== true;
+    return canAddModifier(this.selectedModifiers, modifier) !== true;
   }
 
   generateGrips() {
