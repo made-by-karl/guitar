@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { FretBoardNote, FretboardService } from "../fretboard.service";
-import type { ChordAnalysis } from '../chord-analysis.service';
+import type { ChordAnalysis } from '../chords/chord-analysis.service';
 
 export type GuitarString = ('x' | 'o' | { fret: number; finger?: 1 | 2 | 3 | 4, isPartOfBarree: boolean; }[])
 export interface Grip {

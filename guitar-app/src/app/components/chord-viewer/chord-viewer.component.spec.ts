@@ -1,8 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-
 import { ChordViewerComponent } from './chord-viewer.component';
 
 describe('ChordViewerComponent', () => {
@@ -11,7 +8,7 @@ describe('ChordViewerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ChordViewerComponent, HttpClientTestingModule],
+      imports: [ChordViewerComponent],
       providers: [{
         provide: ActivatedRoute,
         useValue: {
