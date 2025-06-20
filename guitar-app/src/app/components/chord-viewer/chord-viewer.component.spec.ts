@@ -1,6 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ChordViewerComponent } from './chord-viewer.component';
+import { of } from 'rxjs';
+import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
+import { ChordAnalysisService } from 'app/services/chords/chord-analysis.service';
+import { GripScorerService } from 'app/services/grips/grip-scorer.service';
+import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
 
 describe('ChordViewerComponent', () => {
   let component: ChordViewerComponent;
@@ -9,16 +14,26 @@ describe('ChordViewerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ChordViewerComponent],
-      providers: [{
-        provide: ActivatedRoute,
-        useValue: {
-          snapshot: {
-            paramMap: {
-              get: (param: string) => param === 'id' ? 'test-chord' : null
-            }
+      providers: [
+        { provide: GripGeneratorService, useValue: {} },
+        { provide: ChordAnalysisService, useValue: {} },
+        { provide: GripScorerService, useValue: {} },
+        { provide: ChordProgressionService, useValue: {} },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: (param: string) => param === 'chord' ? 'test-chord' : null
+              }
+            },
+            params: of({ chord: 'test-chord' }),
+            queryParamMap: of({
+              get: (param: string) => null
+            })
           }
         }
-      }]
+      ]
     })
     .compileComponents();
 

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { FretboardService, FretBoardNote } from './fretboard.service';
+import { FretboardService, FretBoardNote } from 'app/services/fretboard.service';
 
 describe('FretboardService', () => {
   let service: FretboardService;

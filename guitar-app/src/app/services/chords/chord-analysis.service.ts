@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
-import { Modifier, areModifiersValid } from '../modifiers';
-import { Semitone, normalize, transpose } from '../semitones';
+import { Semitone } from 'app/common/semitones';
+import { Modifier, areModifiersValid } from 'app/common/modifiers';
+import { normalize, transpose } from 'app/common/semitones';
 
 export type ChordAnalysis = {
   root: Semitone;

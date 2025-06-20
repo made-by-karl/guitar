@@ -1,8 +1,9 @@
-import { GripGeneratorService, stringifyGrip } from './grip-generator.service';
-import { FretboardService } from '../fretboard.service';
-import type { ChordAnalysis } from '../chords/chord-analysis.service';
-import { Modifier } from '../modifiers';
-import { Semitone } from '../semitones';
+import { GripGeneratorService, stringifyGrip } from 'app/services/grips/grip-generator.service';
+import { FretboardService } from 'app/services/fretboard.service';
+import type { ChordAnalysis } from 'app/services/chords/chord-analysis.service';
+import { Semitone } from 'app/common/semitones';
+import { Modifier } from 'app/common/modifiers';
+
 
 describe('GripGeneratorService', () => {
   let service: GripGeneratorService;

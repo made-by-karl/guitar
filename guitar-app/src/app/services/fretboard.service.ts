@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Semitone, SEMITONES } from './semitones';
+import { Semitone, SEMITONES } from 'app/common/semitones';
 
 @Injectable({ providedIn: 'root' })
 export class FretboardService {

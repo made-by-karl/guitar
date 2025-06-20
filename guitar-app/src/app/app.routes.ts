@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import { ChordViewerComponent } from './components/chord-viewer/chord-viewer.component';
+import { ChordViewerComponent } from 'app/components/chord-viewer/chord-viewer.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/chords', pathMatch: 'full' },
-  { path: 'chords', component: ChordViewerComponent },
-  { path: 'chord/:id', component: ChordViewerComponent }
+  { path: '', redirectTo: '/chord', pathMatch: 'full' },
+  { path: 'chord/:chord', component: ChordViewerComponent },
+  { path: 'chord', component: ChordViewerComponent }
 ];

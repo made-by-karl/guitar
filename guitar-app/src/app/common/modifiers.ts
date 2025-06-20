@@ -1,8 +1,6 @@
-
 export const MODIFIERS = [
   'm', '7', 'maj7', 'maj9', 'sus2', 'sus4', 'add9', 'add11', 'add13', 'ø7', 'dim7', 'dim', 'aug7', 'aug', 'b5', '#5', 'bb5', 'b9', '#9', '#11', 'b13', 'no3', 'no5', 'no7'
 ] as const;
-
 export type Modifier = typeof MODIFIERS[number];
 
 export function isModifier(modifier: string): modifier is Modifier {

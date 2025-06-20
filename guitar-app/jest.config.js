@@ -23,9 +23,10 @@ module.exports = {
   reporters: [
     'default'
   ],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths || {}, {
-    prefix: '<rootDir>/'
-  }),
+  moduleNameMapper: {
+    ...pathsToModuleNameMapper(compilerOptions.paths || {}, { prefix: '<rootDir>/' }),
+    '^app/(.*)$': '<rootDir>/src/app/$1',
+},
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
   testEnvironment: 'jsdom'
 };

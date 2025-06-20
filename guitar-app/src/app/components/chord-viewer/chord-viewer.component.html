@@ -139,16 +139,50 @@
               @if (chordAnalysis) {
               <div>
                 <div class="d-flex align-items-center mb-4">
-                  <h2 class="me-3">{{ chordAnalysis.root }}</h2>
-                  @for (modifier of chordAnalysis.modifiers; track modifier) {
-                  <span class="badge bg-primary ms-1">{{ modifier }}</span>
-                  }
+                  <h2 class="me-3">
+                    {{ chordAnalysis.root }}
+                    @if (chordAnalysis.modifiers.length > 0) {
+                    <span class="text-muted">({{ chordAnalysis.modifiers.join(', ') }})</span>
+                    }
+                  </h2>
                   @if (chordAnalysis.bass) {
                   <span class="badge bg-secondary ms-1">Bass: {{ chordAnalysis.bass }}</span>
                   }
                 </div>
                 <div class="d-flex align-items-center mb-4">
                   {{ chordAnalysis.notes }}
+                </div>
+
+                <div>
+                  @if (progressions.length > 0) {
+                    <p><strong>Basic progressions</strong></p>
+                    @for (progression of progressions; track $index) {
+                      <div>
+                      @for (chord of progression; track $index) {
+                        <a [routerLink]="['/chord', getChordQueryString(chord)]">
+                          @if (chordEquals(chordAnalysis, chord)) {
+                            <strong>{{ chord.root }}</strong>
+                            @if (chord.modifiers.length) {
+                              <strong>{{ chord.modifiers.join('') }}</strong>
+                            }                            
+                          } @else {
+                            <span>{{ chord.root }}</span>
+                            @if (chord.modifiers.length) {
+                            <span>{{ chord.modifiers.join('') }}</span>
+                            }
+                          }
+                        </a>
+                        @if ($index < progression.length - 1) {
+                          <span> &rarr; </span>
+                        }
+                      }
+                      </div>
+                    }
+                  }
+                </div>
+
+                <div>
+                  <!-- progression can go here -->
                 </div>
               </div>
               }
