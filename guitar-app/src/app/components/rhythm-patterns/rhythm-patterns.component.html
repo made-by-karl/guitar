@@ -10,7 +10,7 @@
   </div>
   <div class="row">
     <div class="col-md-4 mb-4" *ngFor="let pattern of filteredPatterns">
-      <div class="card h-100" [class.border-primary]="selectedPattern?.id === pattern.id">
+      <div class="card h-100">
         <div class="card-body">
           <h5 class="card-title">{{ pattern.name }}</h5>
           <div class="mb-2"><span class="badge bg-info">{{ pattern.category }}</span> <span class="badge bg-light text-dark">{{ pattern.timeSignature }}</span> <span class="badge bg-light text-dark">{{ pattern.tempo }} BPM</span></div>
@@ -19,84 +19,42 @@
             <span *ngFor="let step of pattern.steps" class="me-2">
               <ng-container [ngSwitch]="step.technique">
                 <span *ngSwitchCase="'strum'">
-                  <span [title]="'Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on strings ' + step.strings.join(', ')">
+                  <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on ' + (step.strum?.strings || 'all') + ' strings' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
                     <span *ngIf="step.direction === 'D'">&#8595;</span>
                     <span *ngIf="step.direction === 'U'">&#8593;</span>
-                    <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                    <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                    <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
+                    <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
+                    <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
                   </span>
                 </span>
                 <span *ngSwitchCase="'pick'">
-                  <span [title]="'Pick string(s) ' + step.strings.join(', ')">
+                  <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Pick ' + (step.pick?.length || 0) + ' note(s)' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
                     <span class="bi bi-dot"></span>
-                    <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                    <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                    <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
+                    <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
+                    <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
                   </span>
                 </span>
-                <span *ngSwitchCase="'mute'">X</span>
                 <span *ngSwitchCase="'rest'">-</span>
-                <span *ngSwitchCase="'accent'">A</span>
-                <span *ngSwitchCase="'palm-mute'">PM</span>
                 <span *ngSwitchCase="'percussive'">P</span>
                 <span *ngSwitchDefault>?</span>
               </ng-container>
             </span>
           </div>
           <div class="d-flex gap-2 mt-2">
-            <button class="btn btn-outline-primary btn-sm" (click)="selectPattern(pattern)">Details</button>
+            <button class="btn btn-outline-primary btn-sm" (click)="playPattern(pattern)" [disabled]="!pattern.steps">
+              <i class="bi bi-play-fill"></i> Play
+            </button>
             <button class="btn btn-outline-secondary btn-sm" (click)="startEdit(pattern)"><i class="bi bi-pencil"></i> Edit</button>
+            <button *ngIf="pinnedSheet && !isPatternInPinnedSheet(pattern)" class="btn btn-outline-success btn-sm" (click)="addToPinnedSheet(pattern)">
+              <i class="bi bi-plus-lg"></i> Add to Sheet
+            </button>
+            <button *ngIf="pinnedSheet && isPatternInPinnedSheet(pattern)" class="btn btn-outline-warning btn-sm" (click)="removeFromPinnedSheet(pattern)">
+              <i class="bi bi-dash"></i> Remove
+            </button>
             <button class="btn btn-outline-danger btn-sm" (click)="deletePattern(pattern)" *ngIf="pattern.isCustom"><i class="bi bi-trash"></i> Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="selectedPattern" class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.2)">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ selectedPattern.name }}</h5>
-          <button type="button" class="btn-close" (click)="clearSelection()"></button>
-        </div>
-        <div class="modal-body">
-          <div><b>Category:</b> {{ selectedPattern.category }}</div>
-          <div><b>Time Signature:</b> {{ selectedPattern.timeSignature }}</div>
-          <div><b>Tempo:</b> {{ selectedPattern.tempo }} BPM</div>
-          <div><b>Description:</b> {{ selectedPattern.description }}</div>
-          <div class="mb-2"><b>Pattern:</b>
-            <span *ngFor="let step of selectedPattern.steps" class="me-2">
-              <ng-container [ngSwitch]="step.technique">
-                <span *ngSwitchCase="'strum'">
-                  <span [title]="'Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on strings ' + step.strings.join(', ')">
-                    <span *ngIf="step.direction === 'D'">&#8595;</span>
-                    <span *ngIf="step.direction === 'U'">&#8593;</span>
-                    <span class="text-muted">[{{ step.strings.join('') }}]</span>
-                  </span>
-                </span>
-                <span *ngSwitchCase="'pick'">
-                  <span [title]="'Pick string(s) ' + step.strings.join(', ')">
-                    <span class="bi bi-dot"></span>
-                    <span class="text-muted">[{{ step.strings.join('') }}]</span>
-                  </span>
-                </span>
-                <span *ngSwitchCase="'mute'">X</span>
-                <span *ngSwitchCase="'rest'">-</span>
-                <span *ngSwitchCase="'accent'">A</span>
-                <span *ngSwitchCase="'palm-mute'">PM</span>
-                <span *ngSwitchCase="'percussive'">P</span>
-                <span *ngSwitchDefault>?</span>
-              </ng-container>
-            </span>
-          </div>
-          <div class="d-flex gap-2 mt-3">
-            <button class="btn btn-outline-primary btn-sm" (click)="playPattern(selectedPattern)" [disabled]="!selectedPattern.steps">
-              <i class="bi bi-play-fill"></i> Play Pattern
-            </button>
-            <button *ngIf="pinnedSheet && !isPatternInPinnedSheet(selectedPattern)" class="btn btn-outline-success btn-sm" (click)="addToPinnedSheet(selectedPattern)">
-              <i class="bi bi-plus-lg"></i> Add to Pinned Sheet
-            </button>
-            <button *ngIf="pinnedSheet && isPatternInPinnedSheet(selectedPattern)" class="btn btn-outline-danger btn-sm" (click)="removeFromPinnedSheet(selectedPattern)">
-              <i class="bi bi-trash"></i> Remove from Pinned Sheet
-            </button>
           </div>
         </div>
       </div>
@@ -109,13 +67,13 @@
 
   <!-- Editor Modal -->
   <div *ngIf="editing && draftPattern" class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.2)">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
+    <div class="modal-dialog modal-lg d-flex flex-column" style="height: 90vh; max-height: 90vh;">
+      <div class="modal-content d-flex flex-column h-100">
+        <div class="modal-header flex-shrink-0">
           <h5 class="modal-title">{{ isNew ? 'Create Rhythm Pattern' : 'Edit Rhythm Pattern' }}</h5>
           <button type="button" class="btn-close" (click)="cancelEdit()"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body flex-grow-1 overflow-auto">
           <form (ngSubmit)="saveDraft()">
             <div class="mb-2">
               <label>Name</label>
@@ -141,55 +99,127 @@
             </div>
             <div class="mb-2">
               <label>Steps</label>
-              <table class="table table-sm align-middle">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Technique</th>
-                    <th>Direction</th>
-                    <th>Strings</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let step of draftPattern.steps; let i = index; trackBy: trackByStepIndex">
-                    <td>{{ i + 1 }}</td>
-                    <td>
+              
+              <!-- Mobile-friendly step cards -->
+              <div class="d-flex flex-column gap-3">
+                <div *ngFor="let step of draftPattern.steps; let i = index; trackBy: trackByStepIndex" class="card card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">Step {{ i + 1 }}</h6>
+                    <div class="btn-group" role="group">
+                      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="moveStepUp(i)" [disabled]="i === 0" title="Move up">
+                        <i class="bi bi-arrow-up"></i>
+                      </button>
+                      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="moveStepDown(i)" [disabled]="i === draftPattern.steps.length - 1" title="Move down">
+                        <i class="bi bi-arrow-down"></i>
+                      </button>
+                      <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeStep(i)" title="Remove step">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="row g-2">
+                    <!-- Technique -->
+                    <div class="col-6">
+                      <label class="form-label small">Technique</label>
                       <select class="form-select form-select-sm" [(ngModel)]="step.technique" [name]="'technique' + i" (ngModelChange)="onStepTechniqueChange(i)">
                         <option value="strum">Strum</option>
                         <option value="pick">Pick</option>
-                        <option value="mute">Mute</option>
                         <option value="rest">Rest</option>
-                        <option value="accent">Accent</option>
-                        <option value="palm-mute">Palm Mute</option>
                         <option value="percussive">Percussive</option>
                       </select>
-                    </td>
-                    <td>
-                      <ng-container *ngIf="step.technique === 'strum'; else noDirection">
-                        <select class="form-select form-select-sm" [(ngModel)]="step.direction" [name]="'direction' + i">
-                          <option [ngValue]="'D'">Down</option>
-                          <option [ngValue]="'U'">Up</option>
-                        </select>
-                      </ng-container>
-                      <ng-template #noDirection></ng-template>
-                    </td>
-                    <td>
-                      <input class="form-control form-control-sm" [(ngModel)]="step.strings" [name]="'strings' + i" placeholder="e.g. 6,5,4" />
-                    </td>
-                    <td>
-                      <button class="btn btn-outline-secondary btn-sm me-1" type="button" (click)="moveStepUp(i)" [disabled]="i === 0"><i class="bi bi-arrow-up"></i></button>
-                      <button class="btn btn-outline-secondary btn-sm me-1" type="button" (click)="moveStepDown(i)" [disabled]="i === draftPattern.steps.length - 1"><i class="bi bi-arrow-down"></i></button>
-                      <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeStep(i)"><i class="bi bi-x"></i></button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="addStep()"><i class="bi bi-plus"></i> Add Step</button>
+                    </div>
+                    
+                    <!-- Beat -->
+                    <div class="col-2">
+                      <label class="form-label small">Beat</label>
+                      <input type="number" class="form-control form-control-sm" [(ngModel)]="step.beat" [name]="'beat' + i" min="1" max="4" />
+                    </div>
+                    
+                    <!-- Timing -->
+                    <div class="col-4">
+                      <label class="form-label small">Timing</label>
+                      <select class="form-select form-select-sm" [(ngModel)]="step.timing" [name]="'timing' + i">
+                        <option *ngFor="let timing of getTimingOptions()" [value]="timing.value">{{ timing.label }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <!-- Modifiers (for strum and pick only) -->
+                  <div class="row g-2 mt-1" *ngIf="step.technique === 'strum' || step.technique === 'pick'">
+                    <div class="col-12">
+                      <label class="form-label small">Style Modifiers</label>
+                      <div class="d-flex gap-2 flex-wrap">
+                        <div *ngFor="let modifier of getAvailableModifiers()" class="form-check form-check-inline">
+                          <input 
+                            class="form-check-input" 
+                            type="checkbox" 
+                            [id]="'modifier' + i + '_' + modifier.value"
+                            [checked]="hasModifier(step, modifier.value)"
+                            (change)="toggleModifier(i, modifier.value)"
+                          />
+                          <label class="form-check-label small" [for]="'modifier' + i + '_' + modifier.value">
+                            {{ modifier.label }}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Direction (for strum only) -->
+                  <div class="row g-2 mt-1" *ngIf="step.technique === 'strum'">
+                    <div class="col-6">
+                      <label class="form-label small">Direction</label>
+                      <select class="form-select form-select-sm" [(ngModel)]="step.direction" [name]="'direction' + i">
+                        <option [ngValue]="'D'">Down</option>
+                        <option [ngValue]="'U'">Up</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <!-- Strum Pattern -->
+                  <div class="mt-2" *ngIf="step.technique === 'strum' && step.strum">
+                    <label class="form-label small">String Pattern</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="step.strum.strings" [name]="'strumStrings' + i">
+                      <option value="all">All Strings</option>
+                      <option value="bass">Bass (E,A,D)</option>
+                      <option value="treble">Treble (G,B,E)</option>
+                      <option value="middle">Middle (A,D,G,B)</option>
+                      <option value="power">Power (E,A,D,G)</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Pick Pattern -->
+                  <div class="mt-2" *ngIf="step.technique === 'pick'">
+                    <label class="form-label small">Pick Notes</label>
+                    <div class="d-flex flex-column gap-2">
+                      <div *ngFor="let note of step.pick; let noteIndex = index" class="card card-body p-2 bg-light">
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="badge bg-primary">{{ noteIndex + 1 }}</span>
+                          <div class="flex-fill">
+                            <select class="form-select form-select-sm mb-1" [(ngModel)]="note.string" [name]="'pickString' + i + '_' + noteIndex">
+                              <option *ngFor="let stringIdx of [0,1,2,3,4,5]" [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                            </select>
+                            <input type="number" class="form-control form-control-sm" [(ngModel)]="note.fret" [name]="'pickFret' + i + '_' + noteIndex" min="-1" max="24" placeholder="Fret (-1 = muted)" />
+                          </div>
+                          <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePickingNote(i, noteIndex)">
+                            <i class="bi bi-x"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="addPickingNote(i)">
+                        <i class="bi bi-plus"></i> Add Note
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn btn-outline-secondary btn-sm mt-3" type="button" (click)="addStep()"><i class="bi bi-plus"></i> Add Step</button>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer flex-shrink-0">
           <button class="btn btn-outline-primary" (click)="previewDraft()"><i class="bi bi-play-fill"></i> Preview</button>
           <button class="btn btn-success" (click)="saveDraft()" [disabled]="!draftPattern.name"><i class="bi bi-save"></i> Save</button>
           <button class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>

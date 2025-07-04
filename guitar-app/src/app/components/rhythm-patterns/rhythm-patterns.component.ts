@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule, NgForOf, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RhythmPatternsService } from '../../services/rhythm-patterns.service';
-import { RhythmPattern } from '../../services/rhythm-patterns.model';
+import { RhythmPattern, RhythmStep, PickingNote, BeatTiming, RhythmModifier } from '../../services/rhythm-patterns.model';
 import { MidiService } from '../../services/midi.service';
 import { SongSheetsService } from '../../services/song-sheets.service';
 
@@ -16,7 +16,6 @@ import { SongSheetsService } from '../../services/song-sheets.service';
 export class RhythmPatternsComponent {
   patterns: RhythmPattern[] = [];
   search = '';
-  selectedPattern: RhythmPattern | null = null;
   editing: boolean = false;
   draftPattern: RhythmPattern | null = null;
   isNew: boolean = false;
@@ -64,16 +63,6 @@ export class RhythmPatternsComponent {
 
   saveDraft() {
     if (!this.draftPattern) return;
-    // Ensure all step.strings are arrays of numbers
-    this.draftPattern.steps = this.draftPattern.steps.map(step => {
-      let strings: any = step.strings;
-      if (typeof strings === 'string') {
-        strings = (strings as string).split(/[\s,]+/).map((s: string) => parseInt(s, 10)).filter((n: number) => !isNaN(n));
-      } else if (typeof strings === 'number') {
-        strings = [strings];
-      }
-      return { ...step, strings };
-    });
     this.draftPattern.updatedAt = Date.now();
     if (this.isNew) {
       this.service.add(this.draftPattern);
@@ -94,30 +83,61 @@ export class RhythmPatternsComponent {
 
   addStep() {
     if (!this.draftPattern) return;
-    this.draftPattern.steps.push({ technique: 'strum', direction: 'D', strings: [6,5,4,3,2,1] });
+    this.draftPattern.steps.push({ 
+      technique: 'strum', 
+      direction: 'D', 
+      beat: 1, 
+      timing: 'on-beat', 
+      strum: { strings: 'all' },
+      modifiers: []
+    });
   }
 
   onStepTechniqueChange(i: number) {
     if (!this.draftPattern) return;
     const step = this.draftPattern.steps[i];
-    if (step.technique !== 'strum') {
+    
+    if (step.technique === 'strum') {
+      // Ensure strum pattern exists
+      if (!step.strum) {
+        step.strum = { strings: 'all' };
+      }
+      // Set default direction for strumming
+      if (step.direction !== 'D' && step.direction !== 'U') {
+        step.direction = 'D';
+      }
+      // Remove pick array if switching from pick to strum
+      delete step.pick;
+    } else if (step.technique === 'pick') {
+      // Ensure pick array exists
+      if (!step.pick) {
+        step.pick = [{ string: 0, fret: 0 }];
+      }
+      // Remove direction for picking
       step.direction = null;
-    } else if (step.direction !== 'D' && step.direction !== 'U') {
-      step.direction = 'D';
+      // Remove strum pattern if switching from strum to pick
+      delete step.strum;
+    } else {
+      // For other techniques (rest, percussive), clear direction and patterns
+      step.direction = null;
+      delete step.strum;
+      delete step.pick;
+    }
+    
+    // Ensure modifiers array exists for strum and pick
+    if (step.technique === 'strum' || step.technique === 'pick') {
+      if (!step.modifiers) {
+        step.modifiers = [];
+      }
+    } else {
+      // Remove modifiers for non-applicable techniques
+      delete step.modifiers;
     }
   }
 
   removeStep(idx: number) {
     if (!this.draftPattern) return;
     this.draftPattern.steps.splice(idx, 1);
-  }
-
-  selectPattern(pattern: RhythmPattern) {
-    this.selectedPattern = pattern;
-  }
-
-  clearSelection() {
-    this.selectedPattern = null;
   }
 
   get filteredPatterns() {
@@ -141,13 +161,38 @@ export class RhythmPatternsComponent {
     }
     const interval = 60000 / pattern.tempo;
     for (const step of pattern.steps) {
-      if (step.technique === 'strum' || step.technique === 'pick') {
-        // For demo: play a chord, but only on the specified strings
-        // (In a real app, you'd play the actual notes for the selected strings)
-        // Here, we just play E major open, muting all but the selected strings
+      if (step.technique === 'strum' && step.strum) {
+        // For demo: play a chord on the specified string range
         const all = ['0', '0', '1', '2', '2', '0'];
-        const positions = all.map((f, i) => step.strings.includes(6 - i) ? f : 'x');
+        let positions: string[];
+        
+        if (typeof step.strum.strings === 'string') {
+          // Handle named string ranges
+          switch (step.strum.strings) {
+            case 'all': positions = all; break;
+            case 'bass': positions = all.map((f, i) => i < 3 ? f : 'x'); break;
+            case 'treble': positions = all.map((f, i) => i >= 3 ? f : 'x'); break;
+            case 'middle': positions = all.map((f, i) => i >= 1 && i <= 4 ? f : 'x'); break;
+            case 'power': positions = all.map((f, i) => i <= 3 ? f : 'x'); break;
+            default: positions = all;
+          }
+        } else if (Array.isArray(step.strum.strings)) {
+          // Handle specific string indices
+          positions = all.map((f, i) => (step.strum!.strings as number[]).includes(5 - i) ? f : 'x');
+        } else {
+          positions = all;
+        }
+        
+        // Apply modifiers for playback (could adjust volume, timbre, etc.)
+        // For now, just play the chord normally
         await this.midi.generateAndPlayChord(positions);
+      } else if (step.technique === 'pick' && step.pick) {
+        // For picking, play individual notes
+        for (const note of step.pick) {
+          const positions = Array(6).fill('x');
+          positions[5 - note.string] = note.fret.toString();
+          await this.midi.generateAndPlayChord(positions);
+        }
       }
       // Wait for next step
       await new Promise(res => setTimeout(res, interval));
@@ -187,9 +232,6 @@ export class RhythmPatternsComponent {
     if (confirm('Delete this pattern?')) {
       this.service.delete(pattern.id);
       this.load();
-      if (this.selectedPattern?.id === pattern.id) {
-        this.selectedPattern = null;
-      }
     }
   }
 
@@ -211,5 +253,71 @@ export class RhythmPatternsComponent {
 
   trackByStepIndex(index: number, step: any) {
     return index;
+  }
+
+  // Methods for handling picking notes
+  addPickingNote(stepIndex: number) {
+    if (!this.draftPattern) return;
+    const step = this.draftPattern.steps[stepIndex];
+    if (step.technique === 'pick') {
+      if (!step.pick) {
+        step.pick = [];
+      }
+      step.pick.push({ string: 0, fret: 0 });
+    }
+  }
+
+  removePickingNote(stepIndex: number, noteIndex: number) {
+    if (!this.draftPattern) return;
+    const step = this.draftPattern.steps[stepIndex];
+    if (step.technique === 'pick' && step.pick) {
+      step.pick.splice(noteIndex, 1);
+    }
+  }
+
+  // Helper method to get available timing options
+  getTimingOptions(): { value: BeatTiming; label: string }[] {
+    return [
+      { value: 'on-beat', label: 'On Beat' },
+      { value: 'quarter-past', label: '1/4 Past' },
+      { value: 'half-past', label: '1/2 Past (&)' },
+      { value: 'three-quarter-past', label: '3/4 Past' }
+    ];
+  }
+
+  // Helper method to get string names for picking
+  getStringName(stringIndex: number): string {
+    const names = ['Low E (6th)', 'A (5th)', 'D (4th)', 'G (3rd)', 'B (2nd)', 'High E (1st)'];
+    return names[stringIndex] || `String ${stringIndex + 1}`;
+  }
+
+  // Helper method to get available modifiers
+  getAvailableModifiers(): { value: RhythmModifier; label: string }[] {
+    return [
+      { value: 'mute', label: 'Mute' },
+      { value: 'palm-mute', label: 'Palm Mute' },
+      { value: 'accent', label: 'Accent' }
+    ];
+  }
+
+  // Helper method to toggle modifier
+  toggleModifier(stepIndex: number, modifier: RhythmModifier) {
+    if (!this.draftPattern) return;
+    const step = this.draftPattern.steps[stepIndex];
+    if (!step.modifiers) {
+      step.modifiers = [];
+    }
+    
+    const index = step.modifiers.indexOf(modifier);
+    if (index > -1) {
+      step.modifiers.splice(index, 1);
+    } else {
+      step.modifiers.push(modifier);
+    }
+  }
+
+  // Helper method to check if modifier is active
+  hasModifier(step: RhythmStep, modifier: RhythmModifier): boolean {
+    return step.modifiers?.includes(modifier) || false;
   }
 }

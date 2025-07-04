@@ -7,14 +7,17 @@
     <button *ngIf="renaming" class="btn btn-success btn-sm ms-2" (click)="saveRename()"><i class="bi bi-check-lg"></i> Save</button>
     <button *ngIf="renaming" class="btn btn-outline-secondary btn-sm ms-2" (click)="cancelRename()"><i class="bi bi-x-lg"></i> Cancel</button>
   </div>
-  <div *ngIf="sheet.grips.length === 0" class="alert alert-info">No grips yet. Add some from the Chords page.</div>
-  <div class="row">
-    <div class="col-md-4 mb-4" *ngFor="let grip of sheet.grips">
-      <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
-      <div class="d-flex justify-content-between align-items-center mt-2">
-        <span>{{ grip.chordName }}</span>
-        <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)"><i class="bi bi-play-fill"></i></button>
-        <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.id)"><i class="bi bi-trash"></i></button>
+  <div *ngIf="sheet.grips.length === 0 && sheet.patterns.length === 0" class="alert alert-info">Nothing on your song sheet yet. Add some chords or rhythm patterns.</div>
+  <div *ngIf="sheet.grips && sheet.grips.length > 0" class="mb-4">
+    <h5>Chords</h5>
+    <div class="row">
+      <div class="col-md-4 mb-4" *ngFor="let grip of sheet.grips">
+        <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span>{{ grip.chordName }}</span>
+          <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)"><i class="bi bi-play-fill"></i></button>
+          <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.id)"><i class="bi bi-trash"></i></button>
+        </div>
       </div>
     </div>
   </div>
@@ -28,26 +31,29 @@
             <span class="badge bg-info ms-2">{{ p.pattern.timeSignature }}</span>
             <span class="badge bg-light text-dark ms-1">{{ p.pattern.tempo }} BPM</span>
             <div class="small text-muted">{{ p.pattern.description }}</div>
-            <div>
+            <div class="d-flex flex-row flex-wrap">
               <span *ngFor="let step of p.pattern.steps" class="me-2">
                 <ng-container [ngSwitch]="step.technique">
                   <span *ngSwitchCase="'strum'">
-                    <span [title]="'Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on strings ' + step.strings.join(', ')">
+                    <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on ' + (step.strum?.strings || 'all') + ' strings' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
                       <span *ngIf="step.direction === 'D'">&#8595;</span>
                       <span *ngIf="step.direction === 'U'">&#8593;</span>
-                      <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                      <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
+                      <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
+                      <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
                     </span>
                   </span>
                   <span *ngSwitchCase="'pick'">
-                    <span [title]="'Pick string(s) ' + step.strings.join(', ')">
+                    <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Pick ' + (step.pick?.length || 0) + ' note(s)' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
                       <span class="bi bi-dot"></span>
-                      <span class="text-muted">[{{ step.strings.join('') }}]</span>
+                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                      <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
+                      <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
+                      <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
                     </span>
                   </span>
-                  <span *ngSwitchCase="'mute'">X</span>
                   <span *ngSwitchCase="'rest'">-</span>
-                  <span *ngSwitchCase="'accent'">A</span>
-                  <span *ngSwitchCase="'palm-mute'">PM</span>
                   <span *ngSwitchCase="'percussive'">P</span>
                   <span *ngSwitchDefault>?</span>
                 </ng-container>
