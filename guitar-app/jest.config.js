@@ -26,7 +26,8 @@ module.exports = {
   moduleNameMapper: {
     ...pathsToModuleNameMapper(compilerOptions.paths || {}, { prefix: '<rootDir>/' }),
     '^app/(.*)$': '<rootDir>/src/app/$1',
-},
+    '^tone$': '<rootDir>/src/__mocks__/tone.ts'
+  },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
   testEnvironment: 'jsdom'
 };

@@ -1,10 +1,19 @@
 import { Injectable } from '@angular/core';
 import { RhythmPattern, RhythmStep } from './rhythm-patterns.model';
+import { note } from 'app/common/semitones';
 
 const STORAGE_KEY = 'rhythmPatterns';
 
 @Injectable({ providedIn: 'root' })
 export class RhythmPatternsService {
+  readonly defaultTuning = [
+          note('E', 2),
+          note('A', 2),
+          note('D', 3),
+          note('G', 3),
+          note('B', 3),
+          note('E', 4)];
+          
   private patterns: RhythmPattern[] = [];
 
   constructor() {
@@ -58,6 +67,7 @@ export class RhythmPatternsService {
         category: 'Basic',
         timeSignature: '4/4',
         tempo: 80,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'D', beat: 2, timing: 'on-beat', strum: { strings: 'all' } },
@@ -74,6 +84,7 @@ export class RhythmPatternsService {
         category: 'Basic',
         timeSignature: '4/4',
         tempo: 100,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'U', beat: 1, timing: 'half-past', strum: { strings: 'all' } },
@@ -94,6 +105,7 @@ export class RhythmPatternsService {
         category: 'Folk/Pop',
         timeSignature: '4/4',
         tempo: 90,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'D', beat: 2, timing: 'on-beat', strum: { strings: 'all' } },
@@ -111,6 +123,7 @@ export class RhythmPatternsService {
         category: 'Waltz',
         timeSignature: '3/4',
         tempo: 80,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'pick', direction: null, beat: 1, timing: 'on-beat', pick: [{ string: 0, fret: 0 }] },
           { technique: 'strum', direction: 'D', beat: 2, timing: 'on-beat', strum: { strings: 'treble' } },
@@ -126,6 +139,7 @@ export class RhythmPatternsService {
         category: 'Hybrid',
         timeSignature: '4/4',
         tempo: 90,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'pick', direction: null, beat: 1, timing: 'on-beat', pick: [{ string: 0, fret: 0 }] },
           { technique: 'strum', direction: 'D', beat: 1, timing: 'half-past', strum: { strings: 'treble' } },
@@ -146,6 +160,7 @@ export class RhythmPatternsService {
         category: 'Folk/Country',
         timeSignature: '4/4',
         tempo: 85,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'D', beat: 2, timing: 'on-beat', strum: { strings: 'all' } },
@@ -164,6 +179,7 @@ export class RhythmPatternsService {
         category: 'Reggae',
         timeSignature: '4/4',
         tempo: 75,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'rest', direction: null, beat: 1, timing: 'on-beat' },
           { technique: 'strum', direction: 'U', beat: 1, timing: 'half-past', strum: { strings: 'treble' } },
@@ -184,6 +200,7 @@ export class RhythmPatternsService {
         category: 'Rock',
         timeSignature: '4/4',
         tempo: 120,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
           { technique: 'strum', direction: 'D', beat: 1, timing: 'half-past', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
@@ -202,6 +219,7 @@ export class RhythmPatternsService {
         category: 'Fingerpicking',
         timeSignature: '4/4',
         tempo: 65,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'pick', direction: null, beat: 1, timing: 'on-beat', pick: [{ string: 0, fret: 0 }] },
           { technique: 'pick', direction: null, beat: 1, timing: 'quarter-past', pick: [{ string: 2, fret: 0 }] },
@@ -222,6 +240,7 @@ export class RhythmPatternsService {
         category: 'Fingerpicking',
         timeSignature: '4/4',
         tempo: 70,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'pick', direction: null, beat: 1, timing: 'on-beat', pick: [{ string: 0, fret: 0 }] },
           { technique: 'pick', direction: null, beat: 1, timing: 'half-past', pick: [{ string: 4, fret: 0 }] },
@@ -242,6 +261,7 @@ export class RhythmPatternsService {
         category: 'Funk',
         timeSignature: '4/4',
         tempo: 100,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'D', beat: 1, timing: 'quarter-past', strum: { strings: 'all' }, modifiers: ['mute'] },
@@ -262,6 +282,7 @@ export class RhythmPatternsService {
         category: 'Bossa Nova',
         timeSignature: '4/4',
         tempo: 85,
+        tuning: this.defaultTuning,
         steps: [
           { technique: 'strum', direction: 'D', beat: 1, timing: 'on-beat', strum: { strings: 'all' } },
           { technique: 'strum', direction: 'U', beat: 1, timing: 'three-quarter-past', strum: { strings: 'treble' } },
