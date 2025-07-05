@@ -1,14 +1,15 @@
 import { Injectable } from "@angular/core";
-import { FretBoardNote, FretboardService } from "app/services/fretboard.service";
+import { Note } from "app/common/semitones";
+import { FretboardService } from "app/services/fretboard.service";
 import type { ChordAnalysis } from 'app/services/chords/chord-analysis.service';
 
-export type GuitarString = ('x' | 'o' | { fret: number; finger?: 1 | 2 | 3 | 4, isPartOfBarree: boolean; }[])
+export type GuitarString = ('x' | 'o' | { fret: number; finger?: 1 | 2 | 3 | 4, isPartOfBarree?: boolean; }[])
 export interface Grip {
   strings: GuitarString[]; // 0 = low E, 5 = high E
 }
 
 export interface TunedGrip extends Grip {
-  notes: (string | null)[];
+  notes: (string | null)[]; // Semitone+octave, i.e. E4
   inversion: 'root' | '1st' | '2nd' | undefined;
 }
 
@@ -48,7 +49,7 @@ export class GripGeneratorService {
     const expectedNotes = [...chord.notes, ...((chord.bass) ? [chord.bass] : [])];
 
     const grips: TunedGrip[] = [];
-    const tryAddGrip = (strings: GuitarString[], notes: (FretBoardNote | null)[]): boolean => {
+    const tryAddGrip = (strings: GuitarString[], notes: (Note | null)[]): boolean => {
       if (strings.filter(s => s !== 'x').length < minimalPlayableStrings) {
         return false; // Not enough strings
       }
@@ -163,7 +164,7 @@ export class GripGeneratorService {
       const fretWindowEnd = Math.min(fretWindowBase + fretConfiguration.maxSpan, maxFretToConsider +1);
 
       // The notes of the current window that is evaluated
-      const playableNotes: FretBoardNote[][] = [
+      const playableNotes: Note[][] = [
         ...fretboardMatrix.slice(fretWindowBase, fretWindowEnd)
       ];
 
@@ -349,8 +350,8 @@ export class GripGeneratorService {
     return grips;
   }
 
-  private getNotesForGrip(strings: GuitarString[], fretboardMatrix: FretBoardNote[][]): (FretBoardNote | null)[] {
-    const notes: (FretBoardNote | null)[] = [];
+  private getNotesForGrip(strings: GuitarString[], fretboardMatrix: Note[][]): (Note | null)[] {
+    const notes: (Note | null)[] = [];
     strings.forEach((string, stringIndex) => {
       if (string === 'x') {
         notes.push(null); // Muted string
@@ -366,7 +367,7 @@ export class GripGeneratorService {
     return notes;
   }
 
-  private getCandidatePositions(fretboardNotes: FretBoardNote[][], currentFret: number, notes: string[]): Map<number, number[]> {
+  private getCandidatePositions(fretboardNotes: Note[][], currentFret: number, notes: string[]): Map<number, number[]> {
       const candidatePositions: Map<number, number[]> = new Map();
       fretboardNotes.forEach((fretNotes, windowIndex) => {
         const fretIndex = currentFret + windowIndex;
@@ -384,7 +385,6 @@ export class GripGeneratorService {
             return; // Skip if no candidates for the current fret
         }
       })
-
       return candidatePositions;     
     }
 
@@ -435,7 +435,7 @@ export class GripGeneratorService {
     return { maxSpan: 3, maxFingers: 3 }
   }
 
-  private determineInversion(chordNotes: string[], root: string, notes: (FretBoardNote | null)[]): 'root' | '1st' | '2nd' | undefined {
+  private determineInversion(chordNotes: string[], root: string, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {
       const playedNotes = notes.filter(n => n !== null).map(n => n.semitone);
       if (playedNotes.length === 0) return undefined
 

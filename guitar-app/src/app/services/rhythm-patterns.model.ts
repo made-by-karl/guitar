@@ -1,3 +1,5 @@
+import { Note } from "app/common/semitones";
+
 export type RhythmTechnique = 'strum' | 'pick' | 'rest' | 'percussive';
 export type RhythmDirection = 'D' | 'U' | null;
 export type BeatTiming = 'on-beat' | 'quarter-past' | 'half-past' | 'three-quarter-past'; // Timing within a beat
@@ -61,14 +63,35 @@ export interface RhythmPattern {
   category: string;
   timeSignature: string;
   tempo: number;
+  tuning: Note[];
   steps: RhythmStep[];
   createdAt: number;
   updatedAt: number;
   isCustom?: boolean;
 }
 
+/**
+ * Helper to get string indices for strumming patterns
+ */
+export function getStringsForStrum(strings: any): number[] {
+  if (typeof strings === 'string') {
+    switch (strings) {
+      case 'all': return [0, 1, 2, 3, 4, 5];
+      case 'bass': return [0, 1, 2];
+      case 'treble': return [3, 4, 5];
+      case 'middle': return [1, 2, 3, 4];
+      case 'power': return [0, 1, 2, 3];
+      default: return [0, 1, 2, 3, 4, 5];
+    }
+  } else if (Array.isArray(strings)) {
+    return strings;
+  }
+  return [0, 1, 2, 3, 4, 5];
+}
+
 // Utility functions for rhythm timing calculations
 export class RhythmTimingUtils {
+
   /**
    * Convert beat and timing to decimal beat position
    * @param beat The beat number (1, 2, 3, 4)

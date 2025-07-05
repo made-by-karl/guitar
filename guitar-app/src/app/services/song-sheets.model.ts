@@ -1,9 +1,10 @@
+import { TunedGrip } from './grips/grip-generator.service';
 import { RhythmPattern } from './rhythm-patterns.model';
 
 export interface SongSheetGrip {
   id: string; // unique id for the grip (could be a hash or generated)
   chordName: string;
-  grip: any; // structure for the grip (can be GuitarGrip or similar)
+  grip: TunedGrip;
 }
 
 export interface SongSheetPattern {

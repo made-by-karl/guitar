@@ -4,6 +4,7 @@ import { SongSheetsComponent } from './components/song-sheets/song-sheets.compon
 import { SongSheetDetailComponent } from './components/song-sheets/song-sheet-detail/song-sheet-detail.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { RhythmPatternsComponent } from './components/rhythm-patterns/rhythm-patterns.component';
+import { MidiTestComponent } from './components/midi-test/midi-test.component';
 
 
 export const routes: Routes = [
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'song-sheets', component: SongSheetsComponent },
   { path: 'song-sheets/:id', component: SongSheetDetailComponent },
   { path: 'rhythm-patterns', component: RhythmPatternsComponent },
+  { path: 'midi-test', component: MidiTestComponent },
   { path: 'settings', component: SettingsComponent }
 ];

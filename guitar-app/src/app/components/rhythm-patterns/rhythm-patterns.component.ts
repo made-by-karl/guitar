@@ -3,8 +3,9 @@ import { CommonModule, NgForOf, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RhythmPatternsService } from '../../services/rhythm-patterns.service';
 import { RhythmPattern, RhythmStep, PickingNote, BeatTiming, RhythmModifier } from '../../services/rhythm-patterns.model';
-import { MidiService } from '../../services/midi.service';
+import { PlaybackService } from '../../services/playback.service';
 import { SongSheetsService } from '../../services/song-sheets.service';
+import { FretboardService } from 'app/services/fretboard.service';
 
 @Component({
   selector: 'app-rhythm-patterns',
@@ -22,7 +23,8 @@ export class RhythmPatternsComponent {
 
   constructor(
     public service: RhythmPatternsService,
-    private midi: MidiService,
+    private fretBoard: FretboardService,
+    private playback: PlaybackService,
     public songSheets: SongSheetsService
   ) {
     this.load();
@@ -35,6 +37,8 @@ export class RhythmPatternsComponent {
   startCreate() {
     this.editing = true;
     this.isNew = true;
+
+    const tuning = this.fretBoard.getGuitarFretboardConfig().tuning;
     this.draftPattern = {
       id: 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
       name: '',
@@ -42,6 +46,7 @@ export class RhythmPatternsComponent {
       category: '',
       timeSignature: '4/4',
       tempo: 100,
+      tuning,
       steps: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -159,43 +164,12 @@ export class RhythmPatternsComponent {
       console.error('Pattern has no steps:', pattern);
       return;
     }
-    const interval = 60000 / pattern.tempo;
-    for (const step of pattern.steps) {
-      if (step.technique === 'strum' && step.strum) {
-        // For demo: play a chord on the specified string range
-        const all = ['0', '0', '1', '2', '2', '0'];
-        let positions: string[];
-        
-        if (typeof step.strum.strings === 'string') {
-          // Handle named string ranges
-          switch (step.strum.strings) {
-            case 'all': positions = all; break;
-            case 'bass': positions = all.map((f, i) => i < 3 ? f : 'x'); break;
-            case 'treble': positions = all.map((f, i) => i >= 3 ? f : 'x'); break;
-            case 'middle': positions = all.map((f, i) => i >= 1 && i <= 4 ? f : 'x'); break;
-            case 'power': positions = all.map((f, i) => i <= 3 ? f : 'x'); break;
-            default: positions = all;
-          }
-        } else if (Array.isArray(step.strum.strings)) {
-          // Handle specific string indices
-          positions = all.map((f, i) => (step.strum!.strings as number[]).includes(5 - i) ? f : 'x');
-        } else {
-          positions = all;
-        }
-        
-        // Apply modifiers for playback (could adjust volume, timbre, etc.)
-        // For now, just play the chord normally
-        await this.midi.generateAndPlayChord(positions);
-      } else if (step.technique === 'pick' && step.pick) {
-        // For picking, play individual notes
-        for (const note of step.pick) {
-          const positions = Array(6).fill('x');
-          positions[5 - note.string] = note.fret.toString();
-          await this.midi.generateAndPlayChord(positions);
-        }
-      }
-      // Wait for next step
-      await new Promise(res => setTimeout(res, interval));
+    
+    // Use the new MIDI service to play the entire rhythm pattern
+    try {
+      await this.playback.playRhythmPattern(pattern);
+    } catch (error) {
+      console.error('Error playing rhythm pattern:', error);
     }
   }
 

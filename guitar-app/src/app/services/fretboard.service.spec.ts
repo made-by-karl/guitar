@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { FretboardService, FretBoardNote } from 'app/services/fretboard.service';
+import { FretboardService } from 'app/services/fretboard.service';
+import { Note } from 'app/common/semitones';
 
 describe('FretboardService', () => {
   let service: FretboardService;
@@ -10,7 +11,7 @@ describe('FretboardService', () => {
   });
 
   it('should generate the correct fretboard for a standard guitar tuning with 12 frets', () => {
-    const expectedFretboard: FretBoardNote[][] = [
+    const expectedFretboard: Note[][] = [
       [
         { semitone: 'E', octave: 2 },
         { semitone: 'A', octave: 2 },
@@ -125,5 +126,20 @@ describe('FretboardService', () => {
     const result = service.getFretboard(guitarConfig.tuning, guitarConfig.frets);
     console.log(result);
     expect(result).toEqual(expectedFretboard);
+  });
+
+  it('should calculate single notes', () => {
+    const guitarConfig = service.getGuitarFretboardConfig();
+    expect(guitarConfig.tuning.map(x => x.semitone)).toEqual(['E', 'A', 'D', 'G', 'B', 'E']);
+    expect(guitarConfig.tuning.map(x => x.octave)).toEqual([2, 2, 3, 3, 3, 4]);
+
+    const expectedFretboard = service.getFretboard(guitarConfig.tuning, guitarConfig.frets);
+    for (let fretIndex = 0; fretIndex < expectedFretboard.length; fretIndex++) {
+      for (let stringIndex = 0; stringIndex < expectedFretboard[fretIndex].length; stringIndex++) {
+        const note = expectedFretboard[fretIndex][stringIndex];
+        const result = service.getNoteAtPosition(guitarConfig.tuning, stringIndex, fretIndex);
+        expect(result).toEqual(note);
+      }
+    }
   });
 });

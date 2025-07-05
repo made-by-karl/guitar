@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from '../../../services/song-sheets.service';
 import { SongSheet, SongSheetGrip, SongSheetPattern } from '../../../services/song-sheets.model';
 import { GripDiagramComponent } from '../../grip-diagram/grip-diagram.component';
-import { MidiService } from '../../../services/midi.service';
+import { PlaybackService } from '../../../services/playback.service';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -21,7 +21,7 @@ export class SongSheetDetailComponent {
 
   constructor(
     private service: SongSheetsService,
-    private midi: MidiService,
+    private playback: PlaybackService,
     private route: ActivatedRoute
   ) {
     const id = this.route.snapshot.paramMap.get('id');
@@ -62,20 +62,33 @@ export class SongSheetDetailComponent {
     }
   }
 
-  playGrip(grip: SongSheetGrip) {
-    const positions = grip.grip.frets.map((f: any) => f === 'x' ? 'x' : f.toString());
-    this.midi.generateAndPlayChord(positions);
+  async playGrip(grip: SongSheetGrip) {
+    try {
+      // Use the pre-calculated notes from TunedGrip if available
+      // Filter out muted strings (null notes)
+      const notes = grip.grip.notes?.filter(note => note !== null) as string[] || [];
+      
+      if (notes.length > 0) {
+        await this.playback.playChordFromNotes(notes);
+      } else {
+        console.warn('No playable notes found in grip');
+      }
+    } catch (error) {
+      console.error('Error playing grip:', error);
+    }
   }
 
   async playPattern(pattern: any) {
-    const interval = 60000 / pattern.tempo;
-    for (const step of pattern.steps) {
-      if (step.technique === 'strum' || step.technique === 'pick') {
-        const all = ['0', '0', '1', '2', '2', '0'];
-        const positions = all.map((f, i) => step.strings.includes(6 - i) ? f : 'x');
-        await this.midi.generateAndPlayChord(positions);
-      }
-      await new Promise(res => setTimeout(res, interval));
+    if (!pattern.steps) {
+      console.error('Pattern has no steps:', pattern);
+      return;
+    }
+    
+    // Use the new MIDI service to play the entire rhythm pattern
+    try {
+      await this.playback.playRhythmPattern(pattern);
+    } catch (error) {
+      console.error('Error playing rhythm pattern:', error);
     }
   }
 }

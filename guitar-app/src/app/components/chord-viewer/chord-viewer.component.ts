@@ -13,6 +13,7 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-functions.service';
 import { SongSheetsService } from 'app/services/song-sheets.service';
+import { PlaybackService } from 'app/services/playback.service';
 
 @Component({
   selector: 'app-chord-viewer',
@@ -58,6 +59,7 @@ export class ChordViewerComponent implements OnInit {
     private chordProgression: ChordProgressionService,
     private harmonicFunctions: HarmonicFunctionsService,
     private songSheets: SongSheetsService,
+    private playback: PlaybackService,
     private router: Router,
     private route: ActivatedRoute,
   ) { }
@@ -136,9 +138,20 @@ export class ChordViewerComponent implements OnInit {
     });
   }
 
-  playChord(grip: TunedGrip) {
-    // Implement logic to play the chord using a sound library or Web Audio API
-    console.log('Playing chord:', grip);
+  async playChord(grip: TunedGrip) {
+    try {
+      // Use the pre-calculated notes from TunedGrip
+      // Filter out muted strings (null notes)
+      const notes = grip.notes.filter(note => note !== null) as string[];
+      
+      if (notes.length > 0) {
+        await this.playback.playChordFromNotes(notes);
+      } else {
+        console.warn('No playable notes found in grip');
+      }
+    } catch (error) {
+      console.error('Error playing chord:', error);
+    }
   }
 
   closeChordBuilder() {

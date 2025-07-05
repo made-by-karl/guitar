@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Semitone, SEMITONES } from 'app/common/semitones';
+import { Semitone, SEMITONES, Note, note } from 'app/common/semitones';
 
 @Injectable({ providedIn: 'root' })
 export class FretboardService {
-  getGuitarFretboardConfig(): { tuning: FretBoardNote[], frets: number } {
+  getGuitarFretboardConfig(): { tuning: Note[], frets: number } {
     return {
       tuning: [
         note('E', 2),
@@ -16,8 +16,8 @@ export class FretboardService {
     };
   }
 
-  getFretboard(tuning: FretBoardNote[], frets: number): FretBoardNote[][] {
-    const fretboard: FretBoardNote[][] = Array.from({ length: frets + 1 }, () => []);
+  getFretboard(tuning: Note[], frets: number): Note[][] {
+    const fretboard: Note[][] = Array.from({ length: frets + 1 }, () => []);
 
     tuning.forEach((note) => {
       const index = SEMITONES.indexOf(note.semitone);
@@ -30,13 +30,30 @@ export class FretboardService {
 
     return fretboard;
   }
-}
 
-export interface FretBoardNote {
-  semitone: Semitone;
-  octave: number;
-}
+  /**
+   * Get a specific note for a given string and fret position
+   * @param tuning Array of tuning notes for each string
+   * @param stringIndex Index of the string (0-5, where 0 is lowest string)
+   * @param fret Fret position (0 for open string)
+   * @returns The Note at the specified position
+   */
+  getNoteAtPosition(tuning: Note[], stringIndex: number, fret: number): Note {
+    if (stringIndex < 0 || stringIndex >= tuning.length) {
+      throw new Error(`Invalid string index: ${stringIndex}. Must be between 0 and ${tuning.length - 1}`);
+    }
+    
+    if (fret < 0) {
+      throw new Error(`Invalid fret: ${fret}. Must be 0 or greater`);
+    }
 
-function note(semitone: Semitone, octave: number): FretBoardNote {
-  return { semitone, octave };
+    const openStringNote = tuning[stringIndex];
+    const baseSemitoneIndex = SEMITONES.indexOf(openStringNote.semitone);
+    
+    const semitoneIndex = (baseSemitoneIndex + fret) % 12;
+    const semitone = SEMITONES[semitoneIndex];
+    const octave = Math.floor((baseSemitoneIndex + fret) / 12) + openStringNote.octave;
+    
+    return { semitone, octave };
+  }
 }
