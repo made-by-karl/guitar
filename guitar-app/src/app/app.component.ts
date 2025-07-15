@@ -13,7 +13,7 @@ import { SongSheet } from './services/song-sheets.model';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'Guitar Chord App';
+  title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
 
   constructor(public songSheetsService: SongSheetsService) {}
