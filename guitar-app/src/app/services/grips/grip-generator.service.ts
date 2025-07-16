@@ -1,17 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Note } from "app/common/semitones";
 import { FretboardService } from "app/services/fretboard.service";
-import type { ChordAnalysis } from 'app/services/chords/chord-analysis.service';
-
-export type GuitarString = ('x' | 'o' | { fret: number; finger?: 1 | 2 | 3 | 4, isPartOfBarree?: boolean; }[])
-export interface Grip {
-  strings: GuitarString[]; // 0 = low E, 5 = high E
-}
-
-export interface TunedGrip extends Grip {
-  notes: (string | null)[]; // Semitone+octave, i.e. E4
-  inversion: 'root' | '1st' | '2nd' | undefined;
-}
+import type { ExtendedChord } from 'app/services/chords/chord.service';
+import { Grip, TunedGrip, String } from './grip.model';
 
 @Injectable({
   providedIn: 'root'
@@ -19,23 +10,23 @@ export interface TunedGrip extends Grip {
 export class GripGeneratorService {
   constructor(private fretboard: FretboardService) {}
 
-  generateGrips(chord: ChordAnalysis, options: {
-      allowMutedStringsInside?: boolean,
+  generateGrips(chord: ExtendedChord, options: {
       minFretToConsider?: number,
       maxFretToConsider?: number,
       minimalPlayableStrings?: number,
       allowBarree?: boolean,
       allowInversions?: boolean,
       allowIncompleteChords?: boolean,
+      allowMutedStringsInside?: boolean,
       allowDuplicateNotes?: boolean
     } = {}): TunedGrip[] {
-    const allowMutedStringsInside = options.allowMutedStringsInside ?? false;
     const minFretToConsider = options.minFretToConsider ?? 1;
     const maxFretToConsider = options.maxFretToConsider ?? 12;
     const minimalPlayableStrings = options.minimalPlayableStrings ?? 3;
     const allowBarree = options.allowBarree ?? true;
-    const allowInversions = options.allowInversions ?? true;
+    const allowInversions = options.allowInversions ?? false;
     const allowIncompleteChords = options.allowIncompleteChords ?? false;
+    const allowMutedStringsInside = options.allowMutedStringsInside ?? false;
     const allowDuplicateNotes = options.allowDuplicateNotes ?? false;
 
     if (minFretToConsider < 1 || maxFretToConsider < minFretToConsider) {
@@ -49,7 +40,7 @@ export class GripGeneratorService {
     const expectedNotes = [...chord.notes, ...((chord.bass) ? [chord.bass] : [])];
 
     const grips: TunedGrip[] = [];
-    const tryAddGrip = (strings: GuitarString[], notes: (Note | null)[]): boolean => {
+    const tryAddGrip = (strings: String[], notes: (Note | null)[]): boolean => {
       if (strings.filter(s => s !== 'x').length < minimalPlayableStrings) {
         return false; // Not enough strings
       }
@@ -64,8 +55,8 @@ export class GripGeneratorService {
       }
 
       const inversion = this.determineInversion(chord.notes, chord.root, notes);
-      if (!allowInversions && inversion && inversion !== 'root') {
-        return false; // Inversions not allowed
+      if (!inversion || (!allowInversions && inversion !== 'root')) {
+        return false; // Chord is not an inversion (G6 with E-GBD) or inversions not allowed
       }
 
       const grip: TunedGrip = {
@@ -245,7 +236,7 @@ export class GripGeneratorService {
       })
 
       gripPlacements.map((placements) => {
-        const strings: GuitarString[] = Array(6).fill('o');
+        const strings: String[] = Array(6).fill('o');
         placements.forEach((placement) => {
           const isBarree = placement.strings.length > 1;
           placement.strings.forEach((stringIndex) => {
@@ -272,8 +263,8 @@ export class GripGeneratorService {
         if (!allowMutedStringsInside) {
           strings.forEach((string, index) => {
             if (string === 'x') {
-              const stringsBefore = strings.slice(0, index).map((s: GuitarString): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
-              const stringsAfter = strings.slice(index + 1).map((s: GuitarString): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
+              const stringsBefore = strings.slice(0, index).map((s: String): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
+              const stringsAfter = strings.slice(index + 1).map((s: String): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
               
               let muteBefore = false;
               let muteAfter = false;
@@ -350,7 +341,7 @@ export class GripGeneratorService {
     return grips;
   }
 
-  private getNotesForGrip(strings: GuitarString[], fretboardMatrix: Note[][]): (Note | null)[] {
+  private getNotesForGrip(strings: String[], fretboardMatrix: Note[][]): (Note | null)[] {
     const notes: (Note | null)[] = [];
     strings.forEach((string, stringIndex) => {
       if (string === 'x') {
@@ -361,7 +352,7 @@ export class GripGeneratorService {
       } else if (Array.isArray(string)) {
         const maxFret = Math.max(...string.map(s => s.fret));
         const note = fretboardMatrix[maxFret][stringIndex];
-        notes.push(note); // Open string
+        notes.push(note); // Pushed string
       }
     });
     return notes;
@@ -437,7 +428,7 @@ export class GripGeneratorService {
 
   private determineInversion(chordNotes: string[], root: string, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {
       const playedNotes = notes.filter(n => n !== null).map(n => n.semitone);
-      if (playedNotes.length === 0) return undefined
+      if (playedNotes.length === 0) return undefined;
 
       const bassNote = playedNotes[0];
 

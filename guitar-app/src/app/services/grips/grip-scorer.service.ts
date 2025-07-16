@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TunedGrip } from "app/services/grips/grip-generator.service";
+import { TunedGrip } from "./grip.model";
 
 @Injectable({
   providedIn: 'root'
@@ -8,9 +8,9 @@ export class GripScorerService {
   scoreGrip(grip: TunedGrip): number {
     // Prefer frets 1-5
     const frets: number[] = [];
-    grip.strings.forEach(f => {
+    grip.strings.forEach((f: any) => {
       if (f !== 'o' && f !== 'x') {
-        frets.push(Math.max(...f.map(x => x.fret)))
+        frets.push(Math.max(...f.map((x: any) => x.fret)))
       }
     });
     const minFret = frets.length > 0 ? Math.min(...frets) : 1;
@@ -26,7 +26,7 @@ export class GripScorerService {
     if (grip.inversion && grip.inversion !== 'root') inversionPenalty = 5;
 
     // Prefer grips without muted strings
-    const mutedIndices = grip.strings.map((s, i) => s === 'x' ? i : -1).filter(i => i !== -1);
+    const mutedIndices = grip.strings.map((s: any, i: number) => s === 'x' ? i : -1).filter((i: number) => i !== -1);
     const mutedStrings = mutedIndices.length;
     let mutedPenalty = mutedStrings * 2;
 
@@ -51,7 +51,7 @@ export class GripScorerService {
     }
 
     // Prefer open strings
-    const openStrings = grip.strings.filter(f => f === 'o').length;
+    const openStrings = grip.strings.filter((f: any) => f === 'o').length;
     const openBonus = openStrings * 0.75;
 
     // Penalize barre chords (optional, can be tuned)

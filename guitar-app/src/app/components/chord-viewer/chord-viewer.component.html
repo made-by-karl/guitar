@@ -1,6 +1,6 @@
 <div class="container py-5">
   <h2 class="mb-4"><i class="bi bi-music-note-beamed me-2"></i>Chords</h2>
-  <div class="accordion" id="accordion">
+  <div class="accordion mb-3" id="accordion">
     <div class="accordion-item chord-builder">
       <h2 class="accordion-header">
         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chordBuilder"
@@ -20,8 +20,8 @@
               </select>
             </div>
 
-            <div>
-              <div>
+            <div class="mb-3">
+              <div class="d-flex align-items-center">
                 <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
                   data-bs-target="#collapseModifiers" aria-expanded="false" aria-controls="collapseModifiers">
                   Modifiers
@@ -32,14 +32,22 @@
                   <span class="ms-2">{{ modifier }}</span>
                   }
                 </span>
+                @if (selectedModifiers.length > 0) {
+                <button class="btn btn-sm btn-outline-secondary ms-2" type="button" (click)="resetModifiers()" 
+                        title="Clear all modifiers">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+                }
               </div>
               <div>
                 <div class="collapse" id="collapseModifiers">
                   <div class="card card-body">
                     <ng-template #modifierTemplate let-modifier>
-                      <div class="btn-group me-2 mb-2" role="group">
+                      @let modifierState = getModifierState(modifier);
+                      <div class="btn-group me-2 mb-2" role="group" 
+                           [class.modifier-conflict]="modifierState.isDisabled && modifierState.isConflict">
                         <input type="checkbox" class="btn-check" id="modifier-{{ modifier }}"
-                          [disabled]="isModifierDisabled(modifier)" [checked]="selectedModifiers.includes(modifier)"
+                          [disabled]="modifierState.isDisabled" [checked]="modifierState.isChecked"
                           (change)="toggleModifier(modifier)">
                         <label class="btn btn-outline-primary" style="min-width: 5em;" for="modifier-{{ modifier }}">
                           {{ modifier }}
@@ -49,13 +57,13 @@
 
                     <div class="row">
                       <div class="col">
-                        @for (modifier of modifiers | slice:0:modifiers.indexOf('ø7'); track modifier) {
+                        @for (modifier of modifiers | slice:0:modifiers.indexOf('add13'); track modifier) {
                         <ng-container
                           *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
                         }
                       </div>
                       <div class="col">
-                        @for (modifier of modifiers | slice:modifiers.indexOf('ø7'); track modifier) {
+                        @for (modifier of modifiers | slice:modifiers.indexOf('add13'); track modifier) {
                         <ng-container
                           *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
                         }
@@ -79,8 +87,8 @@
             <div class="form-group mb-3">
               <div class="row align-items-center">
                 <div class="col">
-                  <button class="btn btn-primary" (click)="generateGrips()">
-                    Generate Grips
+                  <button class="btn btn-primary" (click)="updateChord()">
+                    Select
                   </button>
                 </div>
                 <div class="col-auto">
@@ -150,21 +158,57 @@
         <div class="container">
           <div class="row">
             <div class="col-12">
-              @if (chordAnalysis) {
+              @if (activeChord) {
               <div>
                 <div class="d-flex align-items-center mb-4">
                   <h2 class="me-3">
-                    {{ chordAnalysis.root }}
-                    @if (chordAnalysis.modifiers.length > 0) {
-                    <span class="text-muted">({{ chordAnalysis.modifiers.join(', ') }})</span>
+                    {{ activeChord.root }}
+                    @if (activeChord.modifiers.length > 0) {
+                    <span class="text-muted">({{ activeChord.modifiers.join(', ') }})</span>
                     }
                   </h2>
-                  @if (chordAnalysis.bass) {
-                  <span class="badge bg-secondary ms-1">Bass: {{ chordAnalysis.bass }}</span>
+                  @if (activeChord.bass) {
+                  <span class="badge bg-secondary ms-1">Bass: {{ activeChord.bass }}</span>
                   }
                 </div>
                 <div class="d-flex align-items-center mb-4">
-                  {{ chordAnalysis.notes }}
+                  {{ activeChord.notes }}
+                </div>
+
+                <!-- Chord Construction Explanation -->
+                <div class="mb-4">
+                  <button class="btn btn-outline-info btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#chordExplanation" aria-expanded="false" aria-controls="chordExplanation">
+                    <i class="bi bi-info-circle me-1"></i>
+                    How were these notes calculated?
+                    <i class="bi bi-chevron-down ms-1"></i>
+                  </button>
+                  
+                  <div class="collapse mt-3" id="chordExplanation">
+                    <div class="card card-body bg-light">
+                      <h6 class="mb-3">
+                        <i class="bi bi-calculator me-2"></i>
+                        Step-by-step chord construction for {{ activeChord.root }}{{ activeChord.modifiers.join('') }}
+                      </h6>
+                      
+                      @for (step of generateChordExplanation(); track $index) {
+                        <div class="mb-3 pb-3" [class.border-bottom]="$index < generateChordExplanation().length - 1">
+                          <div class="d-flex align-items-start">
+                            <span class="badge bg-primary me-3 mt-1">{{ $index + 1 }}</span>
+                            <div class="flex-grow-1">
+                              <h6 class="mb-2 text-primary">{{ step.step }}</h6>
+                              <p class="mb-0 text-muted small" [innerHTML]="step.description"></p>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      
+                      <div class="alert alert-info mb-0" role="alert">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Final result:</strong> The chord contains the notes {{ activeChord.notes.join(', ') }}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -174,7 +218,7 @@
                   <div>
                     @for (chord of progression; track $index) {
                     <a [routerLink]="['/chord', getChordQueryString(chord)]">
-                      @if (chordEquals(chordAnalysis, chord)) {
+                      @if (chordEquals(activeChord, chord)) {
                       <strong>{{ chord.root }}</strong>
                       @if (chord.modifiers.length) {
                       <strong>{{ chord.modifiers.join('') }}</strong>

@@ -3,7 +3,7 @@ import { MidiService } from './midi.service';
 import { RhythmPattern, BeatTiming, getStringsForStrum } from './rhythm-patterns.model';
 import { MidiInstruction, MidiNote, MidiTechnique } from './midi.model';
 import { Note, transpose, noteNameToNote } from 'app/common/semitones';
-import { Grip } from './grips/grip-generator.service';
+import { Grip } from './grips/grip.model';
 
 @Injectable({
   providedIn: 'root'
@@ -94,7 +94,7 @@ export class PlaybackService {
               note: pattern.tuning[stringIndex]
             });
           } else {
-            const fret = Math.max(...entry.map(s => s.fret));
+            const fret = Math.max(...entry.map((s: any) => s.fret));
             const note = this.getStringNote(pattern.tuning, stringIndex, fret);
             notes.push({
               note: note

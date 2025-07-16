@@ -1,6 +1,6 @@
 import { GripGeneratorService, stringifyGrip } from 'app/services/grips/grip-generator.service';
 import { FretboardService } from 'app/services/fretboard.service';
-import type { ChordAnalysis } from 'app/services/chords/chord-analysis.service';
+import type { ExtendedChord } from 'app/services/chords/chord.service';
 import { Semitone } from 'app/common/semitones';
 import { Modifier } from 'app/common/modifiers';
 
@@ -9,7 +9,7 @@ describe('GripGeneratorService', () => {
   let service: GripGeneratorService;
   let fretboardService: FretboardService;
 
-  const createChordAnalysis = (root: Semitone, notes: Semitone[], modifiers: Modifier[] = [], bass?: Semitone): ChordAnalysis => ({
+  const createChord = (root: Semitone, notes: Semitone[], modifiers: Modifier[] = [], bass?: Semitone): ExtendedChord => ({
     root,
     notes,
     modifiers,
@@ -23,7 +23,7 @@ describe('GripGeneratorService', () => {
 
   describe('Basic chord generation', () => {
     it('should generate common C major open chord', () => {
-      const chord = createChordAnalysis('C', ['C', 'E', 'G']);
+      const chord = createChord('C', ['C', 'E', 'G']);
       const grips = service.generateGrips(chord);
 
       // Should find the common x32o1o shape
@@ -38,7 +38,7 @@ describe('GripGeneratorService', () => {
     });
 
     it('should generate F major barre chord', () => {
-      const chord = createChordAnalysis('F', ['F', 'A', 'C']);
+      const chord = createChord('F', ['F', 'A', 'C']);
       const grips = service.generateGrips(chord);
 
       // Should find the common 133211 barre shape

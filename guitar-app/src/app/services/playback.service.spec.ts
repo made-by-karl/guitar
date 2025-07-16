@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { PlaybackService } from './playback.service';
 import { MidiService } from './midi.service';
 import { note } from 'app/common/semitones';
-import { Grip } from './grips/grip-generator.service';
+import { Grip } from './grips/grip.model';
 
 describe('PlaybackService', () => {
   let service: PlaybackService;

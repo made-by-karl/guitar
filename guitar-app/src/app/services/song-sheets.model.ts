@@ -1,4 +1,4 @@
-import { TunedGrip } from './grips/grip-generator.service';
+import { TunedGrip } from './grips/grip.model';
 import { RhythmPattern } from './rhythm-patterns.model';
 
 export interface SongSheetGrip {

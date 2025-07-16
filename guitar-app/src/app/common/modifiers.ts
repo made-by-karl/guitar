@@ -1,7 +1,210 @@
-export const MODIFIERS = [
-  'm', '7', 'maj7', 'maj9', 'sus2', 'sus4', 'add9', 'add11', 'add13', 'ø7', 'dim7', 'dim', 'aug7', 'aug', 'b5', '#5', 'bb5', 'b9', '#9', '#11', 'b13', 'no3', 'no5', 'no7'
-] as const;
-export type Modifier = typeof MODIFIERS[number];
+// Common definition of all chord modifiers
+export type ModifierOperation =
+  | { type: 'add', interval: string }
+  | { type: 'remove', intervals: string[] }
+  | { type: 'replace', from: string[], to: string };
+
+export type ModifierDefinition = {
+  description: string;
+  operations: ModifierOperation[];
+  defines: {
+    third?: 'major' | 'minor' | 'none';
+    fifth?: 'perfect' | 'diminished' | 'augmented' | 'none';
+    seventh?: 'major' | 'minor' | 'diminished' | 'none';
+    ninth?: 'major' | 'minor' | 'augmented' | 'none';
+    eleventh?: 'perfect' | 'augmented' | 'none';
+    thirteenth?: 'major' | 'minor' | 'none';
+  };
+};
+
+export const MODIFIER_DEFINITIONS: Record<string, ModifierDefinition> = {
+  // Triad qualities
+  'm': {
+    description: 'Minor triad (♭3)',
+    operations: [{ type: 'replace', from: ['3'], to: 'b3' }],
+    defines: { third: 'minor' }
+  },
+  'dim': {
+    description: 'Diminished triad (♭3, ♭5)',
+    operations: [
+      { type: 'replace', from: ['3'], to: 'b3' },
+      { type: 'replace', from: ['5'], to: 'b5' }
+    ],
+    defines: { third: 'minor', fifth: 'diminished' }
+  },
+  'aug': {
+    description: 'Augmented triad (♯5)',
+    operations: [{ type: 'replace', from: ['5'], to: '#5' }],
+    defines: { fifth: 'augmented' }
+  },
+
+  // Power chord and sixth
+  '5': {
+    description: 'Power chord (root + 5th only)',
+    operations: [{ type: 'remove', intervals: ['3', 'b3'] }],
+    defines: { third: 'none' }
+  },
+  '6': {
+    description: 'Major 6th (add 6th)',
+    operations: [{ type: 'add', interval: '6' }],
+    defines: { thirteenth: 'major' }
+  },
+
+  // Sevenths
+  '7': {
+    description: 'Dominant 7th (♭7)',
+    operations: [{ type: 'add', interval: 'b7' }],
+    defines: { seventh: 'minor' }
+  },
+  'maj7': {
+    description: 'Major 7th (♮7)',
+    operations: [{ type: 'add', interval: '7' }],
+    defines: { seventh: 'major' }
+  },
+  'ø7': {
+    description: 'Half-diminished 7th (♭3, ♭5, ♭7)',
+    operations: [
+      { type: 'replace', from: ['3'], to: 'b3' },
+      { type: 'replace', from: ['5'], to: 'b5' },
+      { type: 'add', interval: 'b7' }
+    ],
+    defines: { third: 'minor', fifth: 'diminished', seventh: 'minor' }
+  },
+  'dim7': {
+    description: 'Diminished 7th (♭3, ♭5, ♭♭7)',
+    operations: [
+      { type: 'replace', from: ['3'], to: 'b3' },
+      { type: 'replace', from: ['5'], to: 'b5' },
+      { type: 'add', interval: '6' } // ♭♭7 = 6
+    ],
+    defines: { third: 'minor', fifth: 'diminished', seventh: 'diminished' }
+  },
+  'aug7': {
+    description: 'Augmented 7th (♯5, ♭7)',
+    operations: [
+      { type: 'replace', from: ['5'], to: '#5' },
+      { type: 'add', interval: 'b7' }
+    ],
+    defines: { fifth: 'augmented', seventh: 'minor' }
+  },
+
+  // Extensions
+  'maj9': {
+    description: 'Major 9th (maj7 + 9)',
+    operations: [
+      { type: 'add', interval: '7' },
+      { type: 'add', interval: '9' }
+    ],
+    defines: { seventh: 'major', ninth: 'major' }
+  },
+  'add9': {
+    description: 'Add major 9th (2nd)',
+    operations: [{ type: 'add', interval: '9' }],
+    defines: { ninth: 'major' }
+  },
+  'add11': {
+    description: 'Add perfect 11th (4th)',
+    operations: [{ type: 'add', interval: '11' }],
+    defines: { eleventh: 'perfect' }
+  },
+  'add13': {
+    description: 'Add 13th (6th)',
+    operations: [{ type: 'add', interval: '13' }],
+    defines: { thirteenth: 'major' }
+  },
+
+  // Suspended
+  'sus2': {
+    description: 'Suspend 2nd (replace 3rd with 2nd)',
+    operations: [{ type: 'replace', from: ['3', 'b3'], to: '2' }],
+    defines: { third: 'none' }
+  },
+  'sus4': {
+    description: 'Suspend 4th (replace 3rd with 4th)',
+    operations: [{ type: 'replace', from: ['3', 'b3'], to: '4' }],
+    defines: { third: 'none' }
+  },
+
+  // Altered 5ths
+  'b5': {
+    description: 'Flattened 5th (♭5)',
+    operations: [{ type: 'replace', from: ['5'], to: 'b5' }],
+    defines: { fifth: 'diminished' }
+  },
+  '#5': {
+    description: 'Sharpened 5th (♯5)',
+    operations: [{ type: 'replace', from: ['5'], to: '#5' }],
+    defines: { fifth: 'augmented' }
+  },
+  'bb5': {
+    description: 'Double-flattened 5th (♭♭5)',
+    operations: [{ type: 'replace', from: ['5'], to: '4' }], // ♭♭5 = 4
+    defines: { fifth: 'diminished' }
+  },
+
+  // Altered 9ths
+  'b9': {
+    description: 'Flattened 9th (♭9)',
+    operations: [{ type: 'add', interval: 'b9' }],
+    defines: { ninth: 'minor' }
+  },
+  '#9': {
+    description: 'Sharpened 9th (♯9)',
+    operations: [{ type: 'add', interval: '#9' }],
+    defines: { ninth: 'augmented' }
+  },
+
+  // Altered 11th & 13th
+  '#11': {
+    description: 'Sharpened 11th (♯11)',
+    operations: [{ type: 'add', interval: '#11' }],
+    defines: { eleventh: 'augmented' }
+  },
+  'b13': {
+    description: 'Flattened 13th (♭13)',
+    operations: [{ type: 'add', interval: 'b13' }],
+    defines: { thirteenth: 'minor' }
+  },
+
+  // Suppressions
+  'no3': {
+    description: 'Omit 3rd',
+    operations: [{ type: 'remove', intervals: ['3', 'b3'] }],
+    defines: { third: 'none' }
+  },
+  'no5': {
+    description: 'Omit 5th',
+    operations: [{ type: 'remove', intervals: ['5', 'b5', '#5'] }],
+    defines: { fifth: 'none' }
+  },
+  'no7': {
+    description: 'Omit 7th',
+    operations: [{ type: 'remove', intervals: ['7', 'b7'] }],
+    defines: { seventh: 'none' }
+  },
+};
+
+export const MODIFIERS: Modifier[] = [
+  // Triad qualities
+  'm', 'dim', 'aug',
+  // Power chord and sixth
+  '5', '6',
+  // Sevenths
+  '7', 'maj7', 'ø7', 'dim7', 'aug7',
+  // Extensions
+  'maj9', 'add9', 'add11', 'add13',
+  // Suspended
+  'sus2', 'sus4',
+  // Altered 5ths
+  'b5', '#5', 'bb5',
+  // Altered 9ths
+  'b9', '#9',
+  // Altered 11th & 13th
+  '#11', 'b13',
+  // Suppressions
+  'no3', 'no5', 'no7'
+];
+export type Modifier = keyof typeof MODIFIER_DEFINITIONS;
 
 export function isModifier(modifier: string): modifier is Modifier {
   return MODIFIERS.includes(modifier as Modifier);
@@ -24,127 +227,145 @@ export function areModifiersValid(modifiers: Modifier[]): true | string[] {
   return conflicts.length > 0 ? conflicts : true;
 }
 
-export function canAddModifier(existingModifiers: Modifier[], newModifier: Modifier): true | string {
-  const conflicts: [Modifier, Modifier, string][] = [
-    // Third clashes
-    ['m', 'sus2', '“m” needs ♭3, “sus2” replaces 3 with 2'],
-    ['m', 'sus4', '“m” needs ♭3, “sus4” replaces 3 with 4'],
-    ['m', 'no3', '“m” needs ♭3, but “no3” removes the 3rd'],
-    ['sus2', 'sus4', 'You cannot replace the 3rd with both 2 and 4'],
+export function isModifierSubset(modifier: Modifier, other: Modifier): boolean {
+  const modifierDef = MODIFIER_DEFINITIONS[modifier];
+  const otherDef = MODIFIER_DEFINITIONS[other];
+  
+  if (!modifierDef || !otherDef) {
+    return false;
+  }
 
-    // Seventh clashes
-    ['7', 'maj7', '“7” uses ♭7, but “maj7” uses ♮7'],
-    ['7', 'maj9', '“7” uses ♭7, but “maj9” implies ♮7'],
-    ['7', 'dim7', '“7” uses ♭7, “dim7” uses ♭♭7'],
-    ['7', 'ø7', '“7” is dominant, “ø7” is half-diminished'],
-    ['7', 'aug7', '“7” uses perfect 5th, “aug7” uses ♯5'],
+  if (modifier === other) {
+    return true; // A modifier is always a subset of itself
+  }
 
-    ['maj7', 'dim7', '“maj7” uses ♮7, “dim7” uses ♭♭7'],
-    ['maj7', 'ø7', '“maj7” uses ♮7, “ø7” uses ♭7'],
-    ['maj7', 'aug7', '“maj7” uses ♮7, “aug7” uses ♭7'],
-    ['maj9', 'dim7', '“maj9” uses ♮7, “dim7” uses ♭♭7'],
-    ['maj9', 'ø7', '“maj9” uses ♮7, “ø7” uses ♭7'],
-    ['maj9', 'aug7', '“maj9” uses ♮7, “aug7” uses ♭7'],
+  // Check if all operations of the modifier are contained in the other modifier
+  for (const operation of modifierDef.operations) {
+    const isOperationContained = otherDef.operations.some(otherOp => {
+      if (operation.type !== otherOp.type) {
+        return false;
+      }
 
-    ['ø7', 'dim7', '“ø7” uses ♭7, “dim7” uses ♭♭7'],
-    ['ø7', 'aug7', '“ø7” uses ♭7, “aug7” uses ♯5'],
-    ['dim7', 'aug7', '“dim7” uses ♭♭7 and ♭5, “aug7” uses ♭7 and ♯5'],
+      switch (operation.type) {
+        case 'add':
+          return operation.interval === (otherOp as typeof operation).interval;
+        case 'remove':
+          return operation.intervals.every(interval => 
+            (otherOp as typeof operation).intervals.includes(interval)
+          );
+        case 'replace':
+          return operation.from.every(from => 
+            (otherOp as typeof operation).from.includes(from)
+          ) && operation.to === (otherOp as typeof operation).to;
+        default:
+          return false;
+      }
+    });
 
-    ['7', 'no7', '“7” requires a 7th, but “no7” removes it'],
-    ['maj7', 'no7', '“maj7” requires a 7th, but “no7” removes it'],
-    ['maj9', 'no7', '“maj9” implies maj7, which conflicts with “no7”'],
-    ['ø7', 'no7', '“ø7” includes a 7th, “no7” removes it'],
-    ['dim7', 'no7', '“dim7” includes a 7th, “no7” removes it'],
-    ['aug7', 'no7', '“aug7” includes a 7th, “no7” removes it'],
+    if (!isOperationContained) {
+      return false;
+    }
+  }
 
-    // Fifth clashes
-    ['b5', '#5', 'Cannot have both ♭5 and ♯5'],
-    ['b5', 'bb5', 'Cannot have both ♭5 and ♭♭5'],
-    ['#5', 'bb5', 'Cannot have both ♯5 and ♭♭5'],
-    ['dim', 'aug', '“dim” has ♭5, “aug” has ♯5'],
-    ['dim', '#5', '“dim” has ♭5, “#5” contradicts it'],
-    ['dim', 'aug7', '“dim” has ♭5, “aug7” has ♯5'],
-    ['aug', 'b5', '“aug” has ♯5, “b5” contradicts it'],
-    ['aug', 'bb5', '“aug” has ♯5, “bb5” contradicts it'],
-    ['aug', 'dim7', '“aug” has ♯5, “dim7” has ♭5'],
-    ['aug', 'ø7', '“aug” has ♯5, “ø7” has ♭5'],
-    ['dim', 'no5', '“dim” uses ♭5, “no5” removes the 5th'],
-    ['aug', 'no5', '“aug” uses ♯5, “no5” removes the 5th'],
-    ['b5', 'no5', '“b5” defines the 5th, “no5” removes it'],
-    ['#5', 'no5', '“#5” defines the 5th, “no5” removes it'],
-    ['bb5', 'no5', '“bb5” defines the 5th, “no5” removes it'],
-    ['dim7', 'no5', '“dim7” defines the 5th, “no5” removes it'],
-    ['ø7', 'no5', '“ø7” defines the 5th, “no5” removes it'],
-    ['aug7', 'no5', '“aug7” defines the 5th, “no5” removes it'],
+  // Check if all defined characteristics of the modifier match those in the other
+  const modifierDefines = modifierDef.defines;
+  const otherDefines = otherDef.defines;
 
-    // Ninth
-    ['add9', 'b9', '“add9” adds natural 9, “b9” alters it'],
-    ['add9', '#9', '“add9” adds natural 9, “#9” alters it'],
-    ['maj9', 'b9', '“maj9” uses natural 9, “b9” contradicts it'],
-    ['maj9', '#9', '“maj9” uses natural 9, “#9” contradicts it'],
-    ['b9', '#9', 'Cannot have both ♭9 and ♯9'],
-
-    // Eleventh
-    ['add11', '#11', 'Cannot have both natural 11 and ♯11'],
-
-    // Thirteenth
-    ['add13', 'b13', 'Cannot have both natural 13 and ♭13'],
+  const characteristics: (keyof typeof modifierDefines)[] = [
+    'third', 'fifth', 'seventh', 'ninth', 'eleventh', 'thirteenth'
   ];
 
-  for (const [a, b, reason] of conflicts) {
-    if (
-      (existingModifiers.includes(a) && newModifier === b) ||
-      (existingModifiers.includes(b) && newModifier === a)
-    ) {
-      return reason;
+  for (const characteristic of characteristics) {
+    const modifierValue = modifierDefines[characteristic];
+    const otherValue = otherDefines[characteristic];
+
+    if (modifierValue && (!otherValue || modifierValue !== otherValue)) {
+      return false;
     }
   }
 
   return true;
 }
 
-export function getModifierDescription(modifier: Modifier): string {
-  const descriptions: Record<Modifier, string> = {
-    // Triad qualities
-    'm': 'Minor triad (♭3)',
-    'dim': 'Diminished triad (♭3, ♭5)',
-    'aug': 'Augmented triad (♯5)',
+export function canAddModifier(existingModifiers: Modifier[], newModifier: Modifier): true | string {
+  // Check if the new modifier conflicts with any existing modifiers
+  const newDef = MODIFIER_DEFINITIONS[newModifier];
+  if (!newDef) return `Unknown modifier: ${newModifier}`;
 
-    // Sevenths
-    '7': 'Dominant 7th (♭7)',
-    'maj7': 'Major 7th (♮7)',
-    'ø7': 'Half-diminished 7th (♭3, ♭5, ♭7)',
-    'dim7': 'Diminished 7th (♭3, ♭5, ♭♭7)',
-    'aug7': 'Augmented 7th (♯5, ♭7)',
+  for (const existingMod of existingModifiers) {
+    if (existingMod === newModifier) continue; // Skip duplicates
 
-    // Extensions
-    'maj9': 'Major 9th (maj7 + 9)',
-    'add9': 'Add major 9th (2nd)',
-    'add11': 'Add perfect 11th (4th)',
-    'add13': 'Add 13th (6th)',
+    const existingDef = MODIFIER_DEFINITIONS[existingMod];
+    if (!existingDef) continue;
 
-    // Suspended
-    'sus2': 'Suspend 2nd (replace 3rd with 2nd)',
-    'sus4': 'Suspend 4th (replace 3rd with 4th)',
+    // Check for conflicts based on what each modifier defines
+    const conflicts = detectConflicts(existingDef, newDef);
+    if (conflicts.length > 0) {
+      return `Conflict between "${existingMod}" and "${newModifier}": ${conflicts.join(', ')}`;
+    }
+  }
 
-    // Altered 5ths
-    'b5': 'Flattened 5th (♭5)',
-    '#5': 'Sharpened 5th (♯5)',
-    'bb5': 'Double-flattened 5th (♭♭5)',
+  return true;
+}
 
-    // Altered 9ths
-    'b9': 'Flattened 9th (♭9)',
-    '#9': 'Sharpened 9th (♯9)',
+function detectConflicts(
+  existingDefinition: ModifierDefinition,
+  incomingDefinition: ModifierDefinition
+): string[] {
+  const conflicts: string[] = [];
 
-    // Altered 11th & 13th
-    '#11': 'Sharpened 11th (♯11)',
-    'b13': 'Flattened 13th (♭13)',
+  const existing = existingDefinition.defines;
+  const incoming = incomingDefinition.defines;
 
-    // Suppressions
-    'no3': 'Omit 3rd',
-    'no5': 'Omit 5th',
-    'no7': 'Omit 7th',
+  // Local helper function to check for conflicts in a specific characteristic
+  const checkCharacteristicConflict = (
+    characteristic: keyof ModifierDefinition['defines'],
+    intervalKey: string
+  ): void => {
+    const existingValue = existing[characteristic];
+    const incomingValue = incoming[characteristic];
+
+    if (existingValue && incomingValue) {
+      if (existingValue !== incomingValue) {
+        if (existingValue === 'none' || incomingValue === 'none') {
+          conflicts.push(`${characteristic} conflict (one removes, other defines)`);
+        } else {
+          conflicts.push(`${characteristic} conflict`);
+        }
+      } else if (existingValue === 'none' && incomingValue === 'none') {
+        // Special handling for 'none' values - check if they have conflicting replace operations
+        const existingReplaceOp = existingDefinition.operations.find(
+          op => op.type === 'replace' && op.from.includes(intervalKey)
+        ) as { type: 'replace', from: string[], to: string } | undefined;
+        
+        const incomingReplaceOp = incomingDefinition.operations.find(
+          op => op.type === 'replace' && op.from.includes(intervalKey)
+        ) as { type: 'replace', from: string[], to: string } | undefined;
+
+        if (existingReplaceOp || incomingReplaceOp) {
+          if (existingReplaceOp && incomingReplaceOp) {
+            if (existingReplaceOp.to !== incomingReplaceOp.to) {
+              conflicts.push(`${characteristic} conflict (both replace ${intervalKey} with different notes)`);
+            }
+          } else {
+            conflicts.push(`${characteristic} conflict (one replaces, other defines)`);
+          }
+        }
+      }
+    }
   };
 
-  return descriptions[modifier] ?? 'Unknown modifier';
+  // Check each musical element for conflicts
+  checkCharacteristicConflict('third', '3');
+  checkCharacteristicConflict('fifth', '5');
+  checkCharacteristicConflict('seventh', '7');
+  checkCharacteristicConflict('ninth', '9');
+  checkCharacteristicConflict('eleventh', '11');
+  checkCharacteristicConflict('thirteenth', '13');
+
+  return conflicts;
+}
+
+export function getModifierDescription(modifier: Modifier): string {
+  return MODIFIER_DEFINITIONS[modifier]?.description ?? 'Unknown modifier';
 }

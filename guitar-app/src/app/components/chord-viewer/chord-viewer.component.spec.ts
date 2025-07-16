@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ChordViewerComponent } from './chord-viewer.component';
 import { of } from 'rxjs';
 import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
-import { ChordAnalysisService } from 'app/services/chords/chord-analysis.service';
+import { ChordService } from 'app/services/chords/chord.service';
 import { GripScorerService } from 'app/services/grips/grip-scorer.service';
 import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
 
@@ -16,7 +16,7 @@ describe('ChordViewerComponent', () => {
       imports: [ChordViewerComponent],
       providers: [
         { provide: GripGeneratorService, useValue: {} },
-        { provide: ChordAnalysisService, useValue: {} },
+        { provide: ChordService, useValue: {} },
         { provide: GripScorerService, useValue: {} },
         { provide: ChordProgressionService, useValue: {} },
         {

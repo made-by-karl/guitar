@@ -66,7 +66,7 @@ export class SongSheetDetailComponent {
     try {
       // Use the pre-calculated notes from TunedGrip if available
       // Filter out muted strings (null notes)
-      const notes = grip.grip.notes?.filter(note => note !== null) as string[] || [];
+      const notes = grip.grip.notes?.filter((note: string | null) => note !== null) as string[] || [];
       
       if (notes.length > 0) {
         await this.playback.playChordFromNotes(notes);

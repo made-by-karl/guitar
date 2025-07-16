@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ChordAnalysisService } from './chord-analysis.service';
+import { ChordService } from './chord.service';
 
-describe('ChordAnalysisService', () => {
-    let service: ChordAnalysisService;
+describe('ChordService', () => {
+    let service: ChordService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({});
-        service = TestBed.inject(ChordAnalysisService);
+        service = TestBed.inject(ChordService);
     });
 
     it('should be created', () => {

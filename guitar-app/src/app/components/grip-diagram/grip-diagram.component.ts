@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Grip } from 'app/services/grips/grip-generator.service';
+import { Grip } from 'app/services/grips/grip.model';
 
 @Component({
   selector: 'app-grip-diagram',
@@ -39,9 +39,9 @@ export class GripDiagramComponent implements OnChanges {
 
     const minFret = Math.min(
       ...this.grip.strings
-        .map(s => {
+        .map((s: any) => {
           if (Array.isArray(s)) {
-            return Math.min(...s.map(f => f.fret));
+            return Math.min(...s.map((f: any) => f.fret));
           }
 
           return 9001;
@@ -72,7 +72,7 @@ export class GripDiagramComponent implements OnChanges {
 
     // Draw grip
     const barrees: Map<number, number[]> = new Map();
-    this.grip.strings.forEach((string, i) => {
+    this.grip.strings.forEach((string: any, i: number) => {
       const x = 20 + i * stringSpacing;
       if (string === 'x') {
         dots.push(`<text x="${x - 4}" y="25" font-size="14">x</text>`);
