@@ -3,7 +3,7 @@
   <div class="mb-3 d-flex align-items-center">
     <input [(ngModel)]="newSheetName" class="form-control me-2" placeholder="New Song Sheet Name" (keyup.enter)="createSheet()" />
     <button class="btn btn-primary" (click)="createSheet()" [disabled]="!newSheetName.trim()">
-      <i class="bi bi-plus-lg"></i> Add
+      <i class="bi bi-plus-lg"></i>
     </button>
   </div>
   <div *ngIf="sheets.length === 0" class="alert alert-info">No Song Sheets yet. Create your first one!</div>

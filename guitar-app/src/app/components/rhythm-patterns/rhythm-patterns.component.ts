@@ -5,7 +5,6 @@ import { RhythmPatternsService } from '../../services/rhythm-patterns.service';
 import { RhythmPattern, RhythmStep, PickingNote, BeatTiming, RhythmModifier } from '../../services/rhythm-patterns.model';
 import { PlaybackService } from '../../services/playback.service';
 import { SongSheetsService } from '../../services/song-sheets.service';
-import { FretboardService } from 'app/services/fretboard.service';
 
 @Component({
   selector: 'app-rhythm-patterns',
@@ -23,7 +22,6 @@ export class RhythmPatternsComponent {
 
   constructor(
     public service: RhythmPatternsService,
-    private fretBoard: FretboardService,
     private playback: PlaybackService,
     public songSheets: SongSheetsService
   ) {
@@ -38,15 +36,12 @@ export class RhythmPatternsComponent {
     this.editing = true;
     this.isNew = true;
 
-    const tuning = this.fretBoard.getGuitarFretboardConfig().tuning;
     this.draftPattern = {
       id: 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
       name: '',
       description: '',
       category: '',
       timeSignature: '4/4',
-      tempo: 100,
-      tuning,
       steps: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -176,13 +171,13 @@ export class RhythmPatternsComponent {
   addToPinnedSheet(pattern: RhythmPattern) {
     const pinned = this.pinnedSheet;
     if (!pinned) return;
-    const already = pinned.patterns?.find(p => p.pattern.id === pattern.id);
+    // Check if pattern is already in the sheet
+    const songSheet = this.songSheets.getById(pinned.id);
+    const already = songSheet?.patterns?.find(p => p.patternId === pattern.id);
     if (already) return;
+    
     this.songSheets.addPattern({
-      id: 'pattern-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-      pattern,
-      section: '',
-      chordName: ''
+      patternId: pattern.id
     });
     this.songSheets.getById(pinned.id); // refresh
   }
@@ -190,16 +185,21 @@ export class RhythmPatternsComponent {
   removeFromPinnedSheet(pattern: RhythmPattern) {
     const pinned = this.pinnedSheet;
     if (!pinned) return;
-    const entry = pinned.patterns?.find(p => p.pattern.id === pattern.id);
+    
+    const songSheet = this.songSheets.getById(pinned.id);
+    const entry = songSheet?.patterns?.find(p => p.patternId === pattern.id);
     if (entry) {
-      this.songSheets.removePattern(pinned.id, entry.id);
+      this.songSheets.removePattern(pinned.id, entry.patternId);
       this.songSheets.getById(pinned.id); // refresh
     }
   }
 
   isPatternInPinnedSheet(pattern: RhythmPattern): boolean {
     const pinned = this.pinnedSheet;
-    return !!(pinned && pinned.patterns?.some(p => p.pattern.id === pattern.id));
+    if (!pinned) return false;
+    
+    const songSheet = this.songSheets.getById(pinned.id);
+    return !!(songSheet?.patterns?.some(p => p.patternId === pattern.id));
   }
 
   deletePattern(pattern: RhythmPattern) {

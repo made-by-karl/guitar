@@ -137,7 +137,7 @@ describe('FretboardService', () => {
     for (let fretIndex = 0; fretIndex < expectedFretboard.length; fretIndex++) {
       for (let stringIndex = 0; stringIndex < expectedFretboard[fretIndex].length; stringIndex++) {
         const note = expectedFretboard[fretIndex][stringIndex];
-        const result = service.getNoteAtPosition(guitarConfig.tuning, stringIndex, fretIndex);
+        const result = service.getNoteAtFret(guitarConfig.tuning[stringIndex], fretIndex);
         expect(result).toEqual(note);
       }
     }

@@ -48,8 +48,8 @@ export class ChordViewerComponent implements OnInit {
 
   selectedSheetId: string | null = null;
 
-  readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I','V','vi','IV']
-  readonly BASE_MINOR_PROGRESSION: Degree[] = ['i','VI','III','VII']
+  readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I', 'V', 'vi', 'IV']
+  readonly BASE_MINOR_PROGRESSION: Degree[] = ['i', 'VI', 'III', 'VII']
 
   gripSettings: GripSettings = {
     minFretToConsider: 1,
@@ -82,7 +82,6 @@ export class ChordViewerComponent implements OnInit {
       this.route.queryParamMap
     ]).subscribe(([params, queryParams]) => {
       this.currentChord = params['chord'];
-
       if (this.currentChord) {
         const analysis = this.tryParseChord(this.currentChord);
         if (analysis) {
@@ -153,14 +152,35 @@ export class ChordViewerComponent implements OnInit {
     return this.songSheets.getPinnedSongSheet();
   }
 
-  addGripToPinned(grip: any) {
+  addGripToPinnedSheet(grip: Grip) {
     const pinned = this.songSheets.getPinnedSongSheet();
     if (!pinned) return;
     this.songSheets.addGrip({
-      id: 'grip-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-      chordName: this.currentChord ?? '',
-      grip
+      gripId: stringifyGrip(grip),
+      chordName: this.currentChord ?? ''
     });
+  }
+
+  removeGripFromPinnedSheet(grip: Grip) {
+    const pinned = this.songSheets.getPinnedSongSheet();
+    if (!pinned) return;
+    
+    const gripId = stringifyGrip(grip);
+    const songSheet = this.songSheets.getById(pinned.id);
+    const entry = songSheet?.grips?.find(g => g.gripId === gripId);
+    if (entry) {
+      this.songSheets.removeGrip(pinned.id, entry.gripId);
+      this.songSheets.getById(pinned.id); // refresh
+    }
+  }
+
+  isGripInPinnedSheet(grip: Grip): boolean {
+    const pinned = this.songSheets.getPinnedSongSheet();
+    if (!pinned) return false;
+    
+    const gripId = stringifyGrip(grip);
+    const songSheet = this.songSheets.getById(pinned.id);
+    return !!(songSheet?.grips?.some(p => p.gripId === gripId));
   }
 
   async playChord(grip: TunedGrip) {
@@ -168,7 +188,7 @@ export class ChordViewerComponent implements OnInit {
       // Use the pre-calculated notes from TunedGrip
       // Filter out muted strings (null notes)
       const notes = grip.notes.filter((note: string | null) => note !== null) as string[];
-      
+
       if (notes.length > 0) {
         await this.playback.playChordFromNotes(notes);
       } else {
@@ -243,7 +263,7 @@ export class ChordViewerComponent implements OnInit {
 
     const steps: { step: string; notes: Semitone[]; description: string }[] = [];
     const root = this.activeChord.root;
-    
+
     // Step 1: Base major triad (no modifiers)
     const baseTriad = this.chordService.calculateNotes(root, []);
     steps.push({
@@ -255,16 +275,16 @@ export class ChordViewerComponent implements OnInit {
     // Step 2: Apply each modifier one by one
     let currentModifiers: Modifier[] = [];
     let previousNotes = baseTriad.notes;
-    
+
     for (const modifier of this.activeChord.modifiers) {
       currentModifiers.push(modifier);
       const chordWithModifier = this.chordService.calculateNotes(root, currentModifiers);
       const currentNotes = chordWithModifier.notes;
-      
+
       // Identify changed notes
       const addedNotes = currentNotes.filter(note => !previousNotes.includes(note));
       const removedNotes = previousNotes.filter(note => !currentNotes.includes(note));
-      
+
       // Create description with highlighted changes
       let notesDisplay = currentNotes.map(note => {
         if (addedNotes.includes(note)) {
@@ -272,7 +292,7 @@ export class ChordViewerComponent implements OnInit {
         }
         return note;
       }).join(' - ');
-      
+
       // Add removed notes info if any
       let changeInfo = '';
       if (removedNotes.length > 0 && addedNotes.length > 0) {
@@ -284,13 +304,13 @@ export class ChordViewerComponent implements OnInit {
       } else {
         changeInfo = ' (no changes)';
       }
-      
+
       steps.push({
         step: `Apply "${modifier}"`,
         notes: [...currentNotes],
         description: `${getModifierDescription(modifier)} → ${notesDisplay}${changeInfo}`
       });
-      
+
       previousNotes = currentNotes;
     }
 
@@ -298,10 +318,10 @@ export class ChordViewerComponent implements OnInit {
     if (this.activeChord.bass && this.activeChord.bass !== root) {
       const bassNote = this.activeChord.bass;
       const finalNotes = [bassNote, ...this.activeChord.notes.filter(n => n !== bassNote)];
-      const notesDisplay = finalNotes.map(note => 
+      const notesDisplay = finalNotes.map(note =>
         note === bassNote ? `<strong>${note}</strong>` : note
       ).join(' - ');
-      
+
       steps.push({
         step: 'Add bass note',
         notes: [...finalNotes],

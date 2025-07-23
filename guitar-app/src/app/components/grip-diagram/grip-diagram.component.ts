@@ -9,7 +9,7 @@ import { Grip } from 'app/services/grips/grip.model';
   styleUrl: './grip-diagram.component.scss'
 })
 export class GripDiagramComponent implements OnChanges {
-  @Input() grip!: Grip;
+  @Input() grip!: Grip | undefined;
 
   public svg: any;
 

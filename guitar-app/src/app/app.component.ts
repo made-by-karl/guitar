@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from './services/song-sheets.service';
@@ -16,7 +16,7 @@ export class AppComponent {
   title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
 
-  constructor(public songSheetsService: SongSheetsService) {}
+  constructor(public songSheetsService: SongSheetsService, private router: Router) {}
 
   get pinnedSongSheet(): SongSheet | undefined {
     return this.songSheetsService.getPinnedSongSheet();
@@ -35,5 +35,20 @@ export class AppComponent {
 
   onPinnedSheetChange(id: string | null) {
     this.pinnedSheetId = id;
+  }
+
+  navigateToPinnedSheet() {
+    if (this.pinnedSongSheet) {
+      this.router.navigate(['/song-sheets', this.pinnedSongSheet.id]);
+    }
+  }
+
+  closeNavbar() {
+    this.isNavbarCollapsed = true;
+    // Also programmatically close the Bootstrap navbar collapse
+    const navbarCollapse = document.getElementById('mainNavbar');
+    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+      navbarCollapse.classList.remove('show');
+    }
   }
 }

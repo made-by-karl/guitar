@@ -1,72 +1,503 @@
-<div class="container py-4" *ngIf="sheet">
+@if (sheet) {
+<div class="container py-4">
+  <!-- Song Name Section -->
   <div class="d-flex align-items-center mb-3">
-    <input [ngModel]="renaming ? tempName : sheet.name" (ngModelChange)="tempName = $event" class="form-control me-2" style="max-width: 300px; font-size: 1.5rem; font-weight: bold;" [readonly]="!renaming" />
-    <button *ngIf="!renaming" class="btn btn-outline-secondary btn-sm" (click)="startRenaming()">
-      <i class="bi bi-pencil"></i> Rename
+    <input [ngModel]="renaming ? tempName : sheet.name" (ngModelChange)="tempName = $event" class="form-control me-2"
+      style="max-width: 300px; font-size: 1.5rem; font-weight: bold;" [readonly]="!renaming" />
+    @if (!renaming) {
+    <button class="btn btn-outline-secondary btn-sm" (click)="startRenaming()">
+      <i class="bi bi-pencil"></i>
     </button>
-    <button *ngIf="renaming" class="btn btn-success btn-sm ms-2" (click)="saveRename()"><i class="bi bi-check-lg"></i> Save</button>
-    <button *ngIf="renaming" class="btn btn-outline-secondary btn-sm ms-2" (click)="cancelRename()"><i class="bi bi-x-lg"></i> Cancel</button>
+    }
+    @if (renaming) {
+    <button class="btn btn-success btn-sm ms-2" (click)="saveRename()"><i class="bi bi-check-lg"></i> Save</button>
+    <button class="btn btn-outline-secondary btn-sm ms-2" (click)="cancelRename()"><i class="bi bi-x-lg"></i>
+      Cancel</button>
+    }
   </div>
-  <div *ngIf="sheet.grips.length === 0 && sheet.patterns.length === 0" class="alert alert-info">Nothing on your song sheet yet. Add some chords or rhythm patterns.</div>
-  <div *ngIf="sheet.grips && sheet.grips.length > 0" class="mb-4">
-    <h5>Chords</h5>
-    <div class="row">
-      <div class="col-md-4 mb-4" *ngFor="let grip of sheet.grips">
-        <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
-        <div class="d-flex justify-content-between align-items-center mt-2">
-          <span>{{ grip.chordName }}</span>
-          <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)"><i class="bi bi-play-fill"></i></button>
-          <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.id)"><i class="bi bi-trash"></i></button>
-        </div>
+
+  <!-- Tuning, Capo & Tempo Display -->
+  @if (!showTuningForm) {
+  <div class="d-flex align-items-center justify-content-between mb-4 p-3 bg-light rounded">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-music-note me-2 text-muted"></i>
+        <span class="fw-bold small text-muted me-2">Tuning:</span>
+        <span class="badge bg-secondary">{{ getTuningDisplay() }}</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <i class="bi bi-arrow-bar-down me-2 text-muted"></i>
+        <span class="fw-bold small text-muted me-2">Capo:</span>
+        <span class="badge bg-info">{{ sheet.capodaster === 0 ? 'None' : 'Fret ' + sheet.capodaster }}</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <i class="bi bi-clock me-2 text-muted"></i>
+        <span class="fw-bold small text-muted me-2">Tempo:</span>
+        <span class="badge bg-warning text-dark">{{ sheet.tempo }} BPM</span>
       </div>
     </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="showTuning()" title="Edit tuning, capo & tempo settings">
+      <i class="bi bi-gear"></i>
+    </button>
   </div>
-  <div *ngIf="sheet.patterns && sheet.patterns.length > 0" class="mb-4">
-    <h5>Strumming & Picking Patterns</h5>
-    <div class="row">
-      <div class="col-md-6 mb-3" *ngFor="let p of sheet.patterns">
-        <div class="card card-body d-flex flex-row align-items-center justify-content-between">
-          <div>
-            <b>{{ p.pattern.name }}</b>
-            <span class="badge bg-info ms-2">{{ p.pattern.timeSignature }}</span>
-            <span class="badge bg-light text-dark ms-1">{{ p.pattern.tempo }} BPM</span>
-            <div class="small text-muted">{{ p.pattern.description }}</div>
-            <div class="d-flex flex-row flex-wrap">
-              <span *ngFor="let step of p.pattern.steps" class="me-2">
-                <ng-container [ngSwitch]="step.technique">
-                  <span *ngSwitchCase="'strum'">
-                    <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on ' + (step.strum?.strings || 'all') + ' strings' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
-                      <span *ngIf="step.direction === 'D'">&#8595;</span>
-                      <span *ngIf="step.direction === 'U'">&#8593;</span>
-                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
-                      <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
-                      <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
-                      <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
-                    </span>
-                  </span>
-                  <span *ngSwitchCase="'pick'">
-                    <span [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Pick ' + (step.pick?.length || 0) + ' note(s)' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
-                      <span class="bi bi-dot"></span>
-                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
-                      <span *ngIf="step.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
-                      <span *ngIf="step.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
-                      <span *ngIf="step.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
-                    </span>
-                  </span>
-                  <span *ngSwitchCase="'rest'">-</span>
-                  <span *ngSwitchCase="'percussive'">P</span>
-                  <span *ngSwitchDefault>?</span>
-                </ng-container>
-              </span>
+  }
+
+  <!-- Tuning & Capodaster Form (hidden by default) -->
+  @if (showTuningForm) {
+  <div class="card mb-4">
+    <div class="card-header">
+      <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Tuning, Capo & Tempo Settings</h6>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Capodaster (Fret)</label>
+          <input type="number" class="form-control" [(ngModel)]="tempCapodaster" min="0" max="12" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Tempo (BPM)</label>
+          <input type="number" class="form-control" [(ngModel)]="tempTempo" min="40" max="200" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Guitar Tuning (Low to High)</label>
+        <div class="row g-2">
+          @for (tuningNote of tempTuning; track i; let i = $index) {
+          <div class="col-md-2">
+            <label class="form-label small">String {{ 6 - i }}</label>
+            <div class="input-group input-group-sm">
+              <select class="form-select" [(ngModel)]="tuningNote.semitone">
+                @for (semitone of semitones; track semitone) {
+                <option [value]="semitone">{{ semitone }}</option>
+                }
+              </select>
+              <select class="form-select" [(ngModel)]="tuningNote.octave">
+                @for (octave of octaves; track octave) {
+                <option [value]="octave">{{ octave }}</option>
+                }
+              </select>
             </div>
           </div>
-          <div class="d-flex flex-column gap-2 ms-3">
-            <button class="btn btn-outline-primary btn-sm" (click)="playPattern(p.pattern)" [disabled]="!p.pattern.steps"><i class="bi bi-play-fill"></i></button>
-            <button class="btn btn-outline-danger btn-sm" (click)="removePattern(p.id)"><i class="bi bi-trash"></i></button>
-          </div>
+          }
         </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-success btn-sm" (click)="saveTuning()">
+          <i class="bi bi-check-lg"></i> Save Settings
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" (click)="cancelTuning()">
+          <i class="bi bi-x-lg"></i> Cancel
+        </button>
       </div>
     </div>
   </div>
+  }
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Chords</h5>
+      <button class="btn btn-outline-primary btn-sm" (click)="addChords()" title="Add more chords">
+        <i class="bi bi-plus"></i> Add
+      </button>
+    </div>
+    @if (sheet.grips && sheet.grips.length > 0) {
+    <div class="row">
+      @for (grip of sheet.grips; track grip) {
+      <div class="col-md-6 mb-3">
+        <div class="card h-100">
+          <div class="card-body">
+            @if (grip.grip) {
+            <div class="d-flex flex-row align-items-start justify-content-between">
+              <div class="flex-grow-1">
+                <h6 class="card-title mb-3">{{ grip.chordName }}</h6>
+                <div class="d-flex justify-content-center">
+                  <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
+                </div>
+              </div>
+              <div class="d-flex flex-column gap-2 ms-3">
+                <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)" title="Play chord">
+                  <i class="bi bi-play-fill"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.gripId)" title="Remove chord">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            } @else {
+            <div class="alert alert-warning">Chord data not available.</div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="alert alert-info">
+      <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+        <span>No chords on your song sheet yet. Add some to complete your song sheet.</span>
+      </div>
+    </div>
+    }
+  </div>
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Strumming & Picking Patterns</h5>
+      <button class="btn btn-outline-primary btn-sm" (click)="addPatterns()" title="Add more patterns">
+        <i class="bi bi-plus"></i> Add
+      </button>
+    </div>
+    @if (sheet.patterns && sheet.patterns.length > 0) {
+    <div class="row">
+      @for (p of sheet.patterns; track p) {
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-body">
+            @if (p.pattern) {
+            <div class="d-flex flex-row align-items-start justify-content-between">
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-2">
+                  <b>{{ p.pattern.name }}</b>
+                  <span class="badge bg-info ms-2">{{ p.pattern.timeSignature }}</span>
+                  <span class="badge bg-light text-dark ms-1">{{ sheet.tempo }} BPM</span>
+                </div>
+                <div class="small text-muted mb-2">{{ p.pattern.description }}</div>
+
+                <div class="d-flex flex-row flex-wrap">
+                  @for (step of p.pattern.steps; track step) {
+                  <span class="me-2">
+                    @switch (step.technique) {
+                    @case ('strum') {
+                    <span
+                      [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Strum ' + (step.direction === 'D' ? 'Down' : 'Up') + ' on ' + (step.strum?.strings || 'all') + ' strings' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
+                      @if (step.direction === 'D') {
+                      <span>&#8595;</span>
+                      }
+                      @if (step.direction === 'U') {
+                      <span>&#8593;</span>
+                      }
+                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                      @if (step.modifiers?.includes('mute')) {
+                      <span class="badge bg-secondary ms-1">M</span>
+                      }
+                      @if (step.modifiers?.includes('palm-mute')) {
+                      <span class="badge bg-warning ms-1">PM</span>
+                      }
+                      @if (step.modifiers?.includes('accent')) {
+                      <span class="badge bg-danger ms-1">!</span>
+                      }
+                    </span>
+                    }
+                    @case ('pick') {
+                    <span
+                      [title]="'Beat ' + step.beat + ' ' + step.timing + ' - Pick ' + (step.pick?.length || 0) + ' note(s)' + (step.modifiers?.length ? ' (' + (step.modifiers || []).join(', ') + ')' : '')">
+                      <span class="bi bi-dot"></span>
+                      <span class="text-muted">[{{ step.beat }}.{{ step.timing.charAt(0) }}]</span>
+                      @if (step.modifiers?.includes('mute')) {
+                      <span class="badge bg-secondary ms-1">M</span>
+                      }
+                      @if (step.modifiers?.includes('palm-mute')) {
+                      <span class="badge bg-warning ms-1">PM</span>
+                      }
+                      @if (step.modifiers?.includes('accent')) {
+                      <span class="badge bg-danger ms-1">!</span>
+                      }
+                    </span>
+                    }
+                    @case ('rest') {
+                    <span>-</span>
+                    }
+                    @case ('percussive') {
+                    <span>P</span>
+                    }
+                    @default {
+                    <span>?</span>
+                    }
+                    }
+                  </span>
+                  }
+                </div>
+              </div>
+              <div class="d-flex flex-column gap-2 ms-3">
+                <button class="btn btn-outline-primary btn-sm" (click)="playPattern(p)" [disabled]="!p.pattern.steps"><i
+                    class="bi bi-play-fill"></i></button>
+                <button class="btn btn-outline-danger btn-sm" (click)="removePattern(p.patternId)"><i
+                    class="bi bi-trash"></i></button>
+              </div>
+            </div>
+            } @else {
+            <div class="alert alert-warning">Pattern data not available.</div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="alert alert-info">
+      <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+        <span>No patterns on your song sheet yet. Add some to complete your song sheet.</span>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Song Parts Section -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5>Song Parts</h5>
+      @if (!showAddPartForm && editingPartIndex === null) {
+      <button class="btn btn-outline-primary btn-sm" (click)="showAddPart()">
+        <i class="bi bi-plus-lg"></i> Add Part
+      </button>
+      }
+    </div>
+
+    <!-- Add New Part Form -->
+    @if (showAddPartForm) {
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Add New Song Part</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Section Name</label>
+          <input type="text" class="form-control" [(ngModel)]="tempPartSection"
+            placeholder="e.g., Verse, Chorus, Bridge, Intro">
+          <div class="form-text">Name this part of your song (like Verse 1, Chorus, Bridge, etc.)</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label me-2">Patterns</label>
+          @for (patternWithGrips of tempPartPatterns; track i; let i = $index) {
+          <div class="mb-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="row g-2 mb-3">
+                  <div class="col-12">
+                    <label class="form-label small text-muted">Rhythm Pattern</label>
+                    <select class="form-select" [(ngModel)]="patternWithGrips.pattern.patternId">
+                      <option value="">Choose a strumming or picking pattern</option>
+                      @for (p of sheet.patterns; track p) {
+                      <option [value]="p.patternId">{{ getPatternName(p.patternId) }}</option>
+                      }
+                    </select>
+                    <div class="form-text">Select the rhythm pattern that will be played in this section</div>
+                  </div>
+                  <div class="col-12 d-flex justify-content-end">
+                    <button class="btn btn-outline-danger btn-sm" (click)="removePatternFromPart(i)"
+                      title="Remove this pattern from the song part">
+                      <i class="bi bi-trash"></i>
+                      <span class="d-none d-sm-inline ms-1">Remove Pattern</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small me-2">Chord Changes for this Pattern</label>
+                  @for (grip of patternWithGrips.grips; track j; let j = $index) {
+                  <div class="mb-3 border rounded p-2 bg-light">
+                    <div class="row g-2">
+                      <div class="col-12 col-sm-6">
+                        <label class="form-label small text-muted mb-1">Chord</label>
+                        <select class="form-select form-select-sm" [(ngModel)]="grip.grip.gripId"
+                          (ngModelChange)="updateGripChordName(i, j, $event)">
+                          <option value="">Select which chord to play</option>
+                          @for (g of sheet.grips; track g) {
+                          <option [value]="g.gripId">{{ g.chordName }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="col-8 col-sm-4">
+                        <label class="form-label small text-muted mb-1">Start Beat</label>
+                        <input type="number" class="form-control form-control-sm" [(ngModel)]="grip.startBeat" min="1"
+                          placeholder="1" title="Which beat in the pattern this chord starts on">
+                      </div>
+                      <div class="col-4 col-sm-2 d-flex align-items-end">
+                        <button class="btn btn-outline-danger btn-sm w-100" (click)="removeGripFromPattern(i, j)"
+                          title="Remove this chord change">
+                          <i class="bi bi-trash"></i>
+                          <span class="d-none d-sm-inline ms-1">Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  }
+                  <button class="btn btn-outline-secondary btn-sm" (click)="addGripToPattern(i)">
+                    <i class="bi bi-plus"></i> Add Chord Change
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+          <button class="btn btn-outline-secondary btn-sm" (click)="addPatternToPart()">
+            <i class="bi bi-plus"></i> Add Pattern
+          </button>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2">
+          <button class="btn btn-success" (click)="addNewPart()" [disabled]="!tempPartSection.trim()">
+            <i class="bi bi-check-lg"></i> Save Part
+          </button>
+          <button class="btn btn-outline-secondary" (click)="cancelPartEdit()">
+            <i class="bi bi-x-lg"></i> Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Existing Parts List -->
+    @if (sheet.parts && sheet.parts.length > 0) {
+    @for (part of sheet.parts; track partIndex; let partIndex = $index) {
+    <div class="card mb-3">
+      <div class="card-body">
+        @if (editingPartIndex !== partIndex) {
+        <!-- Display Mode -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h6 class="mb-0">{{ part.section }}</h6>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" (click)="startEditingPart(partIndex)">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-outline-danger btn-sm" (click)="removePart(partIndex)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        @if (part.patterns.length > 0) {
+        <div class="mb-3">
+          <strong>Patterns:</strong>
+          <div class="mt-2">
+            @for (patternWithGrips of part.patterns; track patternWithGrips; let last = $last) {
+            <div class="mb-2">
+              <span class="badge bg-info">{{ getPatternName(patternWithGrips.pattern.patternId) }}</span>
+              @if (patternWithGrips.grips.length > 0) {
+              <div class="mt-1 ms-2">
+                <small class="text-muted">Chords: </small>
+                @for (grip of patternWithGrips.grips; track grip; let gripLast = $last) {
+                <span class="me-2">
+                  <span class="badge bg-success bg-opacity-75">{{ grip.grip.chordName }}</span>
+                  <small class="text-muted ms-1">beat {{ grip.startBeat }}</small>
+                  @if (!gripLast) {
+                  <span>, </span>
+                  }
+                </span>
+                }
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+        }
+        }
+
+        @if (editingPartIndex === partIndex) {
+        <!-- Edit Mode -->
+        <div class="mb-3">
+          <label class="form-label">Section Name</label>
+          <input type="text" class="form-control" [(ngModel)]="tempPartSection"
+            placeholder="e.g., Verse, Chorus, Bridge, Intro">
+          <div class="form-text">Name this part of your song (like Verse 1, Chorus, Bridge, etc.)</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Patterns</label>
+          @for (patternWithGrips of tempPartPatterns; track i; let i = $index) {
+          <div class="mb-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="row g-2 mb-3">
+                  <div class="col-12">
+                    <label class="form-label small text-muted">Rhythm Pattern</label>
+                    <select class="form-select" [(ngModel)]="patternWithGrips.pattern.patternId">
+                      <option value="">Choose a strumming or picking pattern</option>
+                      @for (p of sheet.patterns; track p) {
+                      <option [value]="p.patternId">{{ getPatternName(p.patternId) }}</option>
+                      }
+                    </select>
+                    <div class="form-text">Select the rhythm pattern that will be played in this section</div>
+                  </div>
+                  <div class="col-12 d-flex justify-content-end">
+                    <button class="btn btn-outline-danger btn-sm" (click)="removePatternFromPart(i)"
+                      title="Remove this pattern from the song part">
+                      <i class="bi bi-trash"></i>
+                      <span class="d-none d-sm-inline ms-1">Remove Pattern</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small">Chord Changes for this Pattern</label>
+                  @for (grip of patternWithGrips.grips; track j; let j = $index) {
+                  <div class="mb-3 border rounded p-2 bg-light">
+                    <div class="row g-2">
+                      <div class="col-12 col-sm-6">
+                        <label class="form-label small text-muted mb-1">Chord</label>
+                        <select class="form-select form-select-sm" [(ngModel)]="grip.grip.gripId"
+                          (ngModelChange)="updateGripChordName(i, j, $event)">
+                          <option value="">Select which chord to play</option>
+                          @for (g of sheet.grips; track g) {
+                          <option [value]="g.gripId">{{ g.chordName }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="col-8 col-sm-4">
+                        <label class="form-label small text-muted mb-1">Start Beat</label>
+                        <input type="number" class="form-control form-control-sm" [(ngModel)]="grip.startBeat" min="1"
+                          placeholder="1" title="Which beat in the pattern this chord starts on">
+                      </div>
+                      <div class="col-4 col-sm-2 d-flex align-items-end">
+                        <button class="btn btn-outline-danger btn-sm w-100" (click)="removeGripFromPattern(i, j)"
+                          title="Remove this chord change">
+                          <i class="bi bi-trash"></i>
+                          <span class="d-none d-sm-inline ms-1">Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  }
+                  <button class="btn btn-outline-secondary btn-sm" (click)="addGripToPattern(i)">
+                    <i class="bi bi-plus"></i> Add Chord Change
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+          <button class="btn btn-outline-secondary btn-sm" (click)="addPatternToPart()">
+            <i class="bi bi-plus"></i> Add Pattern
+          </button>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2">
+          <button class="btn btn-success" (click)="savePartEdit()">
+            <i class="bi bi-check-lg"></i> Save Changes
+          </button>
+          <button class="btn btn-outline-secondary" (click)="cancelPartEdit()">
+            <i class="bi bi-x-lg"></i> Cancel
+          </button>
+        </div>
+        }
+      </div>
+    </div>
+    }
+    }
+
+    @if (!sheet.parts || sheet.parts.length === 0) {
+    <div class="alert alert-info">
+      No song parts defined yet. Add parts to organize your patterns and chord changes into verses, choruses, etc.
+    </div>
+    }
+  </div>
 </div>
-<div *ngIf="!sheet" class="container py-5"><div class="alert alert-danger">Song Sheet not found.</div></div>
+} @else {
+<div class="container py-5">
+  <div class="alert alert-danger">Song Sheet not found.</div>
+</div>
+}

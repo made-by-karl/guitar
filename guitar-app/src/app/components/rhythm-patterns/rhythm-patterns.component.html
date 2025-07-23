@@ -13,7 +13,7 @@
       <div class="card h-100">
         <div class="card-body">
           <h5 class="card-title">{{ pattern.name }}</h5>
-          <div class="mb-2"><span class="badge bg-info">{{ pattern.category }}</span> <span class="badge bg-light text-dark">{{ pattern.timeSignature }}</span> <span class="badge bg-light text-dark">{{ pattern.tempo }} BPM</span></div>
+          <div class="mb-2"><span class="badge bg-info">{{ pattern.category }}</span> <span class="badge bg-light text-dark">{{ pattern.timeSignature }}</span></div>
           <div class="mb-2">{{ pattern.description }}</div>
           <div class="mb-2">
             <span *ngFor="let step of pattern.steps" class="me-2">
@@ -91,10 +91,6 @@
               <div class="col">
                 <label>Time Signature</label>
                 <input class="form-control" [(ngModel)]="draftPattern.timeSignature" name="timeSignature" />
-              </div>
-              <div class="col">
-                <label>Tempo (BPM)</label>
-                <input type="number" class="form-control" [(ngModel)]="draftPattern.tempo" name="tempo" min="30" max="300" />
               </div>
             </div>
             <div class="mb-2">

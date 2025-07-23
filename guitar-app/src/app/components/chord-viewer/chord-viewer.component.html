@@ -119,11 +119,6 @@
                     [(ngModel)]="gripSettings.minimalPlayableStrings">
                 </div>
                 <div class="form-group form-check form-switch mb-3">
-                  <label for="allowMutedStringsInside" class="form-label">Allow muted strings inside</label>
-                  <input type="checkbox" id="allowMutedStringsInside" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowMutedStringsInside">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
                   <label for="allowBarree" class="form-label">Allow barree</label>
                   <input type="checkbox" id="allowBarree" class="form-check-input"
                     [(ngModel)]="gripSettings.allowBarree">
@@ -142,6 +137,11 @@
                   <label for="allowDuplicateNotes" class="form-label">Allow duplicate notes</label>
                   <input type="checkbox" id="allowDuplicateNotes" class="form-check-input"
                     [(ngModel)]="gripSettings.allowDuplicateNotes">
+                </div>
+                <div class="form-group form-check form-switch mb-3">
+                  <label for="allowMutedStringsInside" class="form-label">Allow muted strings inside</label>
+                  <input type="checkbox" id="allowMutedStringsInside" class="form-check-input"
+                    [(ngModel)]="gripSettings.allowMutedStringsInside">
                 </div>
               </div>
             </div>
@@ -250,7 +250,7 @@
                         <div style="flex: 1;">
                           <app-grip-diagram [grip]="grip"></app-grip-diagram>
                         </div>
-                        <div style="flex: 1;">
+                        <div style="flex: 1; display: flex; flex-direction: column;">
                           <div>
                             @for (note of grip.notes; track $index) {
                             <span class="note">{{ note ?? '-' }},</span>
@@ -265,9 +265,15 @@
                             <i class="bi bi-play-fill"></i> Play Chord
                           </button>
                           @if (getPinnedSongSheet()) {
-                          <button class="btn btn-outline-success btn-sm mt-3" (click)="addGripToPinned(grip)">
-                            <i class="bi bi-plus-lg"></i> Add to Pinned Sheet
-                          </button>
+                            @if (isGripInPinnedSheet(grip)) {
+                            <button class="btn btn-outline-warning btn-sm mt-3" (click)="removeGripFromPinnedSheet(grip)">
+                              <i class="bi bi-dash"></i> Remove
+                            </button>
+                            } @else {
+                            <button class="btn btn-outline-success btn-sm mt-3" (click)="addGripToPinnedSheet(grip)">
+                              <i class="bi bi-plus-lg"></i> Add to Sheet
+                            </button>
+                            }
                           }
                         </div>
                       </div>

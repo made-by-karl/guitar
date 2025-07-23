@@ -62,8 +62,6 @@ export interface RhythmPattern {
   description: string;
   category: string;
   timeSignature: string;
-  tempo: number;
-  tuning: Note[];
   steps: RhythmStep[];
   createdAt: number;
   updatedAt: number;

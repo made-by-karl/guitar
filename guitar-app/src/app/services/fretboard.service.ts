@@ -33,26 +33,20 @@ export class FretboardService {
 
   /**
    * Get a specific note for a given string and fret position
-   * @param tuning Array of tuning notes for each string
-   * @param stringIndex Index of the string (0-5, where 0 is lowest string)
+   * @param openString Base note (tuning)
    * @param fret Fret position (0 for open string)
    * @returns The Note at the specified position
    */
-  getNoteAtPosition(tuning: Note[], stringIndex: number, fret: number): Note {
-    if (stringIndex < 0 || stringIndex >= tuning.length) {
-      throw new Error(`Invalid string index: ${stringIndex}. Must be between 0 and ${tuning.length - 1}`);
-    }
-    
+  getNoteAtFret(openString: Note, fret: number): Note {    
     if (fret < 0) {
       throw new Error(`Invalid fret: ${fret}. Must be 0 or greater`);
     }
 
-    const openStringNote = tuning[stringIndex];
-    const baseSemitoneIndex = SEMITONES.indexOf(openStringNote.semitone);
+    const baseSemitoneIndex = SEMITONES.indexOf(openString.semitone);
     
     const semitoneIndex = (baseSemitoneIndex + fret) % 12;
     const semitone = SEMITONES[semitoneIndex];
-    const octave = Math.floor((baseSemitoneIndex + fret) / 12) + openStringNote.octave;
+    const octave = Math.floor((baseSemitoneIndex + fret) / 12) + openString.octave;
     
     return { semitone, octave };
   }

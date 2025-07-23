@@ -8,7 +8,7 @@ import { MidiTestComponent } from './components/midi-test/midi-test.component';
 
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/chord', pathMatch: 'full' },
+  { path: '', redirectTo: '/song-sheets', pathMatch: 'full' },
   { path: 'chord/:chord', component: ChordViewerComponent },
   { path: 'chord', component: ChordViewerComponent },
   { path: 'song-sheets', component: SongSheetsComponent },

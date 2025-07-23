@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { MidiService } from './midi.service';
 import { RhythmPattern, BeatTiming, getStringsForStrum } from './rhythm-patterns.model';
 import { MidiInstruction, MidiNote, MidiTechnique } from './midi.model';
-import { Note, transpose, noteNameToNote } from 'app/common/semitones';
+import { Note, transpose, noteNameToNote, note } from 'app/common/semitones';
 import { Grip } from './grips/grip.model';
 
 @Injectable({
@@ -13,13 +13,22 @@ export class PlaybackService {
   constructor(private midiService: MidiService) {}
 
   /**
-   * Play a rhythm pattern with a given grip (Cmajor as default)
+   * Play a rhythm pattern with tuning and a grip
+   * @param pattern The rhythm pattern to play
+   * @param tuning The tuning to use, defaults to standard EADGBE
+   * @param grip The grip to use, defaults to E major
+   * @param tempo The tempo, default is 80bpm
    */
   async playRhythmPattern(
     pattern: RhythmPattern,
-    grip: Grip = { strings: ['o', [{ fret: 2 }], [{ fret: 2 }], [{ fret: 1 }], 'o', 'o'] } ): Promise<void> {
+    tuning?: Note[],
+    grip?: Grip,
+    tempo?: number): Promise<void> {
     
-    const instructions = this.generateFromRhythmPattern(pattern, grip);
+    tuning = tuning ?? [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4)]; 
+    grip = grip ?? { strings: ['o', [{ fret: 2 }], [{ fret: 2 }], [{ fret: 1 }], 'o', 'o'] }; //E major
+    tempo = tempo ?? 80;
+    const instructions = this.generateFromRhythmPattern(pattern, grip, tuning, tempo);
     await this.midiService.playSequence(instructions);
   }
 
@@ -49,9 +58,9 @@ export class PlaybackService {
   /**
    * Generate MIDI instructions from a rhythm pattern
    */
-  private generateFromRhythmPattern(pattern: RhythmPattern, grip: Grip): MidiInstruction[] {
+  private generateFromRhythmPattern(pattern: RhythmPattern, grip: Grip, tuning: Note[], tempo: number): MidiInstruction[] {
     const instructions: MidiInstruction[] = [];
-    const stepDuration = 60 / pattern.tempo; // Duration of quarter note in seconds
+    const stepDuration = 60 / tempo; // Duration of quarter note in seconds
 
     for (const step of pattern.steps) {
       // Calculate timing for this step
@@ -91,11 +100,11 @@ export class PlaybackService {
             continue;
           } else if (entry === 'o') {
             notes.push({
-              note: pattern.tuning[stringIndex]
+              note: tuning[stringIndex]
             });
           } else {
             const fret = Math.max(...entry.map((s: any) => s.fret));
-            const note = this.getStringNote(pattern.tuning, stringIndex, fret);
+            const note = this.getStringNote(tuning, stringIndex, fret);
             notes.push({
               note: note
             });
@@ -104,7 +113,7 @@ export class PlaybackService {
       } else if (step.technique === 'pick' && step.pick) {
         // Generate notes for picking
         for (const pickNote of step.pick) {
-          const note = this.getStringNote(pattern.tuning, pickNote.string, pickNote.fret);
+          const note = this.getStringNote(tuning, pickNote.string, pickNote.fret);
           notes.push({
             note: note
           });

@@ -1,8 +1,9 @@
-import { GripGeneratorService, stringifyGrip } from 'app/services/grips/grip-generator.service';
+import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
 import { FretboardService } from 'app/services/fretboard.service';
 import type { ExtendedChord } from 'app/services/chords/chord.service';
 import { Semitone } from 'app/common/semitones';
 import { Modifier } from 'app/common/modifiers';
+import { stringifyGrip } from './grip.model';
 
 
 describe('GripGeneratorService', () => {
