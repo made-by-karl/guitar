@@ -8,6 +8,7 @@ import { PlaybackService } from '../../../services/playback.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GripService } from 'app/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from 'app/common/semitones';
+import { DialogService } from '../../../services/dialog.service';
 
 @Component({
   selector: 'app-song-sheet-detail',
@@ -45,7 +46,8 @@ export class SongSheetDetailComponent {
     private playback: PlaybackService,
     private gripService: GripService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private dialogService: DialogService
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -195,10 +197,18 @@ export class SongSheetDetailComponent {
     this.refreshData();
   }
 
-  removePart(partIndex: number) {
+  async removePart(partIndex: number) {
     if (!this.sheet) return;
     
-    if (confirm('Are you sure you want to remove this song part?')) {
+    const confirmed = await this.dialogService.confirm(
+      'Are you sure you want to remove this song part?',
+      'Remove Song Part',
+      'Remove',
+      'Cancel',
+      { variant: 'danger' }
+    );
+    
+    if (confirmed) {
       this.songSheetService.removePart(this.sheet.id, partIndex);
       this.refreshData();
     }

@@ -5,6 +5,7 @@ import { RhythmPatternsService } from '../../services/rhythm-patterns.service';
 import { RhythmPattern, RhythmStep, PickingNote, BeatTiming, RhythmModifier } from '../../services/rhythm-patterns.model';
 import { PlaybackService } from '../../services/playback.service';
 import { SongSheetsService } from '../../services/song-sheets.service';
+import { DialogService } from '../../services/dialog.service';
 
 @Component({
   selector: 'app-rhythm-patterns',
@@ -23,7 +24,8 @@ export class RhythmPatternsComponent {
   constructor(
     public service: RhythmPatternsService,
     private playback: PlaybackService,
-    public songSheets: SongSheetsService
+    public songSheets: SongSheetsService,
+    private dialogService: DialogService
   ) {
     this.load();
   }
@@ -202,8 +204,16 @@ export class RhythmPatternsComponent {
     return !!(songSheet?.patterns?.some(p => p.patternId === pattern.id));
   }
 
-  deletePattern(pattern: RhythmPattern) {
-    if (confirm('Delete this pattern?')) {
+  async deletePattern(pattern: RhythmPattern) {
+    const confirmed = await this.dialogService.confirm(
+      'Delete this pattern?',
+      'Delete Pattern',
+      'Delete',
+      'Cancel',
+      { variant: 'danger' }
+    );
+    
+    if (confirmed) {
       this.service.delete(pattern.id);
       this.load();
     }

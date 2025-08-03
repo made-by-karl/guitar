@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { DialogService } from '../../services/dialog.service';
 
 @Component({
   selector: 'app-settings',
@@ -29,10 +30,25 @@ import { Component } from '@angular/core';
   styles: [``]
 })
 export class SettingsComponent {
-  clearLocalStorage() {
-    if (confirm('Are you sure you want to clear all local data? This action cannot be undone.')) {
+  constructor(private dialogService: DialogService) {}
+
+  async clearLocalStorage() {
+    const confirmed = await this.dialogService.confirm(
+      'Are you sure you want to clear all local data? This action cannot be undone.',
+      'Clear All Data',
+      'Clear Data',
+      'Cancel',
+      { variant: 'danger' }
+    );
+    
+    if (confirmed) {
       localStorage.clear();
-      alert('Local storage has been cleared. Please refresh the page to see the changes.');
+      await this.dialogService.alert(
+        'Local storage has been cleared. Please refresh the page to see the changes.',
+        'Data Cleared',
+        undefined,
+        { variant: 'success' }
+      );
       window.location.reload();
     }
   }

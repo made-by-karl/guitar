@@ -1,0 +1,31 @@
+<!-- Custom Modal Overlay -->
+<div class="modal-backdrop" 
+     *ngIf="isVisible" 
+     (click)="onBackdropClick($event)">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header" [ngClass]="'variant-' + getVariantClass()">
+        <h5 class="modal-title">{{ config?.title }}</h5>
+      </div>
+      <div class="modal-body">
+        <p>{{ config?.message }}</p>
+      </div>
+      <div class="modal-footer">
+        <button 
+          *ngIf="config?.type === 'confirm'" 
+          type="button" 
+          class="btn btn-outline-secondary" 
+          (click)="onCancel()">
+          {{ config?.cancelText || 'Cancel' }}
+        </button>
+        <button 
+          type="button" 
+          class="btn"
+          [ngClass]="'btn-' + getVariantClass()"
+          (click)="onConfirm()">
+          {{ config?.confirmText || 'OK' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
