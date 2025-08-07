@@ -5,9 +5,11 @@
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
+    "build-prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "postbuild": "node ../scripts/generate-version.js"
   },
   "private": true,
   "dependencies": {
@@ -23,7 +25,6 @@
     "bootstrap": "^5.3.6",
     "bootstrap-icons": "^1.13.1",
     "rxjs": "~7.8.0",
-    "soundfont-player": "^0.12.0",
     "tone": "^15.1.22",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

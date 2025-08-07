@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from './services/song-sheets.service';
 import { SongSheet } from './services/song-sheets.model';
 import { DialogComponent } from './components/dialog/dialog.component';
+import { UpdateService } from './services/update.service';
+import { timer } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -13,11 +15,21 @@ import { DialogComponent } from './components/dialog/dialog.component';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
   title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
 
-  constructor(public songSheetsService: SongSheetsService, private router: Router) {}
+  constructor(
+    public songSheetsService: SongSheetsService,
+    private router: Router,
+    private updateService: UpdateService
+  ) {}
+
+  ngAfterViewInit(): void {
+    timer(1).subscribe(() => {
+      this.updateService.checkVersion();
+    });
+  }
 
   get pinnedSongSheet(): SongSheet | undefined {
     return this.songSheetsService.getPinnedSongSheet();
