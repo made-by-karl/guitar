@@ -1,17 +1,25 @@
 /* You can add global styles to this file, and also import other style files */
-@use 'bootstrap/scss/bootstrap' as *;
-@import 'bootstrap-icons/font/bootstrap-icons.css';
+@use 'bootstrap/scss/bootstrap' as * with (
+  $primary:   #D2691E,
+  $secondary: #8B5E3C,
+  $body-bg:   #FAF7F2,
+  $body-color:#2F1B12,
+
+  $border-color: #E0D3C0,
+  $card-bg: #F3E3D3
+);
+@use 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* Custom global styles */
 html, body {
-  height: 100%;
+  height: 100vh;
   margin: 0;
   padding: 0;
 }
 
 body {
-  min-height: 100vh;
   width: 100vw;
   overflow-x: hidden;
+  
   background: #f8f9fa;
 }

@@ -1,31 +1,30 @@
 .app-content-container {
-  margin-top: 72px; /* Height of navbar (56px) + some spacing for shadow, adjust if needed */
-  height: calc(100vh - 72px);
+  margin-top: 16px;
+  height: calc(100% - 110px - 16px - 1px);
   overflow-y: auto;
-  padding: 24px 0 0 0;
+  padding: 0;
+}
+
+#mainNavbar {
+  padding: 0 16px;
 }
 
 @media (max-width: 991.98px) {
-  .app-content-container {
-    margin-top: 66px; /* Adjust for mobile navbar height */
-    height: calc(100vh - 66px);
+  #mainNavbar {
+    position: absolute;
+    top: 56px; /* Adjusted for navbar height */
+    left: 0;
+    z-index: 1020; /* Above content, below modal */
+    width: 100%;
+    padding: 0 16px;
   }
 }
 
 .pinned-sheet-bar {
-  position: fixed;
-  top: 56px; /* Height of navbar */
-  left: 0;
   width: 100vw;
   background: #e9ecef;
   color: #333;
-  z-index: 1020; /* Above content, below modal */
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
   border-bottom: 1px solid #dee2e6;
 }
 
-@media (max-width: 991.98px) {
-  .pinned-sheet-bar {
-    top: 50px; /* Adjust for mobile navbar height */
-  }
-}

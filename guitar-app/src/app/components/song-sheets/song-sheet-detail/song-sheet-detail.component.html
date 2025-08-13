@@ -1,5 +1,5 @@
 @if (sheet) {
-<div class="container py-4">
+<div class="container py-5">
   <!-- Song Name Section -->
   <div class="d-flex align-items-center mb-3">
     <input [ngModel]="renaming ? tempName : sheet.name" (ngModelChange)="tempName = $event" class="form-control me-2"
@@ -250,7 +250,7 @@
       <h5>Song Parts</h5>
       @if (!showAddPartForm && editingPartIndex === null) {
       <button class="btn btn-outline-primary btn-sm" (click)="showAddPart()">
-        <i class="bi bi-plus-lg"></i> Add Part
+        <i class="bi bi-plus-lg"></i> Add
       </button>
       }
     </div>

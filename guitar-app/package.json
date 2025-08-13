@@ -1,6 +1,6 @@
 {
   "name": "guitar-app",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
@@ -9,7 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "jest",
     "test:watch": "jest --watch",
-    "postbuild": "node ../scripts/generate-version.js"
+    "postbuild": "node ../scripts/generate-version.js",
+    "postbuild-prod": "node ../scripts/generate-version.js"
   },
   "private": true,
   "dependencies": {

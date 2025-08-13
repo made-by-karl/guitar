@@ -17,7 +17,7 @@ import { DialogService } from '../../services/dialog.service';
           <button class="btn btn-warning me-2" (click)="clearLocalStorage()">
             <i class="bi bi-trash me-1"></i>Clear All Local Data
           </button>
-          <small class="text-muted">This will remove all song sheets, rhythm patterns, and settings.</small>
+          <p><small class="text-muted">This will remove all song sheets, rhythm patterns, and settings.</small></p>
         </div>
       </div>
       
