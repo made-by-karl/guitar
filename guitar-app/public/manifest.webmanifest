@@ -1,6 +1,6 @@
 {
-  "name": "guitar-app",
-  "short_name": "guitar-app",
+  "name": "my-guitar-sheets",
+  "short_name": "guitar-sheets",
   "theme_color": "#1976d2",
   "background_color": "#fafafa",
   "display": "standalone",
