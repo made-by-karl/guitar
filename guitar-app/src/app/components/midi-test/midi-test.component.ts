@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../../services/playback.service';
+import { MidiService } from '../../services/midi.service';
 import { MidiTechnique } from '../../services/midi.model';
 
 @Component({
@@ -89,6 +90,40 @@ import { MidiTechnique } from '../../services/midi.model';
         </div>
       </div>
       
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5>🥁 Guitar Percussion Techniques</h5>
+            </div>
+            <div class="card-body">
+              <p class="text-muted">Test guitar body and string percussion techniques</p>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('body_tap')">
+                🤛 Body Tap
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('body_knock')">
+                👊 Body Knock
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('string_slap')">
+                👋 String Slap
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('finger_tap')">
+                👆 Finger Tap
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('string_scratch')">
+                🔄 String Scratch
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('bridge_tap')">
+                🔧 Bridge Tap
+              </button>
+              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('accent')">
+                💥 Accent Hit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div class="row mt-4" *ngIf="status">
         <div class="col-12">
           <div class="alert alert-info">
@@ -113,7 +148,10 @@ export class MidiTestComponent {
   // Standard guitar tuning (open strings)
   private openStrings = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
 
-  constructor(private playbackService: PlaybackService) {}
+  constructor(
+    private playbackService: PlaybackService,
+    private midiService: MidiService
+  ) {}
 
   async playChord(notes: string[]) {
     try {
@@ -151,6 +189,17 @@ export class MidiTestComponent {
     } catch (error) {
       this.status = `Error playing string: ${error}`;
       console.error('Error playing string:', error);
+    }
+  }
+
+  async playPercussion(technique: string) {
+    try {
+      this.status = `Playing percussion technique: ${technique}`;
+      await this.midiService.playPercussionTechnique(technique);
+      this.status = `Percussion technique ${technique} finished`;
+    } catch (error) {
+      this.status = `Error playing percussion ${technique}: ${error}`;
+      console.error(`Error playing percussion ${technique}:`, error);
     }
   }
 }

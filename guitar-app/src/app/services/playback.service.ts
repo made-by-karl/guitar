@@ -68,7 +68,7 @@ export class PlaybackService {
       const duration = step.duration || 0.25; // Default quarter note duration
       
       const absoluteStartTime = startTime * stepDuration;
-      const absoluteDuration = duration * stepDuration;
+      const absoluteDuration = duration * stepDuration + 0.1; // Slightly extend duration for realism
 
       // Determine technique based on step and modifiers
       let technique: MidiTechnique = 'normal';

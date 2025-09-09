@@ -34,11 +34,6 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
-              },
-              {
-                "glob": "**/*.mp3",
-                "input": "src/assets/audio",
-                "output": "assets/audio"
               }
             ],
             "styles": [
@@ -92,18 +87,12 @@
           "options": {
             "configPath": "jest.config.js",
             "tsConfig": "tsconfig.spec.json"
-              }
-            ],
-            "styles": [
-              "src/styles.scss"
-            ],
-            "scripts": []
           }
         }
       }
-    },
-    "cli": {
-      "analytics": false
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

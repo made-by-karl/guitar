@@ -15,6 +15,15 @@
           "/icons/*.png"
         ]
       }
+    },
+    {
+      "name": "samples",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/samples/**/*.mp3"
+        ]
+      }
     }
   ],
   "dataGroups": [

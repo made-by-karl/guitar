@@ -8,6 +8,7 @@ import { Note } from 'app/common/semitones';
 })
 export class MidiService {
   private sampler: Tone.Sampler | null = null;
+  private percussionSampler: Tone.Sampler | null = null;
   private context: Tone.BaseContext | null = null;
   private initializationPromise: Promise<void> | null = null;
 
@@ -62,14 +63,17 @@ export class MidiService {
     // Initialize audio context first
     await this.initializeAudio();
     
-    // Then create the sampler
+    // Then create the samplers
     if (!this.sampler) {
       await this.createSampler();
+    }
+    if (!this.percussionSampler) {
+      await this.createPercussionSampler();
     }
   }
 
   /**
-   * Creates a Tone.js sampler with multiple samples for different techniques
+   * Creates a Tone.js sampler with guitar string samples
    */
   private async createSampler(): Promise<void> {
     // Skip if sampler already exists
@@ -78,23 +82,105 @@ export class MidiService {
     }
     
     try {
-      // Create a multi-sampler for different guitar techniques
+      // Create a sampler using all available guitar note samples
+      // This provides comprehensive chromatic coverage across multiple octaves
       this.sampler = new Tone.Sampler({
         urls: {
-          // Normal guitar notes (using soundfont samples for now)
-          "C4": "https://tonejs.github.io/audio/salamander/C4.mp3",
-          "D#4": "https://tonejs.github.io/audio/salamander/Ds4.mp3",
-          "F#4": "https://tonejs.github.io/audio/salamander/Fs4.mp3",
-          "A4": "https://tonejs.github.io/audio/salamander/A4.mp3",
+          // Octave 2
+          "E2": "/samples/notes/guitar_E2.mp3",
+          "F2": "/samples/notes/guitar_F2.mp3",
+          "F#2": "/samples/notes/guitar_Fs2.mp3",
+          "G2": "/samples/notes/guitar_G2.mp3",
+          "G#2": "/samples/notes/guitar_Gs2.mp3",
+          "A2": "/samples/notes/guitar_A2.mp3",
+          "A#2": "/samples/notes/guitar_As2.mp3",
+          "B2": "/samples/notes/guitar_B2.mp3",
+          
+          // Octave 3
+          "C3": "/samples/notes/guitar_C3.mp3",
+          "C#3": "/samples/notes/guitar_Cs3.mp3",
+          "D3": "/samples/notes/guitar_D3.mp3",
+          "D#3": "/samples/notes/guitar_Ds3.mp3",
+          "E3": "/samples/notes/guitar_E3.mp3",
+          "F3": "/samples/notes/guitar_F3.mp3",
+          "F#3": "/samples/notes/guitar_Fs3.mp3",
+          "G3": "/samples/notes/guitar_G3.mp3",
+          "G#3": "/samples/notes/guitar_Gs3.mp3",
+          "A3": "/samples/notes/guitar_A3.mp3",
+          "A#3": "/samples/notes/guitar_As3.mp3",
+          "B3": "/samples/notes/guitar_B3.mp3",
+          
+          // Octave 4
+          "C4": "/samples/notes/guitar_C4.mp3",
+          "C#4": "/samples/notes/guitar_Cs4.mp3",
+          "D4": "/samples/notes/guitar_D4.mp3",
+          "D#4": "/samples/notes/guitar_Ds4.mp3",
+          "E4": "/samples/notes/guitar_E4.mp3",
+          "F4": "/samples/notes/guitar_F4.mp3",
+          "F#4": "/samples/notes/guitar_Fs4.mp3",
+          "G4": "/samples/notes/guitar_G4.mp3",
+          "G#4": "/samples/notes/guitar_Gs4.mp3",
+          "A4": "/samples/notes/guitar_A4.mp3",
+          "A#4": "/samples/notes/guitar_As4.mp3",
+          "B4": "/samples/notes/guitar_B4.mp3",
+          
+          // Octave 5
+          "D5": "/samples/notes/guitar_D5.mp3",
+          "D#5": "/samples/notes/guitar_Ds5.mp3",
+          "E5": "/samples/notes/guitar_E5.mp3",
+          "G5": "/samples/notes/guitar_G5.mp3",
+          "G#5": "/samples/notes/guitar_Gs5.mp3"
         },
-        release: 1,
+        release: 3,
+        attack: 0.005,
+        volume: 0 // Adjust volume as needed
       }).toDestination();
 
-      // Wait for samples to load
+      console.log('Loading guitar note samples...');
+      // Wait for all samples to load
       await Tone.loaded();
+      console.log('Guitar note samples loaded successfully');
     } catch (error) {
-      console.error('Failed to create sampler:', error);
+      console.error('Failed to create guitar sampler:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Creates a Tone.js sampler with guitar percussion samples
+   */
+  private async createPercussionSampler(): Promise<void> {
+    // Skip if percussion sampler already exists
+    if (this.percussionSampler) {
+      return;
+    }
+    
+    try {
+      // Create percussion sampler for guitar techniques
+      this.percussionSampler = new Tone.Sampler({
+        urls: {
+          // Guitar percussion techniques mapped to notes
+          "C3": "/samples/percussion/guitar_body_tap.mp3",     // Body tapping
+          "C#3": "/samples/percussion/guitar_body_knock.mp3",   // Body knocking
+          "D3": "/samples/percussion/guitar_string_slap.mp3",   // String slapping
+          "D#3": "/samples/percussion/guitar_finger_tap.mp3",   // Finger tapping
+          "E3": "/samples/percussion/guitar_string_scratch.mp3", // String scratching
+          "F3": "/samples/percussion/guitar_bridge_tap.mp3",    // Bridge tapping
+          "G3": "/samples/percussion/guitar_accent.mp3",       // Accented hits
+        },
+        release: 0.5,
+        attack: 0.001,
+        volume: -6 // Slightly louder than guitar for percussion effect
+      }).toDestination();
+
+      console.log('Loading guitar percussion samples...');
+      // Wait for percussion samples to load
+      await Tone.loaded();
+      console.log('Guitar percussion samples loaded successfully');
+    } catch (error) {
+      console.error('Failed to create percussion sampler:', error);
+      // Don't throw error - percussion is optional
+      console.log('Continuing without percussion samples');
     }
   }
 
@@ -111,48 +197,35 @@ export class MidiService {
   private getPlaybackOptions(technique: MidiTechnique, velocity: number) {
     const baseOptions = {
       velocity: velocity,
-      attack: 0.01,
-      decay: 0.3,
-      sustain: 0.8,
-      release: 0.5
+      duration: undefined
     };
 
     switch (technique) {
       case 'muted':
         return {
           ...baseOptions,
-          attack: 0.001,
-          decay: 0.05,
-          sustain: 0.1,
-          release: 0.1,
-          velocity: velocity * 0.6 // Quieter
+          duration: 0.3, // Still short but less abrupt
+          velocity: velocity * 0.6
         };
       
       case 'palm-muted':
         return {
           ...baseOptions,
-          attack: 0.001,
-          decay: 0.1,
-          sustain: 0.3,
-          release: 0.2,
+          duration: 0.8, // Longer than muted but shorter than open
           velocity: velocity * 0.7
         };
       
       case 'percussive':
         return {
           ...baseOptions,
-          attack: 0.001,
-          decay: 0.02,
-          sustain: 0.0,
-          release: 0.05,
+          duration: 0.015, // Very short for percussive effect
           velocity: velocity * 0.8
         };
       
       case 'accented':
         return {
           ...baseOptions,
-          velocity: Math.min(1.0, velocity * 1.3),
-          attack: 0.005
+          velocity: Math.min(1.0, velocity * 1.6)
         };
       
       default: // normal
@@ -191,7 +264,7 @@ export class MidiService {
           
           this.sampler.triggerAttackRelease(
             noteName,
-            instruction.duration,
+            options.duration ?? instruction.duration,
             scheduleTime,
             options.velocity
           );
@@ -218,25 +291,13 @@ export class MidiService {
     if (notes.length === 0) return;
 
     // Time between each note (in seconds)
-    const noteSpacing = 0.02; // 20ms between notes - adjust for feel
+    const noteSpacing = 0.025; // 25ms between notes - adjust for feel
     const playMode = instruction.playNotes || 'parallel';
     
     let sortedNotes = [...notes];
     
-    if (playMode === 'sequential') {
-      // Sequential: play notes in order by pitch (low to high)
-      sortedNotes = sortedNotes.sort((a, b) => {
-        const aPitch = this.noteToMidiNumber(a.note);
-        const bPitch = this.noteToMidiNumber(b.note);
-        return aPitch - bPitch;
-      });
-    } else if (playMode === 'reversed') {
-      // Reversed: play notes in reverse order by pitch (high to low)
-      sortedNotes = sortedNotes.sort((a, b) => {
-        const aPitch = this.noteToMidiNumber(a.note);
-        const bPitch = this.noteToMidiNumber(b.note);
-        return bPitch - aPitch;
-      });
+    if (playMode === 'reversed') {
+      sortedNotes = sortedNotes.reverse();
     }
 
     // Play each note with slight timing offset
@@ -247,7 +308,7 @@ export class MidiService {
       
       this.sampler.triggerAttackRelease(
         noteName,
-        instruction.duration,
+        options.duration ?? instruction.duration,
         noteTime,
         options.velocity
       );
@@ -255,15 +316,70 @@ export class MidiService {
   }
 
   /**
-   * Convert Note to MIDI number for sorting purposes
+   * Play a guitar percussion technique
    */
-  private noteToMidiNumber(note: Note): number {
-    const noteMap: { [key: string]: number } = {
-      'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
-      'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11
-    };
+  async playPercussionTechnique(technique: string): Promise<void> {
+    await this.ensureInitialized();
     
-    return (note.octave + 1) * 12 + noteMap[note.semitone];
+    if (!this.percussionSampler) {
+      console.warn('Percussion sampler not loaded');
+      return;
+    }
+
+    const techniqueMapping: { [key: string]: string } = {
+      'body_tap': 'C3',
+      'body_knock': 'C#3', 
+      'string_slap': 'D3',
+      'finger_tap': 'D#3',
+      'string_scratch': 'E3',
+      'bridge_tap': 'F3',
+      'accent': 'G3'
+    };
+
+    const note = techniqueMapping[technique];
+    if (note) {
+      this.percussionSampler.triggerAttackRelease(note, '8n');
+      console.log(`Playing percussion technique: ${technique}`);
+    } else {
+      console.warn(`Unknown percussion technique: ${technique}`);
+    }
+  }
+
+  /**
+   * Play a chord with percussion technique
+   */
+  async playChordWithPercussion(notes: string[], technique: string, duration: number = 2.0): Promise<void> {
+    await this.ensureInitialized();
+    
+    if (!this.sampler) {
+      throw new Error('Guitar sampler not initialized');
+    }
+
+    // Play the chord
+    const chordPromise = this.playChordFromNotes(notes, duration);
+    
+    // Add percussion accent if requested
+    if (technique === 'accented' && this.percussionSampler) {
+      setTimeout(() => {
+        this.percussionSampler!.triggerAttackRelease('G3', '8n');
+      }, 50); // Slight delay for accent
+    }
+    
+    return chordPromise;
+  }
+
+  /**
+   * Helper method to play chord from note names
+   */
+  private async playChordFromNotes(notes: string[], duration: number): Promise<void> {
+    if (!this.sampler) return;
+    
+    const now = Tone.now();
+    notes.forEach((note, index) => {
+      // Strum effect - slight delay between notes
+      const strumDelay = index * 0.02;
+      this.sampler!.triggerAttackRelease(note, duration, now + strumDelay);
+    });
   }
 
   /**
@@ -273,6 +389,11 @@ export class MidiService {
     if (this.sampler) {
       this.sampler.dispose();
       this.sampler = null;
+    }
+    
+    if (this.percussionSampler) {
+      this.percussionSampler.dispose();
+      this.percussionSampler = null;
     }
     
     // Reset initialization state
