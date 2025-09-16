@@ -29,7 +29,7 @@ export class SongSheetDetailComponent {
   tempPartSection = '';
   tempPartPatterns: {
     pattern: SongSheetPattern,
-    grips: { grip: SongSheetGrip, startBeat: number }[]
+    grips: { grip: SongSheetGrip, startAction: number }[]
   }[] = [];
   
   // For tuning form
@@ -135,11 +135,6 @@ export class SongSheetDetailComponent {
 
   async playPattern(pattern: SongSheetPatternWithData) {
     if (!this.sheet || !pattern.pattern) return;
-
-    if (!pattern.pattern.steps) {
-      console.error('Pattern has no steps:', pattern);
-      return;
-    }
     
     // Use the MIDI service to play the entire rhythm pattern
     try {
@@ -166,7 +161,7 @@ export class SongSheetDetailComponent {
       pattern: { patternId: p.pattern.patternId },
       grips: p.grips.map(g => ({ 
         grip: { gripId: g.grip.gripId, chordName: g.grip.chordName },
-        startBeat: g.startBeat 
+        startAction: g.startAction 
       }))
     }));
   }
@@ -239,7 +234,7 @@ export class SongSheetDetailComponent {
   addGripToPattern(patternIndex: number) {
     this.tempPartPatterns[patternIndex].grips.push({ 
       grip: { gripId: '', chordName: '' }, 
-      startBeat: 1 
+      startAction: 1 
     });
   }
 
@@ -268,7 +263,7 @@ export class SongSheetDetailComponent {
 
   getTuningDisplay(): string {
     if (!this.sheet) return '';
-    return this.sheet.tuning.map(note => `${note.semitone}${note.octave}`).join(' - ');
+    return this.sheet.tuning.map(note => `${note.semitone}${note.octave}`).join(' | ');
   }
 
   addChords() {

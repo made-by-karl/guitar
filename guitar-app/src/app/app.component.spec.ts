@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { provideRouter } from '@angular/router';
 import { SongSheetsService } from './services/song-sheets.service';
+import { UpdateService } from './services/update.service';
 import { Component } from '@angular/core';
 
 // Mock component for router testing
@@ -10,9 +11,10 @@ class MockComponent { }
 
 describe('AppComponent', () => {
   let mockSongSheetsService: jest.Mocked<SongSheetsService>;
+  let mockUpdateService: jest.Mocked<UpdateService>;
 
   beforeEach(async () => {
-    // Create mock service
+    // Create mock services
     mockSongSheetsService = {
       getAll: jest.fn().mockReturnValue([]),
       getPinnedSongSheet: jest.fn().mockReturnValue(undefined),
@@ -25,6 +27,10 @@ describe('AppComponent', () => {
       deleteSongSheet: jest.fn()
     } as any;
 
+    mockUpdateService = {
+      checkVersion: jest.fn()
+    } as any;
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
@@ -35,7 +41,8 @@ describe('AppComponent', () => {
           { path: 'settings', component: MockComponent },
           { path: 'midi-test', component: MockComponent }
         ]),
-        { provide: SongSheetsService, useValue: mockSongSheetsService }
+        { provide: SongSheetsService, useValue: mockSongSheetsService },
+        { provide: UpdateService, useValue: mockUpdateService }
       ]
     }).compileComponents();
   });

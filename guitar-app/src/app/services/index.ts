@@ -1,1 +1,0 @@
-export * from '../services/rhythm-patterns.model';

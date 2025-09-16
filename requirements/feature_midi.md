@@ -29,12 +29,12 @@ This feature overhauls the MIDI generation and playback system for the guitar ap
   - `playSequence(instructions: MidiInstruction[]): Promise<void>`
     - Where `MidiInstruction` encodes note, velocity, duration, instrument/sample, and timing
   - `generateFromRhythmPattern(pattern: RhythmPattern, tempo: number, ...): MidiInstruction[]`
-    - Converts the app's rhythm pattern model (including techniques, modifiers, and beat/timing data) into a sequence of MIDI instructions
+    - Converts the app's rhythm pattern model (including techniques, modifiers, and action/timing data) into a sequence of MIDI instructions
 - The service must:
   - Support polyphony (multiple notes at once)
   - Support velocity/dynamics (for accents)
   - Support sample switching (normal, muted, palm-muted, percussive)
-  - Support per-step timing (beat, subdivision, duration)
+  - Support per-step timing (action, subdivision, duration)
   - Allow for future extension (e.g., slides, harmonics)
 
 ### 3. Guitar Sound Realism

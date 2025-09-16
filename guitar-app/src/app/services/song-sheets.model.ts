@@ -25,7 +25,7 @@ export interface SongPart {
   section: string; // e.g., Verse, Chorus
   patterns: {
     pattern: SongSheetPattern,
-    grips: { grip: SongSheetGrip, startBeat: number }[]
+    grips: { grip: SongSheetGrip, startAction: number }[]
   }[];
 }
 

@@ -1,0 +1,265 @@
+<!-- Action-based Rhythm Pattern Editor -->
+<div class="rhythm-pattern-editor">
+  <div class="card" *ngIf="pattern() as currentPattern">
+    <div class="card-body">
+      <div>
+        <!-- Pattern Controls -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label for="tempo" class="form-label">Tempo (BPM):</label>
+            <input type="number" id="tempo" class="form-control" [(ngModel)]="tempo" name="tempo" min="60" max="200" />
+          </div>
+          <div class="col-md-3 d-flex align-items-end gap-2">
+            <button class="btn btn-success" type="button" (click)="playPattern()" title="Play Pattern">
+              <i class="bi bi-play-fill"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pattern Details -->
+        <div class="mb-2">
+          <label>Name</label>
+          <input class="form-control" [(ngModel)]="currentPattern.name" name="name" required />
+        </div>
+        <div class="mb-2">
+          <label>Description</label>
+          <input class="form-control" [(ngModel)]="currentPattern.description" name="description" />
+        </div>
+        <div class="mb-2 row">
+          <div class="col">
+            <label>Category</label>
+            <input class="form-control" [(ngModel)]="currentPattern.category" name="category" />
+          </div>
+        </div>
+
+        <!-- Measures -->
+        <div class="mb-2">
+          @for (measureData of measuresForDisplay(); track measureData.measureIndex; let measureIndex = $index) {
+          <div class="card card-body p-3 bg-light mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0">Measure {{ measureData.measureIndex + 1 }}</h5>
+              <div class="btn-group" role="group">
+                <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeMeasure(measureData.measureIndex)"
+                  title="Remove measure">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Time Signature and Controls -->
+            <div class="measure-controls mb-3">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <label class="form-label small">Time Signature</label>
+                  <select class="form-select form-select-sm" 
+                    [ngModel]="measureData.measure.timeSignature"
+                    (ngModelChange)="changeTimeSignature(measureData.measureIndex, $event)"
+                    [name]="'timeSignature_' + measureData.measureIndex">
+                    @for (timeSig of getAvailableTimeSignatures(); track timeSig.value) {
+                      <option [value]="timeSig.value">{{ timeSig.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Subdivision</label>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="small" [class.fw-bold]="!measureData.useSixteenthSteps">8th</span>
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input" type="checkbox" 
+                        [id]="'subdivisionSwitch_' + measureData.measureIndex" 
+                        [checked]="measureData.useSixteenthSteps"
+                        (change)="toggleSixteenthSteps(measureData.measureIndex)">
+                    </div>
+                    <span class="small" [class.fw-bold]="measureData.useSixteenthSteps">16th</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Actions</label>
+                  <div class="small text-muted">
+                    {{ getActionsForDisplay(measureData).length }} positions
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Column Layout -->
+            <div class="action-column-container">
+              <div class="action-positions">
+                @for (actionData of getActionsForDisplay(measureData); track actionData.originalIndex; let i = $index) {
+                <div class="action-position" 
+                     [class.main-position]="actionData.isMainPosition"
+                     [class.quarter-position]="actionData.subdivision === 'quarter'"
+                     [class.eighth-position]="actionData.subdivision === 'eighth'"
+                     [class.sixteenth-position]="actionData.subdivision === 'sixteenth'">
+                  
+                  <!-- Position Label -->
+                  <div class="position-label">
+                    <span class="position-number">{{ actionData.position }}</span>
+                    <span class="subdivision-indicator">{{ actionData.subdivision.substring(0, 1).toUpperCase() }}</span>
+                  </div>
+
+                  <!-- Action Content -->
+                  <div class="action-content-wrapper">
+                    @if (actionData.action) {
+                    <div class="action-content card">
+                      <!-- Action Header -->
+                      <div class="action-header d-flex justify-content-between align-items-center">
+                        <span class="badge" [class]="'bg-' + (actionData.action.technique === 'strum' ? 'primary' : 
+                                                              actionData.action.technique === 'pick' ? 'success' : 
+                                                              actionData.action.technique === 'percussive' ? 'warning' : 'secondary')">
+                          {{ actionData.action.technique }}
+                          @if (actionData.action.direction) {
+                            <i class="bi" [class]="actionData.action.direction === 'D' ? 'bi-arrow-down' : 'bi-arrow-up'"></i>
+                          }
+                        </span>
+                        <button class="btn btn-outline-danger btn-sm" type="button"
+                          (click)="removeAction(measureData.measureIndex, actionData.originalIndex)" title="Remove action">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </div>
+
+                      <!-- Action Details -->
+                      <div class="action-details">
+                        <!-- Modifiers (for strum and pick only) -->
+                        @if (actionData.action.technique === 'strum' || actionData.action.technique === 'pick') {
+                        <div class="modifiers-section">
+                          <label class="form-label small">Modifiers</label>
+                          <div class="d-flex gap-1 flex-wrap">
+                            @for (modifier of getAvailableModifiers(); track modifier.value) {
+                            <div class="form-check form-check-inline">
+                              <input class="form-check-input" type="checkbox"
+                                [id]="'modifier_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + modifier.value"
+                                [checked]="hasModifier(actionData.action, modifier.value)"
+                                (change)="toggleModifier(measureData.measureIndex, actionData.originalIndex, modifier.value)" />
+                              <label class="form-check-label small"
+                                [for]="'modifier_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + modifier.value">
+                                {{ modifier.label }}
+                              </label>
+                            </div>
+                            }
+                          </div>
+                        </div>
+                        }
+
+                        <!-- Direction (for strum only) -->
+                        @if (actionData.action.technique === 'strum') {
+                        <div class="direction-section">
+                          <label class="form-label small">Direction</label>
+                          <select class="form-select form-select-sm" 
+                            [ngModel]="actionData.action.direction"
+                            (ngModelChange)="updateStrumDirection(measureData.measureIndex, actionData.originalIndex, $event)"
+                            [name]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex">
+                            <option [ngValue]="'D'">Down</option>
+                            <option [ngValue]="'U'">Up</option>
+                          </select>
+                        </div>
+
+                        <!-- Strum Pattern -->
+                        @if (actionData.action.strum) {
+                        <div class="strum-section">
+                          <label class="form-label small">Strings</label>
+                          <select class="form-select form-select-sm" 
+                            [ngModel]="actionData.action.strum.strings"
+                            (ngModelChange)="updateStrumStrings(measureData.measureIndex, actionData.originalIndex, $event)"
+                            [name]="'strumStrings_' + measureData.measureIndex + '_' + actionData.originalIndex">
+                            <option value="all">All</option>
+                            <option value="bass">Bass</option>
+                            <option value="treble">Treble</option>
+                            <option value="middle">Middle</option>
+                            <option value="power">Power</option>
+                          </select>
+                        </div>
+                        }
+                        }
+
+                        <!-- Pick Pattern -->
+                        @if (actionData.action.technique === 'pick') {
+                        <div class="pick-section">
+                          <label class="form-label small">Notes</label>
+                          <div class="pick-notes">
+                            @if (actionData.action.pick) {
+                            @for (note of actionData.action.pick; track note; let noteIndex = $index) {
+                            <div class="pick-note">
+                              <div class="d-flex align-items-center gap-1">
+                                <select class="form-select form-select-sm" 
+                                  [ngModel]="note.string"
+                                  (ngModelChange)="updatePickNoteString(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
+                                  [name]="'pickString_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
+                                  @for (stringIdx of [0,1,2,3,4,5]; track stringIdx) {
+                                  <option [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                                  }
+                                </select>
+                                <input type="number" class="form-control form-control-sm" 
+                                  [ngModel]="note.fret"
+                                  (ngModelChange)="updatePickNoteFret(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
+                                  [name]="'pickFret_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex" 
+                                  min="-1" max="24" placeholder="Fret" />
+                                <button class="btn btn-outline-danger btn-sm" type="button"
+                                  (click)="removePickingNote(measureData.measureIndex, actionData.originalIndex, noteIndex)">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                              </div>
+                            </div>
+                            }
+                            }
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                              (click)="addPickingNote(measureData.measureIndex, actionData.originalIndex)">
+                              <i class="bi bi-plus"></i> Add Note
+                            </button>
+                          </div>
+                        </div>
+                        }
+                      </div>
+                    </div>
+                    } @else {
+                    <!-- Empty action slot -->
+                    <div class="empty-action-slot">
+                      <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button"
+                          data-bs-toggle="dropdown" aria-expanded="false" title="Add Technique">
+                          <i class="bi bi-plus"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'strum-down'); $event.preventDefault()">
+                              <i class="bi bi-arrow-down text-primary"></i> Strum Down
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'strum-up'); $event.preventDefault()">
+                              <i class="bi bi-arrow-up text-primary"></i> Strum Up
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'pick'); $event.preventDefault()">
+                              <i class="bi bi-hand-index text-success"></i> Pick
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'percussive'); $event.preventDefault()">
+                              <i class="bi bi-soundwave text-warning"></i> Percussion
+                            </a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'rest'); $event.preventDefault()">
+                              <i class="bi bi-pause text-secondary"></i> Rest
+                            </a></li>
+                        </ul>
+                      </div>
+                    </div>
+                    }
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <button class="btn btn-outline-primary btn-sm" type="button" (click)="addMeasure()">
+            <i class="bi bi-plus"></i> Add Measure
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

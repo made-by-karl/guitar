@@ -97,7 +97,7 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
     * Down-Up alternating (D U D U)
     * Folk/pop (D D U U D U)
     * Waltz (3/4: D D U)
-    * Reggae (offbeat upstrokes)
+    * Reggae (offaction upstrokes)
     * Shuffle/Swing
     * Syncopated, triplets, 6/8, 12/8, flamenco, funk, etc.
     * "Pick bass, strum rest" hybrid patterns
