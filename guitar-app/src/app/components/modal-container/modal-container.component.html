@@ -1,0 +1,28 @@
+<div class="modal-content-wrapper">
+  @if (title || headerTemplate) {
+    <div class="modal-header">
+      @if (headerTemplate) {
+        <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
+      } @else {
+        <h5 class="modal-title">{{ title }}</h5>
+        @if (showCloseButton) {
+          <button type="button" class="btn-close" (click)="onClose()"></button>
+        }
+      }
+    </div>
+  }
+  
+  <div class="modal-body" [ngClass]="bodyClass">
+    <ng-content></ng-content>
+  </div>
+  
+  @if (footerTemplate || showDefaultFooter) {
+    <div class="modal-footer">
+      @if (footerTemplate) {
+        <ng-container *ngTemplateOutlet="footerTemplate"></ng-container>
+      } @else {
+        <ng-content select="[modal-footer]"></ng-content>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,57 @@
+.modal-content-wrapper {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+
+  &.variant-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  &.variant-warning {
+    background-color: #ffc107;
+    color: #000;
+  }
+
+  &.variant-success {
+    background-color: #198754;
+    color: white;
+  }
+
+  &.variant-primary {
+    background-color: #0d6efd;
+    color: white;
+  }
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.modal-body {
+  padding: 1rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+  border-top: 1px solid #dee2e6;
+  gap: 0.5rem;
+}

@@ -4,14 +4,13 @@ import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from './services/song-sheets.service';
 import { SongSheet } from './services/song-sheets.model';
-import { DialogComponent } from './components/dialog/dialog.component';
 import { UpdateService } from './services/update.service';
 import { timer } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule, NgIf, NgForOf, FormsModule, DialogComponent],
+  imports: [RouterOutlet, RouterLink, CommonModule, NgIf, NgForOf, FormsModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })

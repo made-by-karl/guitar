@@ -85,29 +85,4 @@
   <div class="mb-3">
     <button class="btn btn-success" (click)="startCreate()"><i class="bi bi-plus-lg"></i> New Rhythm Pattern</button>
   </div>
-
-  <!-- Rhythm Pattern Editor Modal -->
-  <div *ngIf="editing" class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.2)">
-    <div class="modal-dialog modal-xl d-flex flex-column" style="height: 95vh; max-height: 95vh;">
-      <div class="modal-content d-flex flex-column h-100">
-        <div class="modal-header flex-shrink-0">
-          <h5 class="modal-title">{{ editing.pattern ? 'Edit Rhythm Pattern' : 'Create Rhythm Pattern' }}</h5>
-          <button type="button" class="btn-close" (click)="cancelEdit()"></button>
-        </div>
-        <div class="modal-body flex-grow-1 overflow-auto p-1">
-          <app-rhythm-pattern-editor #editor
-            [pattern]="editing.pattern">
-          </app-rhythm-pattern-editor>
-        </div>
-        <div class="modal-footer btn-group">
-          <button class="btn btn-secondary" type="button" (click)="cancelEdit()">
-            <i class="bi bi-x"></i> Cancel
-          </button>
-          <button class="btn btn-primary" type="button" (click)="onPatternSaved(editor.pattern())">
-            <i class="bi bi-check"></i> Save Pattern
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>

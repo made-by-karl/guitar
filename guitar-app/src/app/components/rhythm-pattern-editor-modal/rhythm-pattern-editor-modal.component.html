@@ -1,0 +1,24 @@
+<div class="modal-content-wrapper">
+  <div class="modal-header">
+    <h5 class="modal-title">{{ pattern ? 'Edit Rhythm Pattern' : 'Create Rhythm Pattern' }}</h5>
+    <button class="ms-3 btn btn-success" type="button" (click)="onPlayPattern()" title="Play Pattern">
+        <i class="bi bi-play-fill"></i>
+    </button>
+    <button type="button" class="btn-close" (click)="onCancel()"></button>
+  </div>
+  <div class="modal-body">
+    @if (pattern) {
+      <app-rhythm-pattern-editor #editor
+        [pattern]="pattern">
+      </app-rhythm-pattern-editor>
+    }
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="onCancel()">
+      <i class="bi bi-x"></i> Cancel
+    </button>
+    <button class="btn btn-primary" type="button" (click)="onSave()">
+      <i class="bi bi-check"></i> Save Pattern
+    </button>
+  </div>
+</div>

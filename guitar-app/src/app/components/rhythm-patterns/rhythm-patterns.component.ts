@@ -7,24 +7,26 @@ import { PlaybackService } from '../../services/playback.service';
 import { SongSheetsService } from '../../services/song-sheets.service';
 import { DialogService } from '../../services/dialog.service';
 import { RhythmPatternEditorComponent } from '../rhythm-pattern-editor/rhythm-pattern-editor.component';
+import { ModalService } from '../../services/modal.service';
+import { RhythmPatternEditorModalComponent } from '../rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
 
 @Component({
   selector: 'app-rhythm-patterns',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgForOf, NgIf, RhythmPatternEditorComponent],
+  imports: [CommonModule, FormsModule, NgForOf, NgIf],
   templateUrl: './rhythm-patterns.component.html',
   styleUrls: ['./rhythm-patterns.component.scss']
 })
 export class RhythmPatternsComponent {
   patterns: RhythmPattern[] = [];
   search = '';
-  editing: { pattern: RhythmPattern } | null = null;
 
   constructor(
     public service: RhythmPatternsService,
     private playback: PlaybackService,
     public songSheets: SongSheetsService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private modalService: ModalService
   ) {
     this.load();
   }
@@ -33,7 +35,7 @@ export class RhythmPatternsComponent {
     this.patterns = this.service.getAll();
   }
 
-  startCreate() {
+  async startCreate() {
     const pattern: RhythmPattern = {
       id: Date.now().toString(),
       name: '',
@@ -48,16 +50,36 @@ export class RhythmPatternsComponent {
       isCustom: true
     };
 
-    this.editing = { pattern };
+    await this.openPatternEditor(pattern);
   }
 
-  startEdit(pattern: RhythmPattern) {
-    this.editing = { pattern };
+  async startEdit(pattern: RhythmPattern) {
+    await this.openPatternEditor(pattern);
   }
 
-  onPatternSaved(pattern: RhythmPattern) {
-    if (!this.editing) return;
+  private async openPatternEditor(pattern: RhythmPattern) {
+    const modalRef = this.modalService.show(RhythmPatternEditorModalComponent, {
+      width: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: false
+    });
+
+    // Set the pattern on the component instance
+    if (modalRef.componentInstance) {
+      modalRef.componentInstance.pattern = pattern;
+    }
+
+    // Wait for the modal to close
+    const result = await modalRef.afterClosed();
     
+    if (result) {
+      this.onPatternSaved(result);
+    }
+  }
+
+  private onPatternSaved(pattern: RhythmPattern) {
     // Check if this is a new pattern (not in our patterns array yet)
     const existingPatternIndex = this.patterns.findIndex(p => p.id === pattern.id);
     
@@ -70,26 +92,6 @@ export class RhythmPatternsComponent {
       this.service.update(pattern);
       this.patterns[existingPatternIndex] = pattern;
     }
-    
-    // Close the editor
-    this.editing = null;
-  }
-
-  onEditCanceled() {
-    this.editing = null;
-  }
-
-  onPatternDeleted(pattern: RhythmPattern) {
-    // Delete from service and local array
-    this.service.delete(pattern.id);
-    this.patterns = this.patterns.filter(p => p.id !== pattern.id);
-    
-    // Close the editor
-    this.editing = null;
-  }
-
-  cancelEdit() {
-    this.editing = null;
   }
 
   get filteredPatterns() {

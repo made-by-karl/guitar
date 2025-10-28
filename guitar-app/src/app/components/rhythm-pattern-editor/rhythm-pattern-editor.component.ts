@@ -27,8 +27,6 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     return this.getMeasuresForDisplay(pattern);
   });
 
-  tempo = 120; // BPM
-
   constructor(
     private playback: PlaybackService
   ) {}

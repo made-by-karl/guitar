@@ -1,0 +1,25 @@
+<div class="modal-content-wrapper">
+  <div class="modal-header" [ngClass]="'variant-' + (data.variant || 'primary')">
+    <h5 class="modal-title">{{ data.title }}</h5>
+  </div>
+  <div class="modal-body">
+    <p>{{ data.message }}</p>
+  </div>
+  <div class="modal-footer">
+    @if (data.type === 'confirm') {
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary" 
+        (click)="onCancel()">
+        {{ data.cancelText || 'Cancel' }}
+      </button>
+    }
+    <button 
+      type="button" 
+      class="btn"
+      [ngClass]="'btn-' + (data.variant || 'primary')"
+      (click)="onConfirm()">
+      {{ data.confirmText || 'OK' }}
+    </button>
+  </div>
+</div>

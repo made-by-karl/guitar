@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
@@ -15,6 +15,7 @@ import { combineLatest } from 'rxjs';
 import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-functions.service';
 import { SongSheetsService } from 'app/services/song-sheets.service';
 import { PlaybackService } from 'app/services/playback.service';
+import { ModalService, ModalRef } from 'app/services/modal.service';
 
 interface GripSettings {
   minFretToConsider?: number;
@@ -35,6 +36,9 @@ interface GripSettings {
   styleUrls: ['./chord-viewer.component.scss']
 })
 export class ChordViewerComponent implements OnInit {
+  @ViewChild('modifierModal') modifierModalTemplate!: TemplateRef<any>;
+  @ViewChild('settingsModal') settingsModalTemplate!: TemplateRef<any>;
+  
   grips: TunedGrip[] = [];
   modifiers: Modifier[] = [...MODIFIERS];
   bassNotes: Semitone[] = [...SEMITONES];
@@ -45,6 +49,9 @@ export class ChordViewerComponent implements OnInit {
 
   activeChord: ExtendedChord | null = null
   progressions: Chord[][] = [];
+  
+  private modifierModalRef: ModalRef | null = null;
+  private settingsModalRef: ModalRef | null = null;
 
   selectedSheetId: string | null = null;
 
@@ -74,6 +81,8 @@ export class ChordViewerComponent implements OnInit {
     private playback: PlaybackService,
     private router: Router,
     private route: ActivatedRoute,
+    private modalService: ModalService,
+    private viewContainerRef: ViewContainerRef
   ) { }
 
   ngOnInit() {
@@ -113,6 +122,44 @@ export class ChordViewerComponent implements OnInit {
     if (chord.modifiers.length === 0) return this.BASE_MAJOR_PROGRESSION;
     if (chord.modifiers.length === 1 && chord.modifiers[0] === 'm') return this.BASE_MINOR_PROGRESSION;
     return [];
+  }
+
+  openModifierModal() {
+    this.modifierModalRef = this.modalService.showTemplate(
+      this.modifierModalTemplate,
+      this.viewContainerRef,
+      {
+        width: '800px',
+        maxHeight: '90vh',
+        closeOnBackdropClick: true
+      }
+    );
+  }
+
+  closeModifierModal() {
+    if (this.modifierModalRef) {
+      this.modifierModalRef.close();
+      this.modifierModalRef = null;
+    }
+  }
+
+  openSettingsModal() {
+    this.settingsModalRef = this.modalService.showTemplate(
+      this.settingsModalTemplate,
+      this.viewContainerRef,
+      {
+        width: '600px',
+        maxHeight: '90vh',
+        closeOnBackdropClick: true
+      }
+    );
+  }
+
+  closeSettingsModal() {
+    if (this.settingsModalRef) {
+      this.settingsModalRef.close();
+      this.settingsModalRef = null;
+    }
   }
 
   toggleModifier(modifier: Modifier) {

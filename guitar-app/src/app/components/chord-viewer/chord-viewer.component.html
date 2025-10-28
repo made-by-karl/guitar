@@ -21,55 +21,26 @@
             </div>
 
             <div class="mb-3">
-              <div class="d-flex align-items-center">
-                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#collapseModifiers" aria-expanded="false" aria-controls="collapseModifiers">
-                  Modifiers
-                  <i class="bi bi-chevron-down"></i>
+              <label class="form-label">Modifiers:</label>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary" type="button" (click)="openModifierModal()">
+                  Select Modifiers
+                  <i class="bi bi-pencil-square ms-1"></i>
                 </button>
-                <span>
-                  @for (modifier of selectedModifiers; track modifier) {
-                  <span class="ms-2">{{ modifier }}</span>
-                  }
-                </span>
-                @if (selectedModifiers.length > 0) {
-                <button class="btn btn-sm btn-outline-secondary ms-2" type="button" (click)="resetModifiers()" 
-                        title="Clear all modifiers">
-                  <i class="bi bi-x-circle"></i>
-                </button>
-                }
-              </div>
-              <div>
-                <div class="collapse" id="collapseModifiers">
-                  <div class="card card-body">
-                    <ng-template #modifierTemplate let-modifier>
-                      @let modifierState = getModifierState(modifier);
-                      <div class="btn-group me-2 mb-2" role="group" 
-                           [class.modifier-conflict]="modifierState.isDisabled && modifierState.isConflict">
-                        <input type="checkbox" class="btn-check" id="modifier-{{ modifier }}"
-                          [disabled]="modifierState.isDisabled" [checked]="modifierState.isChecked"
-                          (change)="toggleModifier(modifier)">
-                        <label class="btn btn-outline-primary" style="min-width: 5em;" for="modifier-{{ modifier }}">
-                          {{ modifier }}
-                        </label>
-                      </div>
-                    </ng-template>
-
-                    <div class="row">
-                      <div class="col">
-                        @for (modifier of modifiers | slice:0:modifiers.indexOf('add13'); track modifier) {
-                        <ng-container
-                          *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
-                        }
-                      </div>
-                      <div class="col">
-                        @for (modifier of modifiers | slice:modifiers.indexOf('add13'); track modifier) {
-                        <ng-container
-                          *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
-                        }
-                      </div>
+                <div class="flex-grow-1">
+                  @if (selectedModifiers.length > 0) {
+                    <div class="d-flex align-items-center gap-2">
+                      @for (modifier of selectedModifiers; track modifier) {
+                        <span class="badge bg-primary">{{ modifier }}</span>
+                      }
+                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetModifiers()" 
+                              title="Clear all modifiers">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
                     </div>
-                  </div>
+                  } @else {
+                    <span class="text-muted">None selected</span>
+                  }
                 </div>
               </div>
             </div>
@@ -85,65 +56,17 @@
             </div>
 
             <div class="form-group mb-3">
-              <div class="row align-items-center">
-                <div class="col">
-                  <button class="btn btn-primary" (click)="updateChord()">
-                    Select
-                  </button>
-                </div>
-                <div class="col-auto">
-                  <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#settingsMenu" aria-expanded="false" aria-controls="settingsMenu">
-                    Settings
-                    <i class="bi bi-gear"></i>
-                  </button>
-                </div>
-              </div>
+              <button class="btn btn-primary w-100" (click)="updateChord()">
+                <i class="bi bi-search me-2"></i>
+                Find Chord Grips
+              </button>
             </div>
 
-            <div class="collapse" id="settingsMenu">
-              <div class="card card-body">
-                <div class="form-group mb-3">
-                  <label for="minFretToConsider" class="form-label">Min fret:</label>
-                  <input type="number" id="minFretToConsider" class="form-control"
-                    [(ngModel)]="gripSettings.minFretToConsider">
-                </div>
-                <div class="form-group mb-3">
-                  <label for="maxFretToConsider" class="form-label">Max fret:</label>
-                  <input type="number" id="maxFretToConsider" class="form-control"
-                    [(ngModel)]="gripSettings.maxFretToConsider">
-                </div>
-                <div class="form-group mb-3">
-                  <label for="minimalPlayableStrings" class="form-label">Minimal playable strings:</label>
-                  <input type="number" id="minimalPlayableStrings" class="form-control"
-                    [(ngModel)]="gripSettings.minimalPlayableStrings">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
-                  <label for="allowBarree" class="form-label">Allow barree</label>
-                  <input type="checkbox" id="allowBarree" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowBarree">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
-                  <label for="allowInversions" class="form-label">Allow inversions</label>
-                  <input type="checkbox" id="allowInversions" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowInversions">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
-                  <label for="allowIncompleteChords" class="form-label">Allow incomplete chords</label>
-                  <input type="checkbox" id="allowIncompleteChords" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowIncompleteChords">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
-                  <label for="allowDuplicateNotes" class="form-label">Allow duplicate notes</label>
-                  <input type="checkbox" id="allowDuplicateNotes" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowDuplicateNotes">
-                </div>
-                <div class="form-group form-check form-switch mb-3">
-                  <label for="allowMutedStringsInside" class="form-label">Allow muted strings inside</label>
-                  <input type="checkbox" id="allowMutedStringsInside" class="form-check-input"
-                    [(ngModel)]="gripSettings.allowMutedStringsInside">
-                </div>
-              </div>
+            <div class="form-group mb-3">
+              <button class="btn btn-outline-secondary w-100" type="button" (click)="openSettingsModal()">
+                <i class="bi bi-gear me-2"></i>
+                Grip Settings
+              </button>
             </div>
           </div>
         </div>
@@ -289,3 +212,181 @@
     </div>
   </div>
 </div>
+
+<!-- Modifier Selection Modal Template -->
+<ng-template #modifierModal>
+  <div class="modal-content-wrapper">
+    <div class="modal-header">
+      <h5 class="modal-title">Select Chord Modifiers</h5>
+      <button type="button" class="btn-close" (click)="closeModifierModal()"></button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            @if (selectedModifiers.length > 0) {
+              <span class="text-muted">Selected: </span>
+              @for (modifier of selectedModifiers; track modifier) {
+                <span class="badge bg-primary me-1">{{ modifier }}</span>
+              }
+            } @else {
+              <span class="text-muted">No modifiers selected</span>
+            }
+          </div>
+          @if (selectedModifiers.length > 0) {
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetModifiers()" 
+                    title="Clear all modifiers">
+              <i class="bi bi-x-circle me-1"></i> Clear All
+            </button>
+          }
+        </div>
+      </div>
+
+      <ng-template #modifierTemplate let-modifier>
+        @let modifierState = getModifierState(modifier);
+        <div class="btn-group me-2 mb-2" role="group" 
+             [class.modifier-conflict]="modifierState.isDisabled && modifierState.isConflict">
+          <input type="checkbox" class="btn-check" id="modifier-modal-{{ modifier }}"
+            [disabled]="modifierState.isDisabled" [checked]="modifierState.isChecked"
+            (change)="toggleModifier(modifier)">
+          <label class="btn btn-outline-primary" style="min-width: 5em;" for="modifier-modal-{{ modifier }}">
+            {{ modifier }}
+          </label>
+        </div>
+      </ng-template>
+
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-muted mb-2">Basic Modifiers</h6>
+          @for (modifier of modifiers | slice:0:modifiers.indexOf('add13'); track modifier) {
+            <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
+          }
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-muted mb-2">Extended & Add Modifiers</h6>
+          @for (modifier of modifiers | slice:modifiers.indexOf('add13'); track modifier) {
+            <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
+          }
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeModifierModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Settings Modal Template -->
+<ng-template #settingsModal>
+  <div class="modal-content-wrapper">
+    <div class="modal-header">
+      <h5 class="modal-title">
+        <i class="bi bi-gear me-2"></i>
+        Grip Generation Settings
+      </h5>
+      <button type="button" class="btn-close" (click)="closeSettingsModal()"></button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        Adjust these settings to control how chord grips are generated and filtered.
+      </div>
+
+      <h6 class="text-muted mb-3">Fret Range</h6>
+      
+      <div class="form-group mb-3">
+        <label for="minFretToConsider" class="form-label">Minimum fret:</label>
+        <input type="number" id="minFretToConsider" class="form-control"
+          [(ngModel)]="gripSettings.minFretToConsider"
+          min="0" max="24">
+        <small class="form-text text-muted">Lowest fret to consider when generating grips</small>
+      </div>
+      
+      <div class="form-group mb-4">
+        <label for="maxFretToConsider" class="form-label">Maximum fret:</label>
+        <input type="number" id="maxFretToConsider" class="form-control"
+          [(ngModel)]="gripSettings.maxFretToConsider"
+          min="1" max="24">
+        <small class="form-text text-muted">Highest fret to consider when generating grips</small>
+      </div>
+
+      <h6 class="text-muted mb-3">Playability Options</h6>
+      
+      <div class="form-group mb-4">
+        <label for="minimalPlayableStrings" class="form-label">Minimal playable strings:</label>
+        <input type="number" id="minimalPlayableStrings" class="form-control"
+          [(ngModel)]="gripSettings.minimalPlayableStrings"
+          min="1" max="6">
+        <small class="form-text text-muted">Minimum number of strings that must be played</small>
+      </div>
+
+      <h6 class="text-muted mb-3">Advanced Options</h6>
+      
+      <div class="form-check form-switch mb-3">
+        <input type="checkbox" id="allowBarree" class="form-check-input"
+          [(ngModel)]="gripSettings.allowBarree">
+        <label for="allowBarree" class="form-check-label">
+          <strong>Allow barré chords</strong>
+          <br>
+          <small class="text-muted">Include chord shapes that require barring multiple strings</small>
+        </label>
+      </div>
+      
+      <div class="form-check form-switch mb-3">
+        <input type="checkbox" id="allowInversions" class="form-check-input"
+          [(ngModel)]="gripSettings.allowInversions">
+        <label for="allowInversions" class="form-check-label">
+          <strong>Allow inversions</strong>
+          <br>
+          <small class="text-muted">Include chord voicings with different bass notes</small>
+        </label>
+      </div>
+      
+      <div class="form-check form-switch mb-3">
+        <input type="checkbox" id="allowIncompleteChords" class="form-check-input"
+          [(ngModel)]="gripSettings.allowIncompleteChords">
+        <label for="allowIncompleteChords" class="form-check-label">
+          <strong>Allow incomplete chords</strong>
+          <br>
+          <small class="text-muted">Include grips that don't contain all chord notes</small>
+        </label>
+      </div>
+      
+      <div class="form-check form-switch mb-3">
+        <input type="checkbox" id="allowDuplicateNotes" class="form-check-input"
+          [(ngModel)]="gripSettings.allowDuplicateNotes">
+        <label for="allowDuplicateNotes" class="form-check-label">
+          <strong>Allow duplicate notes</strong>
+          <br>
+          <small class="text-muted">Include grips where the same note appears multiple times</small>
+        </label>
+      </div>
+      
+      <div class="form-check form-switch mb-3">
+        <input type="checkbox" id="allowMutedStringsInside" class="form-check-input"
+          [(ngModel)]="gripSettings.allowMutedStringsInside">
+        <label for="allowMutedStringsInside" class="form-check-label">
+          <strong>Allow muted strings inside</strong>
+          <br>
+          <small class="text-muted">Include grips with muted strings between played strings</small>
+        </label>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeSettingsModal()">
+        <i class="bi bi-x me-1"></i>
+        Close
+      </button>
+      <button class="btn btn-primary" type="button" (click)="closeSettingsModal(); updateChord()">
+        <i class="bi bi-check2 me-1"></i>
+        Apply & Regenerate
+      </button>
+    </div>
+  </div>
+</ng-template>

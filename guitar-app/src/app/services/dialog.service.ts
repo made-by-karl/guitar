@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { ModalService } from './modal.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../components/confirm-dialog/confirm-dialog.component';
 
 export type DialogType = 'confirm' | 'alert';
 export type DialogVariant = 'primary' | 'danger' | 'warning' | 'success';
@@ -13,21 +14,13 @@ export interface DialogConfig {
   cancelText?: string;
 }
 
-export interface DialogResult {
-  confirmed: boolean;
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class DialogService {
-  private dialogSubject = new Subject<DialogConfig>();
-  private resultSubject = new Subject<DialogResult>();
+  constructor(private modalService: ModalService) {}
 
-  dialog$ = this.dialogSubject.asObservable();
-  result$ = this.resultSubject.asObservable();
-
-  confirm(
+  async confirm(
     message: string, 
     title: string = 'Confirm', 
     confirmText: string = 'OK', 
@@ -36,7 +29,7 @@ export class DialogService {
       variant?: DialogVariant;
     }
   ): Promise<boolean> {
-    const config: DialogConfig = {
+    const data: ConfirmDialogData = {
       title,
       message,
       type: 'confirm',
@@ -45,17 +38,17 @@ export class DialogService {
       cancelText
     };
 
-    this.dialogSubject.next(config);
-
-    return new Promise<boolean>((resolve) => {
-      const subscription = this.result$.subscribe((result) => {
-        subscription.unsubscribe();
-        resolve(result.confirmed);
-      });
+    const modalRef = this.modalService.show(ConfirmDialogComponent, {
+      data,
+      width: 'auto',
+      closeOnBackdropClick: false
     });
+
+    const result = await modalRef.afterClosed();
+    return result === true;
   }
 
-  alert(
+  async alert(
     message: string, 
     title: string = 'Information', 
     confirmText: string = 'OK',
@@ -63,7 +56,7 @@ export class DialogService {
       variant?: DialogVariant;
     }
   ): Promise<void> {
-    const config: DialogConfig = {
+    const data: ConfirmDialogData = {
       title,
       message,
       type: 'alert',
@@ -71,17 +64,12 @@ export class DialogService {
       confirmText
     };
 
-    this.dialogSubject.next(config);
-
-    return new Promise<void>((resolve) => {
-      const subscription = this.result$.subscribe(() => {
-        subscription.unsubscribe();
-        resolve();
-      });
+    const modalRef = this.modalService.show(ConfirmDialogComponent, {
+      data,
+      width: 'auto',
+      closeOnBackdropClick: false
     });
-  }
 
-  close(confirmed: boolean = false) {
-    this.resultSubject.next({ confirmed });
+    await modalRef.afterClosed();
   }
 }
