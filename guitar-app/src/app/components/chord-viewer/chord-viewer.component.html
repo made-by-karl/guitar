@@ -1,74 +1,57 @@
 <div class="container py-5">
   <h2 class="mb-4"><i class="bi bi-music-note-beamed me-2"></i>Chords</h2>
-  <div class="accordion mb-3" id="accordion">
-    <div class="accordion-item chord-builder">
-      <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chordBuilder"
-          aria-expanded="true" aria-controls="chordBuilder">
-          Chord Builder
-        </button>
-      </h2>
-      <div id="chordBuilder" class="accordion-collapse collapse show" data-bs-parent="#accordion">
-        <div class="accordion-body">
-          <div class="chord-builder-content">
-            <div class="form-group mb-3">
-              <label for="root" class="form-label">Root:</label>
-              <select id="root" class="form-select" [(ngModel)]="selectedRoot">
-                @for (root of roots; track root) {
-                <option [value]="root">{{ root }}</option>
-                }
-              </select>
-            </div>
+  
+  <!-- Compact Chord Builder -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="root" class="form-label">Root:</label>
+          <select id="root" class="form-select" [(ngModel)]="selectedRoot" (ngModelChange)="onRootChange()">
+            @for (root of roots; track root) {
+            <option [value]="root">{{ root }}</option>
+            }
+          </select>
+        </div>
 
-            <div class="mb-3">
-              <label class="form-label">Modifiers:</label>
-              <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-primary" type="button" (click)="openModifierModal()">
-                  Select Modifiers
-                  <i class="bi bi-pencil-square ms-1"></i>
-                </button>
-                <div class="flex-grow-1">
-                  @if (selectedModifiers.length > 0) {
-                    <div class="d-flex align-items-center gap-2">
-                      @for (modifier of selectedModifiers; track modifier) {
-                        <span class="badge bg-primary">{{ modifier }}</span>
-                      }
-                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetModifiers()" 
-                              title="Clear all modifiers">
-                        <i class="bi bi-x-circle"></i>
-                      </button>
-                    </div>
-                  } @else {
-                    <span class="text-muted">None selected</span>
-                  }
-                </div>
-              </div>
-            </div>
+        <div class="col-md-3">
+          <label for="bass" class="form-label">Bass (optional):</label>
+          <select id="bass" class="form-select" [(ngModel)]="selectedBass" (ngModelChange)="onBassChange()">
+            <option [ngValue]="null">None</option>
+            @for (bass of bassNotes; track bass) {
+            <option [value]="bass">{{ bass }}</option>
+            }
+          </select>
+        </div>
 
-            <div class="form-group mb-3">
-              <label for="bass" class="form-label">Bass (optional):</label>
-              <select id="bass" class="form-select" [(ngModel)]="selectedBass">
-                <option value="">None</option>
-                @for (bass of bassNotes; track bass) {
-                <option [value]="bass">{{ bass }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group mb-3">
-              <button class="btn btn-primary w-100" (click)="updateChord()">
-                <i class="bi bi-search me-2"></i>
-                Find Chord Grips
+        <div class="col-md-4">
+          <label class="form-label">Modifiers:</label>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary flex-grow-1" type="button" (click)="openModifierModal()">
+              Select Modifiers
+              <i class="bi bi-pencil-square ms-1"></i>
+            </button>
+            @if (selectedModifiers.length > 0) {
+              <button class="btn btn-outline-secondary" type="button" (click)="resetModifiers()" 
+                      title="Clear all modifiers">
+                <i class="bi bi-x-circle"></i>
               </button>
-            </div>
-
-            <div class="form-group mb-3">
-              <button class="btn btn-outline-secondary w-100" type="button" (click)="openSettingsModal()">
-                <i class="bi bi-gear me-2"></i>
-                Grip Settings
-              </button>
-            </div>
+            }
           </div>
+          @if (selectedModifiers.length > 0) {
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              @for (modifier of selectedModifiers; track modifier) {
+                <span class="badge bg-primary">{{ modifier }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Settings:</label>
+          <button class="btn btn-outline-secondary w-100" type="button" (click)="openSettingsModal()">
+            <i class="bi bi-gear"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -166,7 +149,16 @@
               <div class="chord-display">
                 <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
                   <div>
-                    <strong>{{ grips.length }} grips</strong>
+                    @if (isGeneratingGrips) {
+                      <div class="d-flex align-items-center mb-3">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <strong>Generating grips...</strong>
+                      </div>
+                    } @else {
+                      <strong>{{ grips.length }} grips</strong>
+                    }
                     @for (grip of grips; track grip) {
                     <div>
                       <div style="display: flex; flex-direction: row; gap: 1rem;">
@@ -383,7 +375,7 @@
         <i class="bi bi-x me-1"></i>
         Close
       </button>
-      <button class="btn btn-primary" type="button" (click)="closeSettingsModal(); updateChord()">
+      <button class="btn btn-primary" type="button" (click)="applySettingsAndRegenerate()">
         <i class="bi bi-check2 me-1"></i>
         Apply & Regenerate
       </button>

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Note } from "app/common/semitones";
+import { Note, Semitone } from "app/common/semitones";
 import { FretboardService } from "app/services/fretboard.service";
 import type { ExtendedChord } from 'app/services/chords/chord.service';
 import { Grip, TunedGrip, String } from './grip.model';
@@ -54,7 +54,7 @@ export class GripGeneratorService {
         return false; // Duplicate notes not allowed
       }
 
-      const inversion = this.determineInversion(chord.notes, chord.root, notes);
+      const inversion = this.determineInversion(chord, notes);
       if (!inversion || (!allowInversions && inversion !== 'root')) {
         return false; // Chord is not an inversion (G6 with E-GBD) or inversions not allowed
       }
@@ -426,15 +426,20 @@ export class GripGeneratorService {
     return { maxSpan: 3, maxFingers: 3 }
   }
 
-  private determineInversion(chordNotes: string[], root: string, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {
+  private determineInversion(chord: ExtendedChord, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {
       const playedNotes = notes.filter(n => n !== null).map(n => n.semitone);
       if (playedNotes.length === 0) return undefined;
 
-      const bassNote = playedNotes[0];
+      let baseNote: Semitone;
+      if (chord.bass === undefined || chord.bass === chord.root) {
+        baseNote = playedNotes[0];
+      } else {
+        baseNote = playedNotes[1];
+      }
 
-      if (bassNote === root) return 'root';
+      if (baseNote === chord.root) return 'root';
 
-      const index = chordNotes.indexOf(bassNote);
+      const index = chord.notes.indexOf(baseNote);
       if (index === 1) return '1st';
       if (index === 2) return '2nd';
       

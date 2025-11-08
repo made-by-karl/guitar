@@ -51,6 +51,21 @@ describe('GripGeneratorService', () => {
         expect(barreShape.notes).toEqual(['F2', 'C3', 'F3', 'A3', 'C4', 'F4']);
       }
     });
+
+    it('should generate C major chord with E as bass', () => {
+      const chord = createChord('C', ['C', 'E', 'G'], [], 'E');
+      const grips = service.generateGrips(chord);
+
+      // Should find the o32o1o shape
+      const commonShape = grips.find(g => 
+        stringifyGrip(g) === 'o|3|2|o|1|o'
+      );
+
+      expect(commonShape).toBeTruthy();
+      if (commonShape) {
+        expect(commonShape.notes).toEqual(['E2', 'C3', 'E3', 'G3', 'C4', 'E4']);
+      }
+    });
   });
   
   /*

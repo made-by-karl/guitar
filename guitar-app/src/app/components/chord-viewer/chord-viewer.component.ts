@@ -49,6 +49,7 @@ export class ChordViewerComponent implements OnInit {
 
   activeChord: ExtendedChord | null = null
   progressions: Chord[][] = [];
+  isGeneratingGrips: boolean = false;
   
   private modifierModalRef: ModalRef | null = null;
   private settingsModalRef: ModalRef | null = null;
@@ -99,8 +100,7 @@ export class ChordViewerComponent implements OnInit {
           this.selectedBass = analysis.bass || null;
           this.activeChord = analysis;
 
-          const grips = this.gripGenerator.generateGrips(this.activeChord, this.gripSettings);
-          this.grips = this.gripScorer.sortGrips(grips);
+          this.regenerateGrips();
 
           const progressions: Chord[][] = [];
           const inHarmonics = this.harmonicFunctions.find(analysis);
@@ -162,6 +162,11 @@ export class ChordViewerComponent implements OnInit {
     }
   }
 
+  applySettingsAndRegenerate() {
+    this.closeSettingsModal();
+    this.regenerateGrips();
+  }
+
   toggleModifier(modifier: Modifier) {
     if (this.selectedModifiers.includes(modifier)) {
       this.selectedModifiers = this.selectedModifiers.filter(m => m !== modifier);
@@ -175,24 +180,51 @@ export class ChordViewerComponent implements OnInit {
           return true;
         });
     }
+    // Immediately update chord and URL when modifier changes
+    this.updateChord();
   }
 
   resetModifiers() {
     this.selectedModifiers = [];
+    // Immediately update chord and URL when modifiers are reset
+    this.updateChord();
   }
 
   updateChord() {
-    this.closeChordBuilder();
     const chord: Chord = { root: this.selectedRoot, modifiers: [...this.selectedModifiers] };
     const chordString = this.getChordQueryString(chord);
 
-    if (this.currentChord === chordString && this.activeChord) {
-      // If already on the same chord, just refresh grips
-      const grips = this.gripGenerator.generateGrips(this.activeChord, this.gripSettings);
-      this.grips = this.gripScorer.sortGrips(grips);
-    } else {
-      this.router.navigate(['/chord', chordString], { queryParams: {} });
+    // Always navigate to update URL (which will trigger ngOnInit subscription to regenerate grips)
+    this.router.navigate(['/chord', chordString], { queryParams: {} });
+  }
+
+  private regenerateGrips() {
+    if (!this.activeChord) return;
+    
+    this.isGeneratingGrips = true;
+    
+    // Use setTimeout to allow UI to update with loading indicator
+    setTimeout(() => {
+      try {
+        const grips = this.gripGenerator.generateGrips(this.activeChord!, this.gripSettings);
+        this.grips = this.gripScorer.sortGrips(grips);
+      } finally {
+        this.isGeneratingGrips = false;
+      }
+    }, 10);
+  }
+
+  onRootChange() {
+    this.updateChord();
+  }
+
+  onBassChange() {
+    // Ensure that any invalid values get converted to null
+    const bassValue = this.selectedBass as any;
+    if (!bassValue || bassValue === 'null' || bassValue === 'undefined' || bassValue === '') {
+      this.selectedBass = null;
     }
+    this.updateChord();
   }
 
   getPinnedSongSheet() {
@@ -246,22 +278,13 @@ export class ChordViewerComponent implements OnInit {
     }
   }
 
-  closeChordBuilder() {
-    const collapsibleElement = document.getElementById('chordBuilder');
-    if (collapsibleElement) {
-      collapsibleElement.classList.remove('show');
-
-      const buttonElement = document.querySelector('[data-bs-target="#exampleCollapse"]');
-      if (buttonElement) {
-        const isExpanded = collapsibleElement.classList.contains('show');
-        buttonElement.setAttribute('aria-expanded', (!isExpanded).toString());
-      }
-    }
-  }
-
   getChordQueryString(chord: Chord): string {
-    // Compose a string that can be parsed by chordService
-    return chordToString(chord);
+    // For progression links, use the chord as-is (no bass note)
+    // For the current chord being edited, use selectedBass
+    const bass = (chord === this.activeChord || chordEquals(chord, { root: this.selectedRoot, modifiers: this.selectedModifiers })) 
+      ? this.selectedBass 
+      : null;
+    return chordToString(chord, bass);
   }
 
   chordEquals(a: Chord, b: Chord) {
