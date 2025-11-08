@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Note, Semitone } from "app/common/semitones";
+import { getIntervalSemitones, Note, Semitone } from "app/common/semitones";
 import { FretboardService } from "app/services/fretboard.service";
 import type { ExtendedChord } from 'app/services/chords/chord.service';
 import { Grip, TunedGrip, String } from './grip.model';
@@ -55,8 +55,13 @@ export class GripGeneratorService {
       }
 
       const inversion = this.determineInversion(chord, notes);
-      if (!inversion || (!allowInversions && inversion !== 'root')) {
+      if (inversion && (!allowInversions && inversion !== 'root')) {
         return false; // Chord is not an inversion (G6 with E-GBD) or inversions not allowed
+      }
+
+      // Check for dissonant intervals in lower strings
+      if (this.hasDissonantLowVoicing(chord, notes)) {
+        return false;
       }
 
       const grip: TunedGrip = {
@@ -424,6 +429,64 @@ export class GripGeneratorService {
 
   private fretConfiguration(fret: number): { maxSpan: number; maxFingers: number } {
     return { maxSpan: 3, maxFingers: 3 }
+  }
+
+  /**
+   * Check if a grip has dissonant intervals in lower strings
+   * Checks for various dissonant intervals (2nds, 7ths, tritones) that sound harsh in lower registers
+   */
+  private hasDissonantLowVoicing(chord: ExtendedChord, notes: (Note | null)[]): boolean {
+    const playedNotes = notes.filter(n => n !== null);
+    if (playedNotes.length < 4) {
+      return false; // Not enough notes to worry about voicing
+    }
+
+    // Use the actual bass note (lowest played note) as reference
+    // because dissonance is based on acoustic intervals from the bass
+    const bassNote = playedNotes[0];
+
+    // Check each played note for dissonant intervals
+    for (let i = 0; i < notes.length; i++) {
+      const note = notes[i];
+      if (!note) continue;
+
+      // Calculate interval from root
+      const interval = getIntervalSemitones(bassNote, note);
+      const normalizedInterval = ((interval % 12) + 12) % 12;
+
+      // Dissonant intervals to check:
+      // 1 = minor 2nd (very dissonant)
+      // 2 = major 2nd (dissonant in lower register)
+      // 6 = tritone/augmented 4th/diminished 5th (very dissonant)
+      // 10 = minor 7th (dissonant in lower register)
+      // 11 = major 7th (dissonant in lower register)
+      const isMinor2nd = normalizedInterval === 1;
+      const isMajor2nd = normalizedInterval === 2;
+      const isTritone = normalizedInterval === 6;
+      const isMinor7th = normalizedInterval === 10;
+      const isMajor7th = normalizedInterval === 11;
+
+      // 7ths should not be in lower strings
+      if (isMinor7th || isMajor7th) {
+        // Guitar strings are indexed from low E to high E:
+        // Index 0 = Low E (6th string), Index 5 = High E (1st string)
+        // We want to avoid 7th in indices 0, 1, 2 (lower strings: Low E, A, D)
+        // Allow 7th in indices 3, 4, 5 (higher strings: G, B, High E)
+        if (i <= 2) {
+          return true; // 7th in lower strings creates dissonance
+        }
+      }
+
+      // 2nds and tritones should generally not be in the very lowest strings
+      // Allow them in middle to upper strings (indices 2-5)
+      if (isMinor2nd || isMajor2nd || isTritone) {
+        if (i <= 1) {
+          return true; // Very dissonant intervals in the lowest strings
+        }
+      }
+    }
+
+    return false;
   }
 
   private determineInversion(chord: ExtendedChord, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {

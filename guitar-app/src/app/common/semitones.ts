@@ -26,6 +26,17 @@ export function transpose<T extends Semitone | Note>(root: T, semitones: number)
   }
 }
 
+/**
+ * Calculate the interval in semitones between two notes
+ */
+export function getIntervalSemitones(note1: Note, note2: Note): number {
+  const semitoneIndex1 = SEMITONES.indexOf(note1.semitone);
+  const semitoneIndex2 = SEMITONES.indexOf(note2.semitone);
+  const octaveDiff = note2.octave - note1.octave;
+  
+  return (octaveDiff * 12) + (semitoneIndex2 - semitoneIndex1);
+}
+
 const FLAT_EQUIVS: Record<string, Semitone> = {
     'Db': 'C#', 'Eb': 'D#', 'Fb': 'E', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#', 'Cb': 'B',
 };
