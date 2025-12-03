@@ -48,6 +48,22 @@
         <span class="fw-bold small text-muted me-2">Tempo:</span>
         <span class="badge bg-warning text-dark">{{ sheet.tempo }} BPM</span>
       </div>
+      @if (isKeepScreenOnSupported()) {
+      <div class="d-flex align-items-center">
+        <i class="bi bi-{{ isKeepScreenOnActive() ? 'brightness-high-fill' : 'brightness-high' }} me-2 text-muted"></i>
+        <span class="fw-bold small text-muted me-2">Keep Screen On:</span>
+        <div class="form-check form-switch mb-0">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            role="switch" 
+            id="keepScreenOnSwitch"
+            [checked]="isKeepScreenOnActive()" 
+            (change)="toggleKeepScreenOn()"
+            title="Prevent screen from turning off while viewing this song">
+        </div>
+      </div>
+      }
     </div>
     <button class="btn btn-outline-secondary btn-sm" (click)="showTuning()" title="Edit tuning, capo & tempo settings">
       <i class="bi bi-gear"></i>

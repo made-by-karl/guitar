@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SongSheetsService } from '../../../services/song-sheets.service';
@@ -9,6 +9,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GripService } from 'app/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from 'app/common/semitones';
 import { DialogService } from '../../../services/dialog.service';
+import { ScreenWakeLockService } from '../../../services/screen-wake-lock.service';
 
 @Component({
   selector: 'app-song-sheet-detail',
@@ -17,7 +18,7 @@ import { DialogService } from '../../../services/dialog.service';
   templateUrl: './song-sheet-detail.component.html',
   styleUrls: ['./song-sheet-detail.component.scss']
 })
-export class SongSheetDetailComponent {
+export class SongSheetDetailComponent implements OnDestroy {
   sheet: SongSheetWithData | undefined;
   renaming = false;
   tempName = '';
@@ -47,7 +48,8 @@ export class SongSheetDetailComponent {
     private gripService: GripService,
     private route: ActivatedRoute,
     private router: Router,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    public wakeLockService: ScreenWakeLockService
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -278,5 +280,22 @@ export class SongSheetDetailComponent {
       this.songSheetService.pinSongSheet(this.sheet.id);
       this.router.navigate(['/rhythm-patterns']);
     }
+  }
+
+  async toggleKeepScreenOn() {
+    await this.wakeLockService.toggleWakeLock();
+  }
+
+  isKeepScreenOnActive(): boolean {
+    return this.wakeLockService.isWakeLockActive();
+  }
+
+  isKeepScreenOnSupported(): boolean {
+    return this.wakeLockService.isWakeLockSupported();
+  }
+
+  ngOnDestroy() {
+    // Release wake lock when leaving the page
+    this.wakeLockService.releaseWakeLock();
   }
 }
