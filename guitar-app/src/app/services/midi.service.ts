@@ -13,6 +13,50 @@ export class MidiService {
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
+    // Handle visibility changes to resume audio context on mobile
+    this.setupVisibilityHandler();
+  }
+
+  /**
+   * Setup listener for page visibility changes
+   * This is crucial for mobile devices where audio context gets suspended
+   */
+  private setupVisibilityHandler(): void {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden && this.context) {
+          await this.resumeAudioContext();
+        }
+      });
+      
+      // Also handle user interactions (click/touch) to resume context
+      // This ensures context is resumed even if visibility event doesn't fire
+      const resumeOnInteraction = async () => {
+        if (this.context && this.context.state === 'suspended') {
+          await this.resumeAudioContext();
+        }
+      };
+      
+      document.addEventListener('touchstart', resumeOnInteraction, { once: false, passive: true });
+      document.addEventListener('touchend', resumeOnInteraction, { once: false, passive: true });
+      document.addEventListener('click', resumeOnInteraction, { once: false, passive: true });
+    }
+  }
+
+  /**
+   * Resume the audio context if it's suspended
+   * This is needed especially on mobile devices after the app was hidden
+   */
+  private async resumeAudioContext(): Promise<void> {
+    try {
+      if (this.context?.state === 'suspended') {
+        console.log('Audio context suspended, resuming...');
+        await Tone.start();
+        console.log('Audio context resumed successfully');
+      }
+    } catch (error) {
+      console.error('Failed to resume audio context:', error);
+    }
   }
 
   private async initializeAudio(): Promise<void> {
@@ -35,6 +79,11 @@ export class MidiService {
    * Ensures audio is initialized before playing
    */
   private async ensureInitialized(): Promise<void> {
+    // Always try to resume context first (important for mobile)
+    if (this.context) {
+      await this.resumeAudioContext();
+    }
+    
     // If already initialized, return immediately
     if (this.context && this.sampler) {
       return;
