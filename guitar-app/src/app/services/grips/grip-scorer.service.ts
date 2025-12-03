@@ -68,11 +68,4 @@ export class GripScorerService {
       openBonus
     );
   }
-
-  sortGrips(grips: TunedGrip[]): TunedGrip[] {
-    return grips
-      .map(grip => ({ grip, score: this.scoreGrip(grip) }))
-      .sort((a, b) => a.score - b.score)
-      .map(g => g.grip);
-  }
 }

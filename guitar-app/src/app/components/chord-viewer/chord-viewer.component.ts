@@ -207,11 +207,48 @@ export class ChordViewerComponent implements OnInit {
     setTimeout(() => {
       try {
         const grips = this.gripGenerator.generateGrips(this.activeChord!, this.gripSettings);
-        this.grips = this.gripScorer.sortGrips(grips);
+        this.grips = this.sortGripsByFretAndScore(grips);
       } finally {
         this.isGeneratingGrips = false;
       }
     }, 10);
+  }
+
+  private sortGripsByFretAndScore(grips: TunedGrip[]): TunedGrip[] {
+    return grips.sort((a, b) => {
+      // Get the minimum fret for each grip (excluding open strings and muted strings)
+      const minFretA = this.getMinFret(a);
+      const minFretB = this.getMinFret(b);
+
+      // First, sort by fret position
+      if (minFretA !== minFretB) {
+        return minFretA - minFretB;
+      }
+
+      // If frets are equal, sort by score (lower score is better)
+      const scoreA = this.gripScorer.scoreGrip(a);
+      const scoreB = this.gripScorer.scoreGrip(b);
+      return scoreA - scoreB;
+    });
+  }
+
+  private getMinFret(grip: TunedGrip): number {
+    let minFret = Infinity;
+
+    for (const string of grip.strings) {
+      if (string === 'x' || string === 'o') continue;
+      
+      if (Array.isArray(string)) {
+        for (const placement of string) {
+          if (placement.fret < minFret) {
+            minFret = placement.fret;
+          }
+        }
+      }
+    }
+
+    // If no frets found (all open strings), return 0
+    return minFret === Infinity ? 0 : minFret;
   }
 
   onRootChange() {

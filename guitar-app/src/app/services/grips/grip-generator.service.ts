@@ -10,340 +10,511 @@ import { Grip, TunedGrip, String } from './grip.model';
 export class GripGeneratorService {
   constructor(private fretboard: FretboardService) {}
 
-  generateGrips(chord: ExtendedChord, options: {
-      minFretToConsider?: number,
-      maxFretToConsider?: number,
-      minimalPlayableStrings?: number,
-      allowBarree?: boolean,
-      allowInversions?: boolean,
-      allowIncompleteChords?: boolean,
-      allowMutedStringsInside?: boolean,
-      allowDuplicateNotes?: boolean
-    } = {}): TunedGrip[] {
-    const minFretToConsider = options.minFretToConsider ?? 1;
-    const maxFretToConsider = options.maxFretToConsider ?? 12;
-    const minimalPlayableStrings = options.minimalPlayableStrings ?? 3;
-    const allowBarree = options.allowBarree ?? true;
-    const allowInversions = options.allowInversions ?? false;
-    const allowIncompleteChords = options.allowIncompleteChords ?? false;
-    const allowMutedStringsInside = options.allowMutedStringsInside ?? false;
-    const allowDuplicateNotes = options.allowDuplicateNotes ?? false;
+  generateGrips(chord: ExtendedChord, options: GripGeneratorOptions = {}): TunedGrip[] {
+    const config = this.parseOptions(options);
+    this.validateFretRange(config.minFretToConsider, config.maxFretToConsider);
 
-    if (minFretToConsider < 1 || maxFretToConsider < minFretToConsider) {
+    const context = this.initializeGenerationContext(chord, config);
+    
+    for (let fretWindowBase = config.minFretToConsider; fretWindowBase <= config.maxFretToConsider; fretWindowBase++) {
+      this.generateGripsForFretWindow(fretWindowBase, chord, config, context);
+    }
+
+    return context.grips;
+  }
+
+  private parseOptions(options: GripGeneratorOptions): GripGenerationConfig {
+    return {
+      minFretToConsider: options.minFretToConsider ?? 1,
+      maxFretToConsider: options.maxFretToConsider ?? 12,
+      minimalPlayableStrings: options.minimalPlayableStrings ?? 3,
+      allowBarree: options.allowBarree ?? true,
+      allowInversions: options.allowInversions ?? false,
+      allowIncompleteChords: options.allowIncompleteChords ?? false,
+      allowMutedStringsInside: options.allowMutedStringsInside ?? false,
+      allowDuplicateNotes: options.allowDuplicateNotes ?? false
+    };
+  }
+
+  private validateFretRange(minFret: number, maxFret: number): void {
+    if (minFret < 1 || maxFret < minFret) {
       throw new Error('Invalid fret range');
     }
+  }
 
+  private initializeGenerationContext(chord: ExtendedChord, config: GripGenerationConfig): GripGenerationContext {
     const guitarConfig = this.fretboard.getGuitarFretboardConfig();
-    const fretboardMatrix = this.fretboard.getFretboard(guitarConfig.tuning, maxFretToConsider);
+    const fretboardMatrix = this.fretboard.getFretboard(guitarConfig.tuning, config.maxFretToConsider);
     const fingers = this.fingerConfiguration();
-
     const expectedNotes = [...chord.notes, ...((chord.bass) ? [chord.bass] : [])];
 
-    const grips: TunedGrip[] = [];
-    const tryAddGrip = (strings: String[], notes: (Note | null)[]): boolean => {
-      if (strings.filter(s => s !== 'x').length < minimalPlayableStrings) {
-        return false; // Not enough strings
-      }
-      if (!allowBarree && strings.some(s => Array.isArray(s) && s.some(x => x.isPartOfBarree))) {
-        return false; // Barree not allowed
-      }
-      if (!allowIncompleteChords && !expectedNotes.every(e => notes.map(n => n?.semitone).includes(e))) {
-        return false; // Incomplete chord
-      }
-      if (!allowDuplicateNotes && new Set(notes.filter(n => n !== null).map(n => n.semitone + n.octave)).size !== notes.filter(n => n !== null).length) {
-        return false; // Duplicate notes not allowed
-      }
+    return {
+      grips: [],
+      fretboardMatrix,
+      fingers,
+      expectedNotes
+    };
+  }
 
-      const inversion = this.determineInversion(chord, notes);
-      if (inversion && (!allowInversions && inversion !== 'root')) {
-        return false; // Chord is not an inversion (G6 with E-GBD) or inversions not allowed
-      }
+  private generateGripsForFretWindow(
+    fretWindowBase: number,
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): void {
+    const fretConfiguration = this.fretConfiguration(fretWindowBase);
+    const fretWindowEnd = Math.min(fretWindowBase + fretConfiguration.maxSpan, config.maxFretToConsider + 1);
+    const playableNotes = context.fretboardMatrix.slice(fretWindowBase, fretWindowEnd);
 
-      // Check for dissonant intervals in lower strings
-      if (this.hasDissonantLowVoicing(chord, notes)) {
-        return false;
-      }
-
-      const grip: TunedGrip = {
-        strings,
-        notes: notes.map(n => n ? (n.semitone + n.octave) : null),
-        inversion
-      };
-
-      // Check if the grip already exists, is a subset or superset of an existing grip
-      const gripRootIndex = grip.strings.findIndex(s => s !== 'x');
-      for (let i=0; i < grips.length; i++) {
-        const otherGrip = grips[i];
-        const otherRootIndex = otherGrip.strings.findIndex(s => s !== 'x');
-
-        let diffState: 'gripIsSuperset' | 'gripIsSubset' | 'match' | 'conflict' | undefined = undefined;
-
-        for (let i=0; i < grip.strings.length; i++) {
-          const gripString = grip.strings[i];
-          const otherString = otherGrip.strings[i];
-
-          if ((gripString === 'o' && otherString === 'o') || (gripString === 'x' && otherString === 'x')) {
-            diffState = diffState ?? 'match';
-          } else if (Array.isArray(gripString) && Array.isArray(otherString)) {
-            const gripFret = Math.max(...gripString.map(s => s.fret));
-            const otherFret = Math.max(...otherString.map(s => s.fret));
-            if (gripFret === otherFret) {
-              diffState = diffState ?? 'match';
-            } else {
-              diffState = 'conflict';
-              break; // Conflict, no need to check further
-            }
-          }
-          else if (gripString === 'x') {
-            if (!diffState || diffState === 'match' || diffState === 'gripIsSubset') {
-              if (i < gripRootIndex) {
-                // Accept only other grip, if the root note does not change
-                const gripRoot = grip.notes[gripRootIndex]?.substring(0, 1);
-                const otherRoot = otherGrip.notes[otherRootIndex]?.substring(0, 1);
-
-                if (gripRoot !== otherRoot) {
-                  diffState = 'conflict';
-                  break; // Conflict, no need to check further
-                }
-              }
-
-              diffState = 'gripIsSubset';
-            } else {
-              diffState = 'conflict';
-              break; // Conflict, no need to check further
-            }
-          }
-          else if (otherString === 'x') {
-            if (i < otherRootIndex) {
-                // Accept only new grip, if the other root note does not change
-                const gripRoot = grip.notes[gripRootIndex]?.substring(0, 1);
-                const otherRoot = otherGrip.notes[otherRootIndex]?.substring(0, 1);
-
-                if (gripRoot !== otherRoot) {
-                  diffState = 'conflict';
-                  break; // Conflict, no need to check further
-                }
-              }
-            if (!diffState || diffState === 'match' || diffState === 'gripIsSuperset') {
-              diffState = 'gripIsSuperset';
-            } else {
-              diffState = 'conflict';
-              break; // Conflict, no need to check further
-            }
-          } else {
-            diffState = 'conflict';
-            break; // Conflict, no need to check further
-          }
-        }
-
-        if (diffState === 'match' || diffState === 'gripIsSubset') {
-          // Grip already exists
-          return false;
-        }
-
-        if (diffState === 'gripIsSuperset') {
-          // Grip is a superset of an existing grip, replace the existing grip
-          grips[i] = grip;
-          return true; // Grip added
-        }
-      }
-
-      // No existing grip found, add the new grip
-      grips.push(grip);
-      return true;
+    const candidatePositions = this.getCandidatePositions(playableNotes, fretWindowBase, context.expectedNotes);
+    if (candidatePositions.size === 0) {
+      return; // No candidates for this fret window
     }
 
+    const fingerPlacements = this.calculateFingerPlacements(candidatePositions);
+    const gripPlacements = this.combineFingerPlacements(fingerPlacements, context.fingers);
 
-    let fretWindowBase = minFretToConsider;
-    while (fretWindowBase <= maxFretToConsider) {
-      const fretConfiguration = this.fretConfiguration(fretWindowBase);
-      const fretWindowEnd = Math.min(fretWindowBase + fretConfiguration.maxSpan, maxFretToConsider +1);
+    this.processGripPlacements(gripPlacements, chord, config, context);
+  }
 
-      // The notes of the current window that is evaluated
-      const playableNotes: Note[][] = [
-        ...fretboardMatrix.slice(fretWindowBase, fretWindowEnd)
+  private calculateFingerPlacements(candidatePositions: Map<number, number[]>): Map<number, FingerPlacement[]> {
+    const fingerPlacements: Map<number, FingerPlacement[]> = new Map();
+    
+    candidatePositions.forEach((strings, fret) => {
+      const placements: FingerPlacement[] = [];
+      
+      // Add barree option if multiple strings on same fret
+      if (strings.length > 1) {
+        const barree: number[] = [];
+        for (let i = 5; i >= Math.min(...strings); i--) {
+          barree.push(i);
+        }
+        placements.push({ fret, strings: barree });
+      }
+
+      // Add individual finger placements
+      strings.forEach(string => {
+        placements.push({ fret, strings: [string] });
+      });
+
+      if (placements.length > 0) {
+        fingerPlacements.set(fret, placements);
+      }
+    });
+
+    return fingerPlacements;
+  }
+
+  private combineFingerPlacements(fingerPlacements: Map<number, FingerPlacement[]>, fingers: Finger[]): FingerPlacement[][] {
+    const gripPlacements: FingerPlacement[][] = [];
+
+    this.sorted(fingerPlacements).forEach(([fret, placements]) => {
+      const bareePlacements = placements.filter(p => p.strings.length > 1);
+      const singlePlacements = placements.filter(p => p.strings.length === 1);
+      const fretPlacements = [
+        ...bareePlacements.map(p => [p]),
+        ...this.combineElements(singlePlacements)
       ];
 
-      const candidatePositions = this.getCandidatePositions(playableNotes, fretWindowBase, expectedNotes);
-      if (candidatePositions.size === 0) {
-        fretWindowBase++;
-        continue; // No candidates for this fret, skip to next
+      if (gripPlacements.length === 0) {
+        gripPlacements.push(...fretPlacements);
+        return;
       }
 
-      // Calculate finger placements for the candidate positions
-      type FingerPlacement = {
-        fret: number;
-        strings: number[];
-      }
-      const fingerPlacements: Map<number, FingerPlacement[]> = new Map();
-      candidatePositions.forEach((strings, fret) => {
-        const fingers: FingerPlacement[] = [];
-        // Add a barree if there are at least 2 strings on the same fret
-        if (strings.length > 1) {
-          const barree: number[] = [];
-          for (let i=5; i >= Math.min(...strings); i--) {
-            barree.push(i);
-          };
-          
-          fingers.push({ fret, strings: barree });
-        }
+      const combinedPlacements = this.combineArrays(gripPlacements, fretPlacements, (a, p) => [...a, ...p])
+        .filter(combination => this.isValidFingerPlacementCombination(combination, fingers));
 
-        strings.forEach(string => {
-          fingers.push({ fret, strings: [string] });
-        })
+      gripPlacements.push(...combinedPlacements);
+    });
 
-        if (fingers.length > 0) {
-          fingerPlacements.set(fret, fingers);
-        }
-      })
+    return gripPlacements;
+  }
 
-      // Combine possible finger placements
-      const gripPlacements: FingerPlacement[][] = [];
-
-      this.sorted(fingerPlacements).forEach(([fret, placements]) => {
-
-        // Combine the placements on the same fret
-        const bareePlacements = placements.filter(p => p.strings.length > 1);
-        const singlePlacements = placements.filter(p => p.strings.length === 1);
-        const fretPlacements = [...bareePlacements.map(p => [p]), ...this.combineElements(singlePlacements)];
-
-        if (gripPlacements.length === 0) {
-          gripPlacements.push(...fretPlacements);
-
-          return; // First fret, just add the placements
-        }
-        
-        const combinedPlacements = this.combineArrays(gripPlacements, fretPlacements, (a, p) => [...a, ...p])
-                                          .filter(x => {
-                                            // Skip combinations that are too long
-                                            if (x.length > fingers.length) return false;
-
-                                            const singles = x.filter(p => p.strings.length === 1);
-                                            
-                                            // Remove combinations that have duplicate single-strings
-                                            const strings = singles.map(p => p.strings[0]);
-                                            if (new Set(strings).size !== strings.length) return false;
-
-                                            // Remove combinations that have a barree hiding a single-string placement
-                                            const barrees = x.filter(p => p.strings.length > 1);
-                                            for (const barree of barrees) {
-                                              for (const single of singles) {
-                                                if (barree.fret > single.fret && barree.strings.includes(single.strings[0])) {
-                                                  return false; // Barree hides single-string placement
-                                                }
-                                              }
-                                            }
-
-                                            return true; // Valid combination
-                                          });
-
-        gripPlacements.push(...combinedPlacements);
-      })
-
-      gripPlacements.map((placements) => {
-        const strings: String[] = Array(6).fill('o');
-        placements.forEach((placement) => {
-          const isBarree = placement.strings.length > 1;
-          placement.strings.forEach((stringIndex) => {
-            if (strings[stringIndex] === 'o') {
-              strings[stringIndex] = [];
-            }
-            
-            if (Array.isArray(strings[stringIndex])) {
-              strings[stringIndex].push({ fret: placement.fret, isPartOfBarree: isBarree });
-            }
-          })
-        })
-
-        // Modify grip, so that only the expected notes are played
-        const notes = this.getNotesForGrip(strings, fretboardMatrix);
-        notes.forEach((note, index) => {
-          if (note === null || !expectedNotes.includes(note.semitone)) {
-            strings[index] = 'x'; // Muted string
-            notes[index] = null;
-          }
-        })
-
-        // Handle muted strings inside playable strings
-        if (!allowMutedStringsInside) {
-          strings.forEach((string, index) => {
-            if (string === 'x') {
-              const stringsBefore = strings.slice(0, index).map((s: String): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
-              const stringsAfter = strings.slice(index + 1).map((s: String): number => s !== 'x' ? 1 : 0).reduce((a, b) => a + b, 0);
-              
-              let muteBefore = false;
-              let muteAfter = false;
-
-              if (stringsBefore < stringsAfter) {
-                muteBefore = true; // Mute all strings before this one
-              } else if (stringsBefore > stringsAfter) {
-                muteAfter = true; // Mute all strings after this one
-              } else {
-                // If equal, prefer strings before
-                muteAfter = true;
-              }
-
-              if (muteBefore) {
-                for (let i = 0; i < index; i++) {
-                  if (strings[i] !== 'x') {
-                    strings[i] = 'x';
-                    notes[i] = null;
-                  }
-                }
-              }
-
-              if (muteAfter) {
-                for (let i = index + 1; i < strings.length; i++) {
-                  if (strings[i] !== 'x') {
-                    strings[i] = 'x';
-                    notes[i] = null;
-                  }
-                }
-              }
-            }
-          })
-        }
-
-        if (chord.bass !== undefined) {
-          const bassIndex = notes.findIndex(n => n !== null && n.semitone === chord.bass);
-          if (bassIndex !== -1) {
-            if (bassIndex > 0) {
-              // If bass note is played, mute all strings before it
-              for (let i = 0; i < bassIndex; i++) {
-                if (strings[i] !== 'x') {
-                  strings[i] = 'x';
-                  notes[i] = null;
-                }
-              }
-            }
-          } else {
-            return; // No bass note played, skip this grip
-          }
-        } else {
-          const rootIndex = notes.findIndex(n => n !== null && n.semitone === chord.root);
-          if (rootIndex > 0) {
-            const clonedStrings = [...strings];
-            const clonedNotes = [...notes];
-            // If root note is played, mute all strings before it
-            for (let i = 0; i < rootIndex; i++) {
-              if (clonedStrings[i] !== 'x') {
-                clonedStrings[i] = 'x';
-                clonedNotes[i] = null;
-              }
-            }
-
-            tryAddGrip(clonedStrings, clonedNotes);
-          }
-        }
-
-        tryAddGrip(strings, notes);
-      });
-      
-
-      fretWindowBase++;
+  private isValidFingerPlacementCombination(placements: FingerPlacement[], fingers: Finger[]): boolean {
+    if (placements.length > fingers.length) {
+      return false; // Too many fingers needed
     }
 
-    return grips;
+    const singles = placements.filter(p => p.strings.length === 1);
+    const barrees = placements.filter(p => p.strings.length > 1);
+
+    if (this.hasDuplicateSingleStrings(singles)) {
+      return false;
+    }
+
+    if (this.hasBarreeHidingSingleString(barrees, singles)) {
+      return false;
+    }
+
+    if (this.hasBarreeHidingBarree(barrees)) {
+      return false;
+    }
+
+    if (this.hasBarreeHiddenBySingleFingers(barrees, singles)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private hasDuplicateSingleStrings(singles: FingerPlacement[]): boolean {
+    const strings = singles.map(p => p.strings[0]);
+    return new Set(strings).size !== strings.length;
+  }
+
+  private hasBarreeHidingSingleString(barrees: FingerPlacement[], singles: FingerPlacement[]): boolean {
+    for (const barree of barrees) {
+      for (const single of singles) {
+        if (barree.fret > single.fret && barree.strings.includes(single.strings[0])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private hasBarreeHidingBarree(barrees: FingerPlacement[]): boolean {
+    for (const barree of barrees) {
+      for (const other of barrees) {
+        if (barree !== other && barree.fret > other.fret && 
+            other.strings.every(s => barree.strings.includes(s))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private hasBarreeHiddenBySingleFingers(barrees: FingerPlacement[], singles: FingerPlacement[]): boolean {
+    for (const barree of barrees) {
+      const singleFingers = singles
+        .filter(s => s.fret > barree.fret)
+        .map(s => s.strings[0]);
+
+      if (barree.strings.every(s => singleFingers.includes(s))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private processGripPlacements(
+    gripPlacements: FingerPlacement[][],
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): void {
+    gripPlacements.forEach(placements => {
+      const strings = this.buildStringsFromPlacements(placements);
+      let notes = this.getNotesForGrip(strings, context.fretboardMatrix);
+
+      this.muteUnexpectedNotes(strings, notes, context.expectedNotes);
+      
+      if (!config.allowMutedStringsInside) {
+        this.removeMutedStringsInside(strings, notes);
+      }
+
+      if (chord.bass !== undefined) {
+        this.tryAddGripWithBassNote(strings, notes, chord, config, context);
+      } else {
+        this.tryAddGripWithRootNote(strings, notes, chord, config, context);
+      }
+    });
+  }
+
+  private buildStringsFromPlacements(placements: FingerPlacement[]): String[] {
+    const strings: String[] = Array(6).fill('o');
+    
+    placements.forEach(placement => {
+      const isBarree = placement.strings.length > 1;
+      placement.strings.forEach(stringIndex => {
+        if (strings[stringIndex] === 'o') {
+          strings[stringIndex] = [];
+        }
+        if (Array.isArray(strings[stringIndex])) {
+          strings[stringIndex].push({ fret: placement.fret, isPartOfBarree: isBarree });
+        }
+      });
+    });
+
+    return strings;
+  }
+
+  private muteUnexpectedNotes(strings: String[], notes: (Note | null)[], expectedNotes: Semitone[]): void {
+    notes.forEach((note, index) => {
+      if (note === null || !expectedNotes.includes(note.semitone)) {
+        strings[index] = 'x';
+        notes[index] = null;
+      }
+    });
+  }
+
+  private removeMutedStringsInside(strings: String[], notes: (Note | null)[]): void {
+    strings.forEach((string, index) => {
+      if (string !== 'x') return;
+
+      const stringsBefore = strings.slice(0, index).filter(s => s !== 'x').length;
+      const stringsAfter = strings.slice(index + 1).filter(s => s !== 'x').length;
+
+      if (stringsBefore < stringsAfter) {
+        this.muteStringsBefore(strings, notes, index);
+      } else {
+        this.muteStringsAfter(strings, notes, index);
+      }
+    });
+  }
+
+  private muteStringsBefore(strings: String[], notes: (Note | null)[], index: number): void {
+    for (let i = 0; i < index; i++) {
+      if (strings[i] !== 'x') {
+        strings[i] = 'x';
+        notes[i] = null;
+      }
+    }
+  }
+
+  private muteStringsAfter(strings: String[], notes: (Note | null)[], index: number): void {
+    for (let i = index + 1; i < strings.length; i++) {
+      if (strings[i] !== 'x') {
+        strings[i] = 'x';
+        notes[i] = null;
+      }
+    }
+  }
+
+  private tryAddGripWithBassNote(
+    strings: String[],
+    notes: (Note | null)[],
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): void {
+    const bassIndex = notes.findIndex(n => n !== null && n.semitone === chord.bass);
+    if (bassIndex === -1) {
+      return; // No bass note played, skip this grip
+    }
+
+    if (bassIndex > 0) {
+      this.muteStringsBefore(strings, notes, bassIndex);
+    }
+
+    this.tryAddGrip(strings, notes, chord, config, context);
+  }
+
+  private tryAddGripWithRootNote(
+    strings: String[],
+    notes: (Note | null)[],
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): void {
+    const rootIndex = notes.findIndex(n => n !== null && n.semitone === chord.root);
+    
+    // If root is not the lowest note, create a root position version
+    if (rootIndex > 0) {
+      const clonedStrings = [...strings];
+      const clonedNotes = [...notes];
+      this.muteStringsBefore(clonedStrings, clonedNotes, rootIndex);
+      this.tryAddGrip(clonedStrings, clonedNotes, chord, config, context);
+    }
+
+    // Try adding the original grip
+    this.tryAddGrip(strings, notes, chord, config, context);
+  }
+
+  private tryAddGrip(
+    strings: String[],
+    notes: (Note | null)[],
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): boolean {
+    if (!this.isValidGrip(strings, notes, chord, config, context.expectedNotes)) {
+      return false;
+    }
+
+    const grip = this.createGrip(strings, notes, chord);
+    const addResult = this.addGripToCollection(grip, context.grips);
+    
+    return addResult;
+  }
+
+  private isValidGrip(
+    strings: String[],
+    notes: (Note | null)[],
+    chord: ExtendedChord,
+    config: GripGenerationConfig,
+    expectedNotes: Semitone[]
+  ): boolean {
+    if (strings.filter(s => s !== 'x').length < config.minimalPlayableStrings) {
+      return false; // Not enough strings
+    }
+
+    if (!config.allowBarree && strings.some(s => Array.isArray(s) && s.some(x => x.isPartOfBarree))) {
+      return false; // Barree not allowed
+    }
+
+    const playedSemitones = notes.map(n => n?.semitone).filter(s => s !== undefined);
+    if (!config.allowIncompleteChords && !expectedNotes.every(e => playedSemitones.includes(e))) {
+      return false; // Incomplete chord
+    }
+
+    if (!config.allowDuplicateNotes && this.hasDuplicateNotes(notes)) {
+      return false;
+    }
+
+    const inversion = this.determineInversion(chord, notes);
+    if (inversion && (!config.allowInversions && inversion !== 'root')) {
+      return false; // Inversions not allowed
+    }
+
+    if (this.hasDissonantLowVoicing(chord, notes)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private hasDuplicateNotes(notes: (Note | null)[]): boolean {
+    const noteStrings = notes.filter(n => n !== null).map(n => n!.semitone + n!.octave);
+    return new Set(noteStrings).size !== noteStrings.length;
+  }
+
+  private createGrip(strings: String[], notes: (Note | null)[], chord: ExtendedChord): TunedGrip {
+    return {
+      strings,
+      notes: notes.map(n => n ? (n.semitone + n.octave) : null),
+      inversion: this.determineInversion(chord, notes)
+    };
+  }
+
+  private isBarreeGrip(grip: TunedGrip): boolean {
+    return grip.strings.some(s => Array.isArray(s) && s.some(x => x.isPartOfBarree));
+  }
+
+  private addGripToCollection(grip: TunedGrip, grips: TunedGrip[]): boolean {
+    const gripRootIndex = grip.strings.findIndex(s => s !== 'x');
+    const isBarree = this.isBarreeGrip(grip);
+
+    for (let i = 0; i < grips.length; i++) {
+      const otherGrip = grips[i];
+      const otherIsBarree = this.isBarreeGrip(otherGrip);
+      const comparison = this.compareGrips(grip, otherGrip, gripRootIndex);
+
+      // Handle matches
+      if (comparison === 'match') {
+        if (isBarree && !otherIsBarree) {
+          return false; // Keep existing non-barree, reject new barree
+        } else if (!isBarree && otherIsBarree) {
+          grips[i] = grip; // Replace existing barree with new non-barree
+          return true;
+        } else {
+          return false; // Both same type, grip already exists
+        }
+      }
+
+      // Handle subsets
+      if (comparison === 'subset') {
+        if (isBarree === otherIsBarree) {
+          return false; // Same type: new grip is subset, reject it
+        } else if (!isBarree && otherIsBarree) {
+          // New non-barree is subset of existing barree: add it anyway
+          continue; // Keep looking for other conflicts
+        } else {
+          // New barree is subset of existing non-barree: reject it
+          return false;
+        }
+      }
+
+      // Handle supersets
+      if (comparison === 'superset') {
+        if (isBarree === otherIsBarree) {
+          grips[i] = grip; // Same type: replace with superset
+          return true;
+        } else if (!isBarree && otherIsBarree) {
+          grips[i] = grip; // Replace barree with non-barree superset
+          return true;
+        } else {
+          // New barree is superset of existing non-barree: keep non-barree
+          return false;
+        }
+      }
+    }
+
+    grips.push(grip);
+    return true;
+  }
+
+  private compareGrips(
+    grip: TunedGrip,
+    otherGrip: TunedGrip,
+    gripRootIndex: number
+  ): 'match' | 'subset' | 'superset' | 'conflict' {
+    const otherRootIndex = otherGrip.strings.findIndex(s => s !== 'x');
+    let diffState: 'superset' | 'subset' | 'match' | 'conflict' | undefined = undefined;
+
+    for (let i = 0; i < grip.strings.length; i++) {
+      const result = this.compareStringAtIndex(
+        grip.strings[i],
+        otherGrip.strings[i],
+        diffState,
+        i,
+        gripRootIndex,
+        otherRootIndex,
+        grip.notes,
+        otherGrip.notes
+      );
+
+      if (result === 'conflict') {
+        return 'conflict';
+      }
+
+      diffState = result;
+    }
+
+    return diffState ?? 'match';
+  }
+
+  private compareStringAtIndex(
+    gripString: String,
+    otherString: String,
+    currentState: 'superset' | 'subset' | 'match' | 'conflict' | undefined,
+    index: number,
+    gripRootIndex: number,
+    otherRootIndex: number,
+    gripNotes: (string | null)[],
+    otherNotes: (string | null)[]
+  ): 'superset' | 'subset' | 'match' | 'conflict' {
+    if ((gripString === 'o' && otherString === 'o') || (gripString === 'x' && otherString === 'x')) {
+      return currentState ?? 'match';
+    }
+
+    if (Array.isArray(gripString) && Array.isArray(otherString)) {
+      const gripFret = Math.max(...gripString.map(s => s.fret));
+      const otherFret = Math.max(...otherString.map(s => s.fret));
+      return gripFret === otherFret ? (currentState ?? 'match') : 'conflict';
+    }
+
+    if (gripString === 'x') {
+      if (index < gripRootIndex && !this.rootsMatch(gripNotes[gripRootIndex], otherNotes[otherRootIndex])) {
+        return 'conflict';
+      }
+      return (!currentState || currentState === 'match' || currentState === 'subset') ? 'subset' : 'conflict';
+    }
+
+    if (otherString === 'x') {
+      if (index < otherRootIndex && !this.rootsMatch(gripNotes[gripRootIndex], otherNotes[otherRootIndex])) {
+        return 'conflict';
+      }
+      return (!currentState || currentState === 'match' || currentState === 'superset') ? 'superset' : 'conflict';
+    }
+
+    return 'conflict';
+  }
+
+  private rootsMatch(note1: string | null, note2: string | null): boolean {
+    if (!note1 || !note2) return false;
+    return note1.substring(0, 1) === note2.substring(0, 1);
   }
 
   private getNotesForGrip(strings: String[], fretboardMatrix: Note[][]): (Note | null)[] {
@@ -470,9 +641,9 @@ export class GripGeneratorService {
       if (isMinor7th || isMajor7th) {
         // Guitar strings are indexed from low E to high E:
         // Index 0 = Low E (6th string), Index 5 = High E (1st string)
-        // We want to avoid 7th in indices 0, 1, 2 (lower strings: Low E, A, D)
-        // Allow 7th in indices 3, 4, 5 (higher strings: G, B, High E)
-        if (i <= 2) {
+        // We want to avoid 7th in indices 0, 1, 2, 3 (lower strings: Low E, A, D, G)
+        // Allow 7th in indices 4, 5 (higher strings: B, High E)
+        if (i <= 3) {
           return true; // 7th in lower strings creates dissonance
         }
       }
@@ -489,7 +660,7 @@ export class GripGeneratorService {
     return false;
   }
 
-  private determineInversion(chord: ExtendedChord, notes: (Note | null)[]): 'root' | '1st' | '2nd' | undefined {
+  private determineInversion(chord: ExtendedChord, notes: (Note | null)[]): 'root' | '1st' | '2nd' | 'other' | undefined {
       const playedNotes = notes.filter(n => n !== null).map(n => n.semitone);
       if (playedNotes.length === 0) return undefined;
 
@@ -505,6 +676,7 @@ export class GripGeneratorService {
       const index = chord.notes.indexOf(baseNote);
       if (index === 1) return '1st';
       if (index === 2) return '2nd';
+      if (index > 2) return 'other'; // 3rd inversion or higher
       
       return undefined;
     }
@@ -514,4 +686,38 @@ type Finger = {
   finger: 'thumb' |'index' | 'middle' | 'ring' | 'pinky';
   strings: number[];
   barreeRange: number;
+}
+
+type FingerPlacement = {
+  fret: number;
+  strings: number[];
+}
+
+type GripGeneratorOptions = {
+  minFretToConsider?: number;
+  maxFretToConsider?: number;
+  minimalPlayableStrings?: number;
+  allowBarree?: boolean;
+  allowInversions?: boolean;
+  allowIncompleteChords?: boolean;
+  allowMutedStringsInside?: boolean;
+  allowDuplicateNotes?: boolean;
+}
+
+type GripGenerationConfig = {
+  minFretToConsider: number;
+  maxFretToConsider: number;
+  minimalPlayableStrings: number;
+  allowBarree: boolean;
+  allowInversions: boolean;
+  allowIncompleteChords: boolean;
+  allowMutedStringsInside: boolean;
+  allowDuplicateNotes: boolean;
+}
+
+type GripGenerationContext = {
+  grips: TunedGrip[];
+  fretboardMatrix: Note[][];
+  fingers: Finger[];
+  expectedNotes: Semitone[];
 }

@@ -6,7 +6,7 @@ export interface Grip {
 
 export interface TunedGrip extends Grip {
   notes: (string | null)[]; // Semitone+octave, i.e. E4
-  inversion: 'root' | '1st' | '2nd' | undefined;
+  inversion: 'root' | '1st' | '2nd' | 'other' | undefined;
 }
 
 export function stringifyGrip(grip: Grip): string {
