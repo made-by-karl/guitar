@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { ChordViewerComponent } from './chord-viewer.component';
+import { ChordComponent } from './chord.component';
 import { of } from 'rxjs';
 import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
 import { ChordService } from 'app/services/chords/chord.service';
@@ -8,12 +8,12 @@ import { GripScorerService } from 'app/services/grips/grip-scorer.service';
 import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
 
 describe('ChordViewerComponent', () => {
-  let component: ChordViewerComponent;
-  let fixture: ComponentFixture<ChordViewerComponent>;
+  let component: ChordComponent;
+  let fixture: ComponentFixture<ChordComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ChordViewerComponent],
+      imports: [ChordComponent],
       providers: [
         { provide: GripGeneratorService, useValue: {} },
         { provide: ChordService, useValue: {} },
@@ -37,7 +37,7 @@ describe('ChordViewerComponent', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ChordViewerComponent);
+    fixture = TestBed.createComponent(ChordComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -207,6 +207,33 @@ const modalRef = this.modalService.show(MyComponent, {
 });
 ```
 
+### Show Template-Based Modal
+
+For template-based modals, you must inject `ViewContainerRef` and pass it to the service.
+
+```typescript
+import { ViewChild, TemplateRef, ViewContainerRef } from '@angular/core';
+
+@ViewChild('myTemplate') myTemplate!: TemplateRef<any>;
+
+constructor(
+  private modalService: ModalService,
+  private viewContainerRef: ViewContainerRef
+) {}
+
+openTemplateModal() {
+  const modalRef = this.modalService.showTemplate(
+    this.myTemplate,
+    this.viewContainerRef,
+    {
+      width: '800px',
+      maxHeight: '90vh',
+      closeOnBackdropClick: true
+    }
+  );
+}
+```
+
 ### Get Result
 
 ```typescript
@@ -261,7 +288,7 @@ To ensure proper scrolling in the modal body:
 ```scss
 :host {
   display: block;
-  height: 100%;  // Critical for CDK Overlay
+  height: 100%;  // Required for component-based modals
 }
 
 .modal-content-wrapper {
@@ -277,11 +304,27 @@ To ensure proper scrolling in the modal body:
 }
 ```
 
+**Required Configuration:**
+When opening a modal, specify either `height` or `maxHeight` (recommended for responsive layouts):
+
+```typescript
+this.modalService.show(MyComponent, {
+  width: '600px',
+  maxHeight: '90vh'
+});
+
+this.modalService.showTemplate(template, viewContainerRef, {
+  width: '600px',
+  maxHeight: '90vh'
+});
+```
+
 **Why this matters:**
-- The modal service automatically applies `height: 100%` to the component's host element
+- The overlay pane needs a defined height for flexbox scrolling to work (the service uses `height` if set, otherwise falls back to `maxHeight`)
+- For component-based modals, the service applies `height: 100%` (and `display: block`) to the component host
+- For template-based modals, the service applies `height: 100%` to the template's root element
 - The wrapper must use `height: 100%` to fill the container
 - The body must use `flex: 1 1 auto` and `min-height: 0` for proper scrolling
-- Without this structure, scrolling won't work correctly
 
 ### 2. Component Lifecycle
 

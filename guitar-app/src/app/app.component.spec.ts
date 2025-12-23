@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { SongSheetsService } from './services/song-sheets.service';
 import { UpdateService } from './services/update.service';
+import { ScreenWakeLockService } from './services/screen-wake-lock.service';
 import { Component } from '@angular/core';
 
 // Mock component for router testing
@@ -12,6 +13,7 @@ class MockComponent { }
 describe('AppComponent', () => {
   let mockSongSheetsService: jest.Mocked<SongSheetsService>;
   let mockUpdateService: jest.Mocked<UpdateService>;
+  let mockWakeLockService: jest.Mocked<ScreenWakeLockService>;
 
   beforeEach(async () => {
     // Create mock services
@@ -31,18 +33,27 @@ describe('AppComponent', () => {
       checkVersion: jest.fn()
     } as any;
 
+    mockWakeLockService = {
+      isWakeLockSupported: jest.fn().mockReturnValue(true),
+      isWakeLockActive: jest.fn().mockReturnValue(false),
+      toggleWakeLock: jest.fn().mockResolvedValue(true),
+      releaseWakeLock: jest.fn().mockResolvedValue(undefined)
+    } as any;
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
         provideRouter([
           { path: 'song-sheets', component: MockComponent },
+          { path: 'song-sheets/:id', component: MockComponent },
           { path: 'chord', component: MockComponent },
           { path: 'rhythm-patterns', component: MockComponent },
           { path: 'settings', component: MockComponent },
           { path: 'midi-test', component: MockComponent }
         ]),
         { provide: SongSheetsService, useValue: mockSongSheetsService },
-        { provide: UpdateService, useValue: mockUpdateService }
+        { provide: UpdateService, useValue: mockUpdateService },
+        { provide: ScreenWakeLockService, useValue: mockWakeLockService }
       ]
     }).compileComponents();
   });
@@ -64,5 +75,60 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
+  });
+
+  it('should unpin song sheet when navigating to song sheets page', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    
+    await router.navigate(['/song-sheets']);
+    fixture.detectChanges();
+    
+    expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
+  });
+
+  it('should NOT unpin song sheet when navigating to chord page', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    
+    mockSongSheetsService.unpinSongSheet.mockClear();
+    
+    await router.navigate(['/chord']);
+    fixture.detectChanges();
+    
+    expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
+  });
+
+  it('should NOT unpin song sheet when navigating to rhythm patterns page', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    
+    mockSongSheetsService.unpinSongSheet.mockClear();
+    
+    await router.navigate(['/rhythm-patterns']);
+    fixture.detectChanges();
+    
+    expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
+  });
+
+  it('should unpin song sheet when navigating to settings page', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    
+    mockSongSheetsService.unpinSongSheet.mockClear();
+    
+    await router.navigate(['/settings']);
+    fixture.detectChanges();
+    
+    expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
+  });
+
+  it('should release wake lock on destroy', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const component = fixture.componentInstance;
+    
+    component.ngOnDestroy();
+    
+    expect(mockWakeLockService.releaseWakeLock).toHaveBeenCalled();
   });
 });

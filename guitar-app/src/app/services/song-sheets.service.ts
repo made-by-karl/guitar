@@ -160,6 +160,36 @@ export class SongSheetsService {
     }
   }
 
+  moveGrip(sheetId: string, fromIndex: number, toIndex: number) {
+    const sheet = this.getById(sheetId);
+    if (sheet && sheet.grips && fromIndex >= 0 && fromIndex < sheet.grips.length && 
+        toIndex >= 0 && toIndex < sheet.grips.length) {
+      const item = sheet.grips.splice(fromIndex, 1)[0];
+      sheet.grips.splice(toIndex, 0, item);
+      this.update(sheet);
+    }
+  }
+
+  movePattern(sheetId: string, fromIndex: number, toIndex: number) {
+    const sheet = this.getById(sheetId);
+    if (sheet && sheet.patterns && fromIndex >= 0 && fromIndex < sheet.patterns.length && 
+        toIndex >= 0 && toIndex < sheet.patterns.length) {
+      const item = sheet.patterns.splice(fromIndex, 1)[0];
+      sheet.patterns.splice(toIndex, 0, item);
+      this.update(sheet);
+    }
+  }
+
+  movePart(sheetId: string, fromIndex: number, toIndex: number) {
+    const sheet = this.getById(sheetId);
+    if (sheet && sheet.parts && fromIndex >= 0 && fromIndex < sheet.parts.length && 
+        toIndex >= 0 && toIndex < sheet.parts.length) {
+      const item = sheet.parts.splice(fromIndex, 1)[0];
+      sheet.parts.splice(toIndex, 0, item);
+      this.update(sheet);
+    }
+  }
+
   rename(sheetId: string, newName: string) {
     const sheet = this.getById(sheetId);
     if (sheet) {

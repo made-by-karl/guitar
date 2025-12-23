@@ -1,6 +1,7 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { SongSheetsService } from '../../../services/song-sheets.service';
 import { SongSheetWithData, SongSheetGripWithData, SongSheetPatternWithData, SongPart, SongSheetPattern, SongSheetGrip } from '../../../services/song-sheets.model';
 import { GripDiagramComponent } from '../../grip-diagram/grip-diagram.component';
@@ -9,16 +10,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GripService } from 'app/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from 'app/common/semitones';
 import { DialogService } from '../../../services/dialog.service';
-import { ScreenWakeLockService } from '../../../services/screen-wake-lock.service';
 
 @Component({
   selector: 'app-song-sheet-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, DragDropModule],
   templateUrl: './song-sheet-detail.component.html',
   styleUrls: ['./song-sheet-detail.component.scss']
 })
-export class SongSheetDetailComponent implements OnDestroy {
+export class SongSheetDetailComponent {
   sheet: SongSheetWithData | undefined;
   renaming = false;
   tempName = '';
@@ -48,8 +48,7 @@ export class SongSheetDetailComponent implements OnDestroy {
     private gripService: GripService,
     private route: ActivatedRoute,
     private router: Router,
-    private dialogService: DialogService,
-    public wakeLockService: ScreenWakeLockService
+    private dialogService: DialogService
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -103,6 +102,42 @@ export class SongSheetDetailComponent implements OnDestroy {
   removeGrip(gripId: string) {
     if (this.sheet) {
       this.songSheetService.removeGrip(this.sheet.id, gripId);
+      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+    }
+  }
+
+  // Angular CDK drag and drop handler
+  dropGrip(event: CdkDragDrop<SongSheetGripWithData[]>) {
+    if (!this.sheet) return;
+    
+    if (event.previousIndex !== event.currentIndex) {
+      // Use CDK's moveItemInArray for local state update
+      moveItemInArray(this.sheet.grips, event.previousIndex, event.currentIndex);
+      
+      // Persist the change to the service
+      this.songSheetService.moveGrip(this.sheet.id, event.previousIndex, event.currentIndex);
+      
+      // Refresh the sheet data
+      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+    }
+  }
+
+  dropPattern(event: CdkDragDrop<SongSheetPatternWithData[]>) {
+    if (!this.sheet) return;
+    
+    if (event.previousIndex !== event.currentIndex) {
+      moveItemInArray(this.sheet.patterns, event.previousIndex, event.currentIndex);
+      this.songSheetService.movePattern(this.sheet.id, event.previousIndex, event.currentIndex);
+      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+    }
+  }
+
+  dropPart(event: CdkDragDrop<SongPart[]>) {
+    if (!this.sheet) return;
+    
+    if (event.previousIndex !== event.currentIndex) {
+      moveItemInArray(this.sheet.parts, event.previousIndex, event.currentIndex);
+      this.songSheetService.movePart(this.sheet.id, event.previousIndex, event.currentIndex);
       this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
     }
   }
@@ -268,10 +303,14 @@ export class SongSheetDetailComponent implements OnDestroy {
     return this.sheet.tuning.map(note => `${note.semitone}${note.octave}`).join(' | ');
   }
 
-  addChords() {
+  addChords(chordName?: string) {
     if (this.sheet) {
       this.songSheetService.pinSongSheet(this.sheet.id);
-      this.router.navigate(['/chord']);
+      if (chordName) {
+        this.router.navigate(['/chord', chordName]);
+      } else {
+        this.router.navigate(['/chord']);
+      }
     }
   }
 
@@ -280,22 +319,5 @@ export class SongSheetDetailComponent implements OnDestroy {
       this.songSheetService.pinSongSheet(this.sheet.id);
       this.router.navigate(['/rhythm-patterns']);
     }
-  }
-
-  async toggleKeepScreenOn() {
-    await this.wakeLockService.toggleWakeLock();
-  }
-
-  isKeepScreenOnActive(): boolean {
-    return this.wakeLockService.isWakeLockActive();
-  }
-
-  isKeepScreenOnSupported(): boolean {
-    return this.wakeLockService.isWakeLockSupported();
-  }
-
-  ngOnDestroy() {
-    // Release wake lock when leaving the page
-    this.wakeLockService.releaseWakeLock();
   }
 }

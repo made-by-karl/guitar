@@ -8,6 +8,7 @@
         <div class="col-md-3">
           <label for="root" class="form-label">Root:</label>
           <select id="root" class="form-select" [(ngModel)]="selectedRoot" (ngModelChange)="onRootChange()">
+            <option [ngValue]="null">Select a chord...</option>
             @for (root of roots; track root) {
             <option [value]="root">{{ root }}</option>
             }
@@ -144,7 +145,6 @@
                   }
                 </div>
               </div>
-              }
 
               <div class="chord-display">
                 <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
@@ -197,6 +197,15 @@
                   </div>
                 </div>
               </div>
+              } @else {
+              <!-- No chord selected state -->
+              <div class="text-center py-5">
+                <p class="text-muted mb-4">
+                  Select a root note from the dropdown above to start exploring chord grips.<br>
+                  You can also add modifiers (like m, 7, sus4) and change the bass note.
+                </p>
+              </div>
+              }
             </div>
           </div>
         </div>
