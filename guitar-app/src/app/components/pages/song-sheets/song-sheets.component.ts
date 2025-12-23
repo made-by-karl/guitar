@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-import { CommonModule, NgForOf, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SongSheetsService } from '../../services/song-sheets.service';
-import { SongSheet } from '../../services/song-sheets.model';
+import { SongSheetsService } from '../../../services/song-sheets.service';
+import { SongSheet } from '../../../services/song-sheets.model';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { DialogService } from 'app/services/dialog.service';
 
 @Component({
   selector: 'app-song-sheets',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterOutlet, NgForOf, NgIf],
+  imports: [CommonModule, FormsModule, RouterLink, RouterOutlet],
   templateUrl: './song-sheets.component.html',
   styleUrls: ['./song-sheets.component.scss']
 })

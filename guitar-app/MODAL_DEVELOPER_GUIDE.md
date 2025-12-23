@@ -617,8 +617,8 @@ import { Component, ViewChild, TemplateRef, ViewContainerRef } from '@angular/co
 import { ModalService, ModalRef } from './services/modal.service';
 
 @Component({
-  selector: 'app-chord-viewer',
-  templateUrl: './chord-viewer.component.html'
+  selector: 'app-chord',
+  templateUrl: './chord.component.html'
 })
 export class ChordViewerComponent {
   @ViewChild('modifierModal') modifierModalTemplate!: TemplateRef<any>;

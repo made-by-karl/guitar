@@ -1,6 +1,7 @@
 <!-- Action-based Rhythm Pattern Editor -->
 <div class="rhythm-pattern-editor">
-  <div class="card" *ngIf="pattern() as currentPattern">
+  @if (pattern(); as currentPattern) {
+  <div class="card">
     <div class="card-body">
       <div>
         <!-- Pattern Details -->
@@ -249,4 +250,5 @@
       </div>
     </div>
   </div>
+  }
 </div>

@@ -1,19 +1,18 @@
 import { Component } from '@angular/core';
-import { CommonModule, NgForOf, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RhythmPatternsService } from '../../services/rhythm-patterns.service';
-import { RhythmPattern, RhythmAction, PickingNote, RhythmModifier } from '../../services/rhythm-patterns.model';
-import { PlaybackService } from '../../services/playback.service';
-import { SongSheetsService } from '../../services/song-sheets.service';
-import { DialogService } from '../../services/dialog.service';
-import { RhythmPatternEditorComponent } from '../rhythm-pattern-editor/rhythm-pattern-editor.component';
-import { ModalService } from '../../services/modal.service';
-import { RhythmPatternEditorModalComponent } from '../rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
+import { RhythmPatternsService } from '../../../services/rhythm-patterns.service';
+import { RhythmPattern } from '../../../services/rhythm-patterns.model';
+import { PlaybackService } from '../../../services/playback.service';
+import { SongSheetsService } from '../../../services/song-sheets.service';
+import { DialogService } from '../../../services/dialog.service';
+import { ModalService } from '../../../services/modal.service';
+import { RhythmPatternEditorModalComponent } from '../../rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
 
 @Component({
   selector: 'app-rhythm-patterns',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgForOf, NgIf],
+  imports: [CommonModule, FormsModule],
   templateUrl: './rhythm-patterns.component.html',
   styleUrls: ['./rhythm-patterns.component.scss']
 })

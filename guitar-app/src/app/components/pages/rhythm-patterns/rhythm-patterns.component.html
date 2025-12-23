@@ -9,7 +9,8 @@
     <button class="btn btn-outline-secondary" (click)="search = ''"><i class="bi bi-x"></i></button>
   </div>
   <div class="row">
-    <div class="col-md-4 mb-4" *ngFor="let pattern of filteredPatterns">
+    @for (pattern of filteredPatterns; track pattern.id || pattern.name) {
+    <div class="col-md-4 mb-4">
       <div class="card h-100">
         <div class="card-body">
           <h5 class="card-title">{{ pattern.name }}</h5>
@@ -34,30 +35,56 @@
                 @for (action of measure.actions; track $index; let actionIndex = $index) {
                   @if (action) {
                     <span class="me-2">
-                      <ng-container [ngSwitch]="action.technique">
-                        <span *ngSwitchCase="'strum'">
+                      @switch (action.technique) {
+                        @case ('strum') {
+                        <span>
                           <span [title]="'Action ' + actionIndex + ' - Strum ' + (action.direction === 'D' ? 'Down' : 'Up') + ' on ' + (action.strum?.strings || 'all') + ' strings' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
-                            <span *ngIf="action.direction === 'D'">&#8595;</span>
-                            <span *ngIf="action.direction === 'U'">&#8593;</span>
+                            @if (action.direction === 'D') {
+                            <span>&#8595;</span>
+                            }
+                            @if (action.direction === 'U') {
+                            <span>&#8593;</span>
+                            }
                             <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-                            <span *ngIf="action.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
-                            <span *ngIf="action.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
-                            <span *ngIf="action.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
+                            @if (action.modifiers?.includes('mute')) {
+                            <span class="badge bg-secondary ms-1">M</span>
+                            }
+                            @if (action.modifiers?.includes('palm-mute')) {
+                            <span class="badge bg-warning ms-1">PM</span>
+                            }
+                            @if (action.modifiers?.includes('accent')) {
+                            <span class="badge bg-danger ms-1">!</span>
+                            }
                           </span>
                         </span>
-                        <span *ngSwitchCase="'pick'">
+                        }
+                        @case ('pick') {
+                        <span>
                           <span [title]="'Action ' + actionIndex + ' - Pick ' + (action.pick?.length || 0) + ' note(s)' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
                             <span class="bi bi-dot"></span>
                             <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-                            <span *ngIf="action.modifiers?.includes('mute')" class="badge bg-secondary ms-1">M</span>
-                            <span *ngIf="action.modifiers?.includes('palm-mute')" class="badge bg-warning ms-1">PM</span>
-                            <span *ngIf="action.modifiers?.includes('accent')" class="badge bg-danger ms-1">!</span>
+                            @if (action.modifiers?.includes('mute')) {
+                            <span class="badge bg-secondary ms-1">M</span>
+                            }
+                            @if (action.modifiers?.includes('palm-mute')) {
+                            <span class="badge bg-warning ms-1">PM</span>
+                            }
+                            @if (action.modifiers?.includes('accent')) {
+                            <span class="badge bg-danger ms-1">!</span>
+                            }
                           </span>
                         </span>
-                        <span *ngSwitchCase="'rest'">-</span>
-                        <span *ngSwitchCase="'percussive'">P</span>
-                        <span *ngSwitchDefault>?</span>
-                      </ng-container>
+                        }
+                        @case ('rest') {
+                        <span>-</span>
+                        }
+                        @case ('percussive') {
+                        <span>P</span>
+                        }
+                        @default {
+                        <span>?</span>
+                        }
+                      }
                     </span>
                   }
                 }
@@ -69,17 +96,24 @@
               <i class="bi bi-play-fill"></i> Play
             </button>
             <button class="btn btn-outline-secondary btn-sm" (click)="startEdit(pattern)"><i class="bi bi-pencil"></i> Edit</button>
-            <button *ngIf="pinnedSheet && !isPatternInPinnedSheet(pattern)" class="btn btn-outline-success btn-sm" (click)="addToPinnedSheet(pattern)">
+            @if (pinnedSheet && !isPatternInPinnedSheet(pattern)) {
+            <button class="btn btn-outline-success btn-sm" (click)="addToPinnedSheet(pattern)">
               <i class="bi bi-plus-lg"></i> Add to Sheet
             </button>
-            <button *ngIf="pinnedSheet && isPatternInPinnedSheet(pattern)" class="btn btn-outline-warning btn-sm" (click)="removeFromPinnedSheet(pattern)">
+            }
+            @if (pinnedSheet && isPatternInPinnedSheet(pattern)) {
+            <button class="btn btn-outline-warning btn-sm" (click)="removeFromPinnedSheet(pattern)">
               <i class="bi bi-dash"></i> Remove
             </button>
-            <button class="btn btn-outline-danger btn-sm" (click)="deletePattern(pattern)" *ngIf="pattern.isCustom"><i class="bi bi-trash"></i> Delete</button>
+            }
+            @if (pattern.isCustom) {
+            <button class="btn btn-outline-danger btn-sm" (click)="deletePattern(pattern)"><i class="bi bi-trash"></i> Delete</button>
+            }
           </div>
         </div>
       </div>
     </div>
+    }
   </div>
 
   <div class="mb-3">

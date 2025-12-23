@@ -20,11 +20,20 @@
   }
 }
 
-.pinned-sheet-bar {
+.secondary-bar {
   width: 100vw;
   background: #e9ecef;
   color: #333;
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
   border-bottom: 1px solid #dee2e6;
+
+  .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  .bi-brightness-high-fill {
+    color: #0d6efd !important;
+  }
 }
 

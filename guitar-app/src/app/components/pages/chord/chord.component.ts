@@ -29,13 +29,13 @@ interface GripSettings {
 }
 
 @Component({
-  selector: 'app-chord-viewer',
+  selector: 'app-chord',
   standalone: true,
   imports: [CommonModule, FormsModule, GripDiagramComponent, RouterModule],
-  templateUrl: './chord-viewer.component.html',
-  styleUrls: ['./chord-viewer.component.scss']
+  templateUrl: './chord.component.html',
+  styleUrls: ['./chord.component.scss']
 })
-export class ChordViewerComponent implements OnInit {
+export class ChordComponent implements OnInit {
   @ViewChild('modifierModal') modifierModalTemplate!: TemplateRef<any>;
   @ViewChild('settingsModal') settingsModalTemplate!: TemplateRef<any>;
   
@@ -43,7 +43,7 @@ export class ChordViewerComponent implements OnInit {
   modifiers: Modifier[] = [...MODIFIERS];
   bassNotes: Semitone[] = [...SEMITONES];
   roots: Semitone[] = [...SEMITONES];
-  selectedRoot: Semitone = 'C';
+  selectedRoot: Semitone | null = null;
   selectedModifiers: Modifier[] = [];
   selectedBass: Semitone | null = null;
 
@@ -114,6 +114,14 @@ export class ChordViewerComponent implements OnInit {
           progressions.sort((a, b) => a.findIndex(x => chordEquals(x, analysis)) - b.findIndex(x => chordEquals(x, analysis)))
           this.progressions = progressions;
         }
+      } else {
+        // No chord selected - reset to initial state
+        this.selectedRoot = null;
+        this.selectedModifiers = [];
+        this.selectedBass = null;
+        this.activeChord = null;
+        this.grips = [];
+        this.progressions = [];
       }
     });
   }
@@ -191,6 +199,11 @@ export class ChordViewerComponent implements OnInit {
   }
 
   updateChord() {
+    // Don't update if no root is selected
+    if (!this.selectedRoot) {
+      return;
+    }
+    
     const chord: Chord = { root: this.selectedRoot, modifiers: [...this.selectedModifiers] };
     const chordString = this.getChordQueryString(chord);
 
@@ -252,6 +265,11 @@ export class ChordViewerComponent implements OnInit {
   }
 
   onRootChange() {
+    // If user selects "Select a chord..." (null), navigate to base /chord route
+    if (this.selectedRoot === null) {
+      this.router.navigate(['/chord']);
+      return;
+    }
     this.updateChord();
   }
 
@@ -318,7 +336,7 @@ export class ChordViewerComponent implements OnInit {
   getChordQueryString(chord: Chord): string {
     // For progression links, use the chord as-is (no bass note)
     // For the current chord being edited, use selectedBass
-    const bass = (chord === this.activeChord || chordEquals(chord, { root: this.selectedRoot, modifiers: this.selectedModifiers })) 
+    const bass = (chord === this.activeChord || (this.selectedRoot && chordEquals(chord, { root: this.selectedRoot, modifiers: this.selectedModifiers }))) 
       ? this.selectedBass 
       : null;
     return chordToString(chord, bass);

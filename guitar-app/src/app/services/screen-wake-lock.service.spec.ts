@@ -66,16 +66,20 @@ describe('ScreenWakeLockService', () => {
   });
 
   it('should handle unsupported wake lock API', async () => {
-    // Remove wakeLock from navigator
-    Object.defineProperty(navigator, 'wakeLock', {
-      writable: true,
-      configurable: true,
-      value: undefined
-    });
+    // Save the original wakeLock
+    const originalWakeLock = (navigator as any).wakeLock;
+    
+    // Delete wakeLock from navigator
+    delete (navigator as any).wakeLock;
 
     const newService = new ScreenWakeLockService();
     expect(newService.isWakeLockSupported()).toBe(false);
     const result = await newService.requestWakeLock();
     expect(result).toBe(false);
+    
+    // Restore original wakeLock
+    if (originalWakeLock !== undefined) {
+      (navigator as any).wakeLock = originalWakeLock;
+    }
   });
 });
