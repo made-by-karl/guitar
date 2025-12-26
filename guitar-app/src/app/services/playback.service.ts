@@ -68,6 +68,9 @@ export class PlaybackService {
     // Track when each string will be played next (to determine current action's duration)
     // Map of string index to the next time it will be played
     const nextStringPlayTime: Map<number, number> = new Map();
+    
+    // Track the next string-slap time (which stops ALL strings)
+    let nextStringSlapTime: number | null = null;
 
     let measureStartTime = 0; // Track absolute time across measures
 
@@ -140,18 +143,40 @@ export class PlaybackService {
               note: note
             });
           }
-        } else if (action.technique === 'percussive') {
-          // Add a percussive hit (use a fixed note for body percussion)
-          notes.push({
-            note: { semitone: 'C', octave: 4 } // Middle C for percussion
+        } else if (action.technique === 'percussive' && action.percussive) {
+          // Handle percussion separately - add as percussion instruction
+          const percussionTechnique = action.percussive.technique;
+          
+          instructions.push({
+            time: actionStartTime,
+            duration: 0.5, // Short duration for percussion
+            percussion: {
+              technique: percussionTechnique
+            },
+            velocity: velocity,
+            technique: 'percussive'
           });
-          // Percussive doesn't affect string tracking
+          
+          // If this is a string-slap, update the next slap time for duration calculation
+          if (percussionTechnique === 'string-slap') {
+            nextStringSlapTime = actionStartTime;
+          }
+          
+          // Skip the note instruction creation below
+          continue;
         }
 
         if (notes.length > 0) {
           // Calculate duration based on when any of the affected strings will be played next
           let duration = maxDuration; // Default to max duration
           
+          // Check if a string-slap is coming (which stops ALL strings)
+          if (nextStringSlapTime !== null) {
+            const calculatedDuration = nextStringSlapTime - actionStartTime;
+            duration = Math.min(duration, calculatedDuration);
+          }
+          
+          // Also check individual string play times
           for (const stringIndex of affectedStrings) {
             if (nextStringPlayTime.has(stringIndex)) {
               const nextPlayTime = nextStringPlayTime.get(stringIndex)!;
@@ -166,8 +191,8 @@ export class PlaybackService {
             notes: notes,
             velocity: velocity,
             technique: technique,
-            playNotes: action.technique === 'strum' ?
-              (action.direction === 'D' ? 'sequential' : 'reversed') :
+            playNotes: action.technique === 'strum' && action.strum ?
+              (action.strum.direction === 'D' ? 'sequential' : 'reversed') :
               'parallel' // Default to parallel for other techniques
           });
 

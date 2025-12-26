@@ -8,11 +8,12 @@ import { SongSheetsService } from '../../../services/song-sheets.service';
 import { DialogService } from '../../../services/dialog.service';
 import { ModalService } from '../../../services/modal.service';
 import { RhythmPatternEditorModalComponent } from '../../rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
+import { RhythmActionsComponent } from '../../rhythm-actions/rhythm-actions.component';
 
 @Component({
   selector: 'app-rhythm-patterns',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RhythmActionsComponent],
   templateUrl: './rhythm-patterns.component.html',
   styleUrls: ['./rhythm-patterns.component.scss']
 })

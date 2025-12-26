@@ -96,8 +96,8 @@
                                                               actionData.action.technique === 'pick' ? 'success' : 
                                                               actionData.action.technique === 'percussive' ? 'warning' : 'secondary')">
                           {{ actionData.action.technique }}
-                          @if (actionData.action.direction) {
-                            <i class="bi" [class]="actionData.action.direction === 'D' ? 'bi-arrow-down' : 'bi-arrow-up'"></i>
+                          @if (actionData.action.strum) {
+                            <i class="bi" [class]="actionData.action.strum.direction === 'D' ? 'bi-arrow-down' : 'bi-arrow-up'"></i>
                           }
                         </span>
                         <button class="btn btn-outline-danger btn-sm" type="button"
@@ -130,11 +130,11 @@
                         }
 
                         <!-- Direction (for strum only) -->
-                        @if (actionData.action.technique === 'strum') {
+                        @if (actionData.action.technique === 'strum' && actionData.action.strum) {
                         <div class="direction-section">
                           <label class="form-label small">Direction</label>
                           <select class="form-select form-select-sm" 
-                            [ngModel]="actionData.action.direction"
+                            [ngModel]="actionData.action.strum.direction"
                             (ngModelChange)="updateStrumDirection(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex">
                             <option [ngValue]="'D'">Down</option>
@@ -195,6 +195,20 @@
                               <i class="bi bi-plus"></i> Add Note
                             </button>
                           </div>
+                        </div>
+                        }
+
+                        <!-- Percussion Technique -->
+                        @if (actionData.action.technique === 'percussive') {
+                        <div class="percussion-section">
+                          <label class="form-label small">Percussion Technique</label>
+                          <select class="form-select form-select-sm" 
+                            [ngModel]="actionData.action.percussive?.technique || 'body-knock'"
+                            (ngModelChange)="updatePercussionTechnique(measureData.measureIndex, actionData.originalIndex, $event)"
+                            [name]="'percussionTechnique_' + measureData.measureIndex + '_' + actionData.originalIndex">
+                            <option value="body-knock">Body Knock</option>
+                            <option value="string-slap">String Slap</option>
+                          </select>
                         </div>
                         }
                       </div>

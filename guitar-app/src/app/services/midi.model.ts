@@ -4,14 +4,19 @@ import { Note } from 'app/common/semitones';
 export interface MidiInstruction {
   time: number;           // When to play (in seconds from start)
   duration: number;       // How long to hold (in seconds)
-  notes: MidiNote[];      // Notes to play
+  notes?: MidiNote[];     // Notes to play (for guitar techniques)
+  percussion?: MidiPercussion; // Percussion to play (for body/string percussion)
   velocity: number;       // Volume/intensity (0-1)
   technique: MidiTechnique;
-  playNotes: 'parallel' | 'sequential' | 'reversed'; // How to play multiple notes (default: parallel)
+  playNotes?: 'parallel' | 'sequential' | 'reversed'; // How to play multiple notes (default: parallel)
 }
 
 export interface MidiNote {
   note: Note;            // The musical note (semitone + octave)
+}
+
+export interface MidiPercussion {
+  technique: 'body-knock' | 'string-slap';
 }
 
 export type MidiTechnique = 
@@ -20,10 +25,3 @@ export type MidiTechnique =
   | 'palm-muted'    // Palm muted (damped)
   | 'percussive'    // Body hits, taps
   | 'accented';     // Emphasized notes
-
-export interface SampleSet {
-  normal: string;       // URL or key for normal guitar samples
-  muted: string;        // URL or key for muted string samples
-  palmMuted: string;    // URL or key for palm muted samples
-  percussive: string;   // URL or key for percussive samples
-}

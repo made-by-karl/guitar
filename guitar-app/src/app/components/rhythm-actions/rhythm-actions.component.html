@@ -1,0 +1,63 @@
+@for (action of actions(); track actionIndex; let actionIndex = $index) {
+  @if (action) {
+    <span class="me-2">
+      @switch (action.technique) {
+        @case ('strum') {
+          <span
+            [title]="'Action ' + actionIndex + ' - Strum ' + (action.strum?.direction === 'D' ? 'Down' : 'Up') + ' on ' + (action.strum?.strings || 'all') + ' strings' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
+            @if (action.strum?.direction === 'D') {
+              <span>&#8595;</span>
+            }
+            @if (action.strum?.direction === 'U') {
+              <span>&#8593;</span>
+            }
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+            @if (action.modifiers?.includes('mute')) {
+              <span class="badge bg-secondary ms-1">M</span>
+            }
+            @if (action.modifiers?.includes('palm-mute')) {
+              <span class="badge bg-warning ms-1">PM</span>
+            }
+            @if (action.modifiers?.includes('accent')) {
+              <span class="badge bg-danger ms-1">!</span>
+            }
+          </span>
+        }
+        @case ('pick') {
+          <span
+            [title]="'Action ' + actionIndex + ' - Pick ' + (action.pick?.length || 0) + ' note(s)' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
+            <span class="bi bi-dot"></span>
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+            @if (action.modifiers?.includes('mute')) {
+              <span class="badge bg-secondary ms-1">M</span>
+            }
+            @if (action.modifiers?.includes('palm-mute')) {
+              <span class="badge bg-warning ms-1">PM</span>
+            }
+            @if (action.modifiers?.includes('accent')) {
+              <span class="badge bg-danger ms-1">!</span>
+            }
+          </span>
+        }
+        @case ('rest') {
+          <span>-</span>
+        }
+        @case ('percussive') {
+          <span [title]="'Action ' + actionIndex + ' - Percussion: ' + (action.percussive?.technique || 'body-knock')">
+            P
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+          </span>
+        }
+        @default {
+          <span>?</span>
+        }
+      }
+    </span>
+  }
+}
