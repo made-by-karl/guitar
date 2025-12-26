@@ -98,26 +98,11 @@ import { MidiTechnique } from '../../../services/midi.model';
             </div>
             <div class="card-body">
               <p class="text-muted">Test guitar body and string percussion techniques</p>
-              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('body_tap')">
-                🤛 Body Tap
-              </button>
               <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('body_knock')">
                 👊 Body Knock
               </button>
               <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('string_slap')">
                 👋 String Slap
-              </button>
-              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('finger_tap')">
-                👆 Finger Tap
-              </button>
-              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('string_scratch')">
-                🔄 String Scratch
-              </button>
-              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('bridge_tap')">
-                🔧 Bridge Tap
-              </button>
-              <button class="btn btn-outline-secondary me-2 mb-2" (click)="playPercussion('accent')">
-                💥 Accent Hit
               </button>
             </div>
           </div>

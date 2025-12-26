@@ -1,7 +1,6 @@
 export type TimeSignature = '2/4' | '3/4' | '4/4' | '6/8' | '5/4' | '7/8' | '9/8' | '12/8';
 
 export type RhythmTechnique = 'strum' | 'pick' | 'rest' | 'percussive';
-export type RhythmDirection = 'D' | 'U' | null;
 
 // Style modifiers that can be applied to strum and pick techniques
 export type RhythmModifier = 'mute' | 'palm-mute' | 'accent';
@@ -19,8 +18,15 @@ export type StrumRange =
   | 'power'         // Strings 0-3 (low E, A, D, G)
   | number[];       // Specific string indices
 
+export type StrumDirection = 'D' | 'U';
+
 export interface StrumPattern {
   strings: StrumRange;
+  direction: StrumDirection;
+}
+
+export interface Percussive {
+  technique: 'body-knock' | 'string-slap';
 }
 
 export interface Measure {
@@ -30,7 +36,6 @@ export interface Measure {
 
 export interface RhythmAction {
   technique: RhythmTechnique;
-  direction?: RhythmDirection;
   
   // Style modifiers that can be applied to strum and pick techniques
   modifiers?: RhythmModifier[];
@@ -40,6 +45,9 @@ export interface RhythmAction {
   
   // For picking patterns
   pick?: PickingNote[]; // array of notes to pick
+
+  // For percussive technique
+  percussive?: Percussive;
 }
 
 export interface RhythmPattern {

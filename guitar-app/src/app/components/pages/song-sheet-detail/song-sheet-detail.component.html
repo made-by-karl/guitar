@@ -203,60 +203,7 @@
                   @if (measureIndex > 0) {
                     <span class="me-2 text-muted">|</span>
                   }
-                  @for (action of measure.actions; track actionIndex; let actionIndex = $index) {
-                    @if (action) {
-                      <span class="me-2">
-                        @switch (action.technique) {
-                          @case ('strum') {
-                            <span
-                              [title]="'Action ' + actionIndex + ' - Strum ' + (action.direction === 'D' ? 'Down' : 'Up') + ' on ' + (action.strum?.strings || 'all') + ' strings' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
-                              @if (action.direction === 'D') {
-                                <span>&#8595;</span>
-                              }
-                              @if (action.direction === 'U') {
-                                <span>&#8593;</span>
-                              }
-                              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-                              @if (action.modifiers?.includes('mute')) {
-                                <span class="badge bg-secondary ms-1">M</span>
-                              }
-                              @if (action.modifiers?.includes('palm-mute')) {
-                                <span class="badge bg-warning ms-1">PM</span>
-                              }
-                              @if (action.modifiers?.includes('accent')) {
-                                <span class="badge bg-danger ms-1">!</span>
-                              }
-                            </span>
-                          }
-                          @case ('pick') {
-                            <span
-                              [title]="'Action ' + actionIndex + ' - Pick ' + (action.pick?.length || 0) + ' note(s)' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
-                              <span class="bi bi-dot"></span>
-                              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-                              @if (action.modifiers?.includes('mute')) {
-                                <span class="badge bg-secondary ms-1">M</span>
-                              }
-                              @if (action.modifiers?.includes('palm-mute')) {
-                                <span class="badge bg-warning ms-1">PM</span>
-                              }
-                              @if (action.modifiers?.includes('accent')) {
-                                <span class="badge bg-danger ms-1">!</span>
-                              }
-                            </span>
-                        }
-                        @case ('rest') {
-                          <span>-</span>
-                        }
-                        @case ('percussive') {
-                          <span>P</span>
-                        }
-                        @default {
-                          <span>?</span>
-                        }
-                      }
-                    </span>
-                    }
-                  }
+                  <app-rhythm-actions [actions]="measure.actions" [showActionIndex]="true" />
                 }
               }
             </div>

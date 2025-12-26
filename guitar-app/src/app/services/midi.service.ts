@@ -209,17 +209,12 @@ export class MidiService {
       this.percussionSampler = new Tone.Sampler({
         urls: {
           // Guitar percussion techniques mapped to notes
-          "C3": "/samples/percussion/guitar_body_tap.mp3",     // Body tapping
-          "C#3": "/samples/percussion/guitar_body_knock.mp3",   // Body knocking
-          "D3": "/samples/percussion/guitar_string_slap.mp3",   // String slapping
-          "D#3": "/samples/percussion/guitar_finger_tap.mp3",   // Finger tapping
-          "E3": "/samples/percussion/guitar_string_scratch.mp3", // String scratching
-          "F3": "/samples/percussion/guitar_bridge_tap.mp3",    // Bridge tapping
-          "G3": "/samples/percussion/guitar_accent.mp3",       // Accented hits
+          "C3": "/samples/percussion/guitar_body_knock.mp3",    // Body knocking
+          "C#3": "/samples/percussion/guitar_string_slap.mp3",  // String slapping
         },
         release: 0.5,
         attack: 0.001,
-        volume: -6 // Slightly louder than guitar for percussion effect
+        volume: 1 // Slightly louder than guitar for percussion effect
       }).toDestination();
 
       console.log('Loading guitar percussion samples...');
@@ -298,25 +293,43 @@ export class MidiService {
     // Schedule all instructions
     for (const instruction of instructions) {
       const scheduleTime = startTime + instruction.time;
-      const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
       
-      // Determine how to play the notes (default to parallel)
-      const playMode = instruction.playNotes || 'parallel';
-      
-      // Check if this is a sequential/reversed instruction (multiple notes with timing)
-      if (instruction.notes.length > 1 && playMode !== 'parallel') {
-        await this.playSequentialNotes(instruction, scheduleTime, options);
-      } else {
-        // Play all notes simultaneously (parallel or single notes)
-        for (const note of instruction.notes) {
-          const noteName = this.noteToToneName(note.note);
-          
-          this.sampler.triggerAttackRelease(
-            noteName,
-            options.duration ?? instruction.duration,
+      // Handle percussion instructions
+      if (instruction.percussion) {
+        if (this.percussionSampler) {
+          const percussionNote = this.getPercussionNote(instruction.percussion.technique);
+          this.percussionSampler.triggerAttackRelease(
+            percussionNote,
+            0.5, // Short duration for percussion
             scheduleTime,
-            options.velocity
+            instruction.velocity
           );
+        }
+        continue; // Skip to next instruction
+      }
+      
+      // Handle note instructions
+      if (instruction.notes && instruction.notes.length > 0) {
+        const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
+        
+        // Determine how to play the notes (default to parallel)
+        const playMode = instruction.playNotes || 'parallel';
+        
+        // Check if this is a sequential/reversed instruction (multiple notes with timing)
+        if (instruction.notes.length > 1 && playMode !== 'parallel') {
+          await this.playSequentialNotes(instruction, scheduleTime, options);
+        } else {
+          // Play all notes simultaneously (parallel or single notes)
+          for (const note of instruction.notes) {
+            const noteName = this.noteToToneName(note.note);
+            
+            this.sampler.triggerAttackRelease(
+              noteName,
+              options.duration ?? instruction.duration,
+              scheduleTime,
+              options.velocity
+            );
+          }
         }
       }
     }
@@ -327,6 +340,18 @@ export class MidiService {
   }
 
   /**
+   * Map percussion technique to the note name in the percussion sampler
+   */
+  private getPercussionNote(technique: 'body-knock' | 'string-slap'): string {
+    switch (technique) {
+      case 'body-knock':
+        return 'C3';
+      case 'string-slap':
+        return 'C#3';
+    }
+  }
+
+  /**
    * Play notes sequentially or in reverse order
    */
   private async playSequentialNotes(
@@ -334,7 +359,7 @@ export class MidiService {
     startTime: number, 
     options: any
   ): Promise<void> {
-    if (!this.sampler) return;
+    if (!this.sampler || !instruction.notes) return;
 
     const notes = instruction.notes;
     if (notes.length === 0) return;
@@ -376,13 +401,8 @@ export class MidiService {
     }
 
     const techniqueMapping: { [key: string]: string } = {
-      'body_tap': 'C3',
-      'body_knock': 'C#3', 
-      'string_slap': 'D3',
-      'finger_tap': 'D#3',
-      'string_scratch': 'E3',
-      'bridge_tap': 'F3',
-      'accent': 'G3'
+      'body_knock': 'C3', 
+      'string_slap': 'C#3'
     };
 
     const note = techniqueMapping[technique];
@@ -392,43 +412,6 @@ export class MidiService {
     } else {
       console.warn(`Unknown percussion technique: ${technique}`);
     }
-  }
-
-  /**
-   * Play a chord with percussion technique
-   */
-  async playChordWithPercussion(notes: string[], technique: string, duration: number = 2.0): Promise<void> {
-    await this.ensureInitialized();
-    
-    if (!this.sampler) {
-      throw new Error('Guitar sampler not initialized');
-    }
-
-    // Play the chord
-    const chordPromise = this.playChordFromNotes(notes, duration);
-    
-    // Add percussion accent if requested
-    if (technique === 'accented' && this.percussionSampler) {
-      setTimeout(() => {
-        this.percussionSampler!.triggerAttackRelease('G3', '8n');
-      }, 50); // Slight delay for accent
-    }
-    
-    return chordPromise;
-  }
-
-  /**
-   * Helper method to play chord from note names
-   */
-  private async playChordFromNotes(notes: string[], duration: number): Promise<void> {
-    if (!this.sampler) return;
-    
-    const now = Tone.now();
-    notes.forEach((note, index) => {
-      // Strum effect - slight delay between notes
-      const strumDelay = index * 0.02;
-      this.sampler!.triggerAttackRelease(note, duration, now + strumDelay);
-    });
   }
 
   /**

@@ -68,8 +68,7 @@ describe('PlaybackService', () => {
         actions: [
           {
             technique: 'strum' as const,
-            direction: 'D' as const,
-            strum: { strings: 'all' as const }
+            strum: { direction: 'D' as const, strings: 'all' as const }
           }
         ]
       }],
@@ -100,8 +99,7 @@ describe('PlaybackService', () => {
         actions: [
           {
             technique: 'strum' as const,
-            direction: 'D' as const,
-            strum: { strings: 'all' as const }
+            strum: { direction: 'D' as const, strings: 'all' as const }
           }
         ]
       }],
@@ -135,8 +133,7 @@ describe('PlaybackService', () => {
         actions: [
           {
             technique: 'strum' as const,
-            direction: 'U' as const,
-            strum: { strings: 'all' as const }
+            strum: { direction: 'U' as const, strings: 'all' as const }
           }
         ]
       }],
@@ -352,14 +349,12 @@ describe('PlaybackService', () => {
           actions: [
             {
               technique: 'strum' as const,
-              direction: 'D' as const,
-              strum: { strings: [0, 1, 2] as const }
+              strum: { direction: 'D' as const, strings: [0, 1, 2] as const }
             },
             null, null, null,
             {
               technique: 'strum' as const,
-              direction: 'U' as const,
-              strum: { strings: [0, 1, 2] as const }
+              strum: { direction: 'U' as const, strings: [0, 1, 2] as const }
             },
             null, null, null,
             null, null, null, null, null, null, null, null

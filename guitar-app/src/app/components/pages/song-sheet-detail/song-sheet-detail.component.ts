@@ -5,6 +5,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { SongSheetsService } from '../../../services/song-sheets.service';
 import { SongSheetWithData, SongSheetGripWithData, SongSheetPatternWithData, SongPart, SongSheetPattern, SongSheetGrip } from '../../../services/song-sheets.model';
 import { GripDiagramComponent } from '../../grip-diagram/grip-diagram.component';
+import { RhythmActionsComponent } from '../../rhythm-actions/rhythm-actions.component';
 import { PlaybackService } from '../../../services/playback.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GripService } from 'app/services/grips/grip.service';
@@ -14,7 +15,7 @@ import { DialogService } from '../../../services/dialog.service';
 @Component({
   selector: 'app-song-sheet-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent, DragDropModule],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule],
   templateUrl: './song-sheet-detail.component.html',
   styleUrls: ['./song-sheet-detail.component.scss']
 })

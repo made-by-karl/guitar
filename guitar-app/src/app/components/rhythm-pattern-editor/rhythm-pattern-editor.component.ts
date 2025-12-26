@@ -123,16 +123,14 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       case 'strum-down':
         newAction = {
           technique: 'strum',
-          direction: 'D',
-          strum: { strings: 'all' },
+          strum: { direction: 'D', strings: 'all' },
           modifiers: []
         };
         break;
       case 'strum-up':
         newAction = {
           technique: 'strum',
-          direction: 'U',
-          strum: { strings: 'all' },
+          strum: { direction: 'U', strings: 'all' },
           modifiers: []
         };
         break;
@@ -145,7 +143,8 @@ export class RhythmPatternEditorComponent implements OnDestroy {
         break;
       case 'percussive':
         newAction = {
-          technique: 'percussive'
+          technique: 'percussive',
+          percussive: { technique: 'body-knock' }
         };
         break;
       case 'rest':
@@ -157,8 +156,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
         // For hammer-on, pull-off, slide - use basic strum for now
         newAction = {
           technique: 'strum',
-          direction: 'D',
-          strum: { strings: 'all' },
+          strum: { direction: 'D', strings: 'all' },
           modifiers: []
         };
         break;
@@ -195,28 +193,35 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     if (action.technique === 'strum') {
       // Ensure strum pattern exists
       if (!updatedAction.strum) {
-        updatedAction.strum = { strings: 'all' };
+        updatedAction.strum = { direction: 'D', strings: 'all' };
       }
-      // Set default direction for strumming
-      if (updatedAction.direction !== 'D' && updatedAction.direction !== 'U') {
-        updatedAction.direction = 'D';
-      }
-      // Remove pick array if switching from pick to strum
+
+      // Remove pick array and percussive if switching from pick/percussive to strum
       delete updatedAction.pick;
+      delete updatedAction.percussive;
     } else if (action.technique === 'pick') {
       // Ensure pick array exists
       if (!updatedAction.pick) {
         updatedAction.pick = [{ string: 0, fret: 0 }];
       }
-      // Remove direction for picking
-      updatedAction.direction = null;
-      // Remove strum pattern if switching from strum to pick
+
+      // Remove strum pattern and percussive if switching from strum/percussive to pick
       delete updatedAction.strum;
-    } else {
-      // For other techniques (rest, percussive), clear direction and patterns
-      updatedAction.direction = null;
+      delete updatedAction.percussive;
+    } else if (action.technique === 'percussive') {
+      // Ensure percussive object exists
+      if (!updatedAction.percussive) {
+        updatedAction.percussive = { technique: 'body-knock' };
+      }
+
+      // Remove strum and pick for percussive
       delete updatedAction.strum;
       delete updatedAction.pick;
+    } else {
+      // Remove strum, pick, and percussive for other techniques
+      delete updatedAction.strum;
+      delete updatedAction.pick;
+      delete updatedAction.percussive;
     }
     
     // Ensure modifiers array exists for strum and pick
@@ -423,10 +428,14 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const pattern = this.pattern()
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
-    if (action && action.technique === 'strum') {
+
+    if (action && action.technique === 'strum' && action.strum) {
       const updatedAction: RhythmAction = {
         ...action,
-        direction: direction
+        strum: {
+          ...action.strum,
+          direction: direction
+        }
       };
       
       const measure = pattern.measures[measureIndex];
@@ -461,6 +470,40 @@ export class RhythmPatternEditorComponent implements OnDestroy {
         strum: {
           ...action.strum,
           strings: strings as any
+        }
+      };
+      
+      const measure = pattern.measures[measureIndex];
+      const updatedActions = [...measure.actions];
+      updatedActions[originalIndex] = updatedAction;
+      
+      const updatedMeasure: Measure = {
+        ...measure,
+        actions: updatedActions
+      };
+      
+      const updatedMeasures = [...pattern.measures];
+      updatedMeasures[measureIndex] = updatedMeasure;
+      
+      const updatedPattern: RhythmPattern = {
+        ...pattern,
+        measures: updatedMeasures
+      };
+      
+      this.updatePattern(updatedPattern);
+    }
+  }
+
+  // Update percussion technique with immutable pattern update
+  updatePercussionTechnique(measureIndex: number, originalIndex: number, technique: 'body-knock' | 'string-slap'): void {
+    const pattern = this.pattern()
+    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
+    const action = pattern.measures[measureIndex].actions[originalIndex];
+    if (action && action.technique === 'percussive') {
+      const updatedAction: RhythmAction = {
+        ...action,
+        percussive: {
+          technique: technique
         }
       };
       

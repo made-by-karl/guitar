@@ -59,10 +59,10 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: fromQuarters([
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } }
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } }
           ])
         }],
         createdAt: Date.now(),
@@ -76,14 +76,14 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: fromEigths([
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } }
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } }
           ])
         }],
         createdAt: Date.now(),
@@ -97,12 +97,12 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: fromEigths([
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } }
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } }
           ])
         }],
         createdAt: Date.now(),
@@ -118,9 +118,9 @@ export class RhythmPatternsService {
           actions: fromEigths([
             { technique: 'pick', pick: [{ string: 0, fret: 0 }] },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'treble' } },
             null,
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } }
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } }
           ])
         }],
         createdAt: Date.now(),
@@ -135,13 +135,13 @@ export class RhythmPatternsService {
           timeSignature: '4/4',
           actions: fromEigths([
             { technique: 'pick', pick: [{ string: 0, fret: 0 }] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'treble' } },
             { technique: 'pick', pick: [{ string: 1, fret: 0 }] },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
             { technique: 'pick', pick: [{ string: 0, fret: 0 }] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'treble' } },
             { technique: 'pick', pick: [{ string: 1, fret: 0 }] },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } }
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } }
           ])
         }],
         createdAt: Date.now(),
@@ -155,13 +155,13 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: fromEigths([
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } }
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } }
           ])
         }],
         createdAt: Date.now(),
@@ -175,13 +175,13 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: fromEigths([
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute'] },
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute'] },
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute'] },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute', 'accent'] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute'] },
-            { technique: 'strum', direction: 'D', strum: { strings: 'power' }, modifiers: ['palm-mute'] }
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute', 'accent'] },
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute'] },
+            { technique: 'strum', strum: { direction: 'D', strings: 'power' }, modifiers: ['palm-mute'] }
           ])
         }],
         createdAt: Date.now(),
@@ -237,19 +237,19 @@ export class RhythmPatternsService {
         measures: [{
           timeSignature: '4/4',
           actions: [
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
             null,
             null,
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'bass' } },
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'bass' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
             null,
-            { technique: 'strum', direction: 'D', strum: { strings: 'all' } },
+            { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
             null,
             null,
             null,
-            { technique: 'strum', direction: 'U', strum: { strings: 'treble' } },
+            { technique: 'strum', strum: { direction: 'U', strings: 'treble' } },
             null,
             null,
             null
