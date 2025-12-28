@@ -55,6 +55,8 @@ export class ChordComponent implements OnInit {
   private settingsModalRef: ModalRef | null = null;
 
   selectedSheetId: string | null = null;
+  pinnedSheet: any = undefined;
+  pinnedGripIds: Set<string> = new Set();
 
   readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I', 'V', 'vi', 'IV']
   readonly BASE_MINOR_PROGRESSION: Degree[] = ['i', 'VI', 'III', 'VII']
@@ -87,6 +89,7 @@ export class ChordComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.loadPinnedSheet();
     combineLatest([
       this.route.params,
       this.route.queryParamMap
@@ -124,6 +127,20 @@ export class ChordComponent implements OnInit {
         this.progressions = [];
       }
     });
+  }
+
+  async loadPinnedSheet() {
+    this.pinnedSheet = await this.songSheets.getPinnedSongSheet();
+    if (this.pinnedSheet) {
+      const sheet = await this.songSheets.getById(this.pinnedSheet.id);
+      this.pinnedGripIds = new Set(sheet?.grips?.map(g => g.gripId) || []);
+    } else {
+      this.pinnedGripIds = new Set();
+    }
+  }
+
+  getPinnedSongSheet() {
+    return this.pinnedSheet;
   }
 
   private selectProgression(chord: Chord) {
@@ -282,39 +299,27 @@ export class ChordComponent implements OnInit {
     this.updateChord();
   }
 
-  getPinnedSongSheet() {
-    return this.songSheets.getPinnedSongSheet();
-  }
-
-  addGripToPinnedSheet(grip: Grip) {
-    const pinned = this.songSheets.getPinnedSongSheet();
-    if (!pinned) return;
-    this.songSheets.addGrip({
+  async addGripToPinnedSheet(grip: Grip) {
+    if (!this.pinnedSheet) return;
+    await this.songSheets.addGrip({
       gripId: stringifyGrip(grip),
       chordName: this.currentChord ?? ''
     });
+    await this.loadPinnedSheet();
   }
 
-  removeGripFromPinnedSheet(grip: Grip) {
-    const pinned = this.songSheets.getPinnedSongSheet();
-    if (!pinned) return;
+  async removeGripFromPinnedSheet(grip: Grip) {
+    if (!this.pinnedSheet) return;
     
     const gripId = stringifyGrip(grip);
-    const songSheet = this.songSheets.getById(pinned.id);
-    const entry = songSheet?.grips?.find(g => g.gripId === gripId);
-    if (entry) {
-      this.songSheets.removeGrip(pinned.id, entry.gripId);
-      this.songSheets.getById(pinned.id); // refresh
+    if (this.pinnedGripIds.has(gripId)) {
+      await this.songSheets.removeGrip(this.pinnedSheet.id, gripId);
+      await this.loadPinnedSheet();
     }
   }
 
   isGripInPinnedSheet(grip: Grip): boolean {
-    const pinned = this.songSheets.getPinnedSongSheet();
-    if (!pinned) return false;
-    
-    const gripId = stringifyGrip(grip);
-    const songSheet = this.songSheets.getById(pinned.id);
-    return !!(songSheet?.grips?.some(p => p.gripId === gripId));
+    return this.pinnedGripIds.has(stringifyGrip(grip));
   }
 
   async playChord(grip: TunedGrip) {

@@ -20,6 +20,8 @@ import { RhythmActionsComponent } from '../../rhythm-actions/rhythm-actions.comp
 export class RhythmPatternsComponent {
   patterns: RhythmPattern[] = [];
   search = '';
+  pinnedSheet: any = undefined;
+  pinnedPatternIds: Set<string> = new Set();
 
   constructor(
     public service: RhythmPatternsService,
@@ -29,10 +31,21 @@ export class RhythmPatternsComponent {
     private modalService: ModalService
   ) {
     this.load();
+    this.loadPinnedSheet();
   }
 
-  load() {
-    this.patterns = this.service.getAll();
+  async load() {
+    this.patterns = await this.service.getAll();
+  }
+
+  async loadPinnedSheet() {
+    this.pinnedSheet = await this.songSheets.getPinnedSongSheet();
+    if (this.pinnedSheet) {
+      const sheet = await this.songSheets.getById(this.pinnedSheet.id);
+      this.pinnedPatternIds = new Set(sheet?.patterns?.map(p => p.patternId) || []);
+    } else {
+      this.pinnedPatternIds = new Set();
+    }
   }
 
   async startCreate() {
@@ -79,17 +92,17 @@ export class RhythmPatternsComponent {
     }
   }
 
-  private onPatternSaved(pattern: RhythmPattern) {
+  private async onPatternSaved(pattern: RhythmPattern) {
     // Check if this is a new pattern (not in our patterns array yet)
     const existingPatternIndex = this.patterns.findIndex(p => p.id === pattern.id);
     
     if (existingPatternIndex === -1) {
       // New pattern - add it
-      this.service.add(pattern);
+      await this.service.add(pattern);
       this.patterns.push(pattern);
     } else {
       // Existing pattern - update it
-      this.service.update(pattern);
+      await this.service.update(pattern);
       this.patterns[existingPatternIndex] = pattern;
     }
   }
@@ -102,10 +115,6 @@ export class RhythmPatternsComponent {
       p.description.toLowerCase().includes(q) ||
       (p.category && p.category.toLowerCase().includes(q))
     );
-  }
-
-  get pinnedSheet() {
-    return this.songSheets.getPinnedSongSheet();
   }
 
   async playPattern(pattern: RhythmPattern) {
@@ -122,38 +131,28 @@ export class RhythmPatternsComponent {
     }
   }
 
-  addToPinnedSheet(pattern: RhythmPattern) {
-    const pinned = this.pinnedSheet;
-    if (!pinned) return;
+  async addToPinnedSheet(pattern: RhythmPattern) {
+    if (!this.pinnedSheet) return;
     // Check if pattern is already in the sheet
-    const songSheet = this.songSheets.getById(pinned.id);
-    const already = songSheet?.patterns?.find(p => p.patternId === pattern.id);
-    if (already) return;
+    if (this.pinnedPatternIds.has(pattern.id)) return;
     
-    this.songSheets.addPattern({
+    await this.songSheets.addPattern({
       patternId: pattern.id
     });
-    this.songSheets.getById(pinned.id); // refresh
+    await this.loadPinnedSheet();
   }
 
-  removeFromPinnedSheet(pattern: RhythmPattern) {
-    const pinned = this.pinnedSheet;
-    if (!pinned) return;
+  async removeFromPinnedSheet(pattern: RhythmPattern) {
+    if (!this.pinnedSheet) return;
     
-    const songSheet = this.songSheets.getById(pinned.id);
-    const entry = songSheet?.patterns?.find(p => p.patternId === pattern.id);
-    if (entry) {
-      this.songSheets.removePattern(pinned.id, entry.patternId);
-      this.songSheets.getById(pinned.id); // refresh
+    if (this.pinnedPatternIds.has(pattern.id)) {
+      await this.songSheets.removePattern(this.pinnedSheet.id, pattern.id);
+      await this.loadPinnedSheet();
     }
   }
 
   isPatternInPinnedSheet(pattern: RhythmPattern): boolean {
-    const pinned = this.pinnedSheet;
-    if (!pinned) return false;
-    
-    const songSheet = this.songSheets.getById(pinned.id);
-    return !!(songSheet?.patterns?.some(p => p.patternId === pattern.id));
+    return this.pinnedPatternIds.has(pattern.id);
   }
 
   async deletePattern(pattern: RhythmPattern) {
@@ -166,8 +165,8 @@ export class RhythmPatternsComponent {
     );
     
     if (confirmed) {
-      this.service.delete(pattern.id);
-      this.load();
+      await this.service.delete(pattern.id);
+      await this.load();
     }
   }
 }
