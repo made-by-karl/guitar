@@ -53,8 +53,12 @@ export class SongSheetDetailComponent {
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.sheet = this.songSheetService.getByIdWithData(id);
+      this.loadSheet(id);
     }
+  }
+
+  async loadSheet(id: string) {
+    this.sheet = await this.songSheetService.getByIdWithData(id);
   }
 
   startRenaming() {
@@ -64,10 +68,10 @@ export class SongSheetDetailComponent {
     }
   }
 
-  saveRename() {
+  async saveRename() {
     if (this.sheet) {
       this.sheet.name = this.tempName;
-      this.songSheetService.update(this.sheet);
+      await this.songSheetService.update(this.sheet);
     }
     this.renaming = false;
   }
@@ -86,12 +90,12 @@ export class SongSheetDetailComponent {
     }
   }
 
-  saveTuning() {
+  async saveTuning() {
     if (this.sheet) {
       this.sheet.tuning = [...this.tempTuning];
       this.sheet.capodaster = this.tempCapodaster;
       this.sheet.tempo = this.tempTempo;
-      this.songSheetService.update(this.sheet);
+      await this.songSheetService.update(this.sheet);
     }
     this.showTuningForm = false;
   }
@@ -100,15 +104,15 @@ export class SongSheetDetailComponent {
     this.showTuningForm = false;
   }
 
-  removeGrip(gripId: string) {
+  async removeGrip(gripId: string) {
     if (this.sheet) {
-      this.songSheetService.removeGrip(this.sheet.id, gripId);
-      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+      await this.songSheetService.removeGrip(this.sheet.id, gripId);
+      this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
     }
   }
 
   // Angular CDK drag and drop handler
-  dropGrip(event: CdkDragDrop<SongSheetGripWithData[]>) {
+  async dropGrip(event: CdkDragDrop<SongSheetGripWithData[]>) {
     if (!this.sheet) return;
     
     if (event.previousIndex !== event.currentIndex) {
@@ -116,39 +120,39 @@ export class SongSheetDetailComponent {
       moveItemInArray(this.sheet.grips, event.previousIndex, event.currentIndex);
       
       // Persist the change to the service
-      this.songSheetService.moveGrip(this.sheet.id, event.previousIndex, event.currentIndex);
+      await this.songSheetService.moveGrip(this.sheet.id, event.previousIndex, event.currentIndex);
       
       // Refresh the sheet data
-      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+      this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
     }
   }
 
-  dropPattern(event: CdkDragDrop<SongSheetPatternWithData[]>) {
+  async dropPattern(event: CdkDragDrop<SongSheetPatternWithData[]>) {
     if (!this.sheet) return;
     
     if (event.previousIndex !== event.currentIndex) {
       moveItemInArray(this.sheet.patterns, event.previousIndex, event.currentIndex);
-      this.songSheetService.movePattern(this.sheet.id, event.previousIndex, event.currentIndex);
-      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+      await this.songSheetService.movePattern(this.sheet.id, event.previousIndex, event.currentIndex);
+      this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
     }
   }
 
-  dropPart(event: CdkDragDrop<SongPart[]>) {
+  async dropPart(event: CdkDragDrop<SongPart[]>) {
     if (!this.sheet) return;
     
     if (event.previousIndex !== event.currentIndex) {
       moveItemInArray(this.sheet.parts, event.previousIndex, event.currentIndex);
-      this.songSheetService.movePart(this.sheet.id, event.previousIndex, event.currentIndex);
-      this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+      await this.songSheetService.movePart(this.sheet.id, event.previousIndex, event.currentIndex);
+      this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
     }
   }
 
-  removePattern(patternId: string) {
+  async removePattern(patternId: string) {
     if (this.sheet) {
-      this.songSheetService.removePattern(this.sheet.id, patternId);
-      this.sheet = this.songSheetService.getById(this.sheet.id);
-      if (this.sheet) {
-        this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+      await this.songSheetService.removePattern(this.sheet.id, patternId);
+      const updated = await this.songSheetService.getById(this.sheet.id);
+      if (updated) {
+        this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
       }
     }
   }
@@ -204,7 +208,7 @@ export class SongSheetDetailComponent {
     }));
   }
 
-  savePartEdit() {
+  async savePartEdit() {
     if (!this.sheet || this.editingPartIndex === null) return;
 
     const part: SongPart = {
@@ -212,12 +216,12 @@ export class SongSheetDetailComponent {
       patterns: this.tempPartPatterns
     };
 
-    this.songSheetService.updatePart(this.sheet.id, this.editingPartIndex, part);
+    await this.songSheetService.updatePart(this.sheet.id, this.editingPartIndex, part);
     this.cancelPartEdit();
-    this.refreshData();
+    await this.refreshData();
   }
 
-  addNewPart() {
+  async addNewPart() {
     if (!this.sheet || !this.tempPartSection.trim()) return;
 
     const part: SongPart = {
@@ -225,9 +229,9 @@ export class SongSheetDetailComponent {
       patterns: this.tempPartPatterns
     };
 
-    this.songSheetService.addPart(this.sheet.id, part);
+    await this.songSheetService.addPart(this.sheet.id, part);
     this.cancelPartEdit();
-    this.refreshData();
+    await this.refreshData();
   }
 
   async removePart(partIndex: number) {
@@ -242,8 +246,8 @@ export class SongSheetDetailComponent {
     );
     
     if (confirmed) {
-      this.songSheetService.removePart(this.sheet.id, partIndex);
-      this.refreshData();
+      await this.songSheetService.removePart(this.sheet.id, partIndex);
+      await this.refreshData();
     }
   }
 
@@ -288,9 +292,9 @@ export class SongSheetDetailComponent {
     }
   }
 
-  private refreshData() {
+  private async refreshData() {
     if (!this.sheet) return;
-    this.sheet = this.songSheetService.getByIdWithData(this.sheet.id);
+    this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
   }
 
   getPatternName(patternId: string): string {

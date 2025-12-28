@@ -1,55 +1,71 @@
 import { Injectable } from '@angular/core';
 import { RhythmPattern, RhythmAction } from './rhythm-patterns.model';
-
-const STORAGE_KEY = 'rhythmPatterns';
+import { DatabaseService } from './database.service';
 
 @Injectable({ providedIn: 'root' })
 export class RhythmPatternsService {
-  private patterns: RhythmPattern[] = [];
 
-  constructor() {
-    this.load();
-    if (this.patterns.length === 0) {
-      this.addDefaultPatterns();
+  constructor(private db: DatabaseService) {
+    this.initialize();
+  }
+
+  private async initialize() {
+    try {
+      const count = await this.db.rhythmPatterns.count();
+      if (count === 0) {
+        await this.addDefaultPatterns();
+      }
+    } catch (error) {
+      console.error('Error initializing rhythm patterns:', error);
     }
   }
 
-  private load() {
-    const data = localStorage.getItem(STORAGE_KEY);
-    this.patterns = data ? JSON.parse(data) : [];
-  }
-
-  private save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.patterns));
-  }
-
-  getAll(): RhythmPattern[] {
-    return [...this.patterns];
-  }
-
-  getById(id: string): RhythmPattern | undefined {
-    return this.patterns.find(p => p.id === id);
-  }
-
-  add(pattern: RhythmPattern) {
-    this.patterns.push(pattern);
-    this.save();
-  }
-
-  update(pattern: RhythmPattern) {
-    const idx = this.patterns.findIndex(p => p.id === pattern.id);
-    if (idx !== -1) {
-      this.patterns[idx] = pattern;
-      this.save();
+  async getAll(): Promise<RhythmPattern[]> {
+    try {
+      return await this.db.rhythmPatterns.toArray();
+    } catch (error) {
+      console.error('Error loading rhythm patterns:', error);
+      return [];
     }
   }
 
-  delete(id: string) {
-    this.patterns = this.patterns.filter(p => p.id !== id);
-    this.save();
+  async getById(id: string): Promise<RhythmPattern | undefined> {
+    try {
+      return await this.db.rhythmPatterns.get(id);
+    } catch (error) {
+      console.error('Error loading rhythm pattern:', error);
+      return undefined;
+    }
   }
 
-  private addDefaultPatterns() {
+  async add(pattern: RhythmPattern): Promise<void> {
+    try {
+      await this.db.rhythmPatterns.add(pattern);
+    } catch (error) {
+      console.error('Error adding rhythm pattern:', error);
+      throw error;
+    }
+  }
+
+  async update(pattern: RhythmPattern): Promise<void> {
+    try {
+      await this.db.rhythmPatterns.put(pattern);
+    } catch (error) {
+      console.error('Error updating rhythm pattern:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await this.db.rhythmPatterns.delete(id);
+    } catch (error) {
+      console.error('Error deleting rhythm pattern:', error);
+      throw error;
+    }
+  }
+
+  private async addDefaultPatterns() {
     const defaults: RhythmPattern[] = [
       {
         id: 'default-1',
@@ -259,8 +275,11 @@ export class RhythmPatternsService {
         updatedAt: Date.now(),
       }
     ];
-    this.patterns = defaults;
-    this.save();
+    try {
+      await this.db.rhythmPatterns.bulkAdd(defaults);
+    } catch (error) {
+      console.error('Error adding default patterns:', error);
+    }
   }
 }
 

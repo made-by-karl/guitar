@@ -20,6 +20,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
   private routerSubscription?: Subscription;
+  private pinnedSheetSubscription?: Subscription;
+  pinnedSongSheet: SongSheet | undefined;
 
   constructor(
     public songSheetsService: SongSheetsService,
@@ -28,6 +30,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private router: Router
   ) {
     this.setupRouterListener();
+    this.subscribeToPinnedSheet();
+  }
+
+  private subscribeToPinnedSheet() {
+    this.pinnedSheetSubscription = this.songSheetsService.observePinnedSongSheet()
+      .subscribe(sheet => {
+        this.pinnedSongSheet = sheet;
+      });
   }
 
   ngAfterViewInit(): void {
@@ -56,10 +66,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           this.songSheetsService.unpinSongSheet();
         }
       });
-  }
-
-  get pinnedSongSheet(): SongSheet | undefined {
-    return this.songSheetsService.getPinnedSongSheet();
   }
 
   get pinnedSheetId(): string | null {
@@ -98,6 +104,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     // Unsubscribe from router events
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    
+    // Unsubscribe from pinned sheet observable
+    if (this.pinnedSheetSubscription) {
+      this.pinnedSheetSubscription.unsubscribe();
     }
     
     // Release wake lock when app is destroyed

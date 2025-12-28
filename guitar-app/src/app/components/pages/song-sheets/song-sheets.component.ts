@@ -24,15 +24,15 @@ export class SongSheetsComponent {
     this.load();
   }
 
-  load() {
-    this.sheets = this.service.getAll();
+  async load() {
+    this.sheets = await this.service.getAll();
   }
 
-  createSheet() {
+  async createSheet() {
     if (this.newSheetName.trim()) {
-      this.service.create(this.newSheetName.trim());
+      await this.service.create(this.newSheetName.trim());
       this.newSheetName = '';
-      this.load();
+      await this.load();
     }
   }
 
@@ -46,8 +46,8 @@ export class SongSheetsComponent {
     );
 
     if (confirmed) {
-      this.service.delete(id);
-      this.load();
+      await this.service.delete(id);
+      await this.load();
     }
   }
 }
