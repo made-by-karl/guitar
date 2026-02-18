@@ -439,6 +439,8 @@ describe('PlaybackService', () => {
             null,
             {
               technique: 'percussive' as const
+              ,
+              percussive: { technique: 'body-knock' as const }
             },
             null,
             {
@@ -463,7 +465,7 @@ describe('PlaybackService', () => {
       
       // Percussive should have max duration
       expect(calls[1].technique).toBe('percussive');
-      expect(calls[1].duration).toBe(2.0);
+      expect(calls[1].duration).toBe(0.5);
     });
   });
 });

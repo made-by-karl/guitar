@@ -6,6 +6,7 @@ import { SongSheetsService } from './services/song-sheets.service';
 import { SongSheet } from './services/song-sheets.model';
 import { UpdateService } from './services/update.service';
 import { ScreenWakeLockService } from './services/screen-wake-lock.service';
+import { AudioService } from './services/audio.service';
 import { timer, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -27,7 +28,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     public songSheetsService: SongSheetsService,
     private updateService: UpdateService,
     public wakeLockService: ScreenWakeLockService,
-    private router: Router
+    private router: Router,
+    // Instantiate early so auto-resume handlers are installed app-wide
+    private audioService: AudioService
   ) {
     this.setupRouterListener();
     this.subscribeToPinnedSheet();

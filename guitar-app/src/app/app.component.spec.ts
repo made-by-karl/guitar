@@ -4,7 +4,9 @@ import { provideRouter, Router } from '@angular/router';
 import { SongSheetsService } from './services/song-sheets.service';
 import { UpdateService } from './services/update.service';
 import { ScreenWakeLockService } from './services/screen-wake-lock.service';
+import { AudioService } from './services/audio.service';
 import { Component } from '@angular/core';
+import { of } from 'rxjs';
 
 // Mock component for router testing
 @Component({ template: '' })
@@ -20,6 +22,7 @@ describe('AppComponent', () => {
     mockSongSheetsService = {
       getAll: jest.fn().mockReturnValue([]),
       getPinnedSongSheet: jest.fn().mockReturnValue(undefined),
+      observePinnedSongSheet: jest.fn().mockReturnValue(of(undefined)),
       pinSongSheet: jest.fn(),
       unpinSongSheet: jest.fn(),
       getSongSheets: jest.fn().mockReturnValue([]),
@@ -53,7 +56,8 @@ describe('AppComponent', () => {
         ]),
         { provide: SongSheetsService, useValue: mockSongSheetsService },
         { provide: UpdateService, useValue: mockUpdateService },
-        { provide: ScreenWakeLockService, useValue: mockWakeLockService }
+        { provide: ScreenWakeLockService, useValue: mockWakeLockService },
+        { provide: AudioService, useValue: {} }
       ]
     }).compileComponents();
   });

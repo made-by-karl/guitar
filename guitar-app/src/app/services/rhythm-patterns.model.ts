@@ -1,4 +1,4 @@
-export type TimeSignature = '2/4' | '3/4' | '4/4' | '6/8' | '5/4' | '7/8' | '9/8' | '12/8';
+import { getTimeSignatureParts, TimeSignature } from './time-signature.model';
 
 export type RhythmTechnique = 'strum' | 'pick' | 'rest' | 'percussive';
 
@@ -84,32 +84,12 @@ export function getStringsForStrum(strings: any): number[] {
  * Helper to get the number of beats from a TimeSignature
  */
 export function getBeatsFromTimeSignature(ts: TimeSignature): number {
-  switch (ts) {
-    case '2/4': return 2;
-    case '3/4': return 3;
-    case '4/4': return 4;
-    case '5/4': return 5;
-    case '6/8': return 6;
-    case '7/8': return 7;
-    case '9/8': return 9;
-    case '12/8': return 12;
-    default: return 4;
-  }
+  return getTimeSignatureParts(ts).top;
 }
 
 /**
  * Helper to get the number of 16th per beat from a TimeSignature
  */
 export function getSixteenthPerBeatFromTimeSignature(ts: TimeSignature): number {
-  switch (ts) {
-    case '2/4': return 4;
-    case '3/4': return 4;
-    case '4/4': return 4;
-    case '5/4': return 4;
-    case '6/8': return 2;
-    case '7/8': return 2;
-    case '9/8': return 2;
-    case '12/8': return 2;
-    default: return 4;
-  }
+  return getTimeSignatureParts(ts).bottom === 4 ? 4 : 2;
 }

@@ -1,231 +1,82 @@
-import { Injectable } from '@angular/core';
-import * as Tone from 'tone';
+import { Injectable, OnDestroy } from '@angular/core';
 import { MidiInstruction, MidiTechnique } from './midi.model';
 import { Note } from 'app/common/semitones';
+import { AudioService } from './audio.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class MidiService {
-  private sampler: Tone.Sampler | null = null;
-  private percussionSampler: Tone.Sampler | null = null;
-  private context: Tone.BaseContext | null = null;
-  private initializationPromise: Promise<void> | null = null;
-
-  constructor() {
-    // Handle visibility changes to resume audio context on mobile
-    this.setupVisibilityHandler();
-  }
+export class MidiService implements OnDestroy {
+  constructor(private audioService: AudioService) {}
 
   /**
-   * Setup listener for page visibility changes
-   * This is crucial for mobile devices where audio context gets suspended
-   */
-  private setupVisibilityHandler(): void {
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', async () => {
-        if (!document.hidden && this.context) {
-          await this.resumeAudioContext();
-        }
-      });
-      
-      // Also handle user interactions (click/touch) to resume context
-      // This ensures context is resumed even if visibility event doesn't fire
-      const resumeOnInteraction = async () => {
-        if (this.context && this.context.state === 'suspended') {
-          await this.resumeAudioContext();
-        }
-      };
-      
-      document.addEventListener('touchstart', resumeOnInteraction, { once: false, passive: true });
-      document.addEventListener('touchend', resumeOnInteraction, { once: false, passive: true });
-      document.addEventListener('click', resumeOnInteraction, { once: false, passive: true });
-    }
-  }
-
-  /**
-   * Resume the audio context if it's suspended
-   * This is needed especially on mobile devices after the app was hidden
-   */
-  private async resumeAudioContext(): Promise<void> {
-    try {
-      if (this.context?.state === 'suspended') {
-        console.log('Audio context suspended, resuming...');
-        await Tone.start();
-        console.log('Audio context resumed successfully');
-      }
-    } catch (error) {
-      console.error('Failed to resume audio context:', error);
-    }
-  }
-
-  private async initializeAudio(): Promise<void> {
-    // Skip if already initialized
-    if (this.context) {
-      return;
-    }
-    
-    try {
-      // Start Tone.js context (this requires user gesture)
-      await Tone.start();
-      this.context = Tone.getContext();
-    } catch (error) {
-      console.error('Failed to initialize audio context:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Ensures audio is initialized before playing
+   * Ensures Tone is started and the required samplers exist.
    */
   private async ensureInitialized(): Promise<void> {
-    // Always try to resume context first (important for mobile)
-    if (this.context) {
-      await this.resumeAudioContext();
-    }
-    
-    // If already initialized, return immediately
-    if (this.context && this.sampler) {
-      return;
-    }
-    
-    // If initialization is in progress, wait for it
-    if (this.initializationPromise) {
-      return this.initializationPromise;
-    }
-    
-    // Start initialization and store the promise
-    this.initializationPromise = this.performInitialization();
-    
-    try {
-      await this.initializationPromise;
-    } finally {
-      // Clear the promise once initialization is complete (success or failure)
-      this.initializationPromise = null;
-    }
-  }
+    await this.audioService.ensureStarted();
 
-  /**
-   * Performs the actual initialization work
-   */
-  private async performInitialization(): Promise<void> {
-    // Initialize audio context first
-    await this.initializeAudio();
-    
-    // Then create the samplers
-    if (!this.sampler) {
-      await this.createSampler();
-    }
-    if (!this.percussionSampler) {
-      await this.createPercussionSampler();
-    }
-  }
-
-  /**
-   * Creates a Tone.js sampler with guitar string samples
-   */
-  private async createSampler(): Promise<void> {
-    // Skip if sampler already exists
-    if (this.sampler) {
-      return;
-    }
-    
-    try {
-      // Create a sampler using all available guitar note samples
-      // This provides comprehensive chromatic coverage across multiple octaves
-      this.sampler = new Tone.Sampler({
-        urls: {
+    await this.audioService.ensureSamplerInitialized('guitar', {
+      urls: {
           // Octave 2
-          "E2": "/samples/notes/guitar_E2.mp3",
-          "F2": "/samples/notes/guitar_F2.mp3",
-          "F#2": "/samples/notes/guitar_Fs2.mp3",
-          "G2": "/samples/notes/guitar_G2.mp3",
-          "G#2": "/samples/notes/guitar_Gs2.mp3",
-          "A2": "/samples/notes/guitar_A2.mp3",
-          "A#2": "/samples/notes/guitar_As2.mp3",
-          "B2": "/samples/notes/guitar_B2.mp3",
-          
+          'E2': '/samples/notes/guitar_E2.mp3',
+          'F2': '/samples/notes/guitar_F2.mp3',
+          'F#2': '/samples/notes/guitar_Fs2.mp3',
+          'G2': '/samples/notes/guitar_G2.mp3',
+          'G#2': '/samples/notes/guitar_Gs2.mp3',
+          'A2': '/samples/notes/guitar_A2.mp3',
+          'A#2': '/samples/notes/guitar_As2.mp3',
+          'B2': '/samples/notes/guitar_B2.mp3',
+
           // Octave 3
-          "C3": "/samples/notes/guitar_C3.mp3",
-          "C#3": "/samples/notes/guitar_Cs3.mp3",
-          "D3": "/samples/notes/guitar_D3.mp3",
-          "D#3": "/samples/notes/guitar_Ds3.mp3",
-          "E3": "/samples/notes/guitar_E3.mp3",
-          "F3": "/samples/notes/guitar_F3.mp3",
-          "F#3": "/samples/notes/guitar_Fs3.mp3",
-          "G3": "/samples/notes/guitar_G3.mp3",
-          "G#3": "/samples/notes/guitar_Gs3.mp3",
-          "A3": "/samples/notes/guitar_A3.mp3",
-          "A#3": "/samples/notes/guitar_As3.mp3",
-          "B3": "/samples/notes/guitar_B3.mp3",
-          
+          'C3': '/samples/notes/guitar_C3.mp3',
+          'C#3': '/samples/notes/guitar_Cs3.mp3',
+          'D3': '/samples/notes/guitar_D3.mp3',
+          'D#3': '/samples/notes/guitar_Ds3.mp3',
+          'E3': '/samples/notes/guitar_E3.mp3',
+          'F3': '/samples/notes/guitar_F3.mp3',
+          'F#3': '/samples/notes/guitar_Fs3.mp3',
+          'G3': '/samples/notes/guitar_G3.mp3',
+          'G#3': '/samples/notes/guitar_Gs3.mp3',
+          'A3': '/samples/notes/guitar_A3.mp3',
+          'A#3': '/samples/notes/guitar_As3.mp3',
+          'B3': '/samples/notes/guitar_B3.mp3',
+
           // Octave 4
-          "C4": "/samples/notes/guitar_C4.mp3",
-          "C#4": "/samples/notes/guitar_Cs4.mp3",
-          "D4": "/samples/notes/guitar_D4.mp3",
-          "D#4": "/samples/notes/guitar_Ds4.mp3",
-          "E4": "/samples/notes/guitar_E4.mp3",
-          "F4": "/samples/notes/guitar_F4.mp3",
-          "F#4": "/samples/notes/guitar_Fs4.mp3",
-          "G4": "/samples/notes/guitar_G4.mp3",
-          "G#4": "/samples/notes/guitar_Gs4.mp3",
-          "A4": "/samples/notes/guitar_A4.mp3",
-          "A#4": "/samples/notes/guitar_As4.mp3",
-          "B4": "/samples/notes/guitar_B4.mp3",
-          
+          'C4': '/samples/notes/guitar_C4.mp3',
+          'C#4': '/samples/notes/guitar_Cs4.mp3',
+          'D4': '/samples/notes/guitar_D4.mp3',
+          'D#4': '/samples/notes/guitar_Ds4.mp3',
+          'E4': '/samples/notes/guitar_E4.mp3',
+          'F4': '/samples/notes/guitar_F4.mp3',
+          'F#4': '/samples/notes/guitar_Fs4.mp3',
+          'G4': '/samples/notes/guitar_G4.mp3',
+          'G#4': '/samples/notes/guitar_Gs4.mp3',
+          'A4': '/samples/notes/guitar_A4.mp3',
+          'A#4': '/samples/notes/guitar_As4.mp3',
+          'B4': '/samples/notes/guitar_B4.mp3',
+
           // Octave 5
-          "D5": "/samples/notes/guitar_D5.mp3",
-          "D#5": "/samples/notes/guitar_Ds5.mp3",
-          "E5": "/samples/notes/guitar_E5.mp3",
-          "G5": "/samples/notes/guitar_G5.mp3",
-          "G#5": "/samples/notes/guitar_Gs5.mp3"
-        },
-        release: 3,
-        attack: 0.005,
-        volume: 0 // Adjust volume as needed
-      }).toDestination();
+          'D5': '/samples/notes/guitar_D5.mp3',
+          'D#5': '/samples/notes/guitar_Ds5.mp3',
+          'E5': '/samples/notes/guitar_E5.mp3',
+          'G5': '/samples/notes/guitar_G5.mp3',
+          'G#5': '/samples/notes/guitar_Gs5.mp3'
+      },
+      release: 3,
+      attack: 0.005,
+      volume: 0
+    });
 
-      console.log('Loading guitar note samples...');
-      // Wait for all samples to load
-      await Tone.loaded();
-      console.log('Guitar note samples loaded successfully');
-    } catch (error) {
-      console.error('Failed to create guitar sampler:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Creates a Tone.js sampler with guitar percussion samples
-   */
-  private async createPercussionSampler(): Promise<void> {
-    // Skip if percussion sampler already exists
-    if (this.percussionSampler) {
-      return;
-    }
-    
-    try {
-      // Create percussion sampler for guitar techniques
-      this.percussionSampler = new Tone.Sampler({
-        urls: {
-          // Guitar percussion techniques mapped to notes
-          "C3": "/samples/percussion/guitar_body_knock.mp3",    // Body knocking
-          "C#3": "/samples/percussion/guitar_string_slap.mp3",  // String slapping
-        },
-        release: 0.5,
-        attack: 0.001,
-        volume: 1 // Slightly louder than guitar for percussion effect
-      }).toDestination();
-
-      console.log('Loading guitar percussion samples...');
-      // Wait for percussion samples to load
-      await Tone.loaded();
-      console.log('Guitar percussion samples loaded successfully');
-    } catch (error) {
-      console.error('Failed to create percussion sampler:', error);
-      // Don't throw error - percussion is optional
-      console.log('Continuing without percussion samples');
-    }
+    await this.audioService.ensureSamplerInitialized('percussion', {
+      urls: {
+        // Guitar percussion techniques mapped to notes
+        'C3': '/samples/percussion/guitar_body_knock.mp3', // Body knocking
+        'C#3': '/samples/percussion/guitar_string_slap.mp3' // String slapping
+      },
+      release: 0.5,
+      attack: 0.001,
+      volume: 1
+    });
   }
 
   /**
@@ -282,13 +133,14 @@ export class MidiService {
    */
   async playSequence(instructions: MidiInstruction[]): Promise<void> {
     await this.ensureInitialized();
-    
-    if (!this.sampler) {
-      throw new Error('Sampler not initialized');
-    }
 
-    const transport = Tone.getTransport();
-    const startTime = transport.now();
+    const guitarSampler = this.audioService.getSampler('guitar');
+    if (!guitarSampler) throw new Error('Guitar sampler not initialized');
+
+    const percussionSampler = this.audioService.getSampler('percussion');
+    if (!percussionSampler) throw new Error('Percussion sampler not initialized');
+
+    const startTime = this.audioService.now();
 
     // Schedule all instructions
     for (const instruction of instructions) {
@@ -296,9 +148,9 @@ export class MidiService {
       
       // Handle percussion instructions
       if (instruction.percussion) {
-        if (this.percussionSampler) {
+        if (percussionSampler) {
           const percussionNote = this.getPercussionNote(instruction.percussion.technique);
-          this.percussionSampler.triggerAttackRelease(
+          percussionSampler.triggerAttackRelease(
             percussionNote,
             0.5, // Short duration for percussion
             scheduleTime,
@@ -317,13 +169,13 @@ export class MidiService {
         
         // Check if this is a sequential/reversed instruction (multiple notes with timing)
         if (instruction.notes.length > 1 && playMode !== 'parallel') {
-          await this.playSequentialNotes(instruction, scheduleTime, options);
+          this.playSequentialNotes(instruction, scheduleTime, options);
         } else {
           // Play all notes simultaneously (parallel or single notes)
           for (const note of instruction.notes) {
             const noteName = this.noteToToneName(note.note);
             
-            this.sampler.triggerAttackRelease(
+            guitarSampler.triggerAttackRelease(
               noteName,
               options.duration ?? instruction.duration,
               scheduleTime,
@@ -354,12 +206,13 @@ export class MidiService {
   /**
    * Play notes sequentially or in reverse order
    */
-  private async playSequentialNotes(
+  private playSequentialNotes(
     instruction: MidiInstruction, 
     startTime: number, 
     options: any
-  ): Promise<void> {
-    if (!this.sampler || !instruction.notes) return;
+  ): void {
+    const sampler = this.audioService.getSampler('guitar');
+    if (!sampler || !instruction.notes) return;
 
     const notes = instruction.notes;
     if (notes.length === 0) return;
@@ -380,7 +233,7 @@ export class MidiService {
       const noteTime = startTime + (i * noteSpacing);
       const noteName = this.noteToToneName(note.note);
       
-      this.sampler.triggerAttackRelease(
+      sampler.triggerAttackRelease(
         noteName,
         options.duration ?? instruction.duration,
         noteTime,
@@ -394,11 +247,9 @@ export class MidiService {
    */
   async playPercussionTechnique(technique: string): Promise<void> {
     await this.ensureInitialized();
-    
-    if (!this.percussionSampler) {
-      console.warn('Percussion sampler not loaded');
-      return;
-    }
+
+    const percussionSampler = this.audioService.getSampler('percussion');
+    if (!percussionSampler) throw new Error('Percussion sampler not initialized');
 
     const techniqueMapping: { [key: string]: string } = {
       'body_knock': 'C3', 
@@ -407,7 +258,7 @@ export class MidiService {
 
     const note = techniqueMapping[technique];
     if (note) {
-      this.percussionSampler.triggerAttackRelease(note, '8n');
+      percussionSampler.triggerAttackRelease(note, '8n');
       console.log(`Playing percussion technique: ${technique}`);
     } else {
       console.warn(`Unknown percussion technique: ${technique}`);
@@ -418,18 +269,11 @@ export class MidiService {
    * Clean up resources
    */
   dispose(): void {
-    if (this.sampler) {
-      this.sampler.dispose();
-      this.sampler = null;
-    }
-    
-    if (this.percussionSampler) {
-      this.percussionSampler.dispose();
-      this.percussionSampler = null;
-    }
-    
-    // Reset initialization state
-    this.context = null;
-    this.initializationPromise = null;
+    this.audioService.disposeSampler('guitar');
+    this.audioService.disposeSampler('percussion');
+  }
+
+  ngOnDestroy(): void {
+    this.dispose();
   }
 }

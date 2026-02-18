@@ -44,7 +44,7 @@
                     (ngModelChange)="changeTimeSignature(measureData.measureIndex, $event)"
                     [name]="'timeSignature_' + measureData.measureIndex">
                     @for (timeSig of getAvailableTimeSignatures(); track timeSig.value) {
-                      <option [value]="timeSig.value">{{ timeSig.label }}</option>
+                      <option [ngValue]="timeSig.value">{{ timeSig.label }}</option>
                     }
                   </select>
                 </div>
