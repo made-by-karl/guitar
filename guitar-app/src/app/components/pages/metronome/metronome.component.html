@@ -1,0 +1,51 @@
+<div class="container py-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h4 mb-0">Metronome</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" (click)="start()" [disabled]="running">Start</button>
+      <button class="btn btn-outline-secondary" (click)="stop()" [disabled]="!running">Stop</button>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-4">
+          <label for="bpm" class="form-label">BPM</label>
+          <input id="bpm" type="number" class="form-control" [(ngModel)]="bpm" min="20" max="260" />
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label for="timeSignature" class="form-label">Time Signature</label>
+          <select id="timeSignature" class="form-select" [(ngModel)]="timeSignature">
+            @for (ts of timeSignatureOptions; track ts) {
+              <option [ngValue]="ts">{{ timeSignatureOptionLabel(ts) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check form-switch">
+            <input id="subBeats" class="form-check-input" type="checkbox" role="switch" [(ngModel)]="subBeatsEnabled" />
+            <label class="form-check-label" for="subBeats">Sub-beats</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="metronome-beats" aria-label="Beat visualization">
+        @for (label of labels; track trackByIndex($index)) {
+          <span
+            class="beat"
+            [class.active]="$index === activeIndex"
+            [style.transform]="'scale(' + scales[$index] + ')'">
+            {{ label }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+</div>

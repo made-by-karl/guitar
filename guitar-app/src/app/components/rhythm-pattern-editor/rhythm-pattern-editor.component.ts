@@ -1,7 +1,8 @@
 import { Component, computed, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RhythmPattern, RhythmAction, RhythmModifier, TimeSignature, Measure, getBeatsFromTimeSignature, getSixteenthPerBeatFromTimeSignature } from '../../services/rhythm-patterns.model';
+import { RhythmPattern, RhythmAction, RhythmModifier, Measure, getBeatsFromTimeSignature, getSixteenthPerBeatFromTimeSignature } from '../../services/rhythm-patterns.model';
+import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from 'app/services/time-signature.model';
 import { PlaybackService } from 'app/services/playback.service';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide' | 'rest';
@@ -545,25 +546,18 @@ export class RhythmPatternEditorComponent implements OnDestroy {
 
   // Helper method to get available time signatures
   getAvailableTimeSignatures(): { value: TimeSignature; label: string }[] {
-    return [
-      { value: '2/4', label: '2/4' },
-      { value: '3/4', label: '3/4' },
-      { value: '4/4', label: '4/4' },
-      { value: '5/4', label: '5/4' },
-      { value: '6/8', label: '6/8' },
-      { value: '7/8', label: '7/8' },
-      { value: '9/8', label: '9/8' },
-      { value: '12/8', label: '12/8' }
-    ];
+    return TIME_SIGNATURES.map(value => ({ value, label: timeSignatureLabel(value) }));
   }
 
   // Change time signature for a specific measure
-  changeTimeSignature(measureIndex: number, newTimeSignature: TimeSignature): void {
+  changeTimeSignature(measureIndex: number, newTimeSignatureValue: unknown): void {
     const pattern = this.pattern();
     if (!pattern || !pattern.measures[measureIndex]) return;
     
     const measure = pattern.measures[measureIndex];
     const oldTimeSignature = measure.timeSignature;
+
+    const newTimeSignature = parseTimeSignature(newTimeSignatureValue, oldTimeSignature);
     
     // Only update if the time signature actually changed
     if (oldTimeSignature === newTimeSignature) return;
