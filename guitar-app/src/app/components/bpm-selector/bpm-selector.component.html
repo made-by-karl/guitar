@@ -1,0 +1,36 @@
+<div class="input-group">
+  <select
+    class="form-select bpm-mode"
+    [ngModel]="mode"
+    (ngModelChange)="onModeChange($event)"
+    [disabled]="disabled"
+    aria-label="BPM selection mode">
+    <option value="tempo">Tempo</option>
+    <option value="custom">Custom</option>
+  </select>
+
+  @if (mode === 'tempo') {
+    <select
+      class="form-select"
+      [ngModel]="selectedPresetId"
+      (ngModelChange)="onPresetChange($event)"
+      [disabled]="disabled"
+      aria-label="BPM tempo preset">
+      @for (preset of presets; track preset.id) {
+        <option [value]="preset.id">{{ preset.label }}</option>
+      }
+    </select>
+  } @else {
+    <input
+      class="form-control"
+      [ngModel]="customText"
+      (ngModelChange)="onCustomInput($event)"
+      (blur)="onCustomBlur()"
+      [disabled]="disabled"
+      inputmode="numeric"
+      pattern="\d*"
+      aria-label="Custom BPM" />
+  }
+
+  <span class="input-group-text">BPM</span>
+</div>

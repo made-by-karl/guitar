@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs';
 import { MetronomeService } from 'app/services/metronome.service';
 import { AudioService } from 'app/services/audio.service';
 import { TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from 'app/services/time-signature.model';
+import { BpmSelectorComponent } from 'app/components/bpm-selector/bpm-selector.component';
 
 @Component({
   selector: 'app-metronome',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BpmSelectorComponent],
   templateUrl: './metronome.component.html',
   styleUrls: ['./metronome.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

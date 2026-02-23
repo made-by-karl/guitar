@@ -11,11 +11,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GripService } from 'app/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from 'app/common/semitones';
 import { DialogService } from '../../../services/dialog.service';
+import { BpmSelectorComponent } from 'app/components/bpm-selector/bpm-selector.component';
 
 @Component({
   selector: 'app-song-sheet-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule, BpmSelectorComponent],
   templateUrl: './song-sheet-detail.component.html',
   styleUrls: ['./song-sheet-detail.component.scss']
 })
