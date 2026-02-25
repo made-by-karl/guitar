@@ -1,11 +1,10 @@
 import { Injectable } from "@angular/core";
 import { Semitone } from 'app/common/semitones';
-import { Modifier, areModifiersValid, MODIFIER_DEFINITIONS } from 'app/common/modifiers';
+import { Modifier, areModifiersValid, MODIFIER_DEFINITIONS, sortChordModifiers } from 'app/common/modifiers';
 import { normalize, transpose } from 'app/common/semitones';
 import { Chord } from "app/common/chords";
 
 export type ExtendedChord = Chord & {
-  bass?: Semitone;
   notes: Semitone[];
 };
 
@@ -124,7 +123,7 @@ export class ChordService {
       if (!matched) break;
     }
 
-    return this.calculateNotes(root, modifiers, bass);
+    return this.calculateNotes(root, sortChordModifiers(modifiers), bass);
   }
 
   private applyModifierOperations(
