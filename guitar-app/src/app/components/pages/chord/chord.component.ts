@@ -6,8 +6,8 @@ import { Grip, stringifyGrip, TunedGrip } from 'app/services/grips/grip.model';
 import { ExtendedChord, ChordService } from 'app/services/chords/chord.service';
 import { GripDiagramComponent } from 'app/components/grip-diagram/grip-diagram.component';
 import { Chord, chordEquals, chordToString } from 'app/common/chords';
-import { canAddModifier, isModifierSubset, Modifier, MODIFIERS, MODIFIER_DEFINITIONS, getModifierDescription } from 'app/common/modifiers';
-import { Semitone, SEMITONES } from 'app/common/semitones';
+import { Modifier, getModifierDescription } from 'app/common/modifiers';
+import { Semitone } from 'app/common/semitones';
 import { GripScorerService } from 'app/services/grips/grip-scorer.service';
 import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
@@ -16,6 +16,7 @@ import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-f
 import { SongSheetsService } from 'app/services/song-sheets.service';
 import { PlaybackService } from 'app/services/playback.service';
 import { ModalService, ModalRef } from 'app/services/modal.service';
+import { ChordSelectorComponent } from 'app/components/chord-selector/chord-selector.component';
 
 interface GripSettings {
   minFretToConsider?: number;
@@ -31,27 +32,20 @@ interface GripSettings {
 @Component({
   selector: 'app-chord',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent, RouterModule],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, RouterModule, ChordSelectorComponent],
   templateUrl: './chord.component.html',
   styleUrls: ['./chord.component.scss']
 })
 export class ChordComponent implements OnInit {
-  @ViewChild('modifierModal') modifierModalTemplate!: TemplateRef<any>;
   @ViewChild('settingsModal') settingsModalTemplate!: TemplateRef<any>;
   
   grips: TunedGrip[] = [];
-  modifiers: Modifier[] = [...MODIFIERS];
-  bassNotes: Semitone[] = [...SEMITONES];
-  roots: Semitone[] = [...SEMITONES];
-  selectedRoot: Semitone | null = null;
-  selectedModifiers: Modifier[] = [];
-  selectedBass: Semitone | null = null;
+  selectedChord: Chord | null = null;
 
   activeChord: ExtendedChord | null = null
   progressions: Chord[][] = [];
   isGeneratingGrips: boolean = false;
-  
-  private modifierModalRef: ModalRef | null = null;
+
   private settingsModalRef: ModalRef | null = null;
 
   selectedSheetId: string | null = null;
@@ -98,9 +92,11 @@ export class ChordComponent implements OnInit {
       if (this.currentChord) {
         const analysis = this.tryParseChord(this.currentChord);
         if (analysis) {
-          this.selectedRoot = analysis.root;
-          this.selectedModifiers = analysis.modifiers;
-          this.selectedBass = analysis.bass || null;
+          this.selectedChord = {
+            root: analysis.root,
+            bass: analysis.bass,
+            modifiers: [...analysis.modifiers],
+          };
           this.activeChord = analysis;
 
           this.regenerateGrips();
@@ -119,9 +115,7 @@ export class ChordComponent implements OnInit {
         }
       } else {
         // No chord selected - reset to initial state
-        this.selectedRoot = null;
-        this.selectedModifiers = [];
-        this.selectedBass = null;
+        this.selectedChord = null;
         this.activeChord = null;
         this.grips = [];
         this.progressions = [];
@@ -149,25 +143,6 @@ export class ChordComponent implements OnInit {
     return [];
   }
 
-  openModifierModal() {
-    this.modifierModalRef = this.modalService.showTemplate(
-      this.modifierModalTemplate,
-      this.viewContainerRef,
-      {
-        width: '800px',
-        maxHeight: '90vh',
-        closeOnBackdropClick: true
-      }
-    );
-  }
-
-  closeModifierModal() {
-    if (this.modifierModalRef) {
-      this.modifierModalRef.close();
-      this.modifierModalRef = null;
-    }
-  }
-
   openSettingsModal() {
     this.settingsModalRef = this.modalService.showTemplate(
       this.settingsModalTemplate,
@@ -190,42 +165,6 @@ export class ChordComponent implements OnInit {
   applySettingsAndRegenerate() {
     this.closeSettingsModal();
     this.regenerateGrips();
-  }
-
-  toggleModifier(modifier: Modifier) {
-    if (this.selectedModifiers.includes(modifier)) {
-      this.selectedModifiers = this.selectedModifiers.filter(m => m !== modifier);
-    } else {
-      this.selectedModifiers.push(modifier);
-      this.selectedModifiers = this.selectedModifiers
-        .filter(m => {
-          if (isModifierSubset(m, modifier)) {
-            return modifier === m;
-          }
-          return true;
-        });
-    }
-    // Immediately update chord and URL when modifier changes
-    this.updateChord();
-  }
-
-  resetModifiers() {
-    this.selectedModifiers = [];
-    // Immediately update chord and URL when modifiers are reset
-    this.updateChord();
-  }
-
-  updateChord() {
-    // Don't update if no root is selected
-    if (!this.selectedRoot) {
-      return;
-    }
-    
-    const chord: Chord = { root: this.selectedRoot, modifiers: [...this.selectedModifiers] };
-    const chordString = this.getChordQueryString(chord);
-
-    // Always navigate to update URL (which will trigger ngOnInit subscription to regenerate grips)
-    this.router.navigate(['/chord', chordString], { queryParams: {} });
   }
 
   private regenerateGrips() {
@@ -281,22 +220,15 @@ export class ChordComponent implements OnInit {
     return minFret === Infinity ? 0 : minFret;
   }
 
-  onRootChange() {
-    // If user selects "Select a chord..." (null), navigate to base /chord route
-    if (this.selectedRoot === null) {
+  onChordChange(chord: Chord | null) {
+    this.selectedChord = chord;
+
+    if (!chord) {
       this.router.navigate(['/chord']);
       return;
     }
-    this.updateChord();
-  }
 
-  onBassChange() {
-    // Ensure that any invalid values get converted to null
-    const bassValue = this.selectedBass as any;
-    if (!bassValue || bassValue === 'null' || bassValue === 'undefined' || bassValue === '') {
-      this.selectedBass = null;
-    }
-    this.updateChord();
+    this.router.navigate(['/chord', chordToString(chord)], { queryParams: {} });
   }
 
   async addGripToPinnedSheet(grip: Grip) {
@@ -340,11 +272,17 @@ export class ChordComponent implements OnInit {
 
   getChordQueryString(chord: Chord): string {
     // For progression links, use the chord as-is (no bass note)
-    // For the current chord being edited, use selectedBass
-    const bass = (chord === this.activeChord || (this.selectedRoot && chordEquals(chord, { root: this.selectedRoot, modifiers: this.selectedModifiers }))) 
-      ? this.selectedBass 
-      : null;
-    return chordToString(chord, bass);
+    // For the current chord being edited, include selectedChord.bass
+    const selection = this.selectedChord;
+    const isCurrentSelectionBase = !!selection && chordEquals(chord, {
+      root: selection.root,
+      modifiers: selection.modifiers,
+      bass: undefined
+    });
+    return chordToString({
+      ...chord,
+      bass: isCurrentSelectionBase ? selection?.bass : undefined
+    });
   }
 
   chordEquals(a: Chord, b: Chord) {
@@ -358,31 +296,6 @@ export class ChordComponent implements OnInit {
       console.error('Failed to parse chord:', input);
       return null;
     }
-  }
-
-  getModifierState(modifier: Modifier) {
-    const isChecked = this.isModifierChecked(modifier);
-    const isSubset = this.isModifierSubset(modifier);
-    const isConflict = this.isModifierConflict(modifier);
-    const isDisabled = isConflict || isSubset;
-
-    return { isChecked, isDisabled, isConflict, isSubset };
-  }
-
-  isModifierChecked(modifier: Modifier): boolean {
-    return this.selectedModifiers.includes(modifier);
-  }
-
-  isModifierSubset(modifier: Modifier): boolean {
-    const otherModifiers = this.selectedModifiers.filter(m => m !== modifier);
-    if (otherModifiers.length === 0) return false;
-
-    return otherModifiers.some(m => isModifierSubset(modifier, m));
-  }
-
-  isModifierConflict(modifier: Modifier): boolean {
-    const canAdd = canAddModifier(this.selectedModifiers, modifier) === true; // returns string for false
-    return !canAdd;
   }
 
   /**

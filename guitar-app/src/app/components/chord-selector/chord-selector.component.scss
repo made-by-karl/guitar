@@ -1,7 +1,14 @@
-// Modal styles
 :host {
-  display: block;
-  height: 100%;
+  display: contents;
+}
+
+.modifier-conflict {
+  border-color: #dc3545 !important;
+}
+
+.modifier-conflict label {
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
 }
 
 .modal-content-wrapper {

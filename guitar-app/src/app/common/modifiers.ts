@@ -206,6 +206,31 @@ export const MODIFIERS: Modifier[] = [
 ];
 export type Modifier = keyof typeof MODIFIER_DEFINITIONS;
 
+/**
+ * Canonical chord-symbol ordering for this project.
+ *
+ * This is not a universal “official” standard, but it follows common lead-sheet conventions:
+ * quality -> suspensions/triad variants -> sevenths/extensions/add -> alterations -> omissions.
+ */
+export const MODIFIER_ORDER: readonly Modifier[] = Object.freeze([...MODIFIERS]);
+
+const MODIFIER_SORT_INDEX: Readonly<Record<Modifier, number>> = (() => {
+  const map = {} as Record<Modifier, number>;
+  for (let i = 0; i < MODIFIER_ORDER.length; i++) {
+    map[MODIFIER_ORDER[i]] = i;
+  }
+  return Object.freeze(map);
+})();
+
+export function sortChordModifiers(modifiers: readonly Modifier[]): Modifier[] {
+  return [...modifiers].sort((a, b) => {
+    const ia = MODIFIER_SORT_INDEX[a] ?? Number.MAX_SAFE_INTEGER;
+    const ib = MODIFIER_SORT_INDEX[b] ?? Number.MAX_SAFE_INTEGER;
+    if (ia !== ib) return ia - ib;
+    return a.localeCompare(b);
+  });
+}
+
 export function isModifier(modifier: string): modifier is Modifier {
   return MODIFIERS.includes(modifier as Modifier);
 }

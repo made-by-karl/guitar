@@ -5,47 +5,11 @@
   <div class="card mb-4">
     <div class="card-body">
       <div class="row g-3">
-        <div class="col-md-3">
-          <label for="root" class="form-label">Root:</label>
-          <select id="root" class="form-select" [(ngModel)]="selectedRoot" (ngModelChange)="onRootChange()">
-            <option [ngValue]="null">Select a chord...</option>
-            @for (root of roots; track root) {
-            <option [value]="root">{{ root }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="col-md-3">
-          <label for="bass" class="form-label">Bass (optional):</label>
-          <select id="bass" class="form-select" [(ngModel)]="selectedBass" (ngModelChange)="onBassChange()">
-            <option [ngValue]="null">None</option>
-            @for (bass of bassNotes; track bass) {
-            <option [value]="bass">{{ bass }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">Modifiers:</label>
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-primary flex-grow-1" type="button" (click)="openModifierModal()">
-              Select Modifiers
-              <i class="bi bi-pencil-square ms-1"></i>
-            </button>
-            @if (selectedModifiers.length > 0) {
-              <button class="btn btn-outline-secondary" type="button" (click)="resetModifiers()" 
-                      title="Clear all modifiers">
-                <i class="bi bi-x-circle"></i>
-              </button>
-            }
-          </div>
-          @if (selectedModifiers.length > 0) {
-            <div class="mt-2 d-flex flex-wrap gap-1">
-              @for (modifier of selectedModifiers; track modifier) {
-                <span class="badge bg-primary">{{ modifier }}</span>
-              }
-            </div>
-          }
+        <div class="col-md-10">
+          <app-chord-selector
+            [(ngModel)]="selectedChord"
+            (ngModelChange)="onChordChange($event)"
+          ></app-chord-selector>
         </div>
 
         <div class="col-md-2">
@@ -213,73 +177,6 @@
     </div>
   </div>
 </div>
-
-<!-- Modifier Selection Modal Template -->
-<ng-template #modifierModal>
-  <div class="modal-content-wrapper">
-    <div class="modal-header">
-      <h5 class="modal-title">Select Chord Modifiers</h5>
-      <button type="button" class="btn-close" (click)="closeModifierModal()"></button>
-    </div>
-    
-    <div class="modal-body">
-      <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            @if (selectedModifiers.length > 0) {
-              <span class="text-muted">Selected: </span>
-              @for (modifier of selectedModifiers; track modifier) {
-                <span class="badge bg-primary me-1">{{ modifier }}</span>
-              }
-            } @else {
-              <span class="text-muted">No modifiers selected</span>
-            }
-          </div>
-          @if (selectedModifiers.length > 0) {
-            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="resetModifiers()" 
-                    title="Clear all modifiers">
-              <i class="bi bi-x-circle me-1"></i> Clear All
-            </button>
-          }
-        </div>
-      </div>
-
-      <ng-template #modifierTemplate let-modifier>
-        @let modifierState = getModifierState(modifier);
-        <div class="btn-group me-2 mb-2" role="group" 
-             [class.modifier-conflict]="modifierState.isDisabled && modifierState.isConflict">
-          <input type="checkbox" class="btn-check" id="modifier-modal-{{ modifier }}"
-            [disabled]="modifierState.isDisabled" [checked]="modifierState.isChecked"
-            (change)="toggleModifier(modifier)">
-          <label class="btn btn-outline-primary" style="min-width: 5em;" for="modifier-modal-{{ modifier }}">
-            {{ modifier }}
-          </label>
-        </div>
-      </ng-template>
-
-      <div class="row">
-        <div class="col-md-6">
-          <h6 class="text-muted mb-2">Basic Modifiers</h6>
-          @for (modifier of modifiers | slice:0:modifiers.indexOf('add13'); track modifier) {
-            <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
-          }
-        </div>
-        <div class="col-md-6">
-          <h6 class="text-muted mb-2">Extended & Add Modifiers</h6>
-          @for (modifier of modifiers | slice:modifiers.indexOf('add13'); track modifier) {
-            <ng-container *ngTemplateOutlet="modifierTemplate; context: { $implicit: modifier }"></ng-container>
-          }
-        </div>
-      </div>
-    </div>
-    
-    <div class="modal-footer">
-      <button class="btn btn-secondary" type="button" (click)="closeModifierModal()">
-        Close
-      </button>
-    </div>
-  </div>
-</ng-template>
 
 <!-- Settings Modal Template -->
 <ng-template #settingsModal>
