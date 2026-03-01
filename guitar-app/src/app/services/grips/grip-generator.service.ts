@@ -1,8 +1,12 @@
 import { Injectable } from "@angular/core";
-import { getIntervalSemitones, Note, Semitone } from "app/common/semitones";
+import { hasSeventhChord, isAlteredChord, isDiminishedChord, isMajor7Chord } from "app/common/modifiers";
+import { getIntervalSemitones, getNoteMidi, note, Note, Semitone } from "app/common/semitones";
 import { FretboardService } from "app/services/fretboard.service";
 import type { ExtendedChord } from 'app/services/chords/chord.service';
-import { Grip, TunedGrip, String } from './grip.model';
+import { TunedGrip, String } from './grip.model';
+
+const MIDI_A2 = getNoteMidi(note('A', 2));
+const MIDI_E3 = getNoteMidi(note('E', 3));
 
 @Injectable({
   providedIn: 'root'
@@ -32,7 +36,8 @@ export class GripGeneratorService {
       allowInversions: options.allowInversions ?? false,
       allowIncompleteChords: options.allowIncompleteChords ?? false,
       allowMutedStringsInside: options.allowMutedStringsInside ?? false,
-      allowDuplicateNotes: options.allowDuplicateNotes ?? false
+      allowDuplicateNotes: options.allowDuplicateNotes ?? false,
+      dissonanceProfile: options.dissonanceProfile ?? 'neutral'
     };
   }
 
@@ -329,7 +334,7 @@ export class GripGeneratorService {
     config: GripGenerationConfig,
     context: GripGenerationContext
   ): boolean {
-    if (!this.isValidGrip(strings, notes, chord, config, context.expectedNotes)) {
+    if (!this.isValidGrip(strings, notes, chord, config, context)) {
       return false;
     }
 
@@ -344,7 +349,7 @@ export class GripGeneratorService {
     notes: (Note | null)[],
     chord: ExtendedChord,
     config: GripGenerationConfig,
-    expectedNotes: Semitone[]
+    context: GripGenerationContext
   ): boolean {
     if (strings.filter(s => s !== 'x').length < config.minimalPlayableStrings) {
       return false; // Not enough strings
@@ -354,6 +359,7 @@ export class GripGeneratorService {
       return false; // Barree not allowed
     }
 
+    const expectedNotes = context.expectedNotes;
     const playedSemitones = notes.map(n => n?.semitone).filter(s => s !== undefined);
     if (!config.allowIncompleteChords && !expectedNotes.every(e => playedSemitones.includes(e))) {
       return false; // Incomplete chord
@@ -368,7 +374,7 @@ export class GripGeneratorService {
       return false; // Inversions not allowed
     }
 
-    if (this.hasDissonantLowVoicing(chord, notes)) {
+    if (this.isDissonant(chord, notes, context, config.dissonanceProfile)) {
       return false;
     }
 
@@ -602,62 +608,145 @@ export class GripGeneratorService {
     return { maxSpan: 3, maxFingers: 3 }
   }
 
-  /**
-   * Check if a grip has dissonant intervals in lower strings
-   * Checks for various dissonant intervals (2nds, 7ths, tritones) that sound harsh in lower registers
-   */
-  private hasDissonantLowVoicing(chord: ExtendedChord, notes: (Note | null)[]): boolean {
-    const playedNotes = notes.filter(n => n !== null);
-    if (playedNotes.length < 4) {
-      return false; // Not enough notes to worry about voicing
+  private isDissonant(
+    chord: ExtendedChord, notes: (Note | null)[],
+    context: GripGenerationContext,
+    profile: DissonanceProfile = 'neutral'
+  ): boolean {
+    const score = this.calculateDissonanceScore(chord, notes);
+    const threshold = this.adaptiveDissonanceThreshold(chord, notes, context, profile);
+
+    return score >= threshold;
+  }
+
+  private adaptiveDissonanceThreshold(
+    chord: ExtendedChord,
+    notes: (Note | null)[],
+    context: GripGenerationContext,
+    profile: DissonanceProfile = 'neutral'
+  ): number {
+    let threshold = this.baseThreshold(chord);
+
+    const played = notes.filter(Boolean) as Note[];
+    const bass = played[0];
+    if (!bass) return threshold;
+    const bassMidi = getNoteMidi(bass);
+
+    // Register
+    if (bassMidi < MIDI_A2) threshold -= 2;
+    else if (bassMidi > MIDI_E3) threshold += 1;
+
+    // Voicing analysis
+    const tuning = context.fretboardMatrix[0];
+    const openStrings = notes.filter((n, i) => {
+      if (!n || i > 3) return false;
+      const open = tuning[i];
+      return n.semitone === open.semitone && n.octave === open.octave;
+    }).length;
+
+    if (openStrings >= 2) threshold -= 1;
+
+    // Dissonance profile (generic tolerance control)
+    if (profile === 'harmonic') threshold -= 1;
+    if (profile === 'dissonant') threshold += 2;
+
+    return threshold;
+  }
+
+  private baseThreshold(chord: ExtendedChord): number {
+    if (isAlteredChord(chord)) return 12;
+    if (isDiminishedChord(chord)) return 10;
+    if (isMajor7Chord(chord)) return 9;
+    if (hasSeventhChord(chord)) return 8;
+    return 6;
+  }
+
+  private intervalDissonanceWeight(interval: number): number {
+    switch (interval) {
+      case 1:  return 5; // minor 2nd
+      case 2:  return 4; // major 2nd
+      case 3:  return 1; // minor 3rd (mild)
+      case 6:  return 4; // tritone
+      case 10: return 2; // minor 7th
+      case 11: return 4; // major 7th
+      default: return 0;
     }
+  }
 
-    // Use the actual bass note (lowest played note) as reference
-    // because dissonance is based on acoustic intervals from the bass
-    const bassNote = playedNotes[0];
+  private calculateDissonanceScore(
+    chord: ExtendedChord,
+    notes: (Note | null)[]
+  ): number {
+    const played = notes
+      .map((n, i) => n ? { note: n, stringIndex: i } : null)
+      .filter(Boolean) as { note: Note; stringIndex: number }[];
 
-    // Check each played note for dissonant intervals
-    for (let i = 0; i < notes.length; i++) {
-      const note = notes[i];
-      if (!note) continue;
+    if (played.length < 3) return 0;
 
-      // Calculate interval from root
-      const interval = getIntervalSemitones(bassNote, note);
-      const normalizedInterval = ((interval % 12) + 12) % 12;
+    const bass = played[0].note;
+    const bassMidi = getNoteMidi(bass);
+    const bassIntervals: number[] = [];
 
-      // Dissonant intervals to check:
-      // 1 = minor 2nd (very dissonant)
-      // 2 = major 2nd (dissonant in lower register)
-      // 6 = tritone/augmented 4th/diminished 5th (very dissonant)
-      // 10 = minor 7th (dissonant in lower register)
-      // 11 = major 7th (dissonant in lower register)
-      const isMinor2nd = normalizedInterval === 1;
-      const isMajor2nd = normalizedInterval === 2;
-      const isTritone = normalizedInterval === 6;
-      const isMinor7th = normalizedInterval === 10;
-      const isMajor7th = normalizedInterval === 11;
+    let score = 0;
 
-      // 7ths should not be in lower strings
-      if (isMinor7th || isMajor7th) {
-        // Guitar strings are indexed from low E to high E:
-        // Index 0 = Low E (6th string), Index 5 = High E (1st string)
-        // We want to avoid 7th in indices 0, 1, 2, 3 (lower strings: Low E, A, D, G)
-        // Allow 7th in indices 4, 5 (higher strings: B, High E)
-        if (i <= 3) {
-          return true; // 7th in lower strings creates dissonance
+    for (let i = 1; i < played.length; i++) {
+      const { note, stringIndex } = played[i];
+      const noteMidi = getNoteMidi(note);
+      const distance = noteMidi - bassMidi;
+
+      const interval =
+        (distance % 12 + 12) % 12;
+
+      bassIntervals.push(interval);
+
+      let weight = this.intervalDissonanceWeight(interval);
+
+      // Register-dependent amplification
+      if (distance < 12) {
+        weight *= 1.5;
+      }
+
+      // Lower strings amplify dissonance
+      if (stringIndex <= 2) {
+        weight *= 1.5;
+      }
+
+      // Chord type softens/permits certain tensions
+      if (hasSeventhChord(chord) && interval === 10) {
+        weight *= 0.5;
+      }
+
+      // Dominant-specific low-register penalty
+      if (interval === 10) { // minor 7th
+        // If within one octave AND close to the bass
+        if (distance < 10) {
+          score += 3;
         }
       }
 
-      // 2nds and tritones should generally not be in the very lowest strings
-      // Allow them in middle to upper strings (indices 2-5)
-      if (isMinor2nd || isMajor2nd || isTritone) {
-        if (i <= 1) {
-          return true; // Very dissonant intervals in the lowest strings
+      score += weight;
+    }
+
+    // Double 7ths / stacked tensions
+    const seventhCount = bassIntervals.filter(i => i === 10 || i === 11).length;
+
+    if (seventhCount > 1) {
+      score += 3; // a doubled 7th makes dominant voicings sound very rough
+    }
+
+    // Additional voice-to-voice dissonance
+    for (let i = 0; i < played.length; i++) {
+      for (let j = i + 1; j < played.length; j++) {
+        const interval =
+          Math.abs(getNoteMidi(played[i].note) - getNoteMidi(played[j].note)) % 12;
+
+        if (interval === 1 || interval === 2) {
+          score += 3; // very noticeable
         }
       }
     }
 
-    return false;
+    return Math.round(score);
   }
 
   private determineInversion(chord: ExtendedChord, notes: (Note | null)[]): 'root' | '1st' | '2nd' | 'other' | undefined {
@@ -693,7 +782,9 @@ type FingerPlacement = {
   strings: number[];
 }
 
-type GripGeneratorOptions = {
+export type DissonanceProfile = 'harmonic' | 'neutral' | 'dissonant'
+
+export type GripGeneratorOptions = {
   minFretToConsider?: number;
   maxFretToConsider?: number;
   minimalPlayableStrings?: number;
@@ -702,6 +793,7 @@ type GripGeneratorOptions = {
   allowIncompleteChords?: boolean;
   allowMutedStringsInside?: boolean;
   allowDuplicateNotes?: boolean;
+  dissonanceProfile?: DissonanceProfile;
 }
 
 type GripGenerationConfig = {
@@ -713,6 +805,7 @@ type GripGenerationConfig = {
   allowIncompleteChords: boolean;
   allowMutedStringsInside: boolean;
   allowDuplicateNotes: boolean;
+  dissonanceProfile: DissonanceProfile;
 }
 
 type GripGenerationContext = {

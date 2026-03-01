@@ -223,6 +223,18 @@
         <small class="form-text text-muted">Minimum number of strings that must be played</small>
       </div>
 
+      <h6 class="text-muted mb-3">Dissonance Filter</h6>
+
+      <div class="form-group mb-4">
+        <label for="dissonanceProfile" class="form-label">Dissonance profile:</label>
+        <select id="dissonanceProfile" class="form-select" [(ngModel)]="gripSettings.dissonanceProfile">
+          @for (p of dissonanceProfiles; track p.value) {
+            <option [value]="p.value">{{ p.label }}</option>
+          }
+        </select>
+        <small class="form-text text-muted">Controls how strictly dissonant voicings are filtered out</small>
+      </div>
+
       <h6 class="text-muted mb-3">Advanced Options</h6>
       
       <div class="form-check form-switch mb-3">

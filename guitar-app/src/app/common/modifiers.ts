@@ -394,3 +394,46 @@ function detectConflicts(
 export function getModifierDescription(modifier: Modifier): string {
   return MODIFIER_DEFINITIONS[modifier]?.description ?? 'Unknown modifier';
 }
+
+export type ChordModifierCarrier = {
+  modifiers: readonly Modifier[];
+};
+
+const ALTERED_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  // Alterations explicitly supported by this project
+  'b5', '#5', 'bb5',
+  'b9', '#9',
+  '#11',
+  'b13',
+  // Chord qualities that imply an altered 5th
+  'aug', 'aug7',
+]);
+
+const DIMINISHED_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  'dim', 'ø7', 'dim7',
+]);
+
+const MAJOR7_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  'maj7', 'maj9',
+]);
+
+const SEVENTH_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  '7', 'maj7', 'ø7', 'dim7', 'aug7', 'maj9',
+]);
+
+export function isAlteredChord(chord: ChordModifierCarrier): boolean {
+  return chord.modifiers.some(m => ALTERED_MODIFIERS.has(m));
+}
+
+export function isDiminishedChord(chord: ChordModifierCarrier): boolean {
+  return chord.modifiers.some(m => DIMINISHED_MODIFIERS.has(m));
+}
+
+export function isMajor7Chord(chord: ChordModifierCarrier): boolean {
+  return chord.modifiers.some(m => MAJOR7_MODIFIERS.has(m));
+}
+
+export function hasSeventhChord(chord: ChordModifierCarrier): boolean {
+  if (chord.modifiers.includes('no7')) return false;
+  return chord.modifiers.some(m => SEVENTH_MODIFIERS.has(m));
+}

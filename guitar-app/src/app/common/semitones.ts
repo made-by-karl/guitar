@@ -50,6 +50,20 @@ export interface Note {
   octave: number;
 }
 
+/**
+ * Convert a Note (pitch class + octave) to a MIDI note number.
+ *
+ * Uses the common convention where C-1 = 0, C4 (middle C) = 60.
+ */
+export function getNoteMidi(note: Note): number {
+  const semitoneIndex = SEMITONES.indexOf(note.semitone);
+  if (semitoneIndex < 0) {
+    throw new Error(`Invalid semitone: ${String(note.semitone)}`);
+  }
+
+  return 12 * (note.octave + 1) + semitoneIndex;
+}
+
 export function note(semitone: Semitone, octave: number): Note {
   return { semitone, octave };
 }
