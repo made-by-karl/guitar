@@ -8,7 +8,11 @@ import {
     areModifiersValid,
     canAddModifier,
     getModifierDescription,
-    isModifierSubset
+    isModifierSubset,
+    hasSeventhChord,
+    isAlteredChord,
+    isDiminishedChord,
+    isMajor7Chord
 } from './modifiers';
 
 describe('Modifiers', () => {
@@ -138,6 +142,37 @@ describe('Modifiers', () => {
                 expect(description).not.toBe('Unknown modifier');
                 expect(description).toBe(MODIFIER_DEFINITIONS[modifier].description);
             });
+        });
+    });
+
+    describe('chord classifier helpers', () => {
+        it('should detect altered chords based on modifiers', () => {
+            expect(isAlteredChord({ modifiers: ['b9'] })).toBe(true);
+            expect(isAlteredChord({ modifiers: ['#11'] })).toBe(true);
+            expect(isAlteredChord({ modifiers: ['aug'] })).toBe(true);
+            expect(isAlteredChord({ modifiers: [] })).toBe(false);
+            expect(isAlteredChord({ modifiers: ['m'] })).toBe(false);
+        });
+
+        it('should detect diminished chords based on modifiers', () => {
+            expect(isDiminishedChord({ modifiers: ['dim'] })).toBe(true);
+            expect(isDiminishedChord({ modifiers: ['ø7'] })).toBe(true);
+            expect(isDiminishedChord({ modifiers: ['dim7'] })).toBe(true);
+            expect(isDiminishedChord({ modifiers: ['b5'] })).toBe(false);
+        });
+
+        it('should detect major7 chords based on modifiers', () => {
+            expect(isMajor7Chord({ modifiers: ['maj7'] })).toBe(true);
+            expect(isMajor7Chord({ modifiers: ['maj9'] })).toBe(true);
+            expect(isMajor7Chord({ modifiers: ['7'] })).toBe(false);
+        });
+
+        it('should detect seventh chords, respecting no7', () => {
+            expect(hasSeventhChord({ modifiers: ['7'] })).toBe(true);
+            expect(hasSeventhChord({ modifiers: ['maj7'] })).toBe(true);
+            expect(hasSeventhChord({ modifiers: ['maj9'] })).toBe(true);
+            expect(hasSeventhChord({ modifiers: ['no7'] })).toBe(false);
+            expect(hasSeventhChord({ modifiers: ['7', 'no7'] })).toBe(false);
         });
     });
 

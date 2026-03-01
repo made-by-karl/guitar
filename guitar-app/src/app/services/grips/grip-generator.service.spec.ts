@@ -71,7 +71,7 @@ describe('GripGeneratorService', () => {
   describe('Voice leading and harmonic constraints', () => {
     it('should generate E7 chord with b7 (D) in higher strings to avoid dissonance', () => {
       const chord = createChord('E', ['E', 'G#', 'B', 'D'], ['7']);
-      const grips = service.generateGrips(chord);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
 
       expect(grips.length).toBeGreaterThan(0);
 
@@ -150,7 +150,7 @@ describe('GripGeneratorService', () => {
       // Test with a chord that contains a minor 2nd interval (C to C#)
       // This is an uncommon voicing but demonstrates the dissonance check
       const chord = createChord('C', ['C', 'C#', 'G'], []);
-      const grips = service.generateGrips(chord, { allowIncompleteChords: true });
+      const grips = service.generateGrips(chord, { allowIncompleteChords: true, dissonanceProfile: 'harmonic' });
 
       grips.forEach(grip => {
         const notes = grip.notes.filter(n => n !== null);
@@ -170,7 +170,7 @@ describe('GripGeneratorService', () => {
     it('should avoid tritone intervals in lowest strings for diminished chords', () => {
       // Cdim contains C-Eb-Gb, where Gb is a tritone (6 semitones) from C
       const chord = createChord('C', ['C', 'D#', 'F#'], ['dim']);
-      const grips = service.generateGrips(chord);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
 
       grips.forEach(grip => {
         const notes = grip.notes.filter(n => n !== null);
@@ -192,7 +192,7 @@ describe('GripGeneratorService', () => {
       // If we have E in bass, and add a D, it creates a minor 7th from E (E to D = 10 semitones)
       // This should be avoided in lower strings even though D is not the 7th of C
       const chord = createChord('C', ['C', 'E', 'G', 'D'], [], 'E');
-      const grips = service.generateGrips(chord, { allowIncompleteChords: true });
+      const grips = service.generateGrips(chord, { allowIncompleteChords: true, dissonanceProfile: 'harmonic' });
 
       grips.forEach(grip => {
         const notes = grip.notes.filter(n => n !== null);
@@ -210,6 +210,18 @@ describe('GripGeneratorService', () => {
           }
         }
       });
+    });
+
+    it('should allow Bm7 x20202 for neutral but not for harmonic (strict)', () => {
+      const chord = createChord('B', ['B', 'D', 'F#', 'A'], ['m', '7']);
+
+      const neutralGrips = service.generateGrips(chord, { dissonanceProfile: 'neutral' });
+      const neutralShape = neutralGrips.find(g => stringifyGrip(g) === 'x|2|o|2|o|2');
+      expect(neutralShape).toBeTruthy();
+
+      const harmonicGrips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
+      const harmonicShape = harmonicGrips.find(g => stringifyGrip(g) === 'x|2|o|2|o|2');
+      expect(harmonicShape).toBeFalsy();
     });
   });
 });

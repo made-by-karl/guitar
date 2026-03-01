@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, TemplateRef, ViewContainerRef } from '@an
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
+import type { DissonanceProfile, GripGeneratorOptions } from 'app/services/grips/grip-generator.service';
 import { Grip, stringifyGrip, TunedGrip } from 'app/services/grips/grip.model';
 import { ExtendedChord, ChordService } from 'app/services/chords/chord.service';
 import { GripDiagramComponent } from 'app/components/grip-diagram/grip-diagram.component';
@@ -17,17 +18,6 @@ import { SongSheetsService } from 'app/services/song-sheets.service';
 import { PlaybackService } from 'app/services/playback.service';
 import { ModalService, ModalRef } from 'app/services/modal.service';
 import { ChordSelectorComponent } from 'app/components/chord-selector/chord-selector.component';
-
-interface GripSettings {
-  minFretToConsider?: number;
-  maxFretToConsider?: number;
-  minimalPlayableStrings?: number;
-  allowBarree?: boolean;
-  allowInversions?: boolean;
-  allowIncompleteChords?: boolean;
-  allowMutedStringsInside?: boolean;
-  allowDuplicateNotes?: boolean;
-}
 
 @Component({
   selector: 'app-chord',
@@ -55,7 +45,13 @@ export class ChordComponent implements OnInit {
   readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I', 'V', 'vi', 'IV']
   readonly BASE_MINOR_PROGRESSION: Degree[] = ['i', 'VI', 'III', 'VII']
 
-  gripSettings: GripSettings = {
+  dissonanceProfiles: { value: DissonanceProfile; label: string }[] = [
+    { value: 'harmonic', label: 'Harmonic (strict)' },
+    { value: 'neutral', label: 'Neutral' },
+    { value: 'dissonant', label: 'Dissonant (permissive)' },
+  ];
+
+  gripSettings: GripGeneratorOptions = {
     minFretToConsider: 1,
     maxFretToConsider: 12,
     minimalPlayableStrings: 3,
@@ -63,7 +59,8 @@ export class ChordComponent implements OnInit {
     allowInversions: false,
     allowIncompleteChords: false,
     allowMutedStringsInside: false,
-    allowDuplicateNotes: false
+    allowDuplicateNotes: false,
+    dissonanceProfile: 'neutral'
   };
 
   currentChord: string | null = null;
