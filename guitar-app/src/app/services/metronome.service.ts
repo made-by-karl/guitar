@@ -1,8 +1,8 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { AudioService } from './audio.service';
-import { buildMetronomeLabels, isMainBeatLabel } from './metronome-labels';
-import { getAccentedBeats, getTimeSignatureParts, parseTimeSignature, TimeSignature } from './time-signature.model';
+import { AudioService } from '@/app/services/audio.service';
+import { buildMetronomeLabels, isMainBeatLabel } from '@/app/services/metronome-labels';
+import { getAccentedBeats, getTimeSignatureParts, parseTimeSignature, TimeSignature } from '@/app/services/time-signature.model';
 
 export interface MetronomeConfig {
   bpm: number;

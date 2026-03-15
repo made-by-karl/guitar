@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { RhythmPattern, RhythmAction } from './rhythm-patterns.model';
-import { DatabaseService } from './database.service';
+import { RhythmPattern, RhythmAction } from '@/app/services/rhythm-patterns.model';
+import { DatabaseService } from '@/app/services/database.service';
 
 @Injectable({ providedIn: 'root' })
 export class RhythmPatternsService {

@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Grip } from 'app/services/grips/grip.model';
+import { Grip } from '@/app/services/grips/grip.model';
 
 @Component({
   selector: 'app-grip-diagram',

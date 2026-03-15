@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
-import { SongSheet } from './song-sheets.model';
-import { RhythmPattern } from './rhythm-patterns.model';
+import { SongSheet } from '@/app/services/song-sheets.model';
+import { RhythmPattern } from '@/app/services/rhythm-patterns.model';
 
 /**
  * Database service for managing IndexedDB storage using Dexie.js

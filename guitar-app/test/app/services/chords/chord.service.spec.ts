@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ChordService } from './chord.service';
+import { ChordService } from '@/app/services/chords/chord.service';
 
 describe('ChordService', () => {
     let service: ChordService;

@@ -1,4 +1,4 @@
-import { DebugPipe } from './debug.pipe';
+import { DebugPipe } from '@/app/components/pipes/debug.pipe';
 
 describe('DebugPipe', () => {
   it('create an instance', () => {

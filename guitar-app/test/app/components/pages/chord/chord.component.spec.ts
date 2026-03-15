@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { ChordComponent } from './chord.component';
+import { ChordComponent } from '@/app/components/pages/chord/chord.component';
 import { of } from 'rxjs';
-import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
-import { ChordService } from 'app/services/chords/chord.service';
-import { GripScorerService } from 'app/services/grips/grip-scorer.service';
-import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
+import { GripGeneratorService } from '@/app/services/grips/grip-generator.service';
+import { ChordService } from '@/app/services/chords/chord.service';
+import { GripScorerService } from '@/app/services/grips/grip-scorer.service';
+import { ChordProgressionService } from '@/app/services/chords/chord-progression.service';
 
 describe('ChordViewerComponent', () => {
   let component: ChordComponent;

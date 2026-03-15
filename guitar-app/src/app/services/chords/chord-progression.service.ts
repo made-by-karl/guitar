@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Chord } from 'app/common/chords';
-import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-functions.service';
+import { Chord } from '@/app/common/chords';
+import { Degree, HarmonicFunctionsService } from '@/app/services/chords/harmonic-functions.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChordProgressionService {

@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { SongSheet, SongSheetGrip, SongSheetPattern, SongSheetWithData, SongSheetPatternWithData, SongSheetGripWithData, SongPart } from './song-sheets.model';
-import { RhythmPatternsService } from './rhythm-patterns.service';
-import { note } from 'app/common/semitones';
-import { parseGrip } from './grips/grip.model';
-import { DatabaseService } from './database.service';
+import { SongSheet, SongSheetGrip, SongSheetPattern, SongSheetWithData, SongSheetPatternWithData, SongSheetGripWithData, SongPart } from '@/app/services/song-sheets.model';
+import { RhythmPatternsService } from '@/app/services/rhythm-patterns.service';
+import { note } from '@/app/common/semitones';
+import { parseGrip } from '@/app/services/grips/grip.model';
+import { DatabaseService } from '@/app/services/database.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })

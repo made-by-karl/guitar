@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { FretboardService } from 'app/services/fretboard.service';
-import { Note } from 'app/common/semitones';
+import { FretboardService } from '@/app/services/fretboard.service';
+import { Note } from '@/app/common/semitones';
 
 describe('FretboardService', () => {
   let service: FretboardService;

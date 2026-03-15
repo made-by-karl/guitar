@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PlaybackService } from '../../../services/playback.service';
-import { MidiService } from '../../../services/midi.service';
-import { MidiTechnique } from '../../../services/midi.model';
+import { PlaybackService } from '@/app/services/playback.service';
+import { MidiService } from '@/app/services/midi.service';
+import { MidiTechnique } from '@/app/services/midi.model';
 
 @Component({
   selector: 'app-midi-test',

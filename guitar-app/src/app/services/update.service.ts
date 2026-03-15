@@ -2,8 +2,8 @@ import { Injectable, ApplicationRef } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { interval, first } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { APP_VERSION } from '../../version';
-import { DialogService } from '../services/dialog.service'; // fixed path
+import { APP_VERSION } from '@/version';
+import { DialogService } from '@/app/services/dialog.service';
 
 const VERSION_KEY = 'app_version';
 const CHECK_INTERVAL = 15 * 60 * 1000; // 15 minutes

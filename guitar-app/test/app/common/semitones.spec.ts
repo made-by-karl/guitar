@@ -1,4 +1,4 @@
-import { getNoteMidi, note } from './semitones';
+import { getNoteMidi, note } from '@/app/common/semitones';
 
 describe('semitones', () => {
   describe('getNoteMidi', () => {

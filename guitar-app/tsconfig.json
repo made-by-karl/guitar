@@ -21,8 +21,10 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./src",
     "paths": {
+      "@/*": ["*"],
       "@/assets/*": ["assets/*"],
-      "@/types": ["types/index.ts"]
+      "@/types": ["types/index.ts"],
+      "@test/*": ["../test/*"]
     }
   },
   "angularCompilerOptions": {

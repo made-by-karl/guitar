@@ -1,23 +1,23 @@
 import { Component, OnInit, ViewChild, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GripGeneratorService } from 'app/services/grips/grip-generator.service';
-import type { DissonanceProfile, GripGeneratorOptions } from 'app/services/grips/grip-generator.service';
-import { Grip, stringifyGrip, TunedGrip } from 'app/services/grips/grip.model';
-import { ExtendedChord, ChordService } from 'app/services/chords/chord.service';
-import { GripDiagramComponent } from 'app/components/grip-diagram/grip-diagram.component';
-import { Chord, chordEquals, chordToString } from 'app/common/chords';
-import { Modifier, getModifierDescription } from 'app/common/modifiers';
-import { Semitone } from 'app/common/semitones';
-import { GripScorerService } from 'app/services/grips/grip-scorer.service';
-import { ChordProgressionService } from 'app/services/chords/chord-progression.service';
+import { GripGeneratorService } from '@/app/services/grips/grip-generator.service';
+import type { DissonanceProfile, GripGeneratorOptions } from '@/app/services/grips/grip-generator.service';
+import { Grip, stringifyGrip, TunedGrip } from '@/app/services/grips/grip.model';
+import { ExtendedChord, ChordService } from '@/app/services/chords/chord.service';
+import { GripDiagramComponent } from '@/app/components/grip-diagram/grip-diagram.component';
+import { Chord, chordEquals, chordToString } from '@/app/common/chords';
+import { Modifier, getModifierDescription } from '@/app/common/modifiers';
+import { Semitone } from '@/app/common/semitones';
+import { GripScorerService } from '@/app/services/grips/grip-scorer.service';
+import { ChordProgressionService } from '@/app/services/chords/chord-progression.service';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { Degree, HarmonicFunctionsService } from 'app/services/chords/harmonic-functions.service';
-import { SongSheetsService } from 'app/services/song-sheets.service';
-import { PlaybackService } from 'app/services/playback.service';
-import { ModalService, ModalRef } from 'app/services/modal.service';
-import { ChordSelectorComponent } from 'app/components/chord-selector/chord-selector.component';
+import { Degree, HarmonicFunctionsService } from '@/app/services/chords/harmonic-functions.service';
+import { SongSheetsService } from '@/app/services/song-sheets.service';
+import { PlaybackService } from '@/app/services/playback.service';
+import { ModalService, ModalRef } from '@/app/services/modal.service';
+import { ChordSelectorComponent } from '@/app/components/chord-selector/chord-selector.component';
 
 @Component({
   selector: 'app-chord',

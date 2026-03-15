@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
-import { Semitone } from 'app/common/semitones';
-import { Modifier, areModifiersValid, MODIFIER_DEFINITIONS, sortChordModifiers } from 'app/common/modifiers';
-import { normalize, transpose } from 'app/common/semitones';
-import { Chord } from "app/common/chords";
+import { Semitone } from '@/app/common/semitones';
+import { Modifier, areModifiersValid, MODIFIER_DEFINITIONS, sortChordModifiers } from '@/app/common/modifiers';
+import { normalize, transpose } from '@/app/common/semitones';
+import { Chord } from "@/app/common/chords";
 
 export type ExtendedChord = Chord & {
   notes: Semitone[];

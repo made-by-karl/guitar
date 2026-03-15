@@ -1,9 +1,9 @@
 import { Component, computed, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RhythmPattern, RhythmAction, RhythmModifier, Measure, getBeatsFromTimeSignature, getSixteenthPerBeatFromTimeSignature } from '../../services/rhythm-patterns.model';
-import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from 'app/services/time-signature.model';
-import { PlaybackService } from 'app/services/playback.service';
+import { RhythmPattern, RhythmAction, RhythmModifier, Measure, getBeatsFromTimeSignature, getSixteenthPerBeatFromTimeSignature } from '@/app/services/rhythm-patterns.model';
+import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/services/time-signature.model';
+import { PlaybackService } from '@/app/services/playback.service';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide' | 'rest';
 

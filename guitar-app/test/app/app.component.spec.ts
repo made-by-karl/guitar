@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import { AppComponent } from '@/app/app.component';
 import { provideRouter, Router } from '@angular/router';
-import { SongSheetsService } from './services/song-sheets.service';
-import { UpdateService } from './services/update.service';
-import { ScreenWakeLockService } from './services/screen-wake-lock.service';
-import { AudioService } from './services/audio.service';
+import { SongSheetsService } from '@/app/services/song-sheets.service';
+import { UpdateService } from '@/app/services/update.service';
+import { ScreenWakeLockService } from '@/app/services/screen-wake-lock.service';
+import { AudioService } from '@/app/services/audio.service';
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
 

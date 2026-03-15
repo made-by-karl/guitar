@@ -1,5 +1,5 @@
-import { Modifier } from "./modifiers";
-import { Semitone } from "./semitones";
+import { Modifier } from '@/app/common/modifiers';
+import { Semitone } from '@/app/common/semitones';
 
 export interface Chord {
   root: Semitone;

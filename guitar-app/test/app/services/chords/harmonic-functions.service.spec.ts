@@ -1,7 +1,7 @@
-import { HarmonicFunctionsService, Degree, HarmonicFunction } from 'app/services/chords/harmonic-functions.service';
-import { Semitone, SEMITONES } from 'app/common/semitones';
-import { Chord, chordToString } from 'app/common/chords';
-import { Modifier } from 'app/common/modifiers';
+import { HarmonicFunctionsService, Degree, HarmonicFunction } from '@/app/services/chords/harmonic-functions.service';
+import { Semitone, SEMITONES } from '@/app/common/semitones';
+import { Chord, chordToString } from '@/app/common/chords';
+import { Modifier } from '@/app/common/modifiers';
 
 describe('HarmonicFunctionsService', () => {
   let service: HarmonicFunctionsService;

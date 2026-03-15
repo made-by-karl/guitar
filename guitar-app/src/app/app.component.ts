@@ -2,11 +2,11 @@ import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import { RouterOutlet, RouterLink, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SongSheetsService } from './services/song-sheets.service';
-import { SongSheet } from './services/song-sheets.model';
-import { UpdateService } from './services/update.service';
-import { ScreenWakeLockService } from './services/screen-wake-lock.service';
-import { AudioService } from './services/audio.service';
+import { SongSheetsService } from '@/app/services/song-sheets.service';
+import { SongSheet } from '@/app/services/song-sheets.model';
+import { UpdateService } from '@/app/services/update.service';
+import { ScreenWakeLockService } from '@/app/services/screen-wake-lock.service';
+import { AudioService } from '@/app/services/audio.service';
 import { timer, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 

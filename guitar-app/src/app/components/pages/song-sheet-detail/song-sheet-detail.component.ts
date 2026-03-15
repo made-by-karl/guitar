@@ -2,16 +2,16 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { SongSheetsService } from '../../../services/song-sheets.service';
-import { SongSheetWithData, SongSheetGripWithData, SongSheetPatternWithData, SongPart, SongSheetPattern, SongSheetGrip } from '../../../services/song-sheets.model';
-import { GripDiagramComponent } from '../../grip-diagram/grip-diagram.component';
-import { RhythmActionsComponent } from '../../rhythm-actions/rhythm-actions.component';
-import { PlaybackService } from '../../../services/playback.service';
+import { SongSheetsService } from '@/app/services/song-sheets.service';
+import { SongSheetWithData, SongSheetGripWithData, SongSheetPatternWithData, SongPart, SongSheetPattern, SongSheetGrip } from '@/app/services/song-sheets.model';
+import { GripDiagramComponent } from '@/app/components/grip-diagram/grip-diagram.component';
+import { RhythmActionsComponent } from '@/app/components/rhythm-actions/rhythm-actions.component';
+import { PlaybackService } from '@/app/services/playback.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GripService } from 'app/services/grips/grip.service';
-import { Note, SEMITONES, Semitone, transpose } from 'app/common/semitones';
-import { DialogService } from '../../../services/dialog.service';
-import { BpmSelectorComponent } from 'app/components/bpm-selector/bpm-selector.component';
+import { GripService } from '@/app/services/grips/grip.service';
+import { Note, SEMITONES, Semitone, transpose } from '@/app/common/semitones';
+import { DialogService } from '@/app/services/dialog.service';
+import { BpmSelectorComponent } from '@/app/components/bpm-selector/bpm-selector.component';
 
 @Component({
   selector: 'app-song-sheet-detail',

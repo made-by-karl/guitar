@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild, ViewContainerRef, forwardRef } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Chord } from 'app/common/chords';
+import { Chord } from '@/app/common/chords';
 import {
   canAddModifier,
   getModifierDescription,
@@ -9,9 +9,9 @@ import {
   Modifier,
   MODIFIERS,
   sortChordModifiers,
-} from 'app/common/modifiers';
-import { Semitone, SEMITONES } from 'app/common/semitones';
-import { ModalRef, ModalService } from 'app/services/modal.service';
+} from '@/app/common/modifiers';
+import { Semitone, SEMITONES } from '@/app/common/semitones';
+import { ModalRef, ModalService } from '@/app/services/modal.service';
 
 @Component({
   selector: 'app-chord-selector',

@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { MidiService } from './midi.service';
-import { RhythmPattern, getStringsForStrum } from './rhythm-patterns.model';
-import { MidiInstruction, MidiNote, MidiTechnique } from './midi.model';
-import { Note, transpose, noteNameToNote, note } from 'app/common/semitones';
-import { Grip } from './grips/grip.model';
+import { MidiService } from '@/app/services/midi.service';
+import { RhythmPattern, getStringsForStrum } from '@/app/services/rhythm-patterns.model';
+import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/services/midi.model';
+import { Note, transpose, noteNameToNote, note } from '@/app/common/semitones';
+import { Grip } from '@/app/services/grips/grip.model';
 
 @Injectable({
   providedIn: 'root'

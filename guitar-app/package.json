@@ -7,8 +7,8 @@
     "build": "ng build",
     "build-prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "jest --config test/jest.config.js",
+    "test:watch": "jest --config test/jest.config.js --watch",
     "postbuild": "node ../scripts/generate-version.js",
     "postbuild-prod": "node ../scripts/generate-version.js"
   },

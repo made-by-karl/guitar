@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { DialogService } from '../../../services/dialog.service';
-import { DatabaseService } from '../../../services/database.service';
+import { DialogService } from '@/app/services/dialog.service';
+import { DatabaseService } from '@/app/services/database.service';
 
 @Component({
   selector: 'app-settings',

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RhythmPatternEditorComponent } from './rhythm-pattern-editor.component';
-import { RhythmPattern } from '../../services/rhythm-patterns.model';
-import { PlaybackService } from '../../services/playback.service';
+import { RhythmPatternEditorComponent } from '@/app/components/rhythm-pattern-editor/rhythm-pattern-editor.component';
+import { RhythmPattern } from '@/app/services/rhythm-patterns.model';
+import { PlaybackService } from '@/app/services/playback.service';
 
 describe('RhythmPatternEditorComponent', () => {
   let component: RhythmPatternEditorComponent;

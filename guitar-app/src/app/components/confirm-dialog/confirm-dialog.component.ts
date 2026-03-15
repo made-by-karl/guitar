@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MODAL_REF, ModalRef, MODAL_DATA } from '../../services/modal.service';
+import { MODAL_REF, ModalRef, MODAL_DATA } from '@/app/services/modal.service';
 
 export interface ConfirmDialogData {
   title: string;

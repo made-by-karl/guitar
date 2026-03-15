@@ -1,7 +1,7 @@
-import { Semitone, SEMITONES } from 'app/common/semitones';
-import { Chord, chordEquals, chordToString } from 'app/common/chords';
+import { Semitone, SEMITONES } from '@/app/common/semitones';
+import { Chord, chordEquals, chordToString } from '@/app/common/chords';
 import { Injectable } from '@angular/core';
-import { Modifier } from 'app/common/modifiers';
+import { Modifier } from '@/app/common/modifiers';
 
 export type HarmonicFunction = 'Tonic' | 'Predominant' | 'Dominant';
 export type Degree = 'I' | 'i' | 'ii' | 'ii°' | 'iii' | 'III' | 'IV' | 'iv' | 'V' | 'v' | 'vi' | 'VI' | 'vii°' | 'VII';

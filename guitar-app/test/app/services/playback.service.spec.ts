@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { PlaybackService } from './playback.service';
-import { MidiService } from './midi.service';
-import { note } from 'app/common/semitones';
-import { Grip } from './grips/grip.model';
-import { RhythmModifier, RhythmPattern } from './rhythm-patterns.model';
+import { PlaybackService } from '@/app/services/playback.service';
+import { MidiService } from '@/app/services/midi.service';
+import { note } from '@/app/common/semitones';
+import { Grip } from '@/app/services/grips/grip.model';
+import { RhythmModifier, RhythmPattern } from '@/app/services/rhythm-patterns.model';
 
 describe('PlaybackService', () => {
   let service: PlaybackService;

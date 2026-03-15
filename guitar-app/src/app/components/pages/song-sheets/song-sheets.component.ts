@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SongSheetsService } from '../../../services/song-sheets.service';
-import { SongSheet } from '../../../services/song-sheets.model';
+import { SongSheetsService } from '@/app/services/song-sheets.service';
+import { SongSheet } from '@/app/services/song-sheets.model';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { DialogService } from 'app/services/dialog.service';
+import { DialogService } from '@/app/services/dialog.service';
 
 @Component({
   selector: 'app-song-sheets',

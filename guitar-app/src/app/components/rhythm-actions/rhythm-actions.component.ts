@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RhythmAction } from 'app/services/rhythm-patterns.model';
+import { RhythmAction } from '@/app/services/rhythm-patterns.model';
 
 @Component({
   selector: 'app-rhythm-actions',

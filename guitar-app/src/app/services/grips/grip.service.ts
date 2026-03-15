@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
-import { FretboardService } from "../fretboard.service";
-import { Grip, TunedGrip } from "./grip.model";
-import { Note } from "app/common/semitones";
+import { FretboardService } from '@/app/services/fretboard.service';
+import { Grip, TunedGrip } from '@/app/services/grips/grip.model';
+import { Note } from "@/app/common/semitones";
 
 @Injectable({
   providedIn: 'root'

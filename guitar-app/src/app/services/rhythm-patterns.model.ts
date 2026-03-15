@@ -1,4 +1,4 @@
-import { getTimeSignatureParts, TimeSignature } from './time-signature.model';
+import { getTimeSignatureParts, TimeSignature } from '@/app/services/time-signature.model';
 
 export type RhythmTechnique = 'strum' | 'pick' | 'rest' | 'percussive';
 

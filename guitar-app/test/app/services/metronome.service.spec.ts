@@ -1,6 +1,6 @@
 import * as Tone from 'tone';
-import { MetronomeService } from './metronome.service';
-import { AudioService } from './audio.service';
+import { MetronomeService } from '@/app/services/metronome.service';
+import { AudioService } from '@/app/services/audio.service';
 
 describe('MetronomeService', () => {
   beforeEach(() => {

@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { ChordComponent } from 'app/components/pages/chord/chord.component';
-import { SongSheetsComponent } from './components/pages/song-sheets/song-sheets.component';
-import { SongSheetDetailComponent } from './components/pages/song-sheet-detail/song-sheet-detail.component';
-import { SettingsComponent } from './components/pages/settings/settings.component';
-import { RhythmPatternsComponent } from './components/pages/rhythm-patterns/rhythm-patterns.component';
-import { MidiTestComponent } from './components/pages/midi-test/midi-test.component';
-import { MetronomeComponent } from './components/pages/metronome/metronome.component';
+import { ChordComponent } from '@/app/components/pages/chord/chord.component';
+import { SongSheetsComponent } from '@/app/components/pages/song-sheets/song-sheets.component';
+import { SongSheetDetailComponent } from '@/app/components/pages/song-sheet-detail/song-sheet-detail.component';
+import { SettingsComponent } from '@/app/components/pages/settings/settings.component';
+import { RhythmPatternsComponent } from '@/app/components/pages/rhythm-patterns/rhythm-patterns.component';
+import { MidiTestComponent } from '@/app/components/pages/midi-test/midi-test.component';
+import { MetronomeComponent } from '@/app/components/pages/metronome/metronome.component';
 
 
 export const routes: Routes = [

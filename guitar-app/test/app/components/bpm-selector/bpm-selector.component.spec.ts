@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BpmSelectorComponent } from './bpm-selector.component';
+import { BpmSelectorComponent } from '@/app/components/bpm-selector/bpm-selector.component';
 
 describe('BpmSelectorComponent', () => {
   let component: BpmSelectorComponent;

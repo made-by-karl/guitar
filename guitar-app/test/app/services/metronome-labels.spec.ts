@@ -1,4 +1,4 @@
-import { buildMetronomeLabels, isMainBeatLabel } from './metronome-labels';
+import { buildMetronomeLabels, isMainBeatLabel } from '@/app/services/metronome-labels';
 
 describe('metronome-labels', () => {
   it('builds 4/4 labels without sub-beats', () => {

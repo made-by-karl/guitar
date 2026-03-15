@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Chord } from 'app/common/chords';
-import { ModalService } from 'app/services/modal.service';
+import { Chord } from '@/app/common/chords';
+import { ModalService } from '@/app/services/modal.service';
 
-import { ChordSelectorComponent } from './chord-selector.component';
+import { ChordSelectorComponent } from '@/app/components/chord-selector/chord-selector.component';
 
 describe('ChordSelectorComponent', () => {
   let component: ChordSelectorComponent;

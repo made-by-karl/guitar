@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { MidiInstruction, MidiTechnique } from './midi.model';
-import { Note } from 'app/common/semitones';
-import { AudioService } from './audio.service';
+import { MidiInstruction, MidiTechnique } from '@/app/services/midi.model';
+import { Note } from '@/app/common/semitones';
+import { AudioService } from '@/app/services/audio.service';
 
 @Injectable({
   providedIn: 'root'

@@ -1,8 +1,8 @@
 import { Component, Inject, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RhythmPatternEditorComponent } from '../rhythm-pattern-editor/rhythm-pattern-editor.component';
-import { RhythmPattern } from '../../services/rhythm-patterns.model';
-import { MODAL_REF, ModalRef } from '../../services/modal.service';
+import { RhythmPatternEditorComponent } from '@/app/components/rhythm-pattern-editor/rhythm-pattern-editor.component';
+import { RhythmPattern } from '@/app/services/rhythm-patterns.model';
+import { MODAL_REF, ModalRef } from '@/app/services/modal.service';
 
 @Component({
   selector: 'app-rhythm-pattern-editor-modal',

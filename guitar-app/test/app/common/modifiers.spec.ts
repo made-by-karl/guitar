@@ -13,7 +13,9 @@ import {
     isAlteredChord,
     isDiminishedChord,
     isMajor7Chord
-} from './modifiers';
+} from '@/app/common/modifiers';
+
+
 
 describe('Modifiers', () => {
     beforeEach(() => {

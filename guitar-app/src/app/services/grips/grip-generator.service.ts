@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
-import { hasSeventhChord, isAlteredChord, isDiminishedChord, isMajor7Chord } from "app/common/modifiers";
-import { getIntervalSemitones, getNoteMidi, note, Note, Semitone } from "app/common/semitones";
-import { FretboardService } from "app/services/fretboard.service";
-import type { ExtendedChord } from 'app/services/chords/chord.service';
-import { TunedGrip, String } from './grip.model';
+import { hasSeventhChord, isAlteredChord, isDiminishedChord, isMajor7Chord } from "@/app/common/modifiers";
+import { getIntervalSemitones, getNoteMidi, note, Note, Semitone } from "@/app/common/semitones";
+import { FretboardService } from "@/app/services/fretboard.service";
+import type { ExtendedChord } from '@/app/services/chords/chord.service';
+import { TunedGrip, String } from '@/app/services/grips/grip.model';
 
 const MIDI_A2 = getNoteMidi(note('A', 2));
 const MIDI_E3 = getNoteMidi(note('E', 3));

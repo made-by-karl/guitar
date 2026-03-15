@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ScreenWakeLockService } from './screen-wake-lock.service';
+import { ScreenWakeLockService } from '@/app/services/screen-wake-lock.service';
 
 describe('ScreenWakeLockService', () => {
   let service: ScreenWakeLockService;

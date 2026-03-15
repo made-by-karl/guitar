@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TunedGrip } from "./grip.model";
+import { TunedGrip } from '@/app/services/grips/grip.model';
 
 @Injectable({
   providedIn: 'root'

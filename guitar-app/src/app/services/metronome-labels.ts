@@ -1,4 +1,4 @@
-import { getTimeSignatureParts, TimeSignature } from './time-signature.model';
+import { getTimeSignatureParts, TimeSignature } from '@/app/services/time-signature.model';
 
 export function buildMetronomeLabels(timeSignature: TimeSignature, subBeatsEnabled: boolean): string[] {
   const { top, bottom } = getTimeSignatureParts(timeSignature);

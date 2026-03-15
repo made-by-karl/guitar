@@ -1,6 +1,6 @@
-import { Note } from 'app/common/semitones';
-import { Grip } from './grips/grip.model';
-import { RhythmPattern } from './rhythm-patterns.model';
+import { Note } from '@/app/common/semitones';
+import { Grip } from '@/app/services/grips/grip.model';
+import { RhythmPattern } from '@/app/services/rhythm-patterns.model';
 
 export interface SongSheetGrip {
   gripId: string;

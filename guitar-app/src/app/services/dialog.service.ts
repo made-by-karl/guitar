@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { ModalService } from './modal.service';
-import { ConfirmDialogComponent, ConfirmDialogData } from '../components/confirm-dialog/confirm-dialog.component';
+import { ModalService } from '@/app/services/modal.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '@/app/components/confirm-dialog/confirm-dialog.component';
 
 export type DialogType = 'confirm' | 'alert';
 export type DialogVariant = 'primary' | 'danger' | 'warning' | 'success';

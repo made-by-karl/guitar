@@ -1,5 +1,5 @@
 
-import { Note } from 'app/common/semitones';
+import { Note } from '@/app/common/semitones';
 
 export interface MidiInstruction {
   time: number;           // When to play (in seconds from start)
