@@ -1,21 +1,23 @@
 import { Routes } from '@angular/router';
-import { ChordComponent } from '@/app/components/pages/chord/chord.component';
-import { SongSheetsComponent } from '@/app/components/pages/song-sheets/song-sheets.component';
-import { SongSheetDetailComponent } from '@/app/components/pages/song-sheet-detail/song-sheet-detail.component';
-import { SettingsComponent } from '@/app/components/pages/settings/settings.component';
-import { RhythmPatternsComponent } from '@/app/components/pages/rhythm-patterns/rhythm-patterns.component';
-import { MidiTestComponent } from '@/app/components/pages/midi-test/midi-test.component';
-import { MetronomeComponent } from '@/app/components/pages/metronome/metronome.component';
+import { MetronomeComponent } from '@/app/features/metronome/pages/metronome-page/metronome.component';
+import { SettingsComponent } from '@/app/features/maintenance/settings/pages/settings.component';
+import { MidiTestComponent } from '@/app/features/maintenance/midi-test/pages/midi-test.component';
+import { PatternsLibraryComponent } from '@/app/features/patterns/pages/patterns-library/patterns-library.component';
+import { PatternsEditorComponent } from '@/app/features/patterns/pages/patterns-editor/patterns-editor.component';
+import { SheetsListComponent } from '@/app/features/sheets/pages/sheets-list/sheets-list.component';
+import { SongSheetComponent } from '@/app/features/sheets/pages/song-sheet/song-sheet.component';
+import { ChordComponent } from '@/app/features/grips/pages/grips-page/chord.component';
 
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/song-sheets', pathMatch: 'full' },
-  { path: 'chord/:chord', component: ChordComponent },
-  { path: 'chord', component: ChordComponent },
-  { path: 'song-sheets', component: SongSheetsComponent },
-  { path: 'song-sheets/:id', component: SongSheetDetailComponent },
-  { path: 'rhythm-patterns', component: RhythmPatternsComponent },
+  { path: '', redirectTo: '/sheets', pathMatch: 'full' },
+  { path: 'grips/:chord', component: ChordComponent },
+  { path: 'grips', component: ChordComponent },
+  { path: 'sheets', component: SheetsListComponent },
+  { path: 'sheets/:id', component: SongSheetComponent },
+  { path: 'patterns', component: PatternsLibraryComponent },
+  { path: 'patterns/editor', component: PatternsEditorComponent },
   { path: 'metronome', component: MetronomeComponent },
-  { path: 'midi-test', component: MidiTestComponent },
-  { path: 'settings', component: SettingsComponent }
+  { path: 'maintenance/midi-test', component: MidiTestComponent },
+  { path: 'maintenance/settings', component: SettingsComponent }
 ];

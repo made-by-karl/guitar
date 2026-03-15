@@ -1,0 +1,32 @@
+<div class="container py-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0"><i class="bi bi-music-note-beamed me-2"></i>Pattern Editor</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary" type="button" (click)="cancel()">
+        <i class="bi bi-x"></i> Cancel
+      </button>
+      <button class="btn btn-primary" type="button" [disabled]="!pattern" (click)="save()">
+        <i class="bi bi-check"></i> Save
+      </button>
+    </div>
+  </div>
+
+  @if (pattern) {
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Name</label>
+        <input class="form-control" [(ngModel)]="pattern.name" />
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Category</label>
+        <input class="form-control" [(ngModel)]="pattern.category" />
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Description</label>
+        <input class="form-control" [(ngModel)]="pattern.description" />
+      </div>
+    </div>
+
+    <app-rhythm-pattern-editor [pattern]="pattern"></app-rhythm-pattern-editor>
+  }
+</div>

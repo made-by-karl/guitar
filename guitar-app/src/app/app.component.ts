@@ -2,11 +2,11 @@ import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import { RouterOutlet, RouterLink, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SongSheetsService } from '@/app/services/song-sheets.service';
-import { SongSheet } from '@/app/services/song-sheets.model';
-import { UpdateService } from '@/app/services/update.service';
-import { ScreenWakeLockService } from '@/app/services/screen-wake-lock.service';
-import { AudioService } from '@/app/services/audio.service';
+import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
+import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
+import { UpdateService } from '@/app/core/services/update.service';
+import { ScreenWakeLockService } from '@/app/core/services/screen-wake-lock.service';
+import { AudioService } from '@/app/core/services/audio.service';
 import { timer, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -61,8 +61,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       .subscribe((event: NavigationEnd) => {
         // Check if the current URL is NOT the chord or rhythm pattern page
         const url = event.urlAfterRedirects;
-        const isChordPage = url.includes('/chord');
-        const isRhythmPatternPage = url.includes('/rhythm-patterns');
+        const isChordPage = url.includes('/grips');
+        const isRhythmPatternPage = url.includes('/patterns');
         
         // If navigating away from chord/rhythm pattern pages, unpin the song sheet
         if (!isChordPage && !isRhythmPatternPage) {

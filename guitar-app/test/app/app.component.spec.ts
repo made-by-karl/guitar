@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from '@/app/app.component';
 import { provideRouter, Router } from '@angular/router';
-import { SongSheetsService } from '@/app/services/song-sheets.service';
-import { UpdateService } from '@/app/services/update.service';
-import { ScreenWakeLockService } from '@/app/services/screen-wake-lock.service';
-import { AudioService } from '@/app/services/audio.service';
+import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
+import { UpdateService } from '@/app/core/services/update.service';
+import { ScreenWakeLockService } from '@/app/core/services/screen-wake-lock.service';
+import { AudioService } from '@/app/core/services/audio.service';
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -47,12 +47,14 @@ describe('AppComponent', () => {
       imports: [AppComponent],
       providers: [
         provideRouter([
-          { path: 'song-sheets', component: MockComponent },
-          { path: 'song-sheets/:id', component: MockComponent },
-          { path: 'chord', component: MockComponent },
-          { path: 'rhythm-patterns', component: MockComponent },
-          { path: 'settings', component: MockComponent },
-          { path: 'midi-test', component: MockComponent }
+          { path: 'sheets', component: MockComponent },
+          { path: 'sheets/:id', component: MockComponent },
+          { path: 'grips', component: MockComponent },
+          { path: 'grips/:chord', component: MockComponent },
+          { path: 'patterns', component: MockComponent },
+          { path: 'patterns/editor', component: MockComponent },
+          { path: 'maintenance/settings', component: MockComponent },
+          { path: 'maintenance/midi-test', component: MockComponent }
         ]),
         { provide: SongSheetsService, useValue: mockSongSheetsService },
         { provide: UpdateService, useValue: mockUpdateService },
@@ -85,7 +87,7 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const router = TestBed.inject(Router);
     
-    await router.navigate(['/song-sheets']);
+    await router.navigate(['/sheets']);
     fixture.detectChanges();
     
     expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
@@ -97,19 +99,19 @@ describe('AppComponent', () => {
     
     mockSongSheetsService.unpinSongSheet.mockClear();
     
-    await router.navigate(['/chord']);
+    await router.navigate(['/grips']);
     fixture.detectChanges();
     
     expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
   });
 
-  it('should NOT unpin song sheet when navigating to rhythm patterns page', async () => {
+  it('should NOT unpin song sheet when navigating to patterns page', async () => {
     const fixture = TestBed.createComponent(AppComponent);
     const router = TestBed.inject(Router);
     
     mockSongSheetsService.unpinSongSheet.mockClear();
     
-    await router.navigate(['/rhythm-patterns']);
+    await router.navigate(['/patterns']);
     fixture.detectChanges();
     
     expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
@@ -121,7 +123,7 @@ describe('AppComponent', () => {
     
     mockSongSheetsService.unpinSongSheet.mockClear();
     
-    await router.navigate(['/settings']);
+    await router.navigate(['/maintenance/settings']);
     fixture.detectChanges();
     
     expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
