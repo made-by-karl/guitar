@@ -58,24 +58,19 @@
 <div class="secondary-bar">
   <div class="container d-flex align-items-center justify-content-between py-2">
     <div class="d-flex align-items-center">
-      @if (pinnedSongSheet) {
-        <div>
-          <i class="bi bi-pin-angle me-2"></i>
-          <a class="me-2" [routerLink]="['/sheets', pinnedSongSheet.id]" (click)="closeNavbar()">{{ pinnedSongSheet.name }}</a>
-        </div>
-      }
+
     </div>
     @if (isKeepScreenOnSupported()) {
     <div class="d-flex align-items-center">
       <i class="bi bi-{{ isKeepScreenOnActive() ? 'brightness-high-fill' : 'brightness-high' }} me-2 text-muted"></i>
       <span class="small text-muted me-2">Keep Screen On</span>
       <div class="form-check form-switch mb-0">
-        <input 
-          class="form-check-input" 
-          type="checkbox" 
-          role="switch" 
+        <input
+          class="form-check-input"
+          type="checkbox"
+          role="switch"
           id="keepScreenOnSwitch"
-          [checked]="isKeepScreenOnActive()" 
+          [checked]="isKeepScreenOnActive()"
           (change)="toggleKeepScreenOn()"
           title="Prevent screen from turning off">
       </div>

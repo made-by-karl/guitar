@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { ChordComponent } from '@/app/features/grips/pages/grips-page/chord.component';
+import { ChordComponent } from '@/app/features/grips/pages/chord-page/chord.component';
 import { of } from 'rxjs';
 import { GripGeneratorService } from '@/app/features/grips/services/grips/grip-generator.service';
 import { ChordService } from '@/app/features/grips/services/chords/chord.service';

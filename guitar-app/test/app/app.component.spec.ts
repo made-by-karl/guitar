@@ -1,12 +1,12 @@
-import { TestBed } from '@angular/core/testing';
-import { AppComponent } from '@/app/app.component';
-import { provideRouter, Router } from '@angular/router';
-import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { UpdateService } from '@/app/core/services/update.service';
-import { ScreenWakeLockService } from '@/app/core/services/screen-wake-lock.service';
-import { AudioService } from '@/app/core/services/audio.service';
-import { Component } from '@angular/core';
-import { of } from 'rxjs';
+import {TestBed} from '@angular/core/testing';
+import {AppComponent} from '@/app/app.component';
+import {provideRouter} from '@angular/router';
+import {SongSheetsService} from '@/app/features/sheets/services/song-sheets.service';
+import {UpdateService} from '@/app/core/services/update.service';
+import {ScreenWakeLockService} from '@/app/core/services/screen-wake-lock.service';
+import {AudioService} from '@/app/core/services/audio.service';
+import {Component} from '@angular/core';
+import {of} from 'rxjs';
 
 // Mock component for router testing
 @Component({ template: '' })
@@ -83,58 +83,12 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 
-  it('should unpin song sheet when navigating to song sheets page', async () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const router = TestBed.inject(Router);
-    
-    await router.navigate(['/sheets']);
-    fixture.detectChanges();
-    
-    expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
-  });
-
-  it('should NOT unpin song sheet when navigating to chord page', async () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const router = TestBed.inject(Router);
-    
-    mockSongSheetsService.unpinSongSheet.mockClear();
-    
-    await router.navigate(['/grips']);
-    fixture.detectChanges();
-    
-    expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
-  });
-
-  it('should NOT unpin song sheet when navigating to patterns page', async () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const router = TestBed.inject(Router);
-    
-    mockSongSheetsService.unpinSongSheet.mockClear();
-    
-    await router.navigate(['/patterns']);
-    fixture.detectChanges();
-    
-    expect(mockSongSheetsService.unpinSongSheet).not.toHaveBeenCalled();
-  });
-
-  it('should unpin song sheet when navigating to settings page', async () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const router = TestBed.inject(Router);
-    
-    mockSongSheetsService.unpinSongSheet.mockClear();
-    
-    await router.navigate(['/maintenance/settings']);
-    fixture.detectChanges();
-    
-    expect(mockSongSheetsService.unpinSongSheet).toHaveBeenCalled();
-  });
-
   it('should release wake lock on destroy', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const component = fixture.componentInstance;
-    
+
     component.ngOnDestroy();
-    
+
     expect(mockWakeLockService.releaseWakeLock).toHaveBeenCalled();
   });
 });

@@ -1,23 +1,25 @@
-import { Component, OnInit, ViewChild, TemplateRef, ViewContainerRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { GripGeneratorService } from '@/app/features/grips/services/grips/grip-generator.service';
-import type { DissonanceProfile, GripGeneratorOptions } from '@/app/features/grips/services/grips/grip-generator.service';
-import { Grip, stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
-import { ExtendedChord, ChordService } from '@/app/features/grips/services/chords/chord.service';
-import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
-import { Chord, chordEquals, chordToString } from '@/app/core/music/chords';
-import { Modifier, getModifierDescription } from '@/app/core/music/modifiers';
-import { Semitone } from '@/app/core/music/semitones';
-import { GripScorerService } from '@/app/features/grips/services/grips/grip-scorer.service';
-import { ChordProgressionService } from '@/app/features/grips/services/chords/chord-progression.service';
-import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { combineLatest } from 'rxjs';
-import { Degree, HarmonicFunctionsService } from '@/app/features/grips/services/chords/harmonic-functions.service';
-import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { PlaybackService } from '@/app/core/services/playback.service';
-import { ModalService, ModalRef } from '@/app/core/services/modal.service';
-import { ChordSelectorComponent } from '@/app/core/ui/chord-selector/chord-selector.component';
+import {Component, OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import type {DissonanceProfile, GripGeneratorOptions} from '@/app/features/grips/services/grips/grip-generator.service';
+import {GripGeneratorService} from '@/app/features/grips/services/grips/grip-generator.service';
+import {Grip, stringifyGrip, TunedGrip} from '@/app/features/grips/services/grips/grip.model';
+import {ChordService, ChordWithNotes} from '@/app/features/grips/services/chords/chord.service';
+import {GripDiagramComponent} from '@/app/core/ui/grip-diagram/grip-diagram.component';
+import {Chord, chordEquals, chordToString} from '@/app/core/music/chords';
+import {getModifierDescription, Modifier} from '@/app/core/music/modifiers';
+import {Semitone} from '@/app/core/music/semitones';
+import {GripScorerService} from '@/app/features/grips/services/grips/grip-scorer.service';
+import {ChordProgressionService} from '@/app/features/grips/services/chords/chord-progression.service';
+import {ActivatedRoute, Router, RouterModule} from '@angular/router';
+import {combineLatest} from 'rxjs';
+import {Degree, HarmonicFunctionsService} from '@/app/features/grips/services/chords/harmonic-functions.service';
+import {PlaybackService} from '@/app/core/services/playback.service';
+import {ModalService} from '@/app/core/services/modal.service';
+import {ChordSelectorComponent} from '@/app/core/ui/chord-selector/chord-selector.component';
+import {
+  GripGenerationSettingsModalComponent
+} from '@/app/features/grips/ui/grip-generation-settings-modal/grip-generation-settings-modal.component';
 
 @Component({
   selector: 'app-chord',
@@ -27,20 +29,11 @@ import { ChordSelectorComponent } from '@/app/core/ui/chord-selector/chord-selec
   styleUrls: ['./chord.component.scss']
 })
 export class ChordComponent implements OnInit {
-  @ViewChild('settingsModal') settingsModalTemplate!: TemplateRef<any>;
-  
   grips: TunedGrip[] = [];
-  selectedChord: Chord | null = null;
 
-  activeChord: ExtendedChord | null = null
+  activeChord: ChordWithNotes | null = null
   progressions: Chord[][] = [];
   isGeneratingGrips: boolean = false;
-
-  private settingsModalRef: ModalRef | null = null;
-
-  selectedSheetId: string | null = null;
-  pinnedSheet: any = undefined;
-  pinnedGripIds: Set<string> = new Set();
 
   readonly BASE_MAJOR_PROGRESSION: Degree[] = ['I', 'V', 'vi', 'IV']
   readonly BASE_MINOR_PROGRESSION: Degree[] = ['i', 'VI', 'III', 'VII']
@@ -55,7 +48,7 @@ export class ChordComponent implements OnInit {
     minFretToConsider: 1,
     maxFretToConsider: 12,
     minimalPlayableStrings: 3,
-    allowBarree: true,
+    allowBarre: true,
     allowInversions: false,
     allowIncompleteChords: false,
     allowMutedStringsInside: false,
@@ -71,16 +64,13 @@ export class ChordComponent implements OnInit {
     private gripScorer: GripScorerService,
     private chordProgression: ChordProgressionService,
     private harmonicFunctions: HarmonicFunctionsService,
-    private songSheets: SongSheetsService,
     private playback: PlaybackService,
     private router: Router,
     private route: ActivatedRoute,
-    private modalService: ModalService,
-    private viewContainerRef: ViewContainerRef
+    private modalService: ModalService
   ) { }
 
   ngOnInit() {
-    this.loadPinnedSheet();
     combineLatest([
       this.route.params,
       this.route.queryParamMap
@@ -89,30 +79,14 @@ export class ChordComponent implements OnInit {
       if (this.currentChord) {
         const analysis = this.tryParseChord(this.currentChord);
         if (analysis) {
-          this.selectedChord = {
-            root: analysis.root,
-            bass: analysis.bass,
-            modifiers: [...analysis.modifiers],
-          };
           this.activeChord = analysis;
 
           this.regenerateGrips();
 
-          const progressions: Chord[][] = [];
-          const inHarmonics = this.harmonicFunctions.find(analysis);
-
-          for (const entry of inHarmonics) {
-            const degrees = this.selectProgression(entry.tonic);
-            if (degrees.includes(entry.degree)) {
-              progressions.push(this.chordProgression.getProgression(entry.tonic, degrees));
-            }
-          }
-          progressions.sort((a, b) => a.findIndex(x => chordEquals(x, analysis)) - b.findIndex(x => chordEquals(x, analysis)))
-          this.progressions = progressions;
+          this.progressions = this.getProgressions(analysis);
         }
       } else {
         // No chord selected - reset to initial state
-        this.selectedChord = null;
         this.activeChord = null;
         this.grips = [];
         this.progressions = [];
@@ -120,18 +94,29 @@ export class ChordComponent implements OnInit {
     });
   }
 
-  async loadPinnedSheet() {
-    this.pinnedSheet = await this.songSheets.getPinnedSongSheet();
-    if (this.pinnedSheet) {
-      const sheet = await this.songSheets.getById(this.pinnedSheet.id);
-      this.pinnedGripIds = new Set(sheet?.grips?.map(g => g.gripId) || []);
-    } else {
-      this.pinnedGripIds = new Set();
-    }
-  }
+  private getProgressions(selectedChord: ChordWithNotes): Chord[][] {
+    const progressions: Chord[][] = [];
+    const inHarmonics = this.harmonicFunctions.find(selectedChord);
 
-  getPinnedSongSheet() {
-    return this.pinnedSheet;
+    for (const entry of inHarmonics) {
+      const degrees = this.selectProgression(entry.tonic);
+      if (degrees.includes(entry.degree)) {
+        progressions.push(this.chordProgression.getProgression(entry.tonic, degrees));
+      }
+    }
+
+    progressions.sort((a, b) => a.findIndex(x => chordEquals(x, selectedChord)) - b.findIndex(x => chordEquals(x, selectedChord)));
+
+    const uniqueProgressions = new Set<string>();
+    return progressions.filter(seq => {
+      const seqString = seq.map(x => chordToString(x)).sort().join('-');
+      if (uniqueProgressions.has(seqString)) {
+        return false;
+      }
+
+      uniqueProgressions.add(seqString);
+      return true;
+    });
   }
 
   private selectProgression(chord: Chord) {
@@ -140,35 +125,31 @@ export class ChordComponent implements OnInit {
     return [];
   }
 
-  openSettingsModal() {
-    this.settingsModalRef = this.modalService.showTemplate(
-      this.settingsModalTemplate,
-      this.viewContainerRef,
-      {
-        width: '600px',
-        maxHeight: '90vh',
-        closeOnBackdropClick: true
-      }
-    );
-  }
+  async openSettingsModal() {
+    const modalRef = this.modalService.show(GripGenerationSettingsModalComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      closeOnBackdropClick: true
+    });
 
-  closeSettingsModal() {
-    if (this.settingsModalRef) {
-      this.settingsModalRef.close();
-      this.settingsModalRef = null;
+    modalRef.componentInstance.initialize({
+      settings: this.gripSettings,
+      dissonanceProfiles: this.dissonanceProfiles
+    });
+
+    const updatedSettings = await modalRef.afterClosed();
+
+    if (updatedSettings) {
+      this.gripSettings = updatedSettings;
+      this.regenerateGrips();
     }
-  }
-
-  applySettingsAndRegenerate() {
-    this.closeSettingsModal();
-    this.regenerateGrips();
   }
 
   private regenerateGrips() {
     if (!this.activeChord) return;
-    
+
     this.isGeneratingGrips = true;
-    
+
     // Use setTimeout to allow UI to update with loading indicator
     setTimeout(() => {
       try {
@@ -203,7 +184,7 @@ export class ChordComponent implements OnInit {
 
     for (const string of grip.strings) {
       if (string === 'x' || string === 'o') continue;
-      
+
       if (Array.isArray(string)) {
         for (const placement of string) {
           if (placement.fret < minFret) {
@@ -218,37 +199,14 @@ export class ChordComponent implements OnInit {
   }
 
   onChordChange(chord: Chord | null) {
-    this.selectedChord = chord;
-
     if (!chord) {
+      this.activeChord = null;
       this.router.navigate(['/grips']);
       return;
     }
 
+    this.activeChord = this.chordService.calculateNotes(chord);
     this.router.navigate(['/grips', chordToString(chord)], { queryParams: {} });
-  }
-
-  async addGripToPinnedSheet(grip: Grip) {
-    if (!this.pinnedSheet) return;
-    await this.songSheets.addGrip({
-      gripId: stringifyGrip(grip),
-      chordName: this.currentChord ?? ''
-    });
-    await this.loadPinnedSheet();
-  }
-
-  async removeGripFromPinnedSheet(grip: Grip) {
-    if (!this.pinnedSheet) return;
-    
-    const gripId = stringifyGrip(grip);
-    if (this.pinnedGripIds.has(gripId)) {
-      await this.songSheets.removeGrip(this.pinnedSheet.id, gripId);
-      await this.loadPinnedSheet();
-    }
-  }
-
-  isGripInPinnedSheet(grip: Grip): boolean {
-    return this.pinnedGripIds.has(stringifyGrip(grip));
   }
 
   async playChord(grip: TunedGrip) {
@@ -270,7 +228,7 @@ export class ChordComponent implements OnInit {
   getChordQueryString(chord: Chord): string {
     // For progression links, use the chord as-is (no bass note)
     // For the current chord being edited, include selectedChord.bass
-    const selection = this.selectedChord;
+    const selection = this.activeChord;
     const isCurrentSelectionBase = !!selection && chordEquals(chord, {
       root: selection.root,
       modifiers: selection.modifiers,
@@ -286,9 +244,9 @@ export class ChordComponent implements OnInit {
     return chordEquals(a, b);
   }
 
-  tryParseChord(input: string): ExtendedChord | null {
+  tryParseChord(input: string): ChordWithNotes | null {
     try {
-      return this.chordService.parseChord(input);
+      return this.chordService.calculateNotes(input);
     } catch {
       console.error('Failed to parse chord:', input);
       return null;
@@ -305,7 +263,7 @@ export class ChordComponent implements OnInit {
     const root = this.activeChord.root;
 
     // Step 1: Base major triad (no modifiers)
-    const baseTriad = this.chordService.calculateNotes(root, []);
+    const baseTriad = this.chordService.calculateNotes({ root, modifiers: [] });
     steps.push({
       step: 'Base major triad',
       notes: [...baseTriad.notes],
@@ -318,7 +276,7 @@ export class ChordComponent implements OnInit {
 
     for (const modifier of this.activeChord.modifiers) {
       currentModifiers.push(modifier);
-      const chordWithModifier = this.chordService.calculateNotes(root, currentModifiers);
+      const chordWithModifier = this.chordService.calculateNotes({ root, modifiers: currentModifiers });
       const currentNotes = chordWithModifier.notes;
 
       // Identify changed notes
@@ -370,5 +328,13 @@ export class ChordComponent implements OnInit {
     }
 
     return steps;
+  }
+
+  private getGripKey(grip: Grip): string {
+    return stringifyGrip(grip);
+  }
+
+  trackGripBy(grip: TunedGrip): string {
+    return this.getGripKey(grip);
   }
 }

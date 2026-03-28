@@ -1,22 +1,22 @@
 <!-- Action-based Rhythm Pattern Editor -->
 <div class="rhythm-pattern-editor">
-  @if (pattern(); as currentPattern) {
+  @if (pattern(); as patternValue) {
   <div class="card">
     <div class="card-body">
       <div>
         <!-- Pattern Details -->
         <div class="mb-2">
           <label>Name</label>
-          <input class="form-control" [(ngModel)]="currentPattern.name" name="name" required />
+          <input class="form-control" [(ngModel)]="patternValue.name" name="name" required />
         </div>
         <div class="mb-2">
           <label>Description</label>
-          <input class="form-control" [(ngModel)]="currentPattern.description" name="description" />
+          <input class="form-control" [(ngModel)]="patternValue.description" name="description" />
         </div>
         <div class="mb-2 row">
           <div class="col">
             <label>Category</label>
-            <input class="form-control" [(ngModel)]="currentPattern.category" name="category" />
+            <input class="form-control" [(ngModel)]="patternValue.category" name="category" />
           </div>
         </div>
 
@@ -33,13 +33,13 @@
                 </button>
               </div>
             </div>
-            
+
             <!-- Time Signature and Controls -->
             <div class="measure-controls mb-3">
               <div class="row align-items-center">
                 <div class="col-md-4">
                   <label class="form-label small">Time Signature</label>
-                  <select class="form-select form-select-sm" 
+                  <select class="form-select form-select-sm"
                     [ngModel]="measureData.measure.timeSignature"
                     (ngModelChange)="changeTimeSignature(measureData.measureIndex, $event)"
                     [name]="'timeSignature_' + measureData.measureIndex">
@@ -53,8 +53,8 @@
                   <div class="d-flex align-items-center gap-2">
                     <span class="small" [class.fw-bold]="!measureData.useSixteenthSteps">8th</span>
                     <div class="form-check form-switch mb-0">
-                      <input class="form-check-input" type="checkbox" 
-                        [id]="'subdivisionSwitch_' + measureData.measureIndex" 
+                      <input class="form-check-input" type="checkbox"
+                        [id]="'subdivisionSwitch_' + measureData.measureIndex"
                         [checked]="measureData.useSixteenthSteps"
                         (change)="toggleSixteenthSteps(measureData.measureIndex)">
                     </div>
@@ -74,12 +74,12 @@
             <div class="action-column-container">
               <div class="action-positions">
                 @for (actionData of getActionsForDisplay(measureData); track actionData.originalIndex; let i = $index) {
-                <div class="action-position" 
+                <div class="action-position"
                      [class.main-position]="actionData.isMainPosition"
                      [class.quarter-position]="actionData.subdivision === 'quarter'"
                      [class.eighth-position]="actionData.subdivision === 'eighth'"
                      [class.sixteenth-position]="actionData.subdivision === 'sixteenth'">
-                  
+
                   <!-- Position Label -->
                   <div class="position-label">
                     <span class="position-number">{{ actionData.position }}</span>
@@ -92,8 +92,8 @@
                     <div class="action-content card">
                       <!-- Action Header -->
                       <div class="action-header d-flex justify-content-between align-items-center">
-                        <span class="badge" [class]="'bg-' + (actionData.action.technique === 'strum' ? 'primary' : 
-                                                              actionData.action.technique === 'pick' ? 'success' : 
+                        <span class="badge" [class]="'bg-' + (actionData.action.technique === 'strum' ? 'primary' :
+                                                              actionData.action.technique === 'pick' ? 'success' :
                                                               actionData.action.technique === 'percussive' ? 'warning' : 'secondary')">
                           {{ actionData.action.technique }}
                           @if (actionData.action.strum) {
@@ -133,7 +133,7 @@
                         @if (actionData.action.technique === 'strum' && actionData.action.strum) {
                         <div class="direction-section">
                           <label class="form-label small">Direction</label>
-                          <select class="form-select form-select-sm" 
+                          <select class="form-select form-select-sm"
                             [ngModel]="actionData.action.strum.direction"
                             (ngModelChange)="updateStrumDirection(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -146,7 +146,7 @@
                         @if (actionData.action.strum) {
                         <div class="strum-section">
                           <label class="form-label small">Strings</label>
-                          <select class="form-select form-select-sm" 
+                          <select class="form-select form-select-sm"
                             [ngModel]="actionData.action.strum.strings"
                             (ngModelChange)="updateStrumStrings(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'strumStrings_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -169,7 +169,7 @@
                             @for (note of actionData.action.pick; track note; let noteIndex = $index) {
                             <div class="pick-note">
                               <div class="d-flex align-items-center gap-1">
-                                <select class="form-select form-select-sm" 
+                                <select class="form-select form-select-sm"
                                   [ngModel]="note.string"
                                   (ngModelChange)="updatePickNoteString(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickString_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
@@ -177,10 +177,10 @@
                                   <option [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
                                   }
                                 </select>
-                                <input type="number" class="form-control form-control-sm" 
+                                <input type="number" class="form-control form-control-sm"
                                   [ngModel]="note.fret"
                                   (ngModelChange)="updatePickNoteFret(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
-                                  [name]="'pickFret_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex" 
+                                  [name]="'pickFret_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex"
                                   min="-1" max="24" placeholder="Fret" />
                                 <button class="btn btn-outline-danger btn-sm" type="button"
                                   (click)="removePickingNote(measureData.measureIndex, actionData.originalIndex, noteIndex)">
@@ -202,7 +202,7 @@
                         @if (actionData.action.technique === 'percussive') {
                         <div class="percussion-section">
                           <label class="form-label small">Percussion Technique</label>
-                          <select class="form-select form-select-sm" 
+                          <select class="form-select form-select-sm"
                             [ngModel]="actionData.action.percussive?.technique || 'body-knock'"
                             (ngModelChange)="updatePercussionTechnique(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'percussionTechnique_' + measureData.measureIndex + '_' + actionData.originalIndex">

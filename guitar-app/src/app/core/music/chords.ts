@@ -16,7 +16,7 @@ export function chordEquals(a: Chord, b: Chord): boolean {
 export function chordToString(chord: Chord): string {
   const chordName = chord.root + (chord.modifiers.length ? chord.modifiers.join('') : '');
   // Only add bass if it's a valid non-null value
-  if (!chord.bass || chord.bass === null) {
+  if (!chord.bass) {
     return chordName;
   }
   // Extra safety check for string "null" that might come from form binding

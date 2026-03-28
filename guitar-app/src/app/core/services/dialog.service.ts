@@ -21,9 +21,9 @@ export class DialogService {
   constructor(private modalService: ModalService) {}
 
   async confirm(
-    message: string, 
-    title: string = 'Confirm', 
-    confirmText: string = 'OK', 
+    message: string,
+    title: string = 'Confirm',
+    confirmText: string = 'OK',
     cancelText: string = 'Cancel',
     options?: {
       variant?: DialogVariant;
@@ -44,13 +44,12 @@ export class DialogService {
       closeOnBackdropClick: false
     });
 
-    const result = await modalRef.afterClosed();
-    return result === true;
+    return await modalRef.afterClosed();
   }
 
   async alert(
-    message: string, 
-    title: string = 'Information', 
+    message: string,
+    title: string = 'Information',
     confirmText: string = 'OK',
     options?: {
       variant?: DialogVariant;

@@ -1,14 +1,15 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RhythmPatternsService } from '@/app/features/patterns/services/rhythm-patterns.service';
-import { RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
-import { PlaybackService } from '@/app/core/services/playback.service';
-import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { DialogService } from '@/app/core/services/dialog.service';
-import { ModalService } from '@/app/core/services/modal.service';
-import { RhythmPatternEditorModalComponent } from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
-import { RhythmActionsComponent } from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+import {Component, OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
+import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
+import {PlaybackService} from '@/app/core/services/playback.service';
+import {DialogService} from '@/app/core/services/dialog.service';
+import {ModalService} from '@/app/core/services/modal.service';
+import {
+  RhythmPatternEditorModalComponent
+} from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
+import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
 
 @Component({
   selector: 'app-patterns-library',
@@ -17,35 +18,24 @@ import { RhythmActionsComponent } from '@/app/features/patterns/ui/rhythm-action
   templateUrl: './patterns-library.component.html',
   styleUrls: ['./patterns-library.component.scss']
 })
-export class PatternsLibraryComponent {
+export class PatternsLibraryComponent implements OnInit {
   patterns: RhythmPattern[] = [];
   search = '';
-  pinnedSheet: any = undefined;
-  pinnedPatternIds: Set<string> = new Set();
 
   constructor(
     public service: RhythmPatternsService,
     private playback: PlaybackService,
-    public songSheets: SongSheetsService,
     private dialogService: DialogService,
     private modalService: ModalService
   ) {
+  }
+
+  ngOnInit() {
     this.load();
-    this.loadPinnedSheet();
   }
 
   async load() {
     this.patterns = await this.service.getAll();
-  }
-
-  async loadPinnedSheet() {
-    this.pinnedSheet = await this.songSheets.getPinnedSongSheet();
-    if (this.pinnedSheet) {
-      const sheet = await this.songSheets.getById(this.pinnedSheet.id);
-      this.pinnedPatternIds = new Set(sheet?.patterns?.map(p => p.patternId) || []);
-    } else {
-      this.pinnedPatternIds = new Set();
-    }
   }
 
   async startCreate() {
@@ -86,16 +76,16 @@ export class PatternsLibraryComponent {
 
     // Wait for the modal to close
     const result = await modalRef.afterClosed();
-    
+
     if (result) {
-      this.onPatternSaved(result);
+      await this.onPatternSaved(result);
     }
   }
 
   private async onPatternSaved(pattern: RhythmPattern) {
     // Check if this is a new pattern (not in our patterns array yet)
     const existingPatternIndex = this.patterns.findIndex(p => p.id === pattern.id);
-    
+
     if (existingPatternIndex === -1) {
       // New pattern - add it
       await this.service.add(pattern);
@@ -122,37 +112,13 @@ export class PatternsLibraryComponent {
       console.error('Pattern has no measures:', pattern);
       return;
     }
-    
+
     // Use the new MIDI service to play the entire rhythm pattern
     try {
       await this.playback.playRhythmPattern(pattern);
     } catch (error) {
       console.error('Error playing rhythm pattern:', error);
     }
-  }
-
-  async addToPinnedSheet(pattern: RhythmPattern) {
-    if (!this.pinnedSheet) return;
-    // Check if pattern is already in the sheet
-    if (this.pinnedPatternIds.has(pattern.id)) return;
-    
-    await this.songSheets.addPattern({
-      patternId: pattern.id
-    });
-    await this.loadPinnedSheet();
-  }
-
-  async removeFromPinnedSheet(pattern: RhythmPattern) {
-    if (!this.pinnedSheet) return;
-    
-    if (this.pinnedPatternIds.has(pattern.id)) {
-      await this.songSheets.removePattern(this.pinnedSheet.id, pattern.id);
-      await this.loadPinnedSheet();
-    }
-  }
-
-  isPatternInPinnedSheet(pattern: RhythmPattern): boolean {
-    return this.pinnedPatternIds.has(pattern.id);
   }
 
   async deletePattern(pattern: RhythmPattern) {
@@ -163,7 +129,7 @@ export class PatternsLibraryComponent {
       'Cancel',
       { variant: 'danger' }
     );
-    
+
     if (confirmed) {
       await this.service.delete(pattern.id);
       await this.load();

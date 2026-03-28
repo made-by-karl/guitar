@@ -6,7 +6,7 @@ import { PatternsLibraryComponent } from '@/app/features/patterns/pages/patterns
 import { PatternsEditorComponent } from '@/app/features/patterns/pages/patterns-editor/patterns-editor.component';
 import { SheetsListComponent } from '@/app/features/sheets/pages/sheets-list/sheets-list.component';
 import { SongSheetComponent } from '@/app/features/sheets/pages/song-sheet/song-sheet.component';
-import { ChordComponent } from '@/app/features/grips/pages/grips-page/chord.component';
+import { ChordComponent } from '@/app/features/grips/pages/chord-page/chord.component';
 
 
 export const routes: Routes = [

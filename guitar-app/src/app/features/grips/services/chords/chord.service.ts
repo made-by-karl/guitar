@@ -4,7 +4,7 @@ import { Modifier, areModifiersValid, MODIFIER_DEFINITIONS, sortChordModifiers }
 import { normalize, transpose } from '@/app/core/music/semitones';
 import { Chord } from "@/app/core/music/chords";
 
-export type ExtendedChord = Chord & {
+export type ChordWithNotes = Chord & {
   notes: Semitone[];
 };
 
@@ -12,7 +12,7 @@ export type ExtendedChord = Chord & {
  * Chord Analysis Service
  * This service provides functionality to parse and analyze guitar chords.
  * It can identify the root note, bass note, modifiers, and the notes that make up the chord.
- * 
+ *
  * Supported
  * Basic triads: maj, m, dim, aug
  * Power chords: 5
@@ -37,7 +37,15 @@ export class ChordService {
     'b13': 20, '13': 21,
   };
 
-  public calculateNotes(root: Semitone, modifiers: Modifier[], bass?: Semitone): ExtendedChord {
+  public calculateNotes(chord: Chord | string): ChordWithNotes {
+    if (typeof chord === 'string') {
+      chord = this.parseChord(chord);
+    }
+
+    const root = chord.root;
+    const modifiers = chord.modifiers;
+    const bass = chord.bass;
+
     const modifiersValid = areModifiersValid(modifiers);
     if (modifiersValid !== true) {
       throw new Error(`Invalid modifier combination: ${modifiersValid}`);
@@ -69,7 +77,7 @@ export class ChordService {
     return { root, bass, modifiers, notes };
   }
 
-  public parseChord(input: string): ExtendedChord {
+  public parseChord(input: string): Chord {
     const [mainPart, bassRaw] = input.split('/');
     const bass = bassRaw ? normalize(bassRaw) : undefined;
 
@@ -123,7 +131,7 @@ export class ChordService {
       if (!matched) break;
     }
 
-    return this.calculateNotes(root, sortChordModifiers(modifiers), bass);
+    return { root, modifiers: sortChordModifiers(modifiers), bass };
   }
 
   private applyModifierOperations(

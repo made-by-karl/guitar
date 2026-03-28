@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MODAL_REF, ModalRef, MODAL_DATA } from '@/app/core/services/modal.service';
+import {MODAL_REF, ModalRef, MODAL_DATA, ModalComponent} from '@/app/core/services/modal.service';
 
 export interface ConfirmDialogData {
   title: string;
@@ -18,9 +18,9 @@ export interface ConfirmDialogData {
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.scss']
 })
-export class ConfirmDialogComponent {
+export class ConfirmDialogComponent implements ModalComponent<boolean> {
   constructor(
-    @Inject(MODAL_REF) private modalRef: ModalRef<boolean>,
+    @Inject(MODAL_REF) public modalRef: ModalRef<boolean>,
     @Inject(MODAL_DATA) public data: ConfirmDialogData
   ) {}
 

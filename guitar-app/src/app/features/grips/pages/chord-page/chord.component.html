@@ -1,13 +1,13 @@
 <div class="container py-5">
-  <h2 class="mb-4"><i class="bi bi-music-note-beamed me-2"></i>Chords</h2>
-  
+  <h2 class="mb-4"><i class="bi bi-music-note-beamed me-2"></i>Grips</h2>
+
   <!-- Compact Chord Builder -->
   <div class="card mb-4">
     <div class="card-body">
       <div class="row g-3">
         <div class="col-md-10">
           <app-chord-selector
-            [(ngModel)]="selectedChord"
+            [(ngModel)]="activeChord"
             (ngModelChange)="onChordChange($event)"
           ></app-chord-selector>
         </div>
@@ -54,14 +54,14 @@
                     How were these notes calculated?
                     <i class="bi bi-chevron-down ms-1"></i>
                   </button>
-                  
+
                   <div class="collapse mt-3" id="chordExplanation">
                     <div class="card card-body bg-light">
                       <h6 class="mb-3">
                         <i class="bi bi-calculator me-2"></i>
                         Step-by-step chord construction for {{ activeChord.root }}{{ activeChord.modifiers.join('') }}
                       </h6>
-                      
+
                       @for (step of generateChordExplanation(); track $index) {
                         <div class="mb-3 pb-3" [class.border-bottom]="$index < generateChordExplanation().length - 1">
                           <div class="d-flex align-items-start">
@@ -73,7 +73,7 @@
                           </div>
                         </div>
                       }
-                      
+
                       <div class="alert alert-info mb-0" role="alert">
                         <i class="bi bi-lightbulb me-2"></i>
                         <strong>Final result:</strong> The chord contains the notes {{ activeChord.notes.join(', ') }}
@@ -88,7 +88,7 @@
                   @for (progression of progressions; track $index) {
                   <div>
                     @for (chord of progression; track $index) {
-                    <a [routerLink]="['/chord', getChordQueryString(chord)]">
+                    <a [routerLink]="['/grips', getChordQueryString(chord)]">
                       @if (chordEquals(activeChord, chord)) {
                       <strong>{{ chord.root }}</strong>
                       @if (chord.modifiers.length) {
@@ -123,7 +123,7 @@
                     } @else {
                       <strong>{{ grips.length }} grips</strong>
                     }
-                    @for (grip of grips; track grip) {
+                    @for (grip of grips; track trackGripBy(grip)) {
                     <div>
                       <div style="display: flex; flex-direction: row; gap: 1rem;">
                         <div style="flex: 1;">
@@ -143,17 +143,6 @@
                           <button class="btn btn-primary" (click)="playChord(grip)">
                             <i class="bi bi-play-fill"></i> Play Chord
                           </button>
-                          @if (getPinnedSongSheet()) {
-                            @if (isGripInPinnedSheet(grip)) {
-                            <button class="btn btn-outline-warning btn-sm mt-3" (click)="removeGripFromPinnedSheet(grip)">
-                              <i class="bi bi-dash"></i> Remove
-                            </button>
-                            } @else {
-                            <button class="btn btn-outline-success btn-sm mt-3" (click)="addGripToPinnedSheet(grip)">
-                              <i class="bi bi-plus-lg"></i> Add to Sheet
-                            </button>
-                            }
-                          }
                         </div>
                       </div>
                     </div>
@@ -177,126 +166,3 @@
     </div>
   </div>
 </div>
-
-<!-- Settings Modal Template -->
-<ng-template #settingsModal>
-  <div class="modal-content-wrapper">
-    <div class="modal-header">
-      <h5 class="modal-title">
-        <i class="bi bi-gear me-2"></i>
-        Grip Generation Settings
-      </h5>
-      <button type="button" class="btn-close" (click)="closeSettingsModal()"></button>
-    </div>
-    
-    <div class="modal-body">
-      <div class="alert alert-info" role="alert">
-        <i class="bi bi-info-circle me-2"></i>
-        Adjust these settings to control how chord grips are generated and filtered.
-      </div>
-
-      <h6 class="text-muted mb-3">Fret Range</h6>
-      
-      <div class="form-group mb-3">
-        <label for="minFretToConsider" class="form-label">Minimum fret:</label>
-        <input type="number" id="minFretToConsider" class="form-control"
-          [(ngModel)]="gripSettings.minFretToConsider"
-          min="0" max="24">
-        <small class="form-text text-muted">Lowest fret to consider when generating grips</small>
-      </div>
-      
-      <div class="form-group mb-4">
-        <label for="maxFretToConsider" class="form-label">Maximum fret:</label>
-        <input type="number" id="maxFretToConsider" class="form-control"
-          [(ngModel)]="gripSettings.maxFretToConsider"
-          min="1" max="24">
-        <small class="form-text text-muted">Highest fret to consider when generating grips</small>
-      </div>
-
-      <h6 class="text-muted mb-3">Playability Options</h6>
-      
-      <div class="form-group mb-4">
-        <label for="minimalPlayableStrings" class="form-label">Minimal playable strings:</label>
-        <input type="number" id="minimalPlayableStrings" class="form-control"
-          [(ngModel)]="gripSettings.minimalPlayableStrings"
-          min="1" max="6">
-        <small class="form-text text-muted">Minimum number of strings that must be played</small>
-      </div>
-
-      <h6 class="text-muted mb-3">Dissonance Filter</h6>
-
-      <div class="form-group mb-4">
-        <label for="dissonanceProfile" class="form-label">Dissonance profile:</label>
-        <select id="dissonanceProfile" class="form-select" [(ngModel)]="gripSettings.dissonanceProfile">
-          @for (p of dissonanceProfiles; track p.value) {
-            <option [value]="p.value">{{ p.label }}</option>
-          }
-        </select>
-        <small class="form-text text-muted">Controls how strictly dissonant voicings are filtered out</small>
-      </div>
-
-      <h6 class="text-muted mb-3">Advanced Options</h6>
-      
-      <div class="form-check form-switch mb-3">
-        <input type="checkbox" id="allowBarree" class="form-check-input"
-          [(ngModel)]="gripSettings.allowBarree">
-        <label for="allowBarree" class="form-check-label">
-          <strong>Allow barré chords</strong>
-          <br>
-          <small class="text-muted">Include chord shapes that require barring multiple strings</small>
-        </label>
-      </div>
-      
-      <div class="form-check form-switch mb-3">
-        <input type="checkbox" id="allowInversions" class="form-check-input"
-          [(ngModel)]="gripSettings.allowInversions">
-        <label for="allowInversions" class="form-check-label">
-          <strong>Allow inversions</strong>
-          <br>
-          <small class="text-muted">Include chord voicings with different bass notes</small>
-        </label>
-      </div>
-      
-      <div class="form-check form-switch mb-3">
-        <input type="checkbox" id="allowIncompleteChords" class="form-check-input"
-          [(ngModel)]="gripSettings.allowIncompleteChords">
-        <label for="allowIncompleteChords" class="form-check-label">
-          <strong>Allow incomplete chords</strong>
-          <br>
-          <small class="text-muted">Include grips that don't contain all chord notes</small>
-        </label>
-      </div>
-      
-      <div class="form-check form-switch mb-3">
-        <input type="checkbox" id="allowDuplicateNotes" class="form-check-input"
-          [(ngModel)]="gripSettings.allowDuplicateNotes">
-        <label for="allowDuplicateNotes" class="form-check-label">
-          <strong>Allow duplicate notes</strong>
-          <br>
-          <small class="text-muted">Include grips where the same note appears multiple times</small>
-        </label>
-      </div>
-      
-      <div class="form-check form-switch mb-3">
-        <input type="checkbox" id="allowMutedStringsInside" class="form-check-input"
-          [(ngModel)]="gripSettings.allowMutedStringsInside">
-        <label for="allowMutedStringsInside" class="form-check-label">
-          <strong>Allow muted strings inside</strong>
-          <br>
-          <small class="text-muted">Include grips with muted strings between played strings</small>
-        </label>
-      </div>
-    </div>
-    
-    <div class="modal-footer">
-      <button class="btn btn-secondary" type="button" (click)="closeSettingsModal()">
-        <i class="bi bi-x me-1"></i>
-        Close
-      </button>
-      <button class="btn btn-primary" type="button" (click)="applySettingsAndRegenerate()">
-        <i class="bi bi-check2 me-1"></i>
-        Apply & Regenerate
-      </button>
-    </div>
-  </div>
-</ng-template>

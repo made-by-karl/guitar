@@ -97,8 +97,8 @@
 
   <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0">Chords</h5>
-      <button class="btn btn-outline-primary btn-sm" (click)="addChords()" title="Add more chords">
+      <h5 class="mb-0">Grips</h5>
+      <button class="btn btn-outline-primary btn-sm" (click)="addGrip()" title="Add more grips">
         <i class="bi bi-plus"></i> Add
       </button>
     </div>
@@ -110,22 +110,22 @@
           <div class="card-body">
             @if (grip.grip) {
             <div class="d-flex align-items-center mb-3">
-              <div class="d-flex align-items-center me-2 text-muted" 
+              <div class="d-flex align-items-center me-2 text-muted"
                    cdkDragHandle
-                   style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;" 
+                   style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;"
                    title="Drag to reorder">
                 <i class="bi bi-grip-vertical"></i>
               </div>
               <h6 class="card-title mb-0 flex-grow-1">
-                <button class="btn btn-link p-0 text-decoration-none" (click)="addChords(grip.chordName)">
+                <button class="btn btn-link p-0 text-decoration-none" (click)="addGrip(grip.chordName)">
                   {{ grip.chordName }}
                 </button>
               </h6>
               <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)" title="Play chord">
+                <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)" title="Play grip">
                   <i class="bi bi-play-fill"></i>
                 </button>
-                <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.gripId)" title="Remove chord">
+                <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.gripId)" title="Remove grip">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
@@ -134,7 +134,7 @@
               <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
             </div>
             } @else {
-            <div class="alert alert-warning">Chord data not available.</div>
+            <div class="alert alert-warning">Grip data not available.</div>
             }
           </div>
         </div>
@@ -144,7 +144,7 @@
     } @else {
     <div class="alert alert-info">
       <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
-        <span>No chords on your song sheet yet. Add some to complete your song sheet.</span>
+        <span>No grips on your song sheet yet. Add some to complete your song sheet.</span>
       </div>
     </div>
     }
@@ -167,9 +167,9 @@
             <!-- Header: Pattern name, badges, and buttons -->
             <div class="d-flex justify-content-between align-items-center mb-3">
               <div class="d-flex align-items-center">
-                <div class="d-flex align-items-center me-2 text-muted" 
+                <div class="d-flex align-items-center me-2 text-muted"
                      cdkDragHandle
-                     style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;" 
+                     style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;"
                      title="Drag to reorder">
                   <i class="bi bi-grip-vertical"></i>
                 </div>
@@ -276,15 +276,15 @@
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label small me-2">Chord Changes for this Pattern</label>
+                  <label class="form-label small me-2">Grip Changes for this Pattern</label>
                   @for (grip of patternWithGrips.grips; track j; let j = $index) {
                   <div class="mb-3 border rounded p-2 bg-light">
                     <div class="row g-2">
                       <div class="col-12 col-sm-6">
-                        <label class="form-label small text-muted mb-1">Chord</label>
+                        <label class="form-label small text-muted mb-1">Grip</label>
                         <select class="form-select form-select-sm" [(ngModel)]="grip.grip.gripId"
                           (ngModelChange)="updateGripChordName(i, j, $event)">
-                          <option value="">Select which chord to play</option>
+                          <option value="">Select which grip to play</option>
                           @for (g of sheet.grips; track g.gripId) {
                           <option [value]="g.gripId">{{ g.chordName }}</option>
                           }
@@ -293,11 +293,11 @@
                       <div class="col-8 col-sm-4">
                         <label class="form-label small text-muted mb-1">Start Action</label>
                         <input type="number" class="form-control form-control-sm" [(ngModel)]="grip.startAction" min="1"
-                          placeholder="1" title="Which action in the pattern this chord starts on">
+                          placeholder="1" title="Which action in the pattern this grip starts on">
                       </div>
                       <div class="col-4 col-sm-2 d-flex align-items-end">
                         <button class="btn btn-outline-danger btn-sm w-100" (click)="removeGripFromPattern(i, j)"
-                          title="Remove this chord change">
+                          title="Remove this grip change">
                           <i class="bi bi-trash"></i>
                           <span class="d-none d-sm-inline ms-1">Remove</span>
                         </button>
@@ -306,7 +306,7 @@
                   </div>
                   }
                   <button class="btn btn-outline-secondary btn-sm" (click)="addGripToPattern(i)">
-                    <i class="bi bi-plus"></i> Add Chord Change
+                    <i class="bi bi-plus"></i> Add Grip Change
                   </button>
                 </div>
               </div>
@@ -340,9 +340,9 @@
         <!-- Display Mode -->
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div class="d-flex align-items-center">
-            <div class="d-flex align-items-center me-2 text-muted" 
+            <div class="d-flex align-items-center me-2 text-muted"
                  cdkDragHandle
-                 style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;" 
+                 style="font-size: 1.2rem; cursor: grab; user-select: none; -webkit-user-select: none;"
                  title="Drag to reorder">
               <i class="bi bi-grip-vertical"></i>
             </div>
@@ -422,15 +422,15 @@
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label small">Chord Changes for this Pattern</label>
+                  <label class="form-label small">Grip Changes for this Pattern</label>
                   @for (grip of patternWithGrips.grips; track j; let j = $index) {
                   <div class="mb-3 border rounded p-2 bg-light">
                     <div class="row g-2">
                       <div class="col-12 col-sm-6">
-                        <label class="form-label small text-muted mb-1">Chord</label>
+                        <label class="form-label small text-muted mb-1">Grip</label>
                         <select class="form-select form-select-sm" [(ngModel)]="grip.grip.gripId"
                           (ngModelChange)="updateGripChordName(i, j, $event)">
-                          <option value="">Select which chord to play</option>
+                          <option value="">Select which grip to play</option>
                           @for (g of sheet.grips; track g.gripId) {
                           <option [value]="g.gripId">{{ g.chordName }}</option>
                           }
@@ -439,11 +439,11 @@
                       <div class="col-8 col-sm-4">
                         <label class="form-label small text-muted mb-1">Start Action</label>
                         <input type="number" class="form-control form-control-sm" [(ngModel)]="grip.startAction" min="1"
-                          placeholder="1" title="Which action in the pattern this chord starts on">
+                          placeholder="1" title="Which action in the pattern this grip starts on">
                       </div>
                       <div class="col-4 col-sm-2 d-flex align-items-end">
                         <button class="btn btn-outline-danger btn-sm w-100" (click)="removeGripFromPattern(i, j)"
-                          title="Remove this chord change">
+                          title="Remove this grip change">
                           <i class="bi bi-trash"></i>
                           <span class="d-none d-sm-inline ms-1">Remove</span>
                         </button>
@@ -452,7 +452,7 @@
                   </div>
                   }
                   <button class="btn btn-outline-secondary btn-sm" (click)="addGripToPattern(i)">
-                    <i class="bi bi-plus"></i> Add Chord Change
+                    <i class="bi bi-plus"></i> Add Grip Change
                   </button>
                 </div>
               </div>
@@ -481,7 +481,7 @@
 
     @if (!sheet.parts || sheet.parts.length === 0) {
     <div class="alert alert-info">
-      No song parts defined yet. Add parts to organize your patterns and chord changes into verses, choruses, etc.
+      No song parts defined yet. Add parts to organize your patterns and grip changes into verses, choruses, etc.
     </div>
     }
   </div>
@@ -491,3 +491,19 @@
   <div class="alert alert-danger">Song Sheet not found.</div>
 </div>
 }
+
+<ng-template #sheetChoiceModal [typedCtx]="sheetChoiceTemplateType" let-data="data" let-modalRef="modalRef">
+  <div class="modal-content-wrapper">
+    <div class="modal-body p-3">
+      <h5 class="modal-title mb-3">{{ data.title }}</h5>
+
+      <div class="d-grid gap-2">
+        @for (choice of data.choices; track choice.value) {
+          <button class="btn btn-outline-primary" type="button" (click)="modalRef.close(choice.value)">
+            {{ choice.text }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>

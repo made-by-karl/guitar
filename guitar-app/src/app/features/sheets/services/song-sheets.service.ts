@@ -1,10 +1,17 @@
-import { Injectable } from '@angular/core';
-import { SongSheet, SongSheetGrip, SongSheetPattern, SongSheetWithData, SongSheetPatternWithData, SongSheetGripWithData, SongPart } from '@/app/features/sheets/services/song-sheets.model';
-import { RhythmPatternsService } from '@/app/features/patterns/services/rhythm-patterns.service';
-import { note } from '@/app/core/music/semitones';
-import { parseGrip } from '@/app/features/grips/services/grips/grip.model';
-import { DatabaseService } from '@/app/core/services/database.service';
-import { BehaviorSubject, Observable } from 'rxjs';
+import {Injectable} from '@angular/core';
+import {
+  SongPart,
+  SongSheet,
+  SongSheetGrip,
+  SongSheetGripWithData,
+  SongSheetPattern,
+  SongSheetPatternWithData,
+  SongSheetWithData
+} from '@/app/features/sheets/services/song-sheets.model';
+import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
+import {note} from '@/app/core/music/semitones';
+import {parseGrip} from '@/app/features/grips/services/grips/grip.model';
+import {DatabaseService} from '@/app/core/services/database.service';
 
 @Injectable({ providedIn: 'root' })
 export class SongSheetsService {
@@ -15,9 +22,6 @@ export class SongSheetsService {
           note('G', 3),
           note('B', 3),
           note('E', 4)];
-
-  private pinnedSongSheetId: string | null = null;
-  private pinnedSongSheet$ = new BehaviorSubject<SongSheet | undefined>(undefined);
 
   constructor(
     private rhythmPatternsService: RhythmPatternsService,
@@ -130,48 +134,33 @@ export class SongSheetsService {
     }
   }
 
-  pinSongSheet(id: string) {
-    this.pinnedSongSheetId = id;
-    this.emitPinnedSheet();
-  }
-
-  unpinSongSheet() {
-    this.pinnedSongSheetId = null;
-    this.pinnedSongSheet$.next(undefined);
-  }
-
-  async getPinnedSongSheet(): Promise<SongSheet | undefined> {
-    if (!this.pinnedSongSheetId) return undefined;
-    return await this.getById(this.pinnedSongSheetId);
-  }
-
-  observePinnedSongSheet(): Observable<SongSheet | undefined> {
-    return this.pinnedSongSheet$.asObservable();
-  }
-
-  private async emitPinnedSheet() {
-    const sheet = await this.getPinnedSongSheet();
-    this.pinnedSongSheet$.next(sheet);
-  }
-
-  isPinned(id: string): boolean {
-    return this.pinnedSongSheetId === id;
-  }
-
-  async addGrip(grip: SongSheetGrip, songSheetId?: string): Promise<void> {
-    const id = songSheetId || this.pinnedSongSheetId;
-    if (!id) return;
-    const sheet = await this.getById(id);
+  async addGrips(grips: SongSheetGrip[], songSheetId: string): Promise<void> {
+    const sheet = await this.getById(songSheetId);
     if (sheet) {
       sheet.grips = sheet.grips || [];
-      // Ensure we only store the grip reference
-      const cleanGrip: SongSheetGrip = {
-        gripId: grip.gripId,
-        chordName: grip.chordName
-      };
-      sheet.grips.push(cleanGrip);
-      await this.update(sheet);
+
+      let changed = false;
+      for (const grip of grips) {
+        // Ensure we only store the grip reference
+        const cleanGrip: SongSheetGrip = {
+          gripId: grip.gripId,
+          chordName: grip.chordName
+        };
+
+        if (!sheet.grips.find(g => g.gripId === grip.gripId)) {
+          sheet.grips.push(cleanGrip);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await this.update(sheet);
+      }
     }
+  }
+
+  async addGrip(grip: SongSheetGrip, songSheetId: string): Promise<void> {
+    return this.addGrips([grip], songSheetId)
   }
 
   async removeGrip(sheetId: string, gripId: string): Promise<void> {
@@ -184,7 +173,7 @@ export class SongSheetsService {
 
   async moveGrip(sheetId: string, fromIndex: number, toIndex: number): Promise<void> {
     const sheet = await this.getById(sheetId);
-    if (sheet && sheet.grips && fromIndex >= 0 && fromIndex < sheet.grips.length && 
+    if (sheet && sheet.grips && fromIndex >= 0 && fromIndex < sheet.grips.length &&
         toIndex >= 0 && toIndex < sheet.grips.length) {
       const item = sheet.grips.splice(fromIndex, 1)[0];
       sheet.grips.splice(toIndex, 0, item);
@@ -194,7 +183,7 @@ export class SongSheetsService {
 
   async movePattern(sheetId: string, fromIndex: number, toIndex: number): Promise<void> {
     const sheet = await this.getById(sheetId);
-    if (sheet && sheet.patterns && fromIndex >= 0 && fromIndex < sheet.patterns.length && 
+    if (sheet && sheet.patterns && fromIndex >= 0 && fromIndex < sheet.patterns.length &&
         toIndex >= 0 && toIndex < sheet.patterns.length) {
       const item = sheet.patterns.splice(fromIndex, 1)[0];
       sheet.patterns.splice(toIndex, 0, item);
@@ -204,7 +193,7 @@ export class SongSheetsService {
 
   async movePart(sheetId: string, fromIndex: number, toIndex: number): Promise<void> {
     const sheet = await this.getById(sheetId);
-    if (sheet && sheet.parts && fromIndex >= 0 && fromIndex < sheet.parts.length && 
+    if (sheet && sheet.parts && fromIndex >= 0 && fromIndex < sheet.parts.length &&
         toIndex >= 0 && toIndex < sheet.parts.length) {
       const item = sheet.parts.splice(fromIndex, 1)[0];
       sheet.parts.splice(toIndex, 0, item);
@@ -220,19 +209,32 @@ export class SongSheetsService {
     }
   }
 
-  async addPattern(pattern: SongSheetPattern, songSheetId?: string): Promise<void> {
-    const id = songSheetId || this.pinnedSongSheetId;
-    if (!id) return;
-    const sheet = await this.getById(id);
+  async addPatterns(patterns: SongSheetPattern[], songSheetId: string): Promise<void> {
+    const sheet = await this.getById(songSheetId);
     if (sheet) {
       sheet.patterns = sheet.patterns || [];
-      // Ensure we only store the pattern reference
-      const cleanPattern: SongSheetPattern = {
-        patternId: pattern.patternId
-      };
-      sheet.patterns.push(cleanPattern);
-      await this.update(sheet);
+
+      let changed = false;
+      for (const pattern of patterns) {
+        // Ensure we only store the pattern reference
+        const cleanPattern: SongSheetPattern = {
+          patternId: pattern.patternId
+        };
+
+        if (!sheet.patterns.find(p => p.patternId === pattern.patternId)) {
+          sheet.patterns.push(cleanPattern);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await this.update(sheet);
+      }
     }
+  }
+
+  async addPattern(pattern: SongSheetPattern, songSheetId: string): Promise<void> {
+    return this.addPatterns([pattern], songSheetId);
   }
 
   async removePattern(sheetId: string, patternId: string): Promise<void> {

@@ -1,0 +1,138 @@
+<div class="modal-content-wrapper">
+  <div class="modal-header">
+    <h5 class="modal-title">
+      <i class="bi bi-gear me-2"></i>
+      Grip Generation Settings
+    </h5>
+    <button type="button" class="btn-close" (click)="onCancel()"></button>
+  </div>
+
+  <div class="modal-body">
+    <div class="alert alert-info" role="alert">
+      <i class="bi bi-info-circle me-2"></i>
+      Adjust these settings to control how chord grips are generated and filtered.
+    </div>
+
+    <h6 class="text-muted mb-3">Fret Range</h6>
+
+    <div class="form-group mb-3">
+      <label for="minFretToConsider" class="form-label">Minimum fret:</label>
+      <input
+        type="number"
+        id="minFretToConsider"
+        class="form-control"
+        [(ngModel)]="settings.minFretToConsider"
+        min="0"
+        max="24">
+      <small class="form-text text-muted">Lowest fret to consider when generating grips</small>
+    </div>
+
+    <div class="form-group mb-4">
+      <label for="maxFretToConsider" class="form-label">Maximum fret:</label>
+      <input
+        type="number"
+        id="maxFretToConsider"
+        class="form-control"
+        [(ngModel)]="settings.maxFretToConsider"
+        min="1"
+        max="24">
+      <small class="form-text text-muted">Highest fret to consider when generating grips</small>
+    </div>
+
+    <h6 class="text-muted mb-3">Playability Options</h6>
+
+    <div class="form-group mb-4">
+      <label for="minimalPlayableStrings" class="form-label">Minimal playable strings:</label>
+      <input
+        type="number"
+        id="minimalPlayableStrings"
+        class="form-control"
+        [(ngModel)]="settings.minimalPlayableStrings"
+        min="1"
+        max="6">
+      <small class="form-text text-muted">Minimum number of strings that must be played</small>
+    </div>
+
+    <h6 class="text-muted mb-3">Dissonance Filter</h6>
+
+    <div class="form-group mb-4">
+      <label for="dissonanceProfile" class="form-label">Dissonance profile:</label>
+      <select id="dissonanceProfile" class="form-select" [(ngModel)]="settings.dissonanceProfile">
+        @for (p of dissonanceProfiles; track p.value) {
+          <option [value]="p.value">{{ p.label }}</option>
+        }
+      </select>
+      <small class="form-text text-muted">Controls how strictly dissonant voicings are filtered out</small>
+    </div>
+
+    <h6 class="text-muted mb-3">Advanced Options</h6>
+
+    <div class="form-check form-switch mb-3">
+      <input type="checkbox" id="allowBarre" class="form-check-input" [(ngModel)]="settings.allowBarre">
+      <label for="allowBarre" class="form-check-label">
+        <strong>Allow barré chords</strong>
+        <br>
+        <small class="text-muted">Include chord shapes that require barring multiple strings</small>
+      </label>
+    </div>
+
+    <div class="form-check form-switch mb-3">
+      <input type="checkbox" id="allowInversions" class="form-check-input" [(ngModel)]="settings.allowInversions">
+      <label for="allowInversions" class="form-check-label">
+        <strong>Allow inversions</strong>
+        <br>
+        <small class="text-muted">Include chord voicings with different bass notes</small>
+      </label>
+    </div>
+
+    <div class="form-check form-switch mb-3">
+      <input
+        type="checkbox"
+        id="allowIncompleteChords"
+        class="form-check-input"
+        [(ngModel)]="settings.allowIncompleteChords">
+      <label for="allowIncompleteChords" class="form-check-label">
+        <strong>Allow incomplete chords</strong>
+        <br>
+        <small class="text-muted">Include grips that don't contain all chord notes</small>
+      </label>
+    </div>
+
+    <div class="form-check form-switch mb-3">
+      <input
+        type="checkbox"
+        id="allowDuplicateNotes"
+        class="form-check-input"
+        [(ngModel)]="settings.allowDuplicateNotes">
+      <label for="allowDuplicateNotes" class="form-check-label">
+        <strong>Allow duplicate notes</strong>
+        <br>
+        <small class="text-muted">Include grips where the same note appears multiple times</small>
+      </label>
+    </div>
+
+    <div class="form-check form-switch mb-3">
+      <input
+        type="checkbox"
+        id="allowMutedStringsInside"
+        class="form-check-input"
+        [(ngModel)]="settings.allowMutedStringsInside">
+      <label for="allowMutedStringsInside" class="form-check-label">
+        <strong>Allow muted strings inside</strong>
+        <br>
+        <small class="text-muted">Include grips with muted strings between played strings</small>
+      </label>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" type="button" (click)="onCancel()">
+      <i class="bi bi-x me-1"></i>
+      Close
+    </button>
+    <button class="btn btn-primary" type="button" (click)="onApply()">
+      <i class="bi bi-check2 me-1"></i>
+      Apply & Regenerate
+    </button>
+  </div>
+</div>

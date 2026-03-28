@@ -1,6 +1,6 @@
 import { GripGeneratorService } from '@/app/features/grips/services/grips/grip-generator.service';
 import { FretboardService } from '@/app/features/grips/services/fretboard.service';
-import type { ExtendedChord } from '@/app/features/grips/services/chords/chord.service';
+import type { ChordWithNotes } from '@/app/features/grips/services/chords/chord.service';
 import { Semitone } from '@/app/core/music/semitones';
 import { Modifier } from '@/app/core/music/modifiers';
 import { stringifyGrip } from '@/app/features/grips/services/grips/grip.model';
@@ -10,7 +10,7 @@ describe('GripGeneratorService', () => {
   let service: GripGeneratorService;
   let fretboardService: FretboardService;
 
-  const createChord = (root: Semitone, notes: Semitone[], modifiers: Modifier[] = [], bass?: Semitone): ExtendedChord => ({
+  const createChord = (root: Semitone, notes: Semitone[], modifiers: Modifier[] = [], bass?: Semitone): ChordWithNotes => ({
     root,
     notes,
     modifiers,
@@ -28,7 +28,7 @@ describe('GripGeneratorService', () => {
       const grips = service.generateGrips(chord);
 
       // Should find the common x32o1o shape
-      const commonShape = grips.find(g => 
+      const commonShape = grips.find(g =>
         stringifyGrip(g) === 'x|3|2|o|1|o'
       );
 
@@ -57,7 +57,7 @@ describe('GripGeneratorService', () => {
       const grips = service.generateGrips(chord);
 
       // Should find the o32o1o shape
-      const commonShape = grips.find(g => 
+      const commonShape = grips.find(g =>
         stringifyGrip(g) === 'o|3|2|o|1|o'
       );
 
@@ -77,15 +77,15 @@ describe('GripGeneratorService', () => {
 
       // The problematic grip: E2,B2,D3,G#3,B3,E4 has D in the 3rd string (low position)
       // The good grip: E2,B2,E3,G#3,D4,E4 has D in the 5th string (higher position)
-      const problematicGrip = grips.find(g => 
+      const problematicGrip = grips.find(g =>
         g.notes[0] === 'E2' && g.notes[1] === 'B2' && g.notes[2] === 'D3'
       );
-      
+
       // This grip should NOT exist because D (the b7) is too low in the voicing
       expect(problematicGrip).toBeFalsy();
 
       // The good grip should exist
-      const goodGrip = grips.find(g => 
+      const goodGrip = grips.find(g =>
         g.notes[0] === 'E2' && g.notes[1] === 'B2' && g.notes[2] === 'E3' && g.notes[4] === 'D4'
       );
       expect(goodGrip).toBeTruthy();

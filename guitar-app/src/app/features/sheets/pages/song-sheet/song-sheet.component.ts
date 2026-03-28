@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -12,20 +12,56 @@ import { GripService } from '@/app/features/grips/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from '@/app/core/music/semitones';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
+import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
+import {
+  RhythmPatternEditorModalComponent
+} from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
+import {ModalRef, ModalService} from '@/app/core/services/modal.service';
+import {Chord, chordToString} from '@/app/core/music/chords';
+import {
+  GripSelectorModalComponent,
+  GripSelectorModalData
+} from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
+import {stringifyGrip, TunedGrip} from '@/app/features/grips/services/grips/grip.model';
+import {
+  PatternLibrarySelectorModalComponent
+} from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
+import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
+import {TypedContextDirective} from '@/app/core/ui/directives/typed-context.directive';
+
+type SheetChoiceValue = string;
+
+interface SheetChoice {
+  value: SheetChoiceValue;
+  text: string;
+}
+
+interface SheetChoiceTemplateContext {
+  title: string;
+  choices: SheetChoice[];
+}
+
+interface SheetChoiceModalTemplateContext {
+  $implicit: SheetChoiceTemplateContext;
+  data: SheetChoiceTemplateContext;
+  modalRef: ModalRef<SheetChoiceValue>;
+}
 
 @Component({
   selector: 'app-song-sheet',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule, BpmSelectorComponent],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule, BpmSelectorComponent, TypedContextDirective],
   templateUrl: './song-sheet.component.html',
   styleUrls: ['./song-sheet.component.scss']
 })
 export class SongSheetComponent {
+  @ViewChild('sheetChoiceModal') sheetChoiceModalTemplate!: TemplateRef<SheetChoiceModalTemplateContext>;
+
   sheet: SongSheetWithData | undefined;
   renaming = false;
   tempName = '';
   showTuningForm = false;
-  
+
   // For editing song parts
   editingPartIndex: number | null = null;
   showAddPartForm = false;
@@ -34,23 +70,35 @@ export class SongSheetComponent {
     pattern: SongSheetPattern,
     grips: { grip: SongSheetGrip, startAction: number }[]
   }[] = [];
-  
+
   // For tuning form
   readonly semitones: Semitone[] = [...SEMITONES];
   readonly octaves = [1, 2, 3, 4, 5, 6];
-  
+
   // Temporary tuning values for form
   tempTuning: Note[] = [];
   tempCapodaster = 0;
   tempTempo = 80;
+  readonly sheetChoiceTemplateType = {} as SheetChoiceModalTemplateContext;
+
+  private readonly patternSourceChoices: SheetChoiceTemplateContext = {
+    title: 'Add Pattern',
+    choices: [
+      { value: 'from-library', text: 'From library' },
+      { value: 'create-new', text: 'Create new' }
+    ]
+  };
 
   constructor(
     private songSheetService: SongSheetsService,
+    private rhythmPatternsService: RhythmPatternsService,
     private playback: PlaybackService,
     private gripService: GripService,
     private route: ActivatedRoute,
     private router: Router,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private modalService: ModalService,
+    private viewContainerRef: ViewContainerRef
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -115,14 +163,14 @@ export class SongSheetComponent {
   // Angular CDK drag and drop handler
   async dropGrip(event: CdkDragDrop<SongSheetGripWithData[]>) {
     if (!this.sheet) return;
-    
+
     if (event.previousIndex !== event.currentIndex) {
       // Use CDK's moveItemInArray for local state update
       moveItemInArray(this.sheet.grips, event.previousIndex, event.currentIndex);
-      
+
       // Persist the change to the service
       await this.songSheetService.moveGrip(this.sheet.id, event.previousIndex, event.currentIndex);
-      
+
       // Refresh the sheet data
       this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
     }
@@ -130,7 +178,7 @@ export class SongSheetComponent {
 
   async dropPattern(event: CdkDragDrop<SongSheetPatternWithData[]>) {
     if (!this.sheet) return;
-    
+
     if (event.previousIndex !== event.currentIndex) {
       moveItemInArray(this.sheet.patterns, event.previousIndex, event.currentIndex);
       await this.songSheetService.movePattern(this.sheet.id, event.previousIndex, event.currentIndex);
@@ -140,7 +188,7 @@ export class SongSheetComponent {
 
   async dropPart(event: CdkDragDrop<SongPart[]>) {
     if (!this.sheet) return;
-    
+
     if (event.previousIndex !== event.currentIndex) {
       moveItemInArray(this.sheet.parts, event.previousIndex, event.currentIndex);
       await this.songSheetService.movePart(this.sheet.id, event.previousIndex, event.currentIndex);
@@ -164,7 +212,7 @@ export class SongSheetComponent {
     try {
       const tuning = this.sheet.tuning.map(note => transpose(note, this.sheet!.capodaster));
       const tunedGrip = this.gripService.toTunedGrip(grip.grip, tuning);
-      const notes = tunedGrip.notes.filter(note => note !== null);
+      const notes: string[] = tunedGrip.notes.filter((note): note is string => note !== null);
 
       if (notes.length > 0) {
         await this.playback.playChordFromNotes(notes);
@@ -178,8 +226,7 @@ export class SongSheetComponent {
 
   async playPattern(pattern: SongSheetPatternWithData) {
     if (!this.sheet || !pattern.pattern) return;
-    
-    // Use the MIDI service to play the entire rhythm pattern
+
     try {
       const tuning = this.sheet.tuning.map(note => transpose(note, this.sheet!.capodaster));
       await this.playback.playRhythmPattern(pattern.pattern, tuning, undefined, this.sheet.tempo);
@@ -196,15 +243,15 @@ export class SongSheetComponent {
 
   startEditingPart(partIndex: number) {
     if (!this.sheet || !this.sheet.parts) return;
-    
+
     const part = this.sheet.parts[partIndex];
     this.editingPartIndex = partIndex;
     this.tempPartSection = part.section;
-    this.tempPartPatterns = part.patterns.map(p => ({ 
+    this.tempPartPatterns = part.patterns.map(p => ({
       pattern: { patternId: p.pattern.patternId },
-      grips: p.grips.map(g => ({ 
+      grips: p.grips.map(g => ({
         grip: { gripId: g.grip.gripId, chordName: g.grip.chordName },
-        startAction: g.startAction 
+        startAction: g.startAction
       }))
     }));
   }
@@ -237,7 +284,7 @@ export class SongSheetComponent {
 
   async removePart(partIndex: number) {
     if (!this.sheet) return;
-    
+
     const confirmed = await this.dialogService.confirm(
       'Are you sure you want to remove this song part?',
       'Remove Song Part',
@@ -245,7 +292,7 @@ export class SongSheetComponent {
       'Cancel',
       { variant: 'danger' }
     );
-    
+
     if (confirmed) {
       await this.songSheetService.removePart(this.sheet.id, partIndex);
       await this.refreshData();
@@ -264,7 +311,7 @@ export class SongSheetComponent {
   }
 
   addPatternToPart() {
-    this.tempPartPatterns.push({ 
+    this.tempPartPatterns.push({
       pattern: { patternId: '' },
       grips: []
     });
@@ -275,9 +322,9 @@ export class SongSheetComponent {
   }
 
   addGripToPattern(patternIndex: number) {
-    this.tempPartPatterns[patternIndex].grips.push({ 
-      grip: { gripId: '', chordName: '' }, 
-      startAction: 1 
+    this.tempPartPatterns[patternIndex].grips.push({
+      grip: { gripId: '', chordName: '' },
+      startAction: 1
     });
   }
 
@@ -309,21 +356,164 @@ export class SongSheetComponent {
     return this.sheet.tuning.map(note => `${note.semitone}${note.octave}`).join(' | ');
   }
 
-  addChords(chordName?: string) {
+  async addGrip(chordName?: string) {
     if (this.sheet) {
-      this.songSheetService.pinSongSheet(this.sheet.id);
       if (chordName) {
-        this.router.navigate(['/grips', chordName]);
+        await this.openGripSelector(chordName);
       } else {
-        this.router.navigate(['/grips']);
+        await this.openGripSelector();
       }
     }
   }
 
-  addPatterns() {
-    if (this.sheet) {
-      this.songSheetService.pinSongSheet(this.sheet.id);
-      this.router.navigate(['/patterns']);
+  private async openGripSelector(chord?: Chord | string) {
+    const data: GripSelectorModalData = {
+      chord
     }
+
+    const modalRef = this.modalService.show(GripSelectorModalComponent, {
+      data,
+      width: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: true
+    });
+
+    // Wait for the modal to close
+    const result = await modalRef.afterClosed();
+
+    if (result) {
+      const songSheetGrips = result.grips.map((grip: TunedGrip): SongSheetGrip => {
+        return {
+          gripId: stringifyGrip(grip),
+          chordName: chordToString(result.chord)
+        }
+      });
+
+      if (this.sheet) {
+        const sheet = this.sheet;
+        await this.songSheetService.addGrips(songSheetGrips, sheet.id);
+        this.sheet = await this.songSheetService.getByIdWithData(sheet.id);
+      }
+    }
+  }
+
+  async addPatterns() {
+    if (!this.sheet) {
+      return;
+    }
+
+    const choice = await this.openChoiceDialog(this.patternSourceChoices);
+
+    if (choice === 'from-library') {
+      await this.openPatternLibrary();
+      return;
+    }
+
+    if (choice === 'create-new') {
+      await this.openPatternEditorAndAddToSheet();
+    }
+  }
+
+  private async openChoiceDialog(context: SheetChoiceTemplateContext): Promise<SheetChoiceValue | undefined> {
+    if (!this.sheetChoiceModalTemplate) {
+      return undefined;
+    }
+
+    const modalRef = this.modalService.showTemplate<SheetChoiceValue, SheetChoiceTemplateContext>(
+      this.sheetChoiceModalTemplate,
+      this.viewContainerRef,
+      {
+        data: context,
+        width: '380px',
+        maxWidth: '95vw',
+        closeOnBackdropClick: true
+      }
+    );
+
+    return modalRef.afterClosed();
+  }
+
+  private async openPatternLibrary() {
+    const modalRef = this.modalService.show(PatternLibrarySelectorModalComponent, {
+      width: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: false
+    });
+
+    // Wait for the modal to close
+    const result = await modalRef.afterClosed();
+
+    if (result) {
+      const songSheetPatterns = result.patterns.map((pattern: RhythmPattern): SongSheetPattern => {
+        return {
+          patternId: pattern.id,
+        }
+      });
+
+      if (this.sheet) {
+        const sheet = this.sheet;
+        await this.songSheetService.addPatterns(songSheetPatterns, sheet.id);
+        this.sheet = await this.songSheetService.getByIdWithData(sheet.id);
+      }
+    }
+  }
+
+  private async openPatternEditorAndAddToSheet() {
+    if (!this.sheet) {
+      return;
+    }
+
+    const createdPattern = this.createEmptyPattern();
+    const result = await this.openPatternEditor(createdPattern);
+
+    if (!result) {
+      return;
+    }
+
+    await this.rhythmPatternsService.add(result);
+    await this.songSheetService.addPattern({ patternId: result.id }, this.sheet.id);
+    this.sheet = await this.songSheetService.getByIdWithData(this.sheet.id);
+  }
+
+  private createEmptyPattern(): RhythmPattern {
+    const now = Date.now();
+
+    return {
+      id: now.toString(),
+      name: '',
+      description: '',
+      category: '',
+      measures: [{
+        timeSignature: '4/4',
+        actions: Array(16).fill(null)
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: true
+    };
+  }
+
+  private async openPatternEditor(pattern: RhythmPattern): Promise<RhythmPattern | undefined> {
+    const modalRef = this.modalService.show(RhythmPatternEditorModalComponent, {
+      width: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: false
+    });
+
+    // Set the pattern on the component instance
+    if (modalRef.componentInstance) {
+      modalRef.componentInstance.pattern = pattern;
+    }
+
+    // Wait for the modal to close
+    const result = await modalRef.afterClosed();
+
+    return result;
   }
 }

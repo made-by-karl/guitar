@@ -61,7 +61,7 @@ describe('ChordService', () => {
             }
         }
     ])('should analyze chord $input correctly', ({ input, expected }) => {
-        expect(service.parseChord(input)).toEqual(expected);
+        expect(service.calculateNotes(input)).toEqual(expected);
     });
 
     describe('Basic major chords', () => {
@@ -94,7 +94,7 @@ describe('ChordService', () => {
                 }
             }
         ])('should create correct notes for basic major chord %s', ({ input, expected }) => {
-            const result = service.parseChord(input);
+            const result = service.calculateNotes(input);
             expect(result).toEqual(expected);
             // Should always include root, third, and fifth
             if (!input.includes('/')) {  // Not a slash chord
@@ -106,7 +106,7 @@ describe('ChordService', () => {
         });
 
         it('should create major triad when no modifiers present', () => {
-            const { notes } = service.calculateNotes('C', []);
+            const { notes } = service.calculateNotes({ root: 'C', modifiers: [] });
             expect(notes).toEqual(['C', 'E', 'G']);
         });
     });

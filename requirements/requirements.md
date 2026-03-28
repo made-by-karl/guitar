@@ -22,7 +22,7 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
         * Minimum fret to consider.
         * Maximum fret to consider.
         * Minimal playable strings.
-        * Allow barree grips.
+        * Allow barre grips.
         * Allow inversions.
         * Allow incomplete chords.
         * Allow duplicated notes (chord sounds boring)
@@ -34,7 +34,7 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
 * [GA-1.4] The app visualizes the dynamically generated grips for the selected chord.
     * It shows multiple variations of grips for the chord.
     * It displays the tapped strings and finger positions.
-    * It supports visualization of barree grips and single-finger placements.
+    * It supports visualization of barre grips and single-finger placements.
 
 #### Song Sheets
 * [GA-2.0] Song Sheets is a main feature in the app with its own page and menu entry

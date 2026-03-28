@@ -1,199 +1,271 @@
-import { Injectable, Injector, TemplateRef, Type, ComponentRef, EmbeddedViewRef, ApplicationRef, createComponent, EnvironmentInjector, ViewContainerRef } from '@angular/core';
+import {
+  Injectable,
+  Injector,
+  TemplateRef,
+  ComponentRef,
+  ViewContainerRef,
+  InjectionToken
+} from '@angular/core';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal, TemplatePortal } from '@angular/cdk/portal';
-import { Subject } from 'rxjs';
+import { ComponentPortal, ComponentType, TemplatePortal } from '@angular/cdk/portal';
+import { Subject, firstValueFrom, take } from 'rxjs';
 
-export interface ModalConfig {
-  /** Modal title */
+/* =========================
+   Types
+========================= */
+
+export interface ModalConfig<TData = any> {
   title?: string;
-  /** Width of the modal (e.g., '500px', '80%', 'auto') */
   width?: string;
-  /** Height of the modal (e.g., '600px', '90vh', 'auto') */
   height?: string;
-  /** Maximum width */
   maxWidth?: string;
-  /** Maximum height */
   maxHeight?: string;
-  /** Whether to close on backdrop click */
   closeOnBackdropClick?: boolean;
-  /** Whether to show a backdrop */
   hasBackdrop?: boolean;
-  /** Custom CSS classes */
   panelClass?: string | string[];
-  /** Data to pass to the component */
-  data?: any;
-  /** Whether to center the modal */
+  data?: TData;
   centered?: boolean;
 }
 
-export interface ModalRef<T = any> {
-  /** Close the modal with a result */
-  close: (result?: T) => void;
-  /** Get the component instance (if using component) */
-  componentInstance?: any;
-  /** Observable that emits when modal is closed */
-  afterClosed: () => Promise<T>;
+export interface ModalRef<TResult = unknown, TComponent = unknown> {
+  close: (result?: TResult) => void;
+  afterClosed: () => Promise<TResult>;
 }
+
+export interface ComponentModalRef<TResult, TComponent>
+  extends ModalRef<TResult, TComponent> {
+  componentInstance: TComponent;
+}
+
+export interface ModalComponent<TResult = unknown> {
+  modalRef: ModalRef<TResult>;
+}
+
+type ExtractResult<T> = T extends ModalComponent<infer R> ? R : unknown;
+
+export interface ModalDataComponent<TData = unknown> {
+  data: TData;
+}
+
+type ExtractData<T> = T extends ModalDataComponent<infer D> ? D : unknown;
+
+/* =========================
+   Injection Tokens
+========================= */
+
+export const MODAL_DATA = new InjectionToken<any>('ModalData');
+export const MODAL_REF = new InjectionToken<ModalRef>('ModalRef');
+
+/* =========================
+   Internal Model
+========================= */
+
+interface ModalInstance {
+  overlayRef: OverlayRef;
+  componentRef?: ComponentRef<any>;
+  closeSubject: Subject<any>;
+}
+
+/* =========================
+   Service
+========================= */
 
 @Injectable({
   providedIn: 'root'
 })
 export class ModalService {
-  private overlayRef: OverlayRef | null = null;
-  private componentRef: ComponentRef<any> | null = null;
-  private closeSubject = new Subject<any>();
+  private modals: ModalInstance[] = [];
+  private openModals = 0;
 
   constructor(
     private overlay: Overlay,
-    private injector: Injector,
-    private appRef: ApplicationRef,
-    private environmentInjector: EnvironmentInjector
+    private injector: Injector
   ) {}
 
-  /**
-   * Show a modal with a component
-   */
-  show<T>(component: Type<T>, config: ModalConfig = {}): ModalRef {
-    return this.showInternal(component, config);
+  /* =========================
+     Public API
+  ========================= */
+
+  show<TComponent extends ModalComponent<any>>(
+    component: ComponentType<TComponent>,
+    config: ModalConfig<ExtractData<TComponent>> = {}
+  ): ComponentModalRef<ExtractResult<TComponent>, TComponent> {
+    return this.showComponentInternal(component, config);
   }
 
-  /**
-   * Show a modal with a template
-   */
-  showTemplate<T>(template: TemplateRef<any>, viewContainerRef: ViewContainerRef, config: ModalConfig = {}): ModalRef {
-    return this.showInternal(template, config, viewContainerRef);
+  showTemplate<TResult = unknown, TData = any>(
+    template: TemplateRef<any>,
+    viewContainerRef: ViewContainerRef,
+    config: ModalConfig<TData> = {}
+  ): ModalRef<TResult> {
+    return this.showTemplateInternal(template, viewContainerRef, config);
   }
 
-  private showInternal<T>(
-    componentOrTemplate: Type<T> | TemplateRef<any>,
-    config: ModalConfig,
-    viewContainerRef?: ViewContainerRef
-  ): ModalRef {
-    // Close any existing modal
-    this.closeInternal();
+  closeTop(result?: any) {
+    const instance = this.modals[this.modals.length - 1];
+    if (instance) {
+      this.closeInstance(instance, result);
+    }
+  }
 
-    // Disable body scroll
-    document.body.classList.add('modal-open');
-    document.body.style.overflow = 'hidden';
+  /* =========================
+     Component Modal
+  ========================= */
 
-    // Create overlay
-    this.overlayRef = this.overlay.create(this.getOverlayConfig(config));
+  private showComponentInternal<TComponent extends ModalComponent<any>, TData>(
+    component: ComponentType<TComponent>,
+    config: ModalConfig<TData>
+  ): ComponentModalRef<ExtractResult<TComponent>, TComponent> {
 
-    // Handle backdrop click
-    if (config.closeOnBackdropClick !== false && config.hasBackdrop !== false) {
-      this.overlayRef.backdropClick().subscribe(() => {
-        this.closeInternal();
-      });
+    const instance = this.createInstance(config);
+    const modalRef = this.createModalRef<ExtractResult<TComponent>>(instance);
+
+    const portal = new ComponentPortal(
+      component,
+      null,
+      this.createInjector(config.data, modalRef)
+    );
+
+    const componentRef = instance.overlayRef.attach(portal);
+    instance.componentRef = componentRef;
+
+    const hostElement = componentRef.location?.nativeElement as HTMLElement;
+    if (hostElement) {
+      hostElement.style.height = '100%';
+      hostElement.style.display = 'block';
     }
 
-    // Create the modal ref
-    const modalRef: ModalRef = {
-      close: (result?: any) => {
-        this.closeInternal(result);
-      },
-      afterClosed: () => {
-        return new Promise((resolve) => {
-          const subscription = this.closeSubject.subscribe((result) => {
-            subscription.unsubscribe();
-            resolve(result);
-          });
-        });
-      }
+    const componentModalRef: ComponentModalRef<ExtractResult<TComponent>, TComponent> = {
+      ...modalRef,
+      componentInstance: componentRef.instance
     };
 
-    // Attach component or template
-    if (componentOrTemplate instanceof TemplateRef) {
-      // Template
-      if (!viewContainerRef) {
-        throw new Error('ViewContainerRef is required for template-based modals');
-      }
-      const portal = new TemplatePortal(componentOrTemplate, viewContainerRef);
-      const embeddedViewRef = this.overlayRef.attach(portal);
-      
-      // Apply height styling to the root element of the template
-      // Don't set display:block as it breaks flexbox layout inside the template
-      if (embeddedViewRef && embeddedViewRef.rootNodes && embeddedViewRef.rootNodes.length > 0) {
-        const rootElement = embeddedViewRef.rootNodes[0] as HTMLElement;
-        if (rootElement && rootElement.style) {
-          rootElement.style.height = '100%';
-        }
-      }
-    } else {
-      // Component
-      const portal = new ComponentPortal(
-        componentOrTemplate,
-        null,
-        this.createInjector(config.data, modalRef)
-      );
-      const componentRef = this.overlayRef.attach(portal);
-      this.componentRef = componentRef;
-      modalRef.componentInstance = componentRef.instance;
+    return componentModalRef;
+  }
 
-      // Pass data to component if it has a data property
-      if (config.data && componentRef.instance) {
-        Object.assign(componentRef.instance, config.data);
-      }
+  /* =========================
+     Template Modal
+  ========================= */
 
-      // Apply height styling to the component's host element
-      if (componentRef.location && componentRef.location.nativeElement) {
-        const hostElement = componentRef.location.nativeElement as HTMLElement;
-        hostElement.style.height = '100%';
-        hostElement.style.display = 'block';
-      }
+  private showTemplateInternal<TResult, TData>(
+    template: TemplateRef<any>,
+    viewContainerRef: ViewContainerRef,
+    config: ModalConfig<TData>
+  ): ModalRef<TResult> {
+
+    const instance = this.createInstance(config);
+    const modalRef = this.createModalRef<TResult>(instance);
+
+    const context = {
+      $implicit: config.data,
+      data: config.data,
+      modalRef
+    };
+
+    const portal = new TemplatePortal(template, viewContainerRef, context);
+    const viewRef = instance.overlayRef.attach(portal);
+
+    const rootElement = viewRef.rootNodes.find(
+      node => node instanceof HTMLElement
+    ) as HTMLElement | undefined;
+
+    if (rootElement) {
+      rootElement.style.height = '100%';
     }
 
     return modalRef;
   }
 
-  private closeInternal(result?: any) {
-    if (this.overlayRef) {
-      this.overlayRef.dispose();
-      this.overlayRef = null;
+  /* =========================
+     Instance Handling
+  ========================= */
+
+  private createInstance(config: ModalConfig): ModalInstance {
+    const overlayRef = this.overlay.create(this.getOverlayConfig(config));
+    const closeSubject = new Subject<any>();
+
+    const instance: ModalInstance = {
+      overlayRef,
+      closeSubject
+    };
+
+    this.modals.push(instance);
+
+    // scroll handling
+    this.openModals++;
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+
+    // backdrop
+    if (config.closeOnBackdropClick !== false && config.hasBackdrop !== false) {
+      overlayRef.backdropClick()
+        .pipe(take(1))
+        .subscribe(() => this.closeInstance(instance));
     }
 
-    if (this.componentRef) {
-      this.componentRef.destroy();
-      this.componentRef = null;
-    }
-
-    // Re-enable body scroll
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-
-    this.closeSubject.next(result);
+    return instance;
   }
 
+  private createModalRef<TResult>(instance: ModalInstance): ModalRef<TResult> {
+    return {
+      close: (result?: TResult) => this.closeInstance(instance, result),
+      afterClosed: () => firstValueFrom(instance.closeSubject)
+    };
+  }
+
+  private closeInstance(instance: ModalInstance, result?: any) {
+    const index = this.modals.indexOf(instance);
+    if (index === -1) return;
+
+    instance.overlayRef.dispose();
+
+    if (instance.componentRef) {
+      instance.componentRef.destroy();
+    }
+
+    instance.closeSubject.next(result);
+    instance.closeSubject.complete();
+
+    this.modals.splice(index, 1);
+
+    // scroll restore
+    this.openModals--;
+    if (this.openModals <= 0) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      this.openModals = 0;
+    }
+  }
+
+  /* =========================
+     Overlay Config
+  ========================= */
+
   private getOverlayConfig(config: ModalConfig): OverlayConfig {
-    const positionStrategy = this.overlay
-      .position()
-      .global();
+    const positionStrategy = this.overlay.position().global();
 
     if (config.centered !== false) {
       positionStrategy.centerHorizontally().centerVertically();
     }
 
-    // If height is not specified but maxHeight is, use maxHeight as height
-    // This ensures the overlay pane has a defined height for flexbox to work
     const height = config.height || config.maxHeight;
 
-    const overlayConfig = new OverlayConfig({
+    return new OverlayConfig({
       hasBackdrop: config.hasBackdrop !== false,
       backdropClass: 'modal-backdrop',
       panelClass: this.getPanelClasses(config),
       positionStrategy,
       scrollStrategy: this.overlay.scrollStrategies.block(),
       width: config.width,
-      height: height,
+      height,
       maxWidth: config.maxWidth || '95vw',
       maxHeight: config.maxHeight || '95vh'
     });
-
-    return overlayConfig;
   }
 
   private getPanelClasses(config: ModalConfig): string[] {
     const classes = ['modal-panel'];
-    
+
     if (config.panelClass) {
       if (Array.isArray(config.panelClass)) {
         classes.push(...config.panelClass);
@@ -205,7 +277,7 @@ export class ModalService {
     return classes;
   }
 
-  private createInjector(data: any, modalRef: ModalRef): Injector {
+  private createInjector(data: any, modalRef: ModalRef<any, any>): Injector {
     return Injector.create({
       parent: this.injector,
       providers: [
@@ -214,17 +286,4 @@ export class ModalService {
       ]
     });
   }
-
-  /**
-   * Close the current modal
-   */
-  close(result?: any) {
-    this.closeInternal(result);
-  }
 }
-
-// Injection tokens for modal data and ref
-import { InjectionToken } from '@angular/core';
-
-export const MODAL_DATA = new InjectionToken<any>('ModalData');
-export const MODAL_REF = new InjectionToken<ModalRef>('ModalRef');

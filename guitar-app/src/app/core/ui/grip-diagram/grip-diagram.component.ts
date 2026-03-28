@@ -14,7 +14,7 @@ export class GripDiagramComponent implements OnChanges {
   public svg: any;
 
   constructor(private sanitizer: DomSanitizer) {
-    
+
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -71,7 +71,7 @@ export class GripDiagramComponent implements OnChanges {
       : '';
 
     // Draw grip
-    const barrees: Map<number, number[]> = new Map();
+    const barres: Map<number, number[]> = new Map();
     this.grip.strings.forEach((string: any, i: number) => {
       const x = 20 + i * stringSpacing;
       if (string === 'x') {
@@ -80,11 +80,11 @@ export class GripDiagramComponent implements OnChanges {
         dots.push(`<text x="${x - 4}" y="25" font-size="14">o</text>`);
       } else if (Array.isArray(string)) {
         string.forEach(placement => {
-          if (placement.isPartOfBarree) {
-            if (!barrees.has(placement.fret)) {
-              barrees.set(placement.fret, []);
+          if (placement.isPartOfBarre) {
+            if (!barres.has(placement.fret)) {
+              barres.set(placement.fret, []);
             }
-            barrees.get(placement.fret)?.push(i);
+            barres.get(placement.fret)?.push(i);
           }
 
           const y = 40 + ((placement.fret - startFret) + 0.5) * fretHeight;
@@ -93,7 +93,7 @@ export class GripDiagramComponent implements OnChanges {
       }
     });
 
-    barrees.forEach((strings, fret) => {
+    barres.forEach((strings, fret) => {
       const y = 40 + ((fret - startFret) + 0.5) * fretHeight;
       const x1 = 20 + strings[0] * stringSpacing;
       const x2 = 20 + strings[strings.length - 1] * stringSpacing;

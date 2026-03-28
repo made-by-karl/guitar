@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+.pattern-item {
+  border: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: #86b7fe;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+}
+
+.pattern-item-selected {
+  border-color: #0d6efd;
+  background: #e7f1ff;
+}
+
+.pattern-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.selection-indicator {
+  color: #6c757d;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.pattern-item-selected .selection-indicator {
+  color: #0d6efd;
+}
