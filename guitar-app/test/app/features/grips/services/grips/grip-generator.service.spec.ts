@@ -161,7 +161,7 @@ describe('GripGeneratorService', () => {
           const note = grip.notes[i];
           if (note && note.startsWith('C#')) {
             // Minor 2nd should not be in the lowest strings
-            fail(`Minor 2nd (C#) found at string index ${i}, should be avoided in lowest strings`);
+            throw new Error(`Minor 2nd (C#) found at string index ${i}, should be avoided in lowest strings`);
           }
         }
       });
@@ -181,7 +181,7 @@ describe('GripGeneratorService', () => {
           const note = grip.notes[i];
           if (note && (note.startsWith('F#') || note.startsWith('Gb'))) {
             // Tritone should not be in the very lowest strings
-            fail(`Tritone (F#/Gb) found at string index ${i}, should be avoided in lowest strings`);
+            throw new Error(`Tritone (F#/Gb) found at string index ${i}, should be avoided in lowest strings`);
           }
         }
       });
@@ -206,7 +206,7 @@ describe('GripGeneratorService', () => {
         for (let i = 0; i <= 2; i++) {
           const note = grip.notes[i];
           if (note && note.startsWith('D')) {
-            fail(`D (minor 7th from bass note E) found at string index ${i}, should be avoided in lowest strings`);
+            throw new Error(`D (minor 7th from bass note E) found at string index ${i}, should be avoided in lowest strings`);
           }
         }
       });
@@ -222,6 +222,41 @@ describe('GripGeneratorService', () => {
       const harmonicGrips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
       const harmonicShape = harmonicGrips.find(g => stringifyGrip(g) === 'x|2|o|2|o|2');
       expect(harmonicShape).toBeFalsy();
+    });
+
+    it('should allow all grips when using the all profile', () => {
+      const chord = createChord('B', ['B', 'D', 'F#', 'A'], ['m', '7']);
+
+      const harmonicGrips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
+      expect(harmonicGrips.some(g => stringifyGrip(g) === 'x|2|o|2|o|2')).toBe(false);
+
+      const allGrips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+      expect(allGrips.some(g => stringifyGrip(g) === 'x|2|o|2|o|2')).toBe(true);
+    });
+
+    it('should generate common Cadd9 voicings under the harmonic profile', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
+
+      const openCadd9 = grips.find(g => stringifyGrip(g) === 'x|3|2|o|3|o');
+      expect(openCadd9).toBeTruthy();
+      if (openCadd9) {
+        expect(openCadd9.notes).toEqual([null, 'C3', 'E3', 'G3', 'D4', 'E4']);
+      }
+    });
+
+    it('should keep modifier-aware relief specific to chords that expect the tension', () => {
+      const cAdd9 = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
+      const colorGrips = service.generateGrips(cAdd9, { dissonanceProfile: 'harmonic' });
+      expect(colorGrips.some(g => stringifyGrip(g) === 'x|3|2|o|3|o')).toBe(true);
+
+      const accidentalCluster = createChord('C', ['C', 'C#', 'G'], [], 'C');
+      const clusterGrips = service.generateGrips(accidentalCluster, {
+        allowIncompleteChords: true,
+        dissonanceProfile: 'harmonic'
+      });
+
+      expect(clusterGrips.every(g => stringifyGrip(g) !== 'x|3|2|o|2|o')).toBe(true);
     });
   });
 });

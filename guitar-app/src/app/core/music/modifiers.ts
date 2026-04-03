@@ -399,6 +399,70 @@ export type ChordModifierCarrier = {
   modifiers: readonly Modifier[];
 };
 
+export type ExpectedDissonanceCategory =
+  | 'plain'
+  | 'color'
+  | 'structurally-tense'
+  | 'altered';
+
+export type ExpectedDissonanceProfile = {
+  category: ExpectedDissonanceCategory;
+  thresholdBonus: number;
+  bassIntervalRelief: ReadonlySet<number>;
+  pairIntervalRelief: ReadonlySet<number>;
+  lowRegisterProtected: ReadonlySet<number>;
+  expectedTensionPitchClasses: ReadonlySet<number>;
+};
+
+const COLOR_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  '6', '7', 'maj7', 'maj9', 'add9', 'add11', 'add13', 'sus2', 'sus4',
+]);
+
+const STRUCTURALLY_TENSE_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  'dim', 'ø7', 'dim7', 'aug', 'aug7', 'b5', '#5', 'bb5',
+]);
+
+const ALTERED_TENSION_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
+  'b9', '#9', '#11', 'b13',
+]);
+
+const EMPTY_INTERVAL_SET: ReadonlySet<number> = new Set<number>();
+
+const EXPECTED_DISSONANCE_PROFILES: Readonly<Record<ExpectedDissonanceCategory, ExpectedDissonanceProfile>> = Object.freeze({
+  plain: {
+    category: 'plain',
+    thresholdBonus: 0,
+    bassIntervalRelief: EMPTY_INTERVAL_SET,
+    pairIntervalRelief: EMPTY_INTERVAL_SET,
+    lowRegisterProtected: new Set<number>([1, 2, 6, 10, 11]),
+    expectedTensionPitchClasses: EMPTY_INTERVAL_SET,
+  },
+  color: {
+    category: 'color',
+    thresholdBonus: 2,
+    bassIntervalRelief: new Set<number>([2, 5, 9, 10, 11]),
+    pairIntervalRelief: new Set<number>([1, 2]),
+    lowRegisterProtected: new Set<number>([2, 10, 11]),
+    expectedTensionPitchClasses: new Set<number>([2, 5, 9, 10, 11]),
+  },
+  'structurally-tense': {
+    category: 'structurally-tense',
+    thresholdBonus: 4,
+    bassIntervalRelief: new Set<number>([6, 8, 10]),
+    pairIntervalRelief: new Set<number>([1, 2, 6]),
+    lowRegisterProtected: new Set<number>([1, 2, 6, 10]),
+    expectedTensionPitchClasses: new Set<number>([6, 8, 9, 10]),
+  },
+  altered: {
+    category: 'altered',
+    thresholdBonus: 5,
+    bassIntervalRelief: new Set<number>([1, 3, 6, 8, 10]),
+    pairIntervalRelief: new Set<number>([1, 2, 6]),
+    lowRegisterProtected: new Set<number>([1, 2, 6, 10]),
+    expectedTensionPitchClasses: new Set<number>([1, 3, 6, 8]),
+  },
+});
+
 const ALTERED_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
   // Alterations explicitly supported by this project
   'b5', '#5', 'bb5',
@@ -436,4 +500,25 @@ export function isMajor7Chord(chord: ChordModifierCarrier): boolean {
 export function hasSeventhChord(chord: ChordModifierCarrier): boolean {
   if (chord.modifiers.includes('no7')) return false;
   return chord.modifiers.some(m => SEVENTH_MODIFIERS.has(m));
+}
+
+export function getExpectedDissonanceProfile(chord: ChordModifierCarrier): ExpectedDissonanceProfile {
+  const category = getExpectedDissonanceCategory(chord);
+  return EXPECTED_DISSONANCE_PROFILES[category];
+}
+
+export function getExpectedDissonanceCategory(chord: ChordModifierCarrier): ExpectedDissonanceCategory {
+  if (chord.modifiers.some(m => ALTERED_TENSION_MODIFIERS.has(m))) {
+    return 'altered';
+  }
+
+  if (chord.modifiers.some(m => STRUCTURALLY_TENSE_MODIFIERS.has(m))) {
+    return 'structurally-tense';
+  }
+
+  if (chord.modifiers.some(m => COLOR_MODIFIERS.has(m))) {
+    return 'color';
+  }
+
+  return 'plain';
 }

@@ -12,7 +12,9 @@ import {
     hasSeventhChord,
     isAlteredChord,
     isDiminishedChord,
-    isMajor7Chord
+    isMajor7Chord,
+    getExpectedDissonanceCategory,
+    getExpectedDissonanceProfile
 } from '@/app/core/music/modifiers';
 
 
@@ -176,6 +178,35 @@ describe('Modifiers', () => {
             expect(hasSeventhChord({ modifiers: ['maj9'] })).toBe(true);
             expect(hasSeventhChord({ modifiers: ['no7'] })).toBe(false);
             expect(hasSeventhChord({ modifiers: ['7', 'no7'] })).toBe(false);
+        });
+
+        it('should classify add9 as a color chord with expected major 2nd tension', () => {
+            expect(getExpectedDissonanceCategory({ modifiers: ['add9'] })).toBe('color');
+
+            const profile = getExpectedDissonanceProfile({ modifiers: ['add9'] });
+            expect(profile.bassIntervalRelief.has(2)).toBe(true);
+            expect(profile.expectedTensionPitchClasses.has(2)).toBe(true);
+        });
+
+        it('should classify maj7 as a color chord with expected major 7th tension', () => {
+            expect(getExpectedDissonanceCategory({ modifiers: ['maj7'] })).toBe('color');
+
+            const profile = getExpectedDissonanceProfile({ modifiers: ['maj7'] });
+            expect(profile.bassIntervalRelief.has(11)).toBe(true);
+            expect(profile.expectedTensionPitchClasses.has(11)).toBe(true);
+        });
+
+        it('should classify diminished chords as structurally tense', () => {
+            expect(getExpectedDissonanceCategory({ modifiers: ['dim'] })).toBe('structurally-tense');
+
+            const profile = getExpectedDissonanceProfile({ modifiers: ['dim'] });
+            expect(profile.bassIntervalRelief.has(6)).toBe(true);
+            expect(profile.expectedTensionPitchClasses.has(6)).toBe(true);
+        });
+
+        it('should classify altered extensions as altered chords', () => {
+            expect(getExpectedDissonanceCategory({ modifiers: ['7', 'b9'] })).toBe('altered');
+            expect(getExpectedDissonanceCategory({ modifiers: ['7', '#11'] })).toBe('altered');
         });
     });
 

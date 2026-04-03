@@ -42,6 +42,7 @@ export class ChordComponent implements OnInit {
     { value: 'harmonic', label: 'Harmonic (strict)' },
     { value: 'neutral', label: 'Neutral' },
     { value: 'dissonant', label: 'Dissonant (permissive)' },
+    { value: 'all', label: 'All grips (no filter)' },
   ];
 
   gripSettings: GripGeneratorOptions = {

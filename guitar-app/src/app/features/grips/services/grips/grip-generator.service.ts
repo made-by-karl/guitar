@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { hasSeventhChord, isAlteredChord, isDiminishedChord, isMajor7Chord } from "@/app/core/music/modifiers";
-import { getNoteMidi, note, Note, Semitone } from "@/app/core/music/semitones";
+import { getExpectedDissonanceProfile } from "@/app/core/music/modifiers";
+import { getNoteMidi, note, Note, SEMITONES, Semitone } from "@/app/core/music/semitones";
 import { FretboardService } from "@/app/features/grips/services/fretboard.service";
 import type { ChordWithNotes } from '@/app/features/grips/services/chords/chord.service';
 import { TunedGrip, String } from '@/app/features/grips/services/grips/grip.model';
@@ -613,6 +613,10 @@ export class GripGeneratorService {
     context: GripGenerationContext,
     profile: DissonanceProfile = 'neutral'
   ): boolean {
+    if (profile === 'all') {
+      return false;
+    }
+
     const score = this.calculateDissonanceScore(chord, notes);
     const threshold = this.adaptiveDissonanceThreshold(chord, notes, context, profile);
 
@@ -626,6 +630,7 @@ export class GripGeneratorService {
     profile: DissonanceProfile = 'neutral'
   ): number {
     let threshold = this.baseThreshold(chord);
+    const expectedProfile = getExpectedDissonanceProfile(chord);
 
     const played = notes.filter(Boolean) as Note[];
     const bass = played[0];
@@ -647,6 +652,7 @@ export class GripGeneratorService {
     if (openStrings >= 2) threshold -= 1;
 
     // Dissonance profile (generic tolerance control)
+    if (profile === 'neutral' && expectedProfile.category !== 'plain') threshold += 2;
     if (profile === 'harmonic') threshold -= 1;
     if (profile === 'dissonant') threshold += 2;
 
@@ -654,11 +660,8 @@ export class GripGeneratorService {
   }
 
   private baseThreshold(chord: ChordWithNotes): number {
-    if (isAlteredChord(chord)) return 12;
-    if (isDiminishedChord(chord)) return 10;
-    if (isMajor7Chord(chord)) return 9;
-    if (hasSeventhChord(chord)) return 8;
-    return 6;
+    const profile = getExpectedDissonanceProfile(chord);
+    return 6 + profile.thresholdBonus;
   }
 
   private intervalDissonanceWeight(interval: number): number {
@@ -677,6 +680,7 @@ export class GripGeneratorService {
     chord: ChordWithNotes,
     notes: (Note | null)[]
   ): number {
+    const profile = getExpectedDissonanceProfile(chord);
     const played = notes
       .map((n, i) => n ? { note: n, stringIndex: i } : null)
       .filter(Boolean) as { note: Note; stringIndex: number }[];
@@ -700,6 +704,8 @@ export class GripGeneratorService {
       bassIntervals.push(interval);
 
       let weight = this.intervalDissonanceWeight(interval);
+      const isExpectedBassTension = profile.bassIntervalRelief.has(interval);
+      const isLowRegister = distance < 12 || stringIndex <= 2;
 
       // Register-dependent amplification
       if (distance < 12) {
@@ -711,17 +717,25 @@ export class GripGeneratorService {
         weight *= 1.5;
       }
 
-      // Chord type softens/permits certain tensions
-      if (hasSeventhChord(chord) && interval === 10) {
-        weight *= 0.5;
+      // Modifier-aware relief for expected tensions. Keep some penalty when packed low.
+      if (isExpectedBassTension) {
+        if (profile.lowRegisterProtected.has(interval) && isLowRegister) {
+          if (interval === 6) {
+            weight *= 0.9;
+          } else if (interval === 10 || interval === 11) {
+            weight *= 0.75;
+          } else {
+            weight *= 0.65;
+          }
+        } else {
+          weight *= 0.35;
+        }
       }
 
-      // Dominant-specific low-register penalty
-      if (interval === 10) { // minor 7th
-        // If within one octave AND close to the bass
-        if (distance < 10) {
-          score += 3;
-        }
+      if (profile.lowRegisterProtected.has(interval) && isExpectedBassTension && distance <= 10) {
+        score += interval === 6 ? 2 : interval === 10 || interval === 11 ? 2 : 1;
+      } else if (interval === 10 && distance <= 10) {
+        score += 3;
       }
 
       score += weight;
@@ -737,16 +751,39 @@ export class GripGeneratorService {
     // Additional voice-to-voice dissonance
     for (let i = 0; i < played.length; i++) {
       for (let j = i + 1; j < played.length; j++) {
-        const interval =
-          Math.abs(getNoteMidi(played[i].note) - getNoteMidi(played[j].note)) % 12;
+        const noteA = played[i];
+        const noteB = played[j];
+        const interval = Math.abs(getNoteMidi(noteA.note) - getNoteMidi(noteB.note)) % 12;
+        const distance = Math.abs(getNoteMidi(noteA.note) - getNoteMidi(noteB.note));
+        const closeVoicing = distance <= 2 || Math.abs(noteA.stringIndex - noteB.stringIndex) <= 1;
+        const lowVoicing = noteA.stringIndex <= 2 || noteB.stringIndex <= 2;
+        const touchesExpectedTension =
+          this.isExpectedTensionNote(chord.root, noteA.note, profile.expectedTensionPitchClasses) ||
+          this.isExpectedTensionNote(chord.root, noteB.note, profile.expectedTensionPitchClasses);
 
         if (interval === 1 || interval === 2) {
-          score += 3; // very noticeable
+          if (profile.pairIntervalRelief.has(interval) && touchesExpectedTension) {
+            score += closeVoicing || lowVoicing ? 2 : 1;
+          } else {
+            score += closeVoicing ? 3 : 2;
+          }
         }
       }
     }
 
     return Math.round(score);
+  }
+
+  private isExpectedTensionNote(
+    root: Semitone,
+    note: Note,
+    expectedPitchClasses: ReadonlySet<number>
+  ): boolean {
+    const rootIndex = SEMITONES.indexOf(root);
+    const noteIndex = SEMITONES.indexOf(note.semitone);
+    const interval = (noteIndex - rootIndex + 12) % 12;
+
+    return expectedPitchClasses.has(interval);
   }
 
   private determineInversion(chord: ChordWithNotes, notes: (Note | null)[]): 'root' | '1st' | '2nd' | 'other' | undefined {
@@ -782,7 +819,7 @@ type FingerPlacement = {
   strings: number[];
 }
 
-export type DissonanceProfile = 'harmonic' | 'neutral' | 'dissonant'
+export type DissonanceProfile = 'harmonic' | 'neutral' | 'dissonant' | 'all'
 
 export type GripGeneratorOptions = {
   minFretToConsider?: number;
