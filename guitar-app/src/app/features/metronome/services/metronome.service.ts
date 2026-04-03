@@ -1,13 +1,18 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AudioService } from '@/app/core/services/audio.service';
-import { buildMetronomeLabels, isMainBeatLabel } from '@/app/features/metronome/services/metronome-labels';
+import {
+  buildMetronomeLabels,
+  isMainBeatLabel,
+  MetronomeSubdivision,
+  normalizeSubdivision
+} from '@/app/features/metronome/services/metronome-labels';
 import { getAccentedBeats, getTimeSignatureParts, parseTimeSignature, TimeSignature } from '@/app/core/music/rhythm/time-signature.model';
 
 export interface MetronomeConfig {
   bpm: number;
   timeSignature: TimeSignature;
-  subBeatsEnabled: boolean;
+  subdivision: MetronomeSubdivision;
 }
 
 export interface MetronomeState {
@@ -28,8 +33,8 @@ export class MetronomeService implements OnDestroy {
 
   private readonly stateSubject = new BehaviorSubject<MetronomeState>({
     running: false,
-    config: { bpm: 80, timeSignature: '4/4', subBeatsEnabled: true },
-    labels: buildMetronomeLabels('4/4', true),
+    config: { bpm: 80, timeSignature: '4/4', subdivision: '8th' },
+    labels: buildMetronomeLabels('4/4', '8th'),
     activeIndex: 0,
     tickAudioTime: 0,
     tickDurationSeconds: 0.5
@@ -50,48 +55,15 @@ export class MetronomeService implements OnDestroy {
 
   async start(config: MetronomeConfig): Promise<void> {
     await this.ensureInitialized();
+    this.applyConfig(config, true);
+  }
 
-    // Clear only our own previously scheduled events
-    this.stop();
-
-    const bpm = this.sanitizeBpm(config.bpm);
-    const timeSignature = parseTimeSignature(config.timeSignature);
-    const subBeatsEnabled = !!config.subBeatsEnabled;
-
-    const parts = getTimeSignatureParts(timeSignature);
-
-    const labels = buildMetronomeLabels(timeSignature, subBeatsEnabled);
-    const tickDurationSeconds = this.computeTickDurationSeconds(bpm, parts.bottom, subBeatsEnabled);
-
-    const transport = this.audioService.getTransport();
-    transport.bpm.value = bpm;
-    transport.timeSignature = [parts.top, parts.bottom];
-    if (transport.state !== 'started') {
-      transport.start();
+  async updateConfig(config: MetronomeConfig): Promise<void> {
+    const state = this.stateSubject.getValue();
+    if (state.running) {
+      await this.ensureInitialized();
     }
-
-    // Align the first tick slightly in the future to avoid immediate trigger.
-    // Use a relative transport time string to avoid edge cases where `transport.seconds`
-    // can jump when BPM changes (Tone converts between ticks/seconds using BPM).
-    const startAtSeconds = '+0.05';
-    const interval = this.getRepeatInterval(parts.bottom, subBeatsEnabled);
-
-    this.tickIndex = -1;
-
-    this.stateSubject.next({
-      running: true,
-      config: { bpm, timeSignature, subBeatsEnabled },
-      labels,
-      activeIndex: 0,
-      tickAudioTime: this.audioService.now(),
-      tickDurationSeconds
-    });
-
-    const id = transport.scheduleRepeat((time) => {
-      this.onTick(time);
-    }, interval, startAtSeconds);
-
-    this.scheduledIds.push(id);
+    this.applyConfig(config, state.running);
   }
 
   stop(): void {
@@ -184,21 +156,75 @@ export class MetronomeService implements OnDestroy {
     return Math.min(260, Math.max(20, Math.round(bpm)));
   }
 
-  private getRepeatInterval(bottom: 4 | 8, subBeatsEnabled: boolean): string {
-    if (bottom === 4) {
-      return subBeatsEnabled ? '8n' : '4n';
+  private applyConfig(config: MetronomeConfig, startTransport: boolean): void {
+    const bpm = this.sanitizeBpm(config.bpm);
+    const timeSignature = parseTimeSignature(config.timeSignature);
+    const subdivision = normalizeSubdivision(timeSignature, config.subdivision);
+    const parts = getTimeSignatureParts(timeSignature);
+    const labels = buildMetronomeLabels(timeSignature, subdivision);
+    const tickDurationSeconds = this.computeTickDurationSeconds(bpm, parts.bottom, subdivision);
+    const previous = this.stateSubject.getValue();
+
+    this.tickIndex = -1;
+
+    this.stateSubject.next({
+      running: startTransport,
+      config: { bpm, timeSignature, subdivision },
+      labels,
+      activeIndex: 0,
+      tickAudioTime: this.audioService.now(),
+      tickDurationSeconds
+    });
+
+    const transport = this.audioService.getTransport();
+    for (const id of this.scheduledIds) {
+      transport.clear(id);
     }
-    // bottom === 8
-    return subBeatsEnabled ? '16n' : '8n';
+    this.scheduledIds = [];
+
+    if (!startTransport) {
+      if (previous.running) {
+        try {
+          transport.stop();
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
+    transport.bpm.value = bpm;
+    transport.timeSignature = [parts.top, parts.bottom];
+    if (transport.state !== 'started') {
+      transport.start();
+    }
+
+    const id = transport.scheduleRepeat((time) => {
+      this.onTick(time);
+    }, this.getRepeatInterval(parts.bottom, subdivision), '+0.05');
+
+    this.scheduledIds.push(id);
   }
 
-  private computeTickDurationSeconds(bpm: number, bottom: 4 | 8, subBeatsEnabled: boolean): number {
+  private getRepeatInterval(bottom: 4 | 8, subdivision: MetronomeSubdivision): string {
+    if (bottom === 4) {
+      if (subdivision === '16th') return '16n';
+      if (subdivision === '8th') return '8n';
+      return '4n';
+    }
+
+    return subdivision === '16th' ? '16n' : '8n';
+  }
+
+  private computeTickDurationSeconds(bpm: number, bottom: 4 | 8, subdivision: MetronomeSubdivision): number {
     const quarter = 60 / bpm;
     if (bottom === 4) {
-      return subBeatsEnabled ? quarter / 2 : quarter;
+      if (subdivision === '16th') return quarter / 4;
+      if (subdivision === '8th') return quarter / 2;
+      return quarter;
     }
-    // bottom === 8 => beat is eighth
+
     const eighth = quarter / 2;
-    return subBeatsEnabled ? eighth / 2 : eighth;
+    return subdivision === '16th' ? eighth / 2 : eighth;
   }
 }

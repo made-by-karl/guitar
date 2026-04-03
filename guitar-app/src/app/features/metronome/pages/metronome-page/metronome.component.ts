@@ -6,6 +6,11 @@ import { MetronomeService } from '@/app/features/metronome/services/metronome.se
 import { AudioService } from '@/app/core/services/audio.service';
 import { TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/core/music/rhythm/time-signature.model';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
+import {
+  MetronomeSubdivision,
+  getAllowedSubdivisions,
+  normalizeSubdivision
+} from '@/app/features/metronome/services/metronome-labels';
 
 @Component({
   selector: 'app-metronome',
@@ -18,7 +23,7 @@ import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.co
 export class MetronomeComponent implements OnInit, OnDestroy {
   bpm = 80;
   timeSignature: TimeSignature = '4/4';
-  subBeatsEnabled = true;
+  subdivision: MetronomeSubdivision = '8th';
 
   readonly timeSignatureOptions: readonly TimeSignature[] = TIME_SIGNATURES;
 
@@ -70,12 +75,53 @@ export class MetronomeComponent implements OnInit, OnDestroy {
     await this.metronomeService.start({
       bpm: this.bpm,
       timeSignature: this.timeSignature,
-      subBeatsEnabled: this.subBeatsEnabled
+      subdivision: this.subdivision
     });
   }
 
   stop(): void {
     this.metronomeService.stop();
+  }
+
+  async onTimeSignatureChange(): Promise<void> {
+    this.subdivision = normalizeSubdivision(this.timeSignature, this.subdivision);
+    await this.syncConfig();
+  }
+
+  async onQuarterEighthSubdivisionChange(enabled: boolean): Promise<void> {
+    if (enabled) {
+      this.subdivision = this.subdivision === '16th' ? '16th' : '8th';
+    } else {
+      this.subdivision = 'none';
+    }
+    await this.syncConfig();
+  }
+
+  async onSixteenthSubdivisionChange(enabled: boolean): Promise<void> {
+    if (enabled) {
+      this.subdivision = '16th';
+    } else if (getAllowedSubdivisions(this.timeSignature).includes('8th')) {
+      this.subdivision = '8th';
+    } else {
+      this.subdivision = 'none';
+    }
+    await this.syncConfig();
+  }
+
+  supportsEighthSubdivision(): boolean {
+    return getAllowedSubdivisions(this.timeSignature).includes('8th');
+  }
+
+  supportsSixteenthSubdivision(): boolean {
+    return getAllowedSubdivisions(this.timeSignature).includes('16th');
+  }
+
+  isEighthSubdivisionChecked(): boolean {
+    return this.subdivision === '8th' || this.subdivision === '16th';
+  }
+
+  isSixteenthSubdivisionChecked(): boolean {
+    return this.subdivision === '16th';
   }
 
   trackByIndex(index: number): number {
@@ -120,5 +166,13 @@ export class MetronomeComponent implements OnInit, OnDestroy {
       this.scales = scales;
       this.cdr.markForCheck();
     }
+  }
+
+  private async syncConfig(): Promise<void> {
+    await this.metronomeService.updateConfig({
+      bpm: this.bpm,
+      timeSignature: this.timeSignature,
+      subdivision: this.subdivision
+    });
   }
 }

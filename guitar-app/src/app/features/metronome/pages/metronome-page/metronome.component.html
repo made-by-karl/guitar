@@ -17,7 +17,7 @@
 
         <div class="col-12 col-md-4">
           <label for="timeSignature" class="form-label">Time Signature</label>
-          <select id="timeSignature" class="form-select" [(ngModel)]="timeSignature">
+          <select id="timeSignature" class="form-select" [(ngModel)]="timeSignature" (ngModelChange)="onTimeSignatureChange()">
             @for (ts of timeSignatureOptions; track ts) {
               <option [ngValue]="ts">{{ timeSignatureOptionLabel(ts) }}</option>
             }
@@ -25,9 +25,30 @@
         </div>
 
         <div class="col-12">
-          <div class="form-check form-switch">
-            <input id="subBeats" class="form-check-input" type="checkbox" role="switch" [(ngModel)]="subBeatsEnabled" />
-            <label class="form-check-label" for="subBeats">Sub-beats</label>
+          <div class="d-flex flex-wrap gap-3">
+            @if (supportsEighthSubdivision()) {
+              <div class="form-check">
+                <input
+                  id="subdivision8th"
+                  class="form-check-input"
+                  type="checkbox"
+                  [ngModel]="isEighthSubdivisionChecked()"
+                  (ngModelChange)="onQuarterEighthSubdivisionChange($event)" />
+                <label class="form-check-label" for="subdivision8th">8th</label>
+              </div>
+            }
+
+            @if (supportsSixteenthSubdivision()) {
+              <div class="form-check">
+                <input
+                  id="subdivision16th"
+                  class="form-check-input"
+                  type="checkbox"
+                  [ngModel]="isSixteenthSubdivisionChecked()"
+                  (ngModelChange)="onSixteenthSubdivisionChange($event)" />
+                <label class="form-check-label" for="subdivision16th">16th</label>
+              </div>
+            }
           </div>
         </div>
       </div>
