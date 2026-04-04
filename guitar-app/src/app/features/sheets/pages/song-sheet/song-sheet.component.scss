@@ -1,15 +1,231 @@
-// Angular CDK Drag and Drop Styling
+.song-sheet-page {
+  .sheet-name-input {
+    max-width: 24rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .sheet-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .sheet-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #faf6ef, #f1ede6);
+    border: 1px solid #e3d8c5;
+  }
+
+  .meta-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 999px;
+  }
+
+  .meta-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b6255;
+  }
+
+  .sheet-section {
+    padding: 1.25rem;
+    border: 1px solid #e3d8c5;
+    border-radius: 1rem;
+    background: #fffdfa;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-copy {
+    color: #7a7063;
+    font-size: 0.95rem;
+  }
+
+  .grip-title {
+    font-weight: 700;
+  }
+
+  .drag-handle {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    font-size: 1.2rem;
+  }
+
+  .pattern-measures-preview {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .preview-measure {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: #f5f1ea;
+    border: 1px solid #e3d8c5;
+  }
+
+  .preview-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7a7063;
+    margin-bottom: 0.5rem;
+  }
+
+  .part-editor {
+    position: relative;
+  }
+
+  .part-editor-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pattern-item-stack {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .pattern-item {
+    border: 1px solid #ded4c2;
+  }
+
+  .measure-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  }
+
+  .measure-card {
+    padding: 1rem;
+    border-radius: 0.9rem;
+    background: linear-gradient(180deg, #fffdf8 0%, #f6f1e7 100%);
+    border: 1px solid #dfd3bf;
+    box-shadow: 0 0.25rem 0.75rem rgba(74, 53, 28, 0.08);
+  }
+
+  .measure-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .measure-title {
+    font-weight: 700;
+    color: #332a1d;
+  }
+
+  .measure-subtitle {
+    font-size: 0.82rem;
+    color: #7a7063;
+  }
+
+  .rhythm-preview {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #e4dac8;
+    overflow-x: auto;
+  }
+
+  .beat-grid,
+  .advanced-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .beat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  }
+
+  .advanced-grid {
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    margin-top: 0.75rem;
+  }
+
+  .beat-grip-button,
+  .advanced-button {
+    min-height: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .beat-number {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+  }
+
+  .beat-value {
+    font-weight: 600;
+  }
+
+  .advanced-grips {
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #5a4d3a;
+    }
+  }
+
+  .empty-part-state {
+    padding: 1.25rem;
+    border: 1px dashed #c9baa3;
+    border-radius: 0.85rem;
+    background: #f8f4ec;
+    text-align: center;
+  }
+
+  .part-summary-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .part-summary-item {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: #f7f3ec;
+    border: 1px solid #e3d8c5;
+  }
+}
 
 .cdk-drag-preview {
-  opacity: 0.8;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border-radius: 0.375rem;
+  opacity: 0.85;
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.18);
+  border-radius: 0.75rem;
 }
 
 .cdk-drag-placeholder {
   opacity: 0.4;
-  background: #f8f9fa;
-  border: 2px dashed #dee2e6;
+  background: #f8f4ec;
+  border: 2px dashed #d6c6ad;
+  border-radius: 0.75rem;
 }
 
 .cdk-drag-animating {
@@ -20,11 +236,33 @@
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-// Drag handle styling
-[cdkDragHandle] {
-  cursor: grab;
-  
-  &:active {
-    cursor: grabbing;
+@media (max-width: 767px) {
+  .song-sheet-page {
+    .sheet-name-input {
+      max-width: none;
+      width: 100%;
+    }
+
+    .section-header,
+    .measure-card-header {
+      flex-direction: column;
+    }
+
+    .sheet-toolbar {
+      width: 100%;
+
+      .btn {
+        flex: 1;
+      }
+    }
+
+    .measure-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .beat-grid,
+    .advanced-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 }
