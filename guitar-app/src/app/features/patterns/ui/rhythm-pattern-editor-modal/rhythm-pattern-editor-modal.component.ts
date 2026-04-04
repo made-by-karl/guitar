@@ -31,9 +31,13 @@ export class RhythmPatternEditorModalComponent implements ModalComponent<RhythmP
     this.modalRef.close(undefined);
   }
 
-  onPlayPattern() {
+  playPattern() {
     if (this.editor) {
       this.editor.playPattern();
     }
+  }
+
+  isPatternPlaybackActive(): boolean {
+    return this.editor ? this.editor.isPatternPlaybackActive() : false;
   }
 }

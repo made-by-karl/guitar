@@ -330,6 +330,25 @@ export class SongSheetsService {
     return this.getPatternUsageCountFromSheet(sheet as SongSheet, patternId);
   }
 
+  resolvePartMeasures(sheet: SongSheet | SongSheetWithData, part: SongPart): ResolvedSongPartMeasure[] {
+    const measures: ResolvedSongPartMeasure[] = [];
+    let absoluteMeasureIndex = 0;
+
+    for (let itemIndex = 0; itemIndex < part.items.length; itemIndex++) {
+      const itemMeasures = this.resolvePartItem(sheet, part.items[itemIndex]);
+      for (const itemMeasure of itemMeasures) {
+        measures.push({
+          ...itemMeasure,
+          itemIndex,
+          absoluteMeasureIndex
+        });
+        absoluteMeasureIndex++;
+      }
+    }
+
+    return measures;
+  }
+
   resolvePartItem(sheet: SongSheet | SongSheetWithData, item: SongPartPatternItem): ResolvedSongPartMeasure[] {
     const pattern = sheet.patterns.find(existing => existing.id === item.patternId);
     if (!pattern) {
@@ -341,13 +360,16 @@ export class SongSheetsService {
 
     return pattern.measures.map((measure, measureIndex) => ({
       itemId: normalizedItem.id,
-      itemIndex: measureIndex,
+      itemIndex: 0,
       patternId: pattern.id,
       patternName: pattern.name,
       measureIndex,
+      absoluteMeasureIndex: measureIndex,
       measure: this.cloneMeasure(measure),
       lyrics: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.lyrics ?? '',
       notes: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.notes ?? '',
+      patternBeatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
+      patternActionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
       beatGrips: normalizedItem.beatGrips.filter(grip => grip.measureIndex === measureIndex),
       actionGripOverrides: normalizedItem.actionGripOverrides.filter(grip => grip.measureIndex === measureIndex)
     }));
@@ -431,6 +453,8 @@ export class SongSheetsService {
   private clonePattern(pattern: SongSheetPattern): SongSheetPattern {
     return {
       ...pattern,
+      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
       measures: pattern.measures.map(measure => this.cloneMeasure(measure))
     };
   }

@@ -33,6 +33,7 @@ export const Transport = {
   seconds: 0,
   state: 'stopped',
   start: jest.fn(),
+  pause: jest.fn(),
   stop: jest.fn(),
   schedule: jest.fn(),
   scheduleRepeat: jest.fn().mockReturnValue(1),

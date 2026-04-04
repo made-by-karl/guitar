@@ -132,63 +132,65 @@ export class MidiService implements OnDestroy {
    * Play a sequence of MIDI instructions
    */
   async playSequence(instructions: MidiInstruction[]): Promise<void> {
-    await this.ensureInitialized();
-
-    const guitarSampler = this.audioService.getSampler('guitar');
-    if (!guitarSampler) throw new Error('Guitar sampler not initialized');
-
-    const percussionSampler = this.audioService.getSampler('percussion');
-    if (!percussionSampler) throw new Error('Percussion sampler not initialized');
+    await this.ensureReady();
 
     const startTime = this.audioService.now();
 
     // Schedule all instructions
     for (const instruction of instructions) {
       const scheduleTime = startTime + instruction.time;
-      
-      // Handle percussion instructions
-      if (instruction.percussion) {
-        if (percussionSampler) {
-          const percussionNote = this.getPercussionNote(instruction.percussion.technique);
-          percussionSampler.triggerAttackRelease(
-            percussionNote,
-            0.5, // Short duration for percussion
-            scheduleTime,
-            instruction.velocity
-          );
-        }
-        continue; // Skip to next instruction
-      }
-      
-      // Handle note instructions
-      if (instruction.notes && instruction.notes.length > 0) {
-        const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
-        
-        // Determine how to play the notes (default to parallel)
-        const playMode = instruction.playNotes || 'parallel';
-        
-        // Check if this is a sequential/reversed instruction (multiple notes with timing)
-        if (instruction.notes.length > 1 && playMode !== 'parallel') {
-          this.playSequentialNotes(instruction, scheduleTime, options);
-        } else {
-          // Play all notes simultaneously (parallel or single notes)
-          for (const note of instruction.notes) {
-            const noteName = this.noteToToneName(note.note);
-            
-            guitarSampler.triggerAttackRelease(
-              noteName,
-              options.duration ?? instruction.duration,
-              scheduleTime,
-              options.velocity
-            );
-          }
-        }
-      }
+      this.triggerInstruction(instruction, scheduleTime);
     }
 
     // Calculate total duration and wait
     const totalDuration = Math.max(...instructions.map(i => i.time + i.duration));
     await new Promise(resolve => setTimeout(resolve, (totalDuration + 0.5) * 1000));
+  }
+
+  async ensureReady(): Promise<void> {
+    await this.ensureInitialized();
+  }
+
+  triggerInstruction(instruction: MidiInstruction, scheduleTime: number = this.audioService.now() + 0.001): void {
+    const guitarSampler = this.audioService.getSampler('guitar');
+    if (!guitarSampler) throw new Error('Guitar sampler not initialized');
+
+    const percussionSampler = this.audioService.getSampler('percussion');
+    if (!percussionSampler) throw new Error('Percussion sampler not initialized');
+
+    if (instruction.percussion) {
+      const percussionNote = this.getPercussionNote(instruction.percussion.technique);
+      percussionSampler.triggerAttackRelease(
+        percussionNote,
+        0.5,
+        scheduleTime,
+        instruction.velocity
+      );
+      return;
+    }
+
+    if (!instruction.notes || instruction.notes.length === 0) {
+      return;
+    }
+
+    const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
+    const playMode = instruction.playNotes || 'parallel';
+
+    if (instruction.notes.length > 1 && playMode !== 'parallel') {
+      this.playSequentialNotes(instruction, scheduleTime, options);
+      return;
+    }
+
+    for (const note of instruction.notes) {
+      const noteName = this.noteToToneName(note.note);
+
+      guitarSampler.triggerAttackRelease(
+        noteName,
+        options.duration ?? instruction.duration,
+        scheduleTime,
+        options.velocity
+      );
+    }
   }
 
   /**

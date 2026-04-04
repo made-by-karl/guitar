@@ -4,6 +4,17 @@
   <div class="card">
     <div class="card-body">
       <div>
+        <div class="d-flex justify-content-end mb-3">
+          <button
+            class="btn btn-sm"
+            [class.btn-danger]="isPatternPlaybackActive()"
+            [class.btn-outline-primary]="!isPatternPlaybackActive()"
+            type="button"
+            (click)="playPattern()">
+            <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive()" [class.bi-play-fill]="!isPatternPlaybackActive()"></i>
+            {{ isPatternPlaybackActive() ? 'Stop Preview' : 'Play Preview' }}
+          </button>
+        </div>
         <!-- Pattern Details -->
         <div class="mb-2">
           <label>Name</label>
@@ -252,6 +263,48 @@
                 }
               </div>
             </div>
+
+            <div class="mt-3">
+              <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <label class="form-label small mb-0">Beat Grips</label>
+                <button
+                  class="btn btn-outline-secondary btn-sm"
+                  type="button"
+                  (click)="clearMeasureGrips(measureData.measureIndex)">
+                  Clear Grips
+                </button>
+              </div>
+              <div class="beat-grid">
+                @for (beatIndex of getBeatIndices(measureData.measureIndex); track beatIndex) {
+                <button
+                  type="button"
+                  class="btn btn-sm beat-grip-button"
+                  [class.btn-primary]="getBeatGrip(measureData.measureIndex, beatIndex)"
+                  [class.btn-outline-secondary]="!getBeatGrip(measureData.measureIndex, beatIndex)"
+                  (click)="assignBeatGrip(measureData.measureIndex, beatIndex)">
+                  <span class="beat-number">{{ beatIndex + 1 }}</span>
+                  <span class="beat-value">{{ getBeatGrip(measureData.measureIndex, beatIndex)?.chordName || 'Set grip' }}</span>
+                </button>
+                }
+              </div>
+            </div>
+
+            <details class="advanced-grips mt-3">
+              <summary>Advanced timing overrides</summary>
+              <div class="advanced-grid mt-2">
+                @for (actionIndex of getActionIndices(measureData.measureIndex); track actionIndex) {
+                <button
+                  type="button"
+                  class="btn btn-sm advanced-button"
+                  [class.btn-success]="getActionGrip(measureData.measureIndex, actionIndex)"
+                  [class.btn-outline-secondary]="!getActionGrip(measureData.measureIndex, actionIndex)"
+                  (click)="assignActionGrip(measureData.measureIndex, actionIndex)">
+                  <span>Action {{ actionIndex + 1 }}</span>
+                  <span>{{ getActionGrip(measureData.measureIndex, actionIndex)?.chordName || 'Override' }}</span>
+                </button>
+                }
+              </div>
+            </details>
           </div>
           }
         </div>

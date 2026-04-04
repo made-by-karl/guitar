@@ -1,15 +1,16 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
 import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
-import {PlaybackService} from '@/app/core/services/playback.service';
 import {DialogService} from '@/app/core/services/dialog.service';
 import {ModalService} from '@/app/core/services/modal.service';
 import {
   RhythmPatternEditorModalComponent
 } from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
 import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+import {Subscription} from 'rxjs';
+import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 
 @Component({
   selector: 'app-patterns-library',
@@ -18,20 +19,31 @@ import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/
   templateUrl: './patterns-library.component.html',
   styleUrls: ['./patterns-library.component.scss']
 })
-export class PatternsLibraryComponent implements OnInit {
+export class PatternsLibraryComponent implements OnInit, OnDestroy {
   patterns: RhythmPattern[] = [];
   search = '';
+  playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
+  private readonly playbackStateSubscription: Subscription;
 
   constructor(
     public service: RhythmPatternsService,
-    private playback: PlaybackService,
+    private patternPlayback: PatternPlaybackService,
     private dialogService: DialogService,
     private modalService: ModalService
   ) {
+    this.playbackState = this.patternPlayback.getSnapshot();
+    this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
+      this.playbackState = state;
+    });
   }
 
   ngOnInit() {
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.playbackStateSubscription.unsubscribe();
+    this.patternPlayback.stopPatternPreview();
   }
 
   async load() {
@@ -48,6 +60,8 @@ export class PatternsLibraryComponent implements OnInit {
         timeSignature: '4/4',
         actions: Array(16).fill(null)
       }],
+      beatGrips: [],
+      actionGripOverrides: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       isCustom: true
@@ -113,12 +127,15 @@ export class PatternsLibraryComponent implements OnInit {
       return;
     }
 
-    // Use the new MIDI service to play the entire rhythm pattern
     try {
-      await this.playback.playRhythmPattern(pattern);
+      await this.patternPlayback.togglePatternPreview(pattern);
     } catch (error) {
       console.error('Error playing rhythm pattern:', error);
     }
+  }
+
+  isPatternPlaybackActive(pattern: RhythmPattern): boolean {
+    return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
   }
 
   async deletePattern(pattern: RhythmPattern) {

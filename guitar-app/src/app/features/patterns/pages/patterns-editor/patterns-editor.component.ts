@@ -47,6 +47,8 @@ export class PatternsEditorComponent {
           actions: Array(16).fill(null)
         }
       ],
+      beatGrips: [],
+      actionGripOverrides: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       isCustom: true

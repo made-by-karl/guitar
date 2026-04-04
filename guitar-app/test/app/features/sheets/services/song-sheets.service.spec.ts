@@ -48,6 +48,8 @@ describe('SongSheetsService', () => {
           { timeSignature: '4/4', actions: Array(16).fill(null) },
           { timeSignature: '3/4', actions: Array(12).fill(null) }
         ],
+        beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: 'grip-g', chordName: 'G' }],
+        actionGripOverrides: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', chordName: 'G' }],
         createdAt: 1,
         updatedAt: 1
       }],
@@ -121,10 +123,14 @@ describe('SongSheetsService', () => {
 
     expect(resolved).toHaveLength(2);
     expect(resolved[0].patternName).toBe('Verse Pattern');
+    expect(resolved[0].absoluteMeasureIndex).toBe(0);
     expect(resolved[0].lyrics).toBe('hello');
     expect(resolved[0].beatGrips[0].chordName).toBe('C');
+    expect(resolved[0].patternBeatGrips[0].chordName).toBe('G');
+    expect(resolved[1].absoluteMeasureIndex).toBe(1);
     expect(resolved[1].notes).toBe('hold');
     expect(resolved[1].actionGripOverrides[0].actionIndex).toBe(2);
+    expect(resolved[1].patternActionGripOverrides[0].actionIndex).toBe(2);
   });
 
   it('removes grip references from all part items when a grip is deleted', async () => {

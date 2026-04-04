@@ -34,6 +34,21 @@ export interface Measure {
   actions: (RhythmAction | null)[];
 }
 
+export interface RhythmPatternGripReference {
+  gripId: string;
+  chordName: string;
+}
+
+export interface RhythmPatternBeatGrip extends RhythmPatternGripReference {
+  measureIndex: number;
+  beatIndex: number;
+}
+
+export interface RhythmPatternActionGripOverride extends RhythmPatternGripReference {
+  measureIndex: number;
+  actionIndex: number;
+}
+
 export interface RhythmAction {
   technique: RhythmTechnique;
   
@@ -56,6 +71,8 @@ export interface RhythmPattern {
   description: string;
   category: string;
   measures: Measure[];
+  beatGrips?: RhythmPatternBeatGrip[];
+  actionGripOverrides?: RhythmPatternActionGripOverride[];
   createdAt: number;
   updatedAt: number;
   isCustom?: boolean;

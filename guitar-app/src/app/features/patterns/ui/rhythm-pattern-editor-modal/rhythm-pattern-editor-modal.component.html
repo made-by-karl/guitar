@@ -1,8 +1,14 @@
 <div class="modal-content-wrapper">
   <div class="modal-header">
     <h5 class="modal-title">{{ pattern ? 'Edit Rhythm Pattern' : 'Create Rhythm Pattern' }}</h5>
-    <button class="ms-3 btn btn-success" type="button" (click)="onPlayPattern()" title="Play Pattern">
-        <i class="bi bi-play-fill"></i>
+    <button
+      class="btn btn-sm ms-2"
+      [class.btn-danger]="isPatternPlaybackActive()"
+      [class.btn-outline-primary]="!isPatternPlaybackActive()"
+      type="button"
+      (click)="playPattern()">
+      <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive()" [class.bi-play-fill]="!isPatternPlaybackActive()"></i>
+      {{ isPatternPlaybackActive() ? 'Stop Preview' : 'Play Preview' }}
     </button>
     <button type="button" class="btn-close" (click)="onCancel()"></button>
   </div>

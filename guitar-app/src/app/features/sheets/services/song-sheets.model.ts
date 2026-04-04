@@ -1,6 +1,11 @@
 import { Note } from '@/app/core/music/semitones';
 import { Grip } from '@/app/features/grips/services/grips/grip.model';
-import { Measure, RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
+import {
+  Measure,
+  RhythmPattern,
+  RhythmPatternActionGripOverride,
+  RhythmPatternBeatGrip
+} from '@/app/features/patterns/services/rhythm-patterns.model';
 
 export interface SongSheetGrip {
   gripId: string;
@@ -19,19 +24,9 @@ export interface SongPartMeasureText {
   notes: string;
 }
 
-export interface SongPartBeatGrip {
-  measureIndex: number;
-  beatIndex: number;
-  gripId: string;
-  chordName: string;
-}
+export type SongPartBeatGrip = RhythmPatternBeatGrip;
 
-export interface SongPartActionGrip {
-  measureIndex: number;
-  actionIndex: number;
-  gripId: string;
-  chordName: string;
-}
+export type SongPartActionGrip = RhythmPatternActionGripOverride;
 
 export interface SongPartPatternItem {
   id: string;
@@ -70,9 +65,12 @@ export interface ResolvedSongPartMeasure {
   patternId: string;
   patternName: string;
   measureIndex: number;
+  absoluteMeasureIndex: number;
   measure: Measure;
   lyrics: string;
   notes: string;
+  patternBeatGrips: RhythmPatternBeatGrip[];
+  patternActionGripOverrides: RhythmPatternActionGripOverride[];
   beatGrips: SongPartBeatGrip[];
   actionGripOverrides: SongPartActionGrip[];
 }

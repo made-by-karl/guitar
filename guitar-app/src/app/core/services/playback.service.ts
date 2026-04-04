@@ -1,217 +1,297 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { MidiService } from '@/app/core/services/midi.service';
-import { RhythmPattern, getStringsForStrum } from '@/app/features/patterns/services/rhythm-patterns.model';
 import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/midi.model';
-import { Note, transpose, noteNameToNote, note } from '@/app/core/music/semitones';
-import { Grip } from '@/app/features/grips/services/grips/grip.model';
+import { noteNameToNote } from '@/app/core/music/semitones';
+import { FinitePlaybackScheduler, PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+
+/**
+ * Describes a finite playback run as timed instructions plus segment boundaries.
+ */
+export interface PlaybackPlan {
+  instructions: MidiInstruction[];
+  segmentStartTimes: number[];
+  totalDuration: number;
+  totalSegments: number;
+}
+
+/**
+ * Represents the transport state of a playback session.
+ */
+export interface PlaybackSessionState {
+  sessionId: string;
+  scope: string;
+  status: PlaybackStatus;
+  cursor: number;
+  total: number;
+  canPause: boolean;
+  canSeek: boolean;
+}
+
+/**
+ * Controls a finite playback run and exposes its transport state.
+ */
+export interface PlaybackSession {
+  readonly state$: Observable<PlaybackSessionState>;
+  /** Returns the current transport state without subscribing. */
+  getSnapshot(): PlaybackSessionState;
+  /** Starts playback for the provided plan, optionally from a later segment. */
+  play(plan: PlaybackPlan, startCursor?: number): Promise<void>;
+  /** Suspends playback and keeps the current segment position. */
+  pause(): void;
+  /** Continues a paused playback run from its current segment. */
+  resume(): void;
+  /** Stops playback and resets the session to its idle state. */
+  stop(): void;
+  /** Moves the transport to another segment in the active plan. */
+  seek(cursor: number): void;
+  /** Releases scheduler state and removes the session from the manager. */
+  destroy(): void;
+}
+
+class FinitePlaybackSession implements PlaybackSession {
+  private readonly scheduler = new FinitePlaybackScheduler({
+    total: 0,
+    scheduleFrom: (cursor, onCursor, onComplete) => this.schedulePlan(cursor, onCursor, onComplete),
+    onStop: () => this.handleStop()
+  });
+
+  private readonly stateSubject = new BehaviorSubject<PlaybackSessionState>({
+    sessionId: '',
+    scope: '',
+    status: 'idle',
+    cursor: 0,
+    total: 0,
+    canPause: true,
+    canSeek: true
+  });
+
+  readonly state$ = this.stateSubject.asObservable();
+
+  private plan: PlaybackPlan | null = null;
+  private isStartingPlayback = false;
+
+  constructor(
+    private readonly sessionId: string,
+    private readonly scope: string,
+    private readonly midiService: MidiService,
+    private readonly beforePlay: (session: FinitePlaybackSession) => void,
+    private readonly onDestroySession: (sessionId: string) => void
+  ) {
+    this.stateSubject.next({
+      ...this.stateSubject.getValue(),
+      sessionId: this.sessionId,
+      scope: this.scope
+    });
+
+    this.scheduler.state$.subscribe((state) => {
+      // Starting playback updates the scheduler total before the first play event,
+      // which would otherwise look like a spurious "idle" transition to consumers.
+      if (this.isStartingPlayback && state.status === 'idle' && this.plan) {
+        return;
+      }
+
+      if (state.status === 'playing') {
+        this.isStartingPlayback = false;
+      }
+
+      this.stateSubject.next({
+        sessionId: this.sessionId,
+        scope: this.scope,
+        status: state.status,
+        cursor: state.cursor ?? 0,
+        total: state.total ?? 0,
+        canPause: state.canPause,
+        canSeek: state.canSeek
+      });
+    });
+  }
+
+  getSnapshot(): PlaybackSessionState {
+    return this.stateSubject.getValue();
+  }
+
+  async play(plan: PlaybackPlan, startCursor: number = 0): Promise<void> {
+    if (plan.instructions.length === 0 || plan.totalSegments === 0) {
+      this.stop();
+      return;
+    }
+
+    await this.midiService.ensureReady();
+    this.beforePlay(this);
+    this.plan = plan;
+    this.isStartingPlayback = true;
+    this.scheduler.updateTotal(plan.totalSegments);
+    this.scheduler.play(startCursor);
+  }
+
+  pause(): void {
+    this.scheduler.pause();
+  }
+
+  resume(): void {
+    if (!this.plan) {
+      return;
+    }
+
+    this.scheduler.resume();
+  }
+
+  stop(): void {
+    this.isStartingPlayback = false;
+    this.plan = null;
+    this.scheduler.stop();
+  }
+
+  seek(cursor: number): void {
+    if (!this.plan) {
+      return;
+    }
+
+    this.scheduler.seek(cursor);
+  }
+
+  destroy(): void {
+    this.isStartingPlayback = false;
+    this.plan = null;
+    this.scheduler.destroy();
+    this.stateSubject.complete();
+    this.onDestroySession(this.sessionId);
+  }
+
+  isActive(): boolean {
+    const status = this.getSnapshot().status;
+    return status === 'playing' || status === 'paused';
+  }
+
+  hasScope(scope: string): boolean {
+    return this.scope === scope;
+  }
+
+  private schedulePlan(
+    startCursor: number,
+    onCursor: (cursor: number) => void,
+    onComplete: () => void
+  ): () => void {
+    const plan = this.plan;
+    if (!plan) {
+      onComplete();
+      return () => {};
+    }
+
+    const startTime = plan.segmentStartTimes[startCursor] ?? 0;
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    onCursor(startCursor);
+
+    for (let segmentIndex = startCursor; segmentIndex < plan.totalSegments; segmentIndex++) {
+      const delay = Math.max(0, (plan.segmentStartTimes[segmentIndex] - startTime) * 1000);
+      timeoutIds.push(setTimeout(() => {
+        onCursor(segmentIndex);
+      }, delay));
+    }
+
+    for (const instruction of plan.instructions) {
+      if (instruction.time < startTime) {
+        continue;
+      }
+
+      const delay = Math.max(0, (instruction.time - startTime) * 1000);
+      timeoutIds.push(setTimeout(() => {
+        this.midiService.triggerInstruction({
+          ...instruction,
+          time: instruction.time - startTime
+        });
+      }, delay));
+    }
+
+    timeoutIds.push(setTimeout(() => {
+      this.isStartingPlayback = false;
+      this.plan = null;
+      onComplete();
+    }, Math.max(0, (plan.totalDuration - startTime + 0.1) * 1000)));
+
+    return () => {
+      for (const id of timeoutIds) {
+        clearTimeout(id);
+      }
+    };
+  }
+
+  private handleStop(): void {
+    this.isStartingPlayback = false;
+    this.plan = null;
+  }
+}
 
 @Injectable({
   providedIn: 'root'
 })
+/**
+ * Provides generic playback primitives for finite sessions and direct note playback.
+ */
 export class PlaybackService {
+  private readonly finiteSessions = new Map<string, FinitePlaybackSession>();
 
   constructor(private midiService: MidiService) { }
 
   /**
-   * Play a rhythm pattern with tuning and a grip
-   * @param pattern The rhythm pattern to play
-   * @param tuning The tuning to use, defaults to standard EADGBE
-   * @param grip The grip to use, defaults to E major
-   * @param tempo The tempo, default is 80bpm
+   * Returns a stable finite playback session for the given identifier.
    */
-  async playRhythmPattern(
-    pattern: RhythmPattern,
-    tuning?: Note[],
-    grip?: Grip,
-    tempo?: number): Promise<void> {
+  getFiniteSession(sessionId: string, scope: string = 'finite-playback'): PlaybackSession {
+    const existing = this.finiteSessions.get(sessionId);
+    if (existing) {
+      return existing;
+    }
 
-    tuning = tuning ?? [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4)];
-    grip = grip ?? { strings: ['o', [{ fret: 2 }], [{ fret: 2 }], [{ fret: 1 }], 'o', 'o'] }; //E major
-    tempo = tempo ?? 80;
-    const instructions = this.generateFromRhythmPattern(pattern, grip, tuning, tempo);
-    await this.midiService.playSequence(instructions);
+    const session = new FinitePlaybackSession(
+      sessionId,
+      scope,
+      this.midiService,
+      (nextSession) => this.stopOtherFiniteSessionsInScope(nextSession),
+      (destroyedSessionId) => this.finiteSessions.delete(destroyedSessionId)
+    );
+
+    this.finiteSessions.set(sessionId, session);
+    return session;
   }
 
   /**
    * Play a chord from note names (e.g., ["E4", "A4", "C5"])
    */
-  async playChordFromNotes(noteNames: string[], duration: number = 2.0, velocity: number = 0.7, technique: MidiTechnique = 'normal'): Promise<void> {
-    const notes: MidiNote[] = noteNames.map(noteName => {
-      const note = noteNameToNote(noteName);
-      return {
-        note: note
-      };
-    });
+  async playChordFromNotes(
+    noteNames: string[],
+    duration: number = 2.0,
+    velocity: number = 0.7,
+    technique: MidiTechnique = 'normal'
+  ): Promise<void> {
+    const notes: MidiNote[] = noteNames.map(noteName => ({
+      note: noteNameToNote(noteName)
+    }));
 
     const instruction: MidiInstruction = {
       time: 0,
-      duration: duration,
-      notes: notes,
-      velocity: velocity,
-      technique: technique,
-      playNotes: 'parallel' // Single chord played simultaneously
+      duration,
+      notes,
+      velocity,
+      technique,
+      playNotes: 'parallel'
     };
 
     await this.midiService.playSequence([instruction]);
   }
 
-  /**
-   * Generate MIDI instructions from a rhythm pattern
-   * Processes actions from end to start to calculate proper note durations
-   */
-  private generateFromRhythmPattern(pattern: RhythmPattern, grip: Grip, tuning: Note[], tempo: number): MidiInstruction[] {
-    const instructions: MidiInstruction[] = [];
-    const quarterNoteDuration = 60 / tempo; // Duration of quarter note in seconds
-    const sixteenthNoteDuration = quarterNoteDuration / 4; // Duration of 16th note
-    const maxDuration = 2.0; // Cap duration at 2 seconds (sample length is 3s)
+  private stopOtherFiniteSessionsInScope(nextSession: FinitePlaybackSession): void {
+    const scope = nextSession.getSnapshot().scope;
 
-    // Track when each string will be played next (to determine current action's duration)
-    // Map of string index to the next time it will be played
-    const nextStringPlayTime: Map<number, number> = new Map();
-    
-    // Track the next string-slap time (which stops ALL strings)
-    let nextStringSlapTime: number | null = null;
-
-    let measureStartTime = 0; // Track absolute time across measures
-
-    // Process all measures from end to start to handle cross-measure durations
-    for (let measureIndex = pattern.measures.length - 1; measureIndex >= 0; measureIndex--) {
-      const measure = pattern.measures[measureIndex];
-      
-      // Calculate this measure's start time by summing all following measures
-      measureStartTime = 0;
-      for (let i = 0; i < measureIndex; i++) {
-        measureStartTime += pattern.measures[i].actions.length * sixteenthNoteDuration;
+    for (const session of this.finiteSessions.values()) {
+      if (session === nextSession) {
+        continue;
       }
 
-      // Process actions from end to start within this measure
-      for (let i = measure.actions.length - 1; i >= 0; i--) {
-        const action = measure.actions[i];
-        if (!action) continue;
-
-        const actionStartTime = measureStartTime + (i * sixteenthNoteDuration);
-
-        // Determine technique and velocity
-        let technique: MidiTechnique = 'normal';
-        let velocity = 0.7;
-
-        if (action.modifiers?.includes('mute')) {
-          technique = 'muted';
-        } else if (action.modifiers?.includes('palm-mute')) {
-          technique = 'palm-muted';
-        } else if (action.technique === 'percussive') {
-          technique = 'percussive';
-        }
-
-        if (action.modifiers?.includes('accent')) {
-          technique = 'accented';
-          velocity = 0.9;
-        }
-
-        // Generate notes based on technique
-        const notes: MidiNote[] = [];
-        const affectedStrings: number[] = [];
-
-        if (action.technique === 'strum' && action.strum) {
-          // Generate notes for strumming
-          const strings = getStringsForStrum(action.strum.strings);
-          affectedStrings.push(...strings);
-          
-          for (const stringIndex of strings) {
-            const entry = grip.strings[stringIndex];
-            if (entry === 'x') {
-              // Muted strum, no note
-              continue;
-            } else if (entry === 'o') {
-              notes.push({
-                note: tuning[stringIndex]
-              });
-            } else {
-              const fret = Math.max(...entry.map((s: any) => s.fret));
-              const note = this.getStringNote(tuning, stringIndex, fret);
-              notes.push({
-                note: note
-              });
-            }
-          }
-        } else if (action.technique === 'pick' && action.pick) {
-          // Generate notes for picking
-          for (const pickNote of action.pick) {
-            affectedStrings.push(pickNote.string);
-            const note = this.getStringNote(tuning, pickNote.string, pickNote.fret);
-            notes.push({
-              note: note
-            });
-          }
-        } else if (action.technique === 'percussive' && action.percussive) {
-          // Handle percussion separately - add as percussion instruction
-          const percussionTechnique = action.percussive.technique;
-          
-          instructions.push({
-            time: actionStartTime,
-            duration: 0.5, // Short duration for percussion
-            percussion: {
-              technique: percussionTechnique
-            },
-            velocity: velocity,
-            technique: 'percussive'
-          });
-          
-          // If this is a string-slap, update the next slap time for duration calculation
-          if (percussionTechnique === 'string-slap') {
-            nextStringSlapTime = actionStartTime;
-          }
-          
-          // Skip the note instruction creation below
-          continue;
-        }
-
-        if (notes.length > 0) {
-          // Calculate duration based on when any of the affected strings will be played next
-          let duration = maxDuration; // Default to max duration
-          
-          // Check if a string-slap is coming (which stops ALL strings)
-          if (nextStringSlapTime !== null) {
-            const calculatedDuration = nextStringSlapTime - actionStartTime;
-            duration = Math.min(duration, calculatedDuration);
-          }
-          
-          // Also check individual string play times
-          for (const stringIndex of affectedStrings) {
-            if (nextStringPlayTime.has(stringIndex)) {
-              const nextPlayTime = nextStringPlayTime.get(stringIndex)!;
-              const calculatedDuration = nextPlayTime - actionStartTime;
-              duration = Math.min(duration, calculatedDuration);
-            }
-          }
-
-          instructions.push({
-            time: actionStartTime,
-            duration: duration,
-            notes: notes,
-            velocity: velocity,
-            technique: technique,
-            playNotes: action.technique === 'strum' && action.strum ?
-              (action.strum.direction === 'D' ? 'sequential' : 'reversed') :
-              'parallel' // Default to parallel for other techniques
-          });
-
-          // Update nextStringPlayTime for all affected strings
-          for (const stringIndex of affectedStrings) {
-            nextStringPlayTime.set(stringIndex, actionStartTime);
-          }
-        }
+      // Sessions in the same scope represent competing transports in one UI context.
+      if (session.hasScope(scope) && session.isActive()) {
+        session.stop();
       }
     }
-
-    // Reverse instructions since we processed backwards
-    return instructions.reverse();
-  }
-
-  /**
-   * Converts string and fret to Note
-   */
-  private getStringNote(tuning: Note[], string: number, fret: number): Note {
-    return transpose(tuning[string], fret);
   }
 }

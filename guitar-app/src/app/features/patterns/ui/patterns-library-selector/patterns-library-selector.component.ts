@@ -1,10 +1,11 @@
-import {Component, EventEmitter, Output} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
 import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
-import {PlaybackService} from '@/app/core/services/playback.service';
 import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
+import {Subscription} from 'rxjs';
 
 export interface PatternSelectorResult {
   patterns: RhythmPattern[];
@@ -17,18 +18,29 @@ export interface PatternSelectorResult {
   templateUrl: './patterns-library-selector.component.html',
   styleUrls: ['./patterns-library-selector.component.scss']
 })
-export class PatternsLibrarySelectorComponent {
+export class PatternsLibrarySelectorComponent implements OnDestroy {
   @Output() selectedPatternsChange = new EventEmitter<PatternSelectorResult>();
 
   patterns: RhythmPattern[] = [];
   search = '';
+  playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   private selectedPatternIds = new Set<string>();
+  private readonly playbackStateSubscription: Subscription;
 
   constructor(
     public service: RhythmPatternsService,
-    private playback: PlaybackService
+    private patternPlayback: PatternPlaybackService
   ) {
+    this.playbackState = this.patternPlayback.getSnapshot();
+    this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
+      this.playbackState = state;
+    });
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.playbackStateSubscription.unsubscribe();
+    this.patternPlayback.stopPatternPreview();
   }
 
   async load() {
@@ -54,10 +66,14 @@ export class PatternsLibrarySelectorComponent {
 
     // Use the new MIDI service to play the entire rhythm pattern
     try {
-      await this.playback.playRhythmPattern(pattern);
+      await this.patternPlayback.togglePatternPreview(pattern);
     } catch (error) {
       console.error('Error playing rhythm pattern:', error);
     }
+  }
+
+  isPatternPlaybackActive(pattern: RhythmPattern): boolean {
+    return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
   }
 
   isSelected(pattern: RhythmPattern): boolean {

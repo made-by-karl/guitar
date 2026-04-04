@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, OnDestroy, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -18,6 +18,8 @@ import {
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
 import { RhythmActionsComponent } from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
 import { PlaybackService } from '@/app/core/services/playback.service';
+import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
+import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { GripService } from '@/app/features/grips/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from '@/app/core/music/semitones';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -31,6 +33,7 @@ import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/gr
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
 import { RhythmPatternsService } from '@/app/features/patterns/services/rhythm-patterns.service';
 import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.directive';
+import { Subscription } from 'rxjs';
 
 type SheetChoiceValue = string;
 
@@ -57,7 +60,7 @@ interface SheetChoiceModalTemplateContext {
   templateUrl: './song-sheet.component.html',
   styleUrls: ['./song-sheet.component.scss']
 })
-export class SongSheetComponent {
+export class SongSheetComponent implements OnDestroy {
   @ViewChild('sheetChoiceModal') sheetChoiceModalTemplate!: TemplateRef<SheetChoiceModalTemplateContext>;
 
   sheet: SongSheetWithData | undefined;
@@ -75,21 +78,44 @@ export class SongSheetComponent {
   tempCapodaster = 0;
   tempTempo = 80;
   readonly sheetChoiceTemplateType = {} as SheetChoiceModalTemplateContext;
+  playbackState = { type: 'none', status: 'idle' } as ReturnType<SongPartPlaybackService['getSnapshot']>;
+  patternPlaybackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
+  private readonly playbackStateSubscription: Subscription;
+  private readonly patternPlaybackStateSubscription: Subscription;
 
   constructor(
     private songSheetService: SongSheetsService,
     private rhythmPatternsService: RhythmPatternsService,
     private playback: PlaybackService,
+    private songPartPlayback: SongPartPlaybackService,
+    private patternPlayback: PatternPlaybackService,
     private gripService: GripService,
     private route: ActivatedRoute,
     private dialogService: DialogService,
     private modalService: ModalService,
     private viewContainerRef: ViewContainerRef
   ) {
+    this.playbackState = this.songPartPlayback.getSnapshot();
+    this.patternPlaybackState = this.patternPlayback.getSnapshot();
+    this.playbackStateSubscription = this.songPartPlayback.state$.subscribe(state => {
+      this.playbackState = state;
+    });
+    this.patternPlaybackStateSubscription = this.patternPlayback.state$.subscribe(state => {
+      this.patternPlaybackState = state;
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadSheet(id);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.playbackStateSubscription.unsubscribe();
+    this.patternPlaybackStateSubscription.unsubscribe();
+    this.patternPlayback.stopPatternPreview();
+    this.songPartPlayback.stopMeasurePreview();
+    this.songPartPlayback.stopSongPart();
   }
 
   async loadSheet(id: string) {
@@ -224,16 +250,52 @@ export class SongSheetComponent {
   }
 
   async playPattern(pattern: SongSheetPattern) {
+    try {
+      this.songPartPlayback.stopMeasurePreview();
+      this.songPartPlayback.stopSongPart();
+      const tuning = this.sheet
+        ? this.sheet.tuning.map(note => transpose(note, this.sheet!.capodaster))
+        : undefined;
+      await this.patternPlayback.togglePatternPreview(pattern, tuning, undefined, this.sheet?.tempo);
+    } catch (error) {
+      console.error('Error playing rhythm pattern:', error);
+    }
+  }
+
+  async toggleMeasurePlayback(part: SongPart, item: SongPartPatternItem, measureIndex: number) {
     if (!this.sheet) {
       return;
     }
 
-    try {
-      const tuning = this.sheet.tuning.map(note => transpose(note, this.sheet!.capodaster));
-      await this.playback.playRhythmPattern(pattern, tuning, undefined, this.sheet.tempo);
-    } catch (error) {
-      console.error('Error playing rhythm pattern:', error);
+    await this.songPartPlayback.toggleMeasurePreview(this.sheet, part, item.id, measureIndex);
+  }
+
+  async playPart(part: SongPart) {
+    if (!this.sheet) {
+      return;
     }
+
+    await this.songPartPlayback.playSongPart(this.sheet, part);
+  }
+
+  pausePart() {
+    this.songPartPlayback.pauseSongPart();
+  }
+
+  resumePart() {
+    this.songPartPlayback.resumeSongPart();
+  }
+
+  stopPart() {
+    this.songPartPlayback.stopSongPart();
+  }
+
+  rewindPart() {
+    this.songPartPlayback.seekSongPartMeasure(-1);
+  }
+
+  forwardPart() {
+    this.songPartPlayback.seekSongPartMeasure(1);
   }
 
   showAddPart() {
@@ -449,8 +511,28 @@ export class SongSheetComponent {
     return item.beatGrips.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
   }
 
+  getEffectiveBeatGrip(
+    item: SongPartPatternItem,
+    pattern: SongSheetPattern,
+    measureIndex: number,
+    beatIndex: number
+  ): SongPartBeatGrip | undefined {
+    return this.getBeatGrip(item, measureIndex, beatIndex) ??
+      pattern.beatGrips?.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
+  }
+
   getActionGrip(item: SongPartPatternItem, measureIndex: number, actionIndex: number): SongPartActionGrip | undefined {
     return item.actionGripOverrides.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+  }
+
+  getEffectiveActionGrip(
+    item: SongPartPatternItem,
+    pattern: SongSheetPattern,
+    measureIndex: number,
+    actionIndex: number
+  ): SongPartActionGrip | undefined {
+    return this.getActionGrip(item, measureIndex, actionIndex) ??
+      pattern.actionGripOverrides?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
   }
 
   async assignBeatGrip(item: SongPartPatternItem, measureIndex: number, beatIndex: number) {
@@ -503,6 +585,43 @@ export class SongSheetComponent {
     return pattern.measures[measureIndex].actions
       .map((action, index) => action ? index : -1)
       .filter(index => index >= 0);
+  }
+
+  isMeasurePlaybackActive(item: SongPartPatternItem, measureIndex: number): boolean {
+    return this.playbackState.type === 'measure' &&
+      this.playbackState.status === 'playing' &&
+      this.playbackState.itemId === item.id &&
+      this.playbackState.itemMeasureIndex === measureIndex;
+  }
+
+  isPartPlaybackActive(part: SongPart): boolean {
+    return this.playbackState.type === 'part' && this.playbackState.partId === part.id;
+  }
+
+  isPartPlaybackPaused(part: SongPart): boolean {
+    return this.isPartPlaybackActive(part) && this.playbackState.status === 'paused';
+  }
+
+  isPatternPlaybackActive(pattern: SongSheetPattern): boolean {
+    return this.patternPlaybackState.status === 'playing' && this.patternPlaybackState.patternId === pattern.id;
+  }
+
+  getPartMeasureCounter(part: SongPart): string {
+    const totalMeasures = this.songSheetService.resolvePartMeasures(this.sheet!, part).length;
+    if (!this.isPartPlaybackActive(part)) {
+      return totalMeasures > 0 ? `Measure 1 / ${totalMeasures}` : 'No measures';
+    }
+
+    return `Measure ${(this.playbackState.currentMeasureIndex ?? 0) + 1} / ${this.playbackState.totalMeasures ?? totalMeasures}`;
+  }
+
+  canRewindPart(part: SongPart): boolean {
+    return this.isPartPlaybackActive(part) && (this.playbackState.currentMeasureIndex ?? 0) > 0;
+  }
+
+  canForwardPart(part: SongPart): boolean {
+    return this.isPartPlaybackActive(part) &&
+      (this.playbackState.currentMeasureIndex ?? 0) < ((this.playbackState.totalMeasures ?? 1) - 1);
   }
 
   trackByPatternId(_: number, pattern: SongSheetPattern): string {
@@ -577,6 +696,8 @@ export class SongSheetComponent {
   private clonePattern(pattern: RhythmPattern): SongSheetPattern {
     return {
       ...pattern,
+      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
       measures: pattern.measures.map(measure => ({
         ...measure,
         actions: measure.actions.map(action => action ? {
@@ -775,6 +896,8 @@ export class SongSheetComponent {
         timeSignature: '4/4',
         actions: Array(16).fill(null)
       }],
+      beatGrips: [],
+      actionGripOverrides: [],
       createdAt: now,
       updatedAt: now,
       isCustom: true

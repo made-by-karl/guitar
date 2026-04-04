@@ -1,9 +1,24 @@
 import { Component, computed, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RhythmPattern, RhythmAction, RhythmModifier, Measure, getBeatsFromTimeSignature, getSixteenthPerBeatFromTimeSignature } from '@/app/features/patterns/services/rhythm-patterns.model';
+import {
+  RhythmPattern,
+  RhythmAction,
+  RhythmModifier,
+  Measure,
+  RhythmPatternActionGripOverride,
+  RhythmPatternBeatGrip,
+  RhythmPatternGripReference,
+  getBeatsFromTimeSignature,
+  getSixteenthPerBeatFromTimeSignature
+} from '@/app/features/patterns/services/rhythm-patterns.model';
 import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/core/music/rhythm/time-signature.model';
-import { PlaybackService } from '@/app/core/services/playback.service';
+import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
+import { Subscription } from 'rxjs';
+import { ModalService } from '@/app/core/services/modal.service';
+import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
+import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
+import { chordToString } from '@/app/core/music/chords';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide' | 'rest';
 
@@ -16,9 +31,11 @@ type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer
 export class RhythmPatternEditorComponent implements OnDestroy {
 
   pattern = model.required<RhythmPattern>();
+  playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   
   // Internal display model to manage UI state per measure
   private measureDisplayStates = new Map<number, boolean>();
+  private readonly playbackStateSubscription: Subscription;
 
   // Use a computed signal that recalculates when pattern changes
   measuresForDisplay = computed(() => {
@@ -29,20 +46,32 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   });
 
   constructor(
-    private playback: PlaybackService
-  ) {}
+    private patternPlayback: PatternPlaybackService,
+    private modalService: ModalService
+  ) {
+    this.playbackState = this.patternPlayback.getSnapshot();
+    this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
+      this.playbackState = state;
+    });
+  }
 
-  playPattern(): void {
+  async playPattern(): Promise<void> {
     const pattern = this.pattern()
     if (!pattern) return;
-    
-    this.playback.playRhythmPattern(pattern);
+
+    await this.patternPlayback.togglePatternPreview(pattern);
+  }
+
+  isPatternPlaybackActive(): boolean {
+    return this.playbackState.status === 'playing' && this.playbackState.patternId === this.pattern()?.id;
   }
 
   private updatePattern(updatedPattern: RhythmPattern) {
     // Update the pattern signal
     this.pattern.set({
       ...updatedPattern,
+      beatGrips: this.normalizeBeatGrips(updatedPattern),
+      actionGripOverrides: this.normalizeActionGripOverrides(updatedPattern),
       updatedAt: Date.now()
     });
   }
@@ -50,6 +79,8 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   ngOnDestroy(): void {
     // Clean up display states
     this.measureDisplayStates.clear();
+    this.playbackStateSubscription.unsubscribe();
+    this.patternPlayback.stopPatternPreview();
   }
 
   // Add a new measure
@@ -70,7 +101,9 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     // Create updated pattern with new measure
     const updatedPattern = {
       ...pattern,
-      measures: [...pattern.measures, newMeasure]
+      measures: [...pattern.measures, newMeasure],
+      beatGrips: [...(pattern.beatGrips ?? [])],
+      actionGripOverrides: [...(pattern.actionGripOverrides ?? [])]
     };
     
     // Initialize display state for new measure
@@ -90,7 +123,19 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     
     const updatedPattern = {
       ...pattern,
-      measures: updatedMeasures
+      measures: updatedMeasures,
+      beatGrips: (pattern.beatGrips ?? []).flatMap(grip => {
+        if (grip.measureIndex === measureIndex) {
+          return [];
+        }
+        return [{ ...grip, measureIndex: grip.measureIndex > measureIndex ? grip.measureIndex - 1 : grip.measureIndex }];
+      }),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).flatMap(grip => {
+        if (grip.measureIndex === measureIndex) {
+          return [];
+        }
+        return [{ ...grip, measureIndex: grip.measureIndex > measureIndex ? grip.measureIndex - 1 : grip.measureIndex }];
+      })
     };
     
     // Clean up display state for removed measure and shift remaining states
@@ -177,7 +222,9 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     
     const updatedPattern: RhythmPattern = {
       ...pattern,
-      measures: updatedMeasures
+      measures: updatedMeasures,
+      beatGrips: this.filterBeatGripsForMeasure(pattern, measureIndex, updatedMeasure),
+      actionGripOverrides: this.filterActionGripsForMeasure(pattern, measureIndex, updatedMeasure)
     };
     
     this.updatePattern(updatedPattern);
@@ -677,6 +724,96 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     this.pattern.set({ ...currentPattern });
   }
 
+  getBeatIndices(measureIndex: number): number[] {
+    const pattern = this.pattern();
+    const measure = pattern?.measures[measureIndex];
+    if (!measure) {
+      return [];
+    }
+
+    return Array.from({ length: getBeatsFromTimeSignature(measure.timeSignature) }, (_, index) => index);
+  }
+
+  getActionIndices(measureIndex: number): number[] {
+    const measure = this.pattern()?.measures[measureIndex];
+    if (!measure) {
+      return [];
+    }
+
+    return measure.actions.map((action, index) => action ? index : -1).filter(index => index >= 0);
+  }
+
+  getBeatGrip(measureIndex: number, beatIndex: number): RhythmPatternBeatGrip | undefined {
+    return this.pattern()?.beatGrips?.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
+  }
+
+  getActionGrip(measureIndex: number, actionIndex: number): RhythmPatternActionGripOverride | undefined {
+    return this.pattern()?.actionGripOverrides?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+  }
+
+  async assignBeatGrip(measureIndex: number, beatIndex: number): Promise<void> {
+    const pattern = this.pattern();
+    if (!pattern) {
+      return;
+    }
+
+    const selectedGrip = await this.selectGrip(this.getBeatGrip(measureIndex, beatIndex)?.chordName);
+    if (selectedGrip === undefined) {
+      return;
+    }
+
+    this.updatePattern({
+      ...pattern,
+      beatGrips: selectedGrip ? [
+        ...(pattern.beatGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.beatIndex === beatIndex)),
+        {
+          measureIndex,
+          beatIndex,
+          gripId: selectedGrip.gripId,
+          chordName: selectedGrip.chordName
+        }
+      ] : (pattern.beatGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.beatIndex === beatIndex))
+    });
+  }
+
+  async assignActionGrip(measureIndex: number, actionIndex: number): Promise<void> {
+    const pattern = this.pattern();
+    if (!pattern) {
+      return;
+    }
+
+    const selectedGrip = await this.selectGrip(this.getActionGrip(measureIndex, actionIndex)?.chordName);
+    if (selectedGrip === undefined) {
+      return;
+    }
+
+    this.updatePattern({
+      ...pattern,
+      actionGripOverrides: selectedGrip ? [
+        ...(pattern.actionGripOverrides ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)),
+        {
+          measureIndex,
+          actionIndex,
+          gripId: selectedGrip.gripId,
+          chordName: selectedGrip.chordName
+        }
+      ] : (pattern.actionGripOverrides ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
+    });
+  }
+
+  clearMeasureGrips(measureIndex: number): void {
+    const pattern = this.pattern();
+    if (!pattern) {
+      return;
+    }
+
+    this.updatePattern({
+      ...pattern,
+      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex !== measureIndex),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex !== measureIndex)
+    });
+  }
+
   getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): { position: string; action: RhythmAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] {
     const measure = measureData.measure;
     if (!measure) return [];
@@ -711,5 +848,61 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     if (actionIndex % 4 === 0) return 'quarter';
     if (actionIndex % 2 === 0) return 'eighth';
     return 'sixteenth';
+  }
+
+  private filterBeatGripsForMeasure(pattern: RhythmPattern, measureIndex: number, updatedMeasure: Measure): RhythmPatternBeatGrip[] {
+    return (pattern.beatGrips ?? []).filter(grip => {
+      if (grip.measureIndex !== measureIndex) {
+        return true;
+      }
+
+      return grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(updatedMeasure.timeSignature);
+    });
+  }
+
+  private filterActionGripsForMeasure(pattern: RhythmPattern, measureIndex: number, updatedMeasure: Measure): RhythmPatternActionGripOverride[] {
+    return (pattern.actionGripOverrides ?? []).filter(grip => {
+      if (grip.measureIndex !== measureIndex) {
+        return true;
+      }
+
+      return grip.actionIndex >= 0 && grip.actionIndex < updatedMeasure.actions.length;
+    });
+  }
+
+  private normalizeBeatGrips(pattern: RhythmPattern): RhythmPatternBeatGrip[] {
+    return (pattern.beatGrips ?? []).filter(grip => {
+      const measure = pattern.measures[grip.measureIndex];
+      return !!measure && grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(measure.timeSignature);
+    });
+  }
+
+  private normalizeActionGripOverrides(pattern: RhythmPattern): RhythmPatternActionGripOverride[] {
+    return (pattern.actionGripOverrides ?? []).filter(grip => {
+      const measure = pattern.measures[grip.measureIndex];
+      return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
+    });
+  }
+
+  private async selectGrip(chordName?: string): Promise<RhythmPatternGripReference | null | undefined> {
+    const data: GripSelectorModalData = { chord: chordName };
+    const modalRef = this.modalService.show(GripSelectorModalComponent, {
+      data,
+      width: '95vw',
+      height: '90vh',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: true
+    });
+
+    const result = await modalRef.afterClosed();
+    if (!result || result.grips.length === 0) {
+      return undefined;
+    }
+
+    return {
+      gripId: stringifyGrip(result.grips[0] as TunedGrip),
+      chordName: chordToString(result.chord)
+    };
   }
 }

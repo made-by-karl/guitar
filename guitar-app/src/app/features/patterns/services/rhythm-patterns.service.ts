@@ -22,7 +22,7 @@ export class RhythmPatternsService {
 
   async getAll(): Promise<RhythmPattern[]> {
     try {
-      return await this.db.rhythmPatterns.toArray();
+      return (await this.db.rhythmPatterns.toArray()).map(pattern => this.clonePattern(pattern));
     } catch (error) {
       console.error('Error loading patterns:', error);
       return [];
@@ -31,7 +31,8 @@ export class RhythmPatternsService {
 
   async getById(id: string): Promise<RhythmPattern | undefined> {
     try {
-      return await this.db.rhythmPatterns.get(id);
+      const pattern = await this.db.rhythmPatterns.get(id);
+      return pattern ? this.clonePattern(pattern) : undefined;
     } catch (error) {
       console.error('Error loading pattern:', error);
       return undefined;
@@ -40,7 +41,7 @@ export class RhythmPatternsService {
 
   async add(pattern: RhythmPattern): Promise<void> {
     try {
-      await this.db.rhythmPatterns.add(pattern);
+      await this.db.rhythmPatterns.add(this.clonePattern(pattern));
     } catch (error) {
       console.error('Error adding pattern:', error);
       throw error;
@@ -49,7 +50,7 @@ export class RhythmPatternsService {
 
   async update(pattern: RhythmPattern): Promise<void> {
     try {
-      await this.db.rhythmPatterns.put(pattern);
+      await this.db.rhythmPatterns.put(this.clonePattern(pattern));
     } catch (error) {
       console.error('Error updating pattern:', error);
       throw error;
@@ -280,6 +281,24 @@ export class RhythmPatternsService {
     } catch (error) {
       console.error('Error adding default patterns:', error);
     }
+  }
+
+  private clonePattern(pattern: RhythmPattern): RhythmPattern {
+    return {
+      ...pattern,
+      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
+      measures: pattern.measures.map(measure => ({
+        ...measure,
+        actions: measure.actions.map(action => action ? {
+          ...action,
+          modifiers: action.modifiers ? [...action.modifiers] : undefined,
+          strum: action.strum ? { ...action.strum } : undefined,
+          pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
+          percussive: action.percussive ? { ...action.percussive } : undefined
+        } : null)
+      }))
+    };
   }
 }
 

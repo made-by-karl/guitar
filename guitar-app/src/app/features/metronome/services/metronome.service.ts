@@ -1,6 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AudioService } from '@/app/core/services/audio.service';
+import { TransportRepeatPlaybackScheduler } from '@/app/core/services/playback-scheduler.service';
 import {
   buildMetronomeLabels,
   isMainBeatLabel,
@@ -28,8 +29,8 @@ export interface MetronomeState {
   providedIn: 'root'
 })
 export class MetronomeService implements OnDestroy {
-  private scheduledIds: number[] = [];
   private tickIndex = -1;
+  private readonly scheduler: TransportRepeatPlaybackScheduler;
 
   private readonly stateSubject = new BehaviorSubject<MetronomeState>({
     running: false,
@@ -42,10 +43,13 @@ export class MetronomeService implements OnDestroy {
 
   readonly state$ = this.stateSubject.asObservable();
 
-  constructor(private audioService: AudioService) {}
+  constructor(private audioService: AudioService) {
+    this.scheduler = new TransportRepeatPlaybackScheduler(audioService);
+  }
 
   ngOnDestroy(): void {
     this.stop();
+    this.scheduler.destroy();
     this.audioService.disposeSampler('metronome');
   }
 
@@ -67,20 +71,8 @@ export class MetronomeService implements OnDestroy {
   }
 
   stop(): void {
-    const transport = this.audioService.getTransport();
-    for (const id of this.scheduledIds) {
-      transport.clear(id);
-    }
-    this.scheduledIds = [];
     this.tickIndex = -1;
-
-    // The metronome is currently the only Transport user in this app.
-    // Stopping it avoids leaving the Transport running silently.
-    try {
-      transport.stop();
-    } catch {
-      // ignore
-    }
+    this.scheduler.stop();
 
     const previous = this.stateSubject.getValue();
     if (previous.running) {
@@ -176,34 +168,21 @@ export class MetronomeService implements OnDestroy {
       tickDurationSeconds
     });
 
-    const transport = this.audioService.getTransport();
-    for (const id of this.scheduledIds) {
-      transport.clear(id);
-    }
-    this.scheduledIds = [];
-
     if (!startTransport) {
       if (previous.running) {
-        try {
-          transport.stop();
-        } catch {
-          // ignore
-        }
+        this.scheduler.stop();
       }
       return;
     }
 
+    const transport = this.audioService.getTransport();
     transport.bpm.value = bpm;
     transport.timeSignature = [parts.top, parts.bottom];
-    if (transport.state !== 'started') {
-      transport.start();
-    }
-
-    const id = transport.scheduleRepeat((time) => {
-      this.onTick(time);
-    }, this.getRepeatInterval(parts.bottom, subdivision), '+0.05');
-
-    this.scheduledIds.push(id);
+    this.scheduler.replaceSchedule(() => [
+      transport.scheduleRepeat((time) => {
+        this.onTick(time);
+      }, this.getRepeatInterval(parts.bottom, subdivision), '+0.05')
+    ], true);
   }
 
   private getRepeatInterval(bottom: 4 | 8, subdivision: MetronomeSubdivision): string {

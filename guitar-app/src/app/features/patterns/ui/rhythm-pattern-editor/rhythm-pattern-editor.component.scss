@@ -225,6 +225,50 @@
     }
   }
 
+  .beat-grid,
+  .advanced-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .beat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  }
+
+  .advanced-grid {
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  }
+
+  .beat-grip-button,
+  .advanced-button {
+    min-height: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .beat-number {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+  }
+
+  .beat-value {
+    font-weight: 600;
+  }
+
+  .advanced-grips {
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #495057;
+    }
+  }
+
   .subdivision-controls {
     .form-check-input:checked {
       background-color: #D2691E;
@@ -293,6 +337,11 @@
           }
         }
       }
+    }
+
+    .beat-grid,
+    .advanced-grid {
+      grid-template-columns: 1fr 1fr;
     }
   }
 }
