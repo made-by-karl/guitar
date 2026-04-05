@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { MidiInstruction, MidiTechnique } from '@/app/core/services/midi.model';
-import { Note } from '@/app/core/music/semitones';
+import { getIntervalSemitones, Note, transpose } from '@/app/core/music/semitones';
 import { AudioService } from '@/app/core/services/audio.service';
 
 @Injectable({
@@ -176,6 +176,11 @@ export class MidiService implements OnDestroy {
     const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
     const playMode = instruction.playNotes || 'parallel';
 
+    if (instruction.legato) {
+      this.playLegatoTechnique(instruction, scheduleTime, options);
+      return;
+    }
+
     if (instruction.notes.length > 1 && playMode !== 'parallel') {
       this.playSequentialNotes(instruction, scheduleTime, options);
       return;
@@ -240,6 +245,99 @@ export class MidiService implements OnDestroy {
         options.duration ?? instruction.duration,
         noteTime,
         options.velocity
+      );
+    }
+  }
+
+  private playLegatoTechnique(
+    instruction: MidiInstruction,
+    startTime: number,
+    options: { velocity: number; duration?: number }
+  ): void {
+    const sampler = this.audioService.getSampler('guitar');
+    if (!sampler || !instruction.legato) return;
+    const totalDuration = Math.max(0.12, instruction.duration);
+
+    if (instruction.technique === 'slide') {
+      this.playSlideTechnique(sampler, instruction, startTime, options, totalDuration);
+      return;
+    }
+
+    const sourceNoteName = this.noteToToneName(instruction.legato.source.note);
+    const targetNoteName = this.noteToToneName(instruction.legato.target.note);
+
+    let transitionDelay = 0.07;
+    let targetVelocityScale = 0.78;
+
+    if (instruction.technique === 'pull-off') {
+      transitionDelay = 0.06;
+      targetVelocityScale = 0.72;
+    }
+
+    const sourceDuration = Math.max(0.05, Math.min(totalDuration * 0.45, transitionDelay + 0.02));
+    const targetDuration = Math.max(0.08, totalDuration - transitionDelay);
+
+    sampler.triggerAttackRelease(
+      sourceNoteName,
+      sourceDuration,
+      startTime,
+      Math.max(0.2, options.velocity * 0.85)
+    );
+
+    sampler.triggerAttackRelease(
+      targetNoteName,
+      targetDuration,
+      startTime + transitionDelay,
+      Math.max(0.2, options.velocity * targetVelocityScale)
+    );
+  }
+
+  private playSlideTechnique(
+    sampler: { triggerAttackRelease: (note: string, duration: number, time: number, velocity: number) => void },
+    instruction: MidiInstruction,
+    startTime: number,
+    options: { velocity: number; duration?: number },
+    totalDuration: number
+  ): void {
+    if (!instruction.legato) return;
+
+    const interval = getIntervalSemitones(
+      instruction.legato.source.note,
+      instruction.legato.target.note
+    );
+    const direction = Math.sign(interval);
+    const distance = Math.abs(interval);
+
+    if (direction === 0 || distance === 0) {
+      sampler.triggerAttackRelease(
+        this.noteToToneName(instruction.legato.target.note),
+        totalDuration,
+        startTime,
+        options.velocity
+      );
+      return;
+    }
+
+    const notes: Note[] = [];
+    for (let step = 0; step <= distance; step++) {
+      notes.push(transpose(instruction.legato.source.note, step * direction));
+    }
+
+    const transitionWindow = Math.min(0.22, Math.max(0.09, totalDuration * 0.55));
+    const stepSpacing = notes.length > 1 ? transitionWindow / (notes.length - 1) : transitionWindow;
+    const perStepDuration = Math.max(0.05, Math.min(totalDuration * 0.5, stepSpacing * 1.3));
+
+    for (let index = 0; index < notes.length; index++) {
+      const noteTime = startTime + (index * stepSpacing);
+      const isTarget = index === notes.length - 1;
+      const noteDuration = isTarget ? Math.max(0.08, totalDuration - (index * stepSpacing)) : perStepDuration;
+      const noteVelocity = isTarget ? Math.min(1, options.velocity * 0.95) : Math.max(0.18, options.velocity * 0.65);
+
+      sampler.triggerAttackRelease(
+        this.noteToToneName(notes[index]),
+        noteDuration,
+        noteTime,
+        noteVelocity
       );
     }
   }

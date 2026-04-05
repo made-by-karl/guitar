@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   RhythmPattern,
   RhythmAction,
+  LegatoNote,
   RhythmModifier,
   Measure,
   RhythmPatternActionGripOverride,
@@ -20,7 +21,7 @@ import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/feature
 import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { chordToString } from '@/app/core/music/chords';
 
-type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide' | 'rest';
+type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
 
 @Component({
   selector: 'app-rhythm-pattern-editor',
@@ -193,17 +194,12 @@ export class RhythmPatternEditorComponent implements OnDestroy {
           percussive: { technique: 'body-knock' }
         };
         break;
-      case 'rest':
+      case 'hammer-on':
+      case 'pull-off':
+      case 'slide':
         newAction = {
-          technique: 'rest'
-        };
-        break;
-      default:
-        // For hammer-on, pull-off, slide - use basic strum for now
-        newAction = {
-          technique: 'strum',
-          strum: { direction: 'D', strings: 'all' },
-          modifiers: []
+          technique: techniqueType,
+          legato: { string: 0, fromFret: 0, toFret: techniqueType === 'pull-off' ? 0 : 2 }
         };
         break;
     }
@@ -265,11 +261,21 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       // Remove strum and pick for percussive
       delete updatedAction.strum;
       delete updatedAction.pick;
+      delete updatedAction.legato;
+    } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
+      if (!updatedAction.legato) {
+        updatedAction.legato = { string: 0, fromFret: 0, toFret: action.technique === 'pull-off' ? 0 : 2 };
+      }
+
+      delete updatedAction.strum;
+      delete updatedAction.pick;
+      delete updatedAction.percussive;
     } else {
       // Remove strum, pick, and percussive for other techniques
       delete updatedAction.strum;
       delete updatedAction.pick;
       delete updatedAction.percussive;
+      delete updatedAction.legato;
     }
     
     // Ensure modifiers array exists for strum and pick
@@ -582,6 +588,18 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     return names[stringIndex] || `String ${stringIndex + 1}`;
   }
 
+  updateLegatoString(measureIndex: number, originalIndex: number, stringValue: number): void {
+    this.updateLegato(measureIndex, originalIndex, { string: stringValue });
+  }
+
+  updateLegatoFromFret(measureIndex: number, originalIndex: number, fromFret: number): void {
+    this.updateLegato(measureIndex, originalIndex, { fromFret });
+  }
+
+  updateLegatoToFret(measureIndex: number, originalIndex: number, toFret: number): void {
+    this.updateLegato(measureIndex, originalIndex, { toFret });
+  }
+
   // Helper method to get available modifiers
   getAvailableModifiers(): { value: RhythmModifier; label: string }[] {
     return [
@@ -692,6 +710,39 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   // Helper method to check if modifier is active
   hasModifier(action: RhythmAction, modifier: RhythmModifier): boolean {
     return action.modifiers?.includes(modifier) || false;
+  }
+
+  private updateLegato(measureIndex: number, originalIndex: number, patch: Partial<LegatoNote>): void {
+    const pattern = this.pattern();
+    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
+
+    const action = pattern.measures[measureIndex].actions[originalIndex];
+    if (!action || !action.legato) return;
+
+    const updatedAction: RhythmAction = {
+      ...action,
+      legato: {
+        ...action.legato,
+        ...patch
+      }
+    };
+
+    const measure = pattern.measures[measureIndex];
+    const updatedActions = [...measure.actions];
+    updatedActions[originalIndex] = updatedAction;
+
+    const updatedMeasure: Measure = {
+      ...measure,
+      actions: updatedActions
+    };
+
+    const updatedMeasures = [...pattern.measures];
+    updatedMeasures[measureIndex] = updatedMeasure;
+
+    this.updatePattern({
+      ...pattern,
+      measures: updatedMeasures
+    });
   }
 
   // Ensure we have display states initialized for all measures

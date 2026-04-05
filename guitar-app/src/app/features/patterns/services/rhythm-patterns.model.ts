@@ -1,6 +1,6 @@
 import { getTimeSignatureParts, TimeSignature } from '@/app/core/music/rhythm/time-signature.model';
 
-export type RhythmTechnique = 'strum' | 'pick' | 'rest' | 'percussive';
+export type RhythmTechnique = 'strum' | 'pick' | 'hammer-on' | 'pull-off' | 'slide' | 'percussive';
 
 // Style modifiers that can be applied to strum and pick techniques
 export type RhythmModifier = 'mute' | 'palm-mute' | 'accent';
@@ -8,6 +8,12 @@ export type RhythmModifier = 'mute' | 'palm-mute' | 'accent';
 export interface PickingNote {
   string: number; // 0-5 (low E to high E)
   fret: number;   // 0 = open, -1 = muted
+}
+
+export interface LegatoNote {
+  string: number;   // 0-5 (low E to high E)
+  fromFret: number; // starting fret, 0 = open
+  toFret: number;   // destination fret, 0 = open
 }
 
 export type StrumRange = 
@@ -60,6 +66,9 @@ export interface RhythmAction {
   
   // For picking patterns
   pick?: PickingNote[]; // array of notes to pick
+
+  // For hammer-ons, pull-offs, and slides
+  legato?: LegatoNote;
 
   // For percussive technique
   percussive?: Percussive;

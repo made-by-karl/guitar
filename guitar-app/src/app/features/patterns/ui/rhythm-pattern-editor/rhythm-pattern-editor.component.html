@@ -105,7 +105,7 @@
                       <div class="action-header d-flex justify-content-between align-items-center">
                         <span class="badge" [class]="'bg-' + (actionData.action.technique === 'strum' ? 'primary' :
                                                               actionData.action.technique === 'pick' ? 'success' :
-                                                              actionData.action.technique === 'percussive' ? 'warning' : 'secondary')">
+                                                              actionData.action.technique === 'percussive' ? 'warning' : 'info')">
                           {{ actionData.action.technique }}
                           @if (actionData.action.strum) {
                             <i class="bi" [class]="actionData.action.strum.direction === 'D' ? 'bi-arrow-down' : 'bi-arrow-up'"></i>
@@ -209,6 +209,34 @@
                         </div>
                         }
 
+                        @if ((actionData.action.technique === 'hammer-on' || actionData.action.technique === 'pull-off' || actionData.action.technique === 'slide') && actionData.action.legato) {
+                        <div class="pick-section">
+                          <label class="form-label small">Legato Note</label>
+                          <div class="pick-note">
+                            <div class="d-flex align-items-center gap-1">
+                              <select class="form-select form-select-sm"
+                                [ngModel]="actionData.action.legato.string"
+                                (ngModelChange)="updateLegatoString(measureData.measureIndex, actionData.originalIndex, $event)"
+                                [name]="'legatoString_' + measureData.measureIndex + '_' + actionData.originalIndex">
+                                @for (stringIdx of [0,1,2,3,4,5]; track stringIdx) {
+                                <option [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                                }
+                              </select>
+                              <input type="number" class="form-control form-control-sm"
+                                [ngModel]="actionData.action.legato.fromFret"
+                                (ngModelChange)="updateLegatoFromFret(measureData.measureIndex, actionData.originalIndex, $event)"
+                                [name]="'legatoFromFret_' + measureData.measureIndex + '_' + actionData.originalIndex"
+                                min="0" max="24" placeholder="From" />
+                              <input type="number" class="form-control form-control-sm"
+                                [ngModel]="actionData.action.legato.toFret"
+                                (ngModelChange)="updateLegatoToFret(measureData.measureIndex, actionData.originalIndex, $event)"
+                                [name]="'legatoToFret_' + measureData.measureIndex + '_' + actionData.originalIndex"
+                                min="0" max="24" placeholder="To" />
+                            </div>
+                          </div>
+                        </div>
+                        }
+
                         <!-- Percussion Technique -->
                         @if (actionData.action.technique === 'percussive') {
                         <div class="percussion-section">
@@ -246,13 +274,20 @@
                               <i class="bi bi-hand-index text-success"></i> Pick
                             </a></li>
                           <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'hammer-on'); $event.preventDefault()">
+                              <i class="bi bi-chevron-double-up text-info"></i> Hammer-On
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'pull-off'); $event.preventDefault()">
+                              <i class="bi bi-chevron-double-down text-info"></i> Pull-Off
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
+                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'slide'); $event.preventDefault()">
+                              <i class="bi bi-slash-lg text-info"></i> Slide
+                            </a></li>
+                          <li><a class="dropdown-item" href="#"
                               (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'percussive'); $event.preventDefault()">
                               <i class="bi bi-soundwave text-warning"></i> Percussion
-                            </a></li>
-                          <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item" href="#"
-                              (click)="addAction(measureData.measureIndex, actionData.originalIndex, 'rest'); $event.preventDefault()">
-                              <i class="bi bi-pause text-secondary"></i> Rest
                             </a></li>
                         </ul>
                       </div>

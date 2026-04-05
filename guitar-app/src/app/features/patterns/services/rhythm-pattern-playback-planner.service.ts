@@ -181,6 +181,7 @@ export class RhythmPatternPlaybackPlannerService {
         time: event.time,
         duration,
         notes: eventData.notes,
+        legato: eventData.legato,
         velocity: eventData.velocity,
         technique: eventData.technique,
         playNotes: eventData.playNotes
@@ -204,6 +205,11 @@ export class RhythmPatternPlaybackPlannerService {
     technique: MidiTechnique;
     velocity: number;
     playNotes: 'parallel' | 'sequential' | 'reversed';
+    legato?: {
+      source: MidiNote;
+      target: MidiNote;
+      string: number;
+    };
     percussionTechnique?: 'body-knock' | 'string-slap';
   } | undefined {
     let technique: MidiTechnique = 'normal';
@@ -220,6 +226,11 @@ export class RhythmPatternPlaybackPlannerService {
     if (action.modifiers?.includes('accent')) {
       technique = 'accented';
       velocity = 0.9;
+    }
+
+    if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
+      technique = action.technique;
+      velocity = 0.75;
     }
 
     if (action.technique === 'percussive' && action.percussive) {
@@ -240,6 +251,11 @@ export class RhythmPatternPlaybackPlannerService {
     const notes: MidiNote[] = [];
     const affectedStrings: number[] = [];
     let playNotes: 'parallel' | 'sequential' | 'reversed' = 'parallel';
+    let legato: {
+      source: MidiNote;
+      target: MidiNote;
+      string: number;
+    } | undefined;
 
     if (action.technique === 'strum' && action.strum) {
       const strings = getStringsForStrum(action.strum.strings);
@@ -266,6 +282,21 @@ export class RhythmPatternPlaybackPlannerService {
           note: this.getStringNote(tuning, pickNote.string, pickNote.fret)
         });
       }
+    } else if ((action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') && action.legato) {
+      const source = {
+        note: this.getStringNote(tuning, action.legato.string, action.legato.fromFret)
+      };
+      const target = {
+        note: this.getStringNote(tuning, action.legato.string, action.legato.toFret)
+      };
+
+      affectedStrings.push(action.legato.string);
+      notes.push(source, target);
+      legato = {
+        source,
+        target,
+        string: action.legato.string
+      };
     }
 
     return {
@@ -273,7 +304,8 @@ export class RhythmPatternPlaybackPlannerService {
       affectedStrings,
       technique,
       velocity,
-      playNotes
+      playNotes,
+      legato
     };
   }
 

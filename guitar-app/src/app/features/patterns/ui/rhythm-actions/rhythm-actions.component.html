@@ -43,8 +43,29 @@
             }
           </span>
         }
-        @case ('rest') {
-          <span>-</span>
+        @case ('hammer-on') {
+          <span [title]="'Action ' + actionIndex + ' - Hammer-on on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+            H
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+          </span>
+        }
+        @case ('pull-off') {
+          <span [title]="'Action ' + actionIndex + ' - Pull-off on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+            PO
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+          </span>
+        }
+        @case ('slide') {
+          <span [title]="'Action ' + actionIndex + ' - Slide on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+            /
+            @if (showActionIndex()) {
+              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
+            }
+          </span>
         }
         @case ('percussive') {
           <span [title]="'Action ' + actionIndex + ' - Percussion: ' + (action.percussive?.technique || 'body-knock')">

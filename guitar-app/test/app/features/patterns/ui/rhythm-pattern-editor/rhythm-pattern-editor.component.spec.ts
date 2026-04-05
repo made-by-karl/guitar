@@ -44,7 +44,7 @@ describe('RhythmPatternEditorComponent', () => {
       category: 'Test',
       measures: [{
         timeSignature: '4/4',
-        actions: []
+        actions: [null, null, null, null]
       }],
       beatGrips: [],
       actionGripOverrides: [],
@@ -65,5 +65,26 @@ describe('RhythmPatternEditorComponent', () => {
     await component.playPattern();
 
     expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(component.pattern());
+  });
+
+  it('creates a hammer-on action with legato defaults', () => {
+    component.addAction(0, 1, 'hammer-on');
+
+    expect(component.pattern().measures[0].actions[1]).toEqual({
+      technique: 'hammer-on',
+      legato: { string: 0, fromFret: 0, toFret: 2 }
+    });
+  });
+
+  it('updates legato frets immutably', () => {
+    component.addAction(0, 0, 'slide');
+
+    component.updateLegatoFromFret(0, 0, 5);
+    component.updateLegatoToFret(0, 0, 7);
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'slide',
+      legato: { string: 0, fromFret: 5, toFret: 7 }
+    });
   });
 });
