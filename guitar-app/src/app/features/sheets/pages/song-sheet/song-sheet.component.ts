@@ -36,6 +36,7 @@ import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.di
 import { Subscription } from 'rxjs';
 
 type SheetChoiceValue = string;
+type SongSheetTab = 'parts' | 'grips' | 'patterns';
 
 interface SheetChoice {
   value: SheetChoiceValue;
@@ -53,6 +54,18 @@ interface SheetChoiceModalTemplateContext {
   modalRef: ModalRef<SheetChoiceValue>;
 }
 
+interface PartEditorModalTemplateContext {
+  $implicit: null;
+  data: null;
+  modalRef: ModalRef<void>;
+}
+
+interface TuningEditorModalTemplateContext {
+  $implicit: null;
+  data: null;
+  modalRef: ModalRef<void>;
+}
+
 @Component({
   selector: 'app-song-sheet',
   standalone: true,
@@ -62,6 +75,8 @@ interface SheetChoiceModalTemplateContext {
 })
 export class SongSheetComponent implements OnDestroy {
   @ViewChild('sheetChoiceModal') sheetChoiceModalTemplate!: TemplateRef<SheetChoiceModalTemplateContext>;
+  @ViewChild('partEditorModal') partEditorModalTemplate!: TemplateRef<PartEditorModalTemplateContext>;
+  @ViewChild('tuningEditorModal') tuningEditorModalTemplate!: TemplateRef<TuningEditorModalTemplateContext>;
 
   sheet: SongSheetWithData | undefined;
   renaming = false;
@@ -77,7 +92,10 @@ export class SongSheetComponent implements OnDestroy {
   tempTuning: Note[] = [];
   tempCapodaster = 0;
   tempTempo = 80;
+  activeTab: SongSheetTab = 'parts';
   readonly sheetChoiceTemplateType = {} as SheetChoiceModalTemplateContext;
+  readonly partEditorTemplateType = {} as PartEditorModalTemplateContext;
+  readonly tuningEditorTemplateType = {} as TuningEditorModalTemplateContext;
   playbackState = { type: 'none', status: 'idle' } as ReturnType<SongPartPlaybackService['getSnapshot']>;
   patternPlaybackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   private readonly playbackStateSubscription: Subscription;
@@ -147,7 +165,7 @@ export class SongSheetComponent implements OnDestroy {
     this.tempName = '';
   }
 
-  showTuning() {
+  async showTuning() {
     if (!this.sheet) {
       return;
     }
@@ -155,10 +173,10 @@ export class SongSheetComponent implements OnDestroy {
     this.tempTuning = [...this.sheet.tuning];
     this.tempCapodaster = this.sheet.capodaster;
     this.tempTempo = this.sheet.tempo;
-    this.showTuningForm = true;
+    await this.openTuningEditorDialog();
   }
 
-  async saveTuning() {
+  async saveTuning(modalRef?: ModalRef<void>) {
     if (!this.sheet) {
       return;
     }
@@ -168,10 +186,16 @@ export class SongSheetComponent implements OnDestroy {
     this.sheet.tempo = this.tempTempo;
     await this.songSheetService.update(this.sheet);
     this.showTuningForm = false;
+    modalRef?.close();
   }
 
-  cancelTuning() {
+  cancelTuning(modalRef?: ModalRef<void>) {
     this.showTuningForm = false;
+    modalRef?.close();
+  }
+
+  selectTab(tab: SongSheetTab) {
+    this.activeTab = tab;
   }
 
   async dropGrip(event: CdkDragDrop<SongSheetGripWithData[]>) {
@@ -298,12 +322,13 @@ export class SongSheetComponent implements OnDestroy {
     this.songPartPlayback.seekSongPartMeasure(1);
   }
 
-  showAddPart() {
+  async showAddPart() {
     this.editingPartIndex = null;
     this.tempPart = this.createEmptyPart();
+    await this.openPartEditorDialog();
   }
 
-  startEditingPart(partIndex: number) {
+  async startEditingPart(partIndex: number) {
     if (!this.sheet) {
       return;
     }
@@ -311,14 +336,16 @@ export class SongSheetComponent implements OnDestroy {
     this.editingPartIndex = partIndex;
     this.tempPart = this.clonePart(this.sheet.parts[partIndex]);
     this.syncTempPart();
+    await this.openPartEditorDialog();
   }
 
-  cancelPartEdit() {
+  cancelPartEdit(modalRef?: ModalRef<void>) {
     this.editingPartIndex = null;
     this.tempPart = null;
+    modalRef?.close();
   }
 
-  async savePart() {
+  async savePart(modalRef?: ModalRef<void>) {
     if (!this.sheet || !this.tempPart || !this.tempPart.section.trim()) {
       return;
     }
@@ -336,6 +363,7 @@ export class SongSheetComponent implements OnDestroy {
 
     this.cancelPartEdit();
     await this.refreshData();
+    modalRef?.close();
   }
 
   async removePart(partIndex: number) {
@@ -842,6 +870,47 @@ export class SongSheetComponent implements OnDestroy {
     );
 
     return modalRef.afterClosed();
+  }
+
+  private async openPartEditorDialog(): Promise<void> {
+    if (!this.partEditorModalTemplate) {
+      return;
+    }
+
+    const modalRef = this.modalService.showTemplate<void, null>(
+      this.partEditorModalTemplate,
+      this.viewContainerRef,
+      {
+        data: null,
+        width: '95vw',
+        height: '90vh',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        panelClass: 'modal-xl',
+        closeOnBackdropClick: false
+      }
+    );
+
+    await modalRef.afterClosed();
+  }
+
+  private async openTuningEditorDialog(): Promise<void> {
+    if (!this.tuningEditorModalTemplate) {
+      return;
+    }
+
+    const modalRef = this.modalService.showTemplate<void, null>(
+      this.tuningEditorModalTemplate,
+      this.viewContainerRef,
+      {
+        data: null,
+        width: '720px',
+        maxWidth: '95vw',
+        closeOnBackdropClick: false
+      }
+    );
+
+    await modalRef.afterClosed();
   }
 
   private async importPatternsFromLibrary(): Promise<SongSheetPattern[]> {

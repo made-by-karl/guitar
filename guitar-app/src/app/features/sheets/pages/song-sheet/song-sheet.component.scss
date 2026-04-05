@@ -1,8 +1,18 @@
 .song-sheet-page {
   .sheet-name-input {
-    max-width: 24rem;
+    flex: 1 1 24rem;
+    min-width: 0;
     font-size: 1.5rem;
     font-weight: 700;
+  }
+
+  .sheet-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    min-width: 0;
+    width: 100%;
   }
 
   .sheet-toolbar {
@@ -16,9 +26,19 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     padding: 1rem;
+    align-items: center;
     border-radius: 1rem;
     background: linear-gradient(135deg, #faf6ef, #f1ede6);
     border: 1px solid #e3d8c5;
+  }
+
+  .meta-settings-button {
+    margin-left: auto;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
   }
 
   .meta-pill {
@@ -43,6 +63,77 @@
     border: 1px solid #e3d8c5;
     border-radius: 1rem;
     background: #fffdfa;
+  }
+
+  .sheet-tabs {
+    display: grid;
+    gap: 0;
+  }
+
+  .sheet-tab-panel {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #fff;
+  }
+
+  .sheet-tab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    padding: 0 0 0 0.5rem;
+    margin-bottom: -1px;
+    background: rgba(241, 237, 230, 0.94);
+    backdrop-filter: blur(10px);
+    border: 1px solid #e3d8c5;
+    border-bottom: none;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -8px;
+      height: 8px;
+      background: #fffdfa;
+    }
+  }
+
+  .sheet-tab {
+    border: 1px solid #d8cab3;
+    border-bottom: none;
+    background: linear-gradient(180deg, #e7dfcf 0%, #ddd2bc 100%);
+    color: #5a4d3a;
+    border-top-left-radius: 0.9rem;
+    border-top-right-radius: 0.9rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 0.8rem 1rem 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+
+    &:hover {
+      background: linear-gradient(180deg, #ede5d7 0%, #e2d6c2 100%);
+      border-color: #cfbea0;
+    }
+
+    &.is-active {
+      background: #fffdfa;
+      border-color: #e3d8c5;
+      color: #3f3426;
+      box-shadow: none;
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .sheet-tabs > .sheet-section {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   .section-header {
@@ -219,6 +310,82 @@
   }
 }
 
+.part-editor-modal {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.tuning-editor-modal {
+  min-width: min(720px, 95vw);
+}
+
+.part-editor-header {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.part-editor-header-copy {
+  min-width: 0;
+}
+
+.part-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
+}
+
+.part-editor-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+.part-editor-playback-block {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+  min-width: fit-content;
+}
+
+.part-editor-playback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.part-editor-counter {
+  white-space: nowrap;
+}
+
+.part-editor-modal .modal-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+  padding: 1rem;
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .part-editor-playback-block {
+    min-width: 0;
+  }
+}
+
 .cdk-drag-preview {
   opacity: 0.85;
   box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.18);
@@ -243,13 +410,16 @@
 @media (max-width: 767px) {
   .song-sheet-page {
     .sheet-name-input {
-      max-width: none;
-      width: 100%;
+      flex-basis: auto;
     }
 
     .section-header,
     .measure-card-header {
       flex-direction: column;
+    }
+
+    .sheet-tab {
+      flex: 0 0 auto;
     }
 
     .sheet-toolbar {
