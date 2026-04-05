@@ -5,29 +5,29 @@ import { Note, transpose } from '@/app/core/music/semitones';
 import { parseGrip, Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
   Measure,
-  RhythmAction,
-  RhythmPatternActionGripOverride,
-  RhythmPatternBeatGrip,
+  PlayingAction,
+  PlayingPatternActionGripOverride,
+  PlayingPatternBeatGrip,
   getBeatsFromTimeSignature,
   getStringsForStrum
-} from '@/app/features/patterns/services/rhythm-patterns.model';
+} from '@/app/features/patterns/services/playing-patterns.model';
 
 interface FlatPlaybackEvent {
   time: number;
-  action: RhythmAction;
+  action: PlayingAction;
   grip?: Grip;
 }
 
-export interface RhythmPatternPlaybackMeasure {
+export interface PlayingPatternPlaybackMeasure {
   measure: Measure;
-  beatGrips?: RhythmPatternBeatGrip[];
-  actionGripOverrides?: RhythmPatternActionGripOverride[];
+  beatGrips?: PlayingPatternBeatGrip[];
+  actionGripOverrides?: PlayingPatternActionGripOverride[];
 }
 
 @Injectable({ providedIn: 'root' })
-export class RhythmPatternPlaybackPlannerService {
+export class PlayingPatternPlaybackPlannerService {
   buildPlaybackPlan(
-    measures: RhythmPatternPlaybackMeasure[],
+    measures: PlayingPatternPlaybackMeasure[],
     tuning: Note[],
     tempo: number,
     initialGrip?: Grip
@@ -70,7 +70,7 @@ export class RhythmPatternPlaybackPlannerService {
   }
 
   resolveGripBeforeMeasure(
-    measures: RhythmPatternPlaybackMeasure[],
+    measures: PlayingPatternPlaybackMeasure[],
     targetMeasureIndex: number
   ): Grip | undefined {
     const gripMap = this.createGripMap(measures);
@@ -90,7 +90,7 @@ export class RhythmPatternPlaybackPlannerService {
     return currentGrip;
   }
 
-  private createGripMap(measures: RhythmPatternPlaybackMeasure[]): Map<string, Grip> {
+  private createGripMap(measures: PlayingPatternPlaybackMeasure[]): Map<string, Grip> {
     const gripMap = new Map<string, Grip>();
 
     for (const measure of measures) {
@@ -111,7 +111,7 @@ export class RhythmPatternPlaybackPlannerService {
   }
 
   private resolveGripForAction(
-    measureConfig: RhythmPatternPlaybackMeasure,
+    measureConfig: PlayingPatternPlaybackMeasure,
     actionIndex: number,
     gripMap: Map<string, Grip>,
     currentGrip?: Grip
@@ -196,7 +196,7 @@ export class RhythmPatternPlaybackPlannerService {
   }
 
   private buildEventInstructionData(
-    action: RhythmAction,
+    action: PlayingAction,
     grip: Grip | undefined,
     tuning: Note[]
   ): {

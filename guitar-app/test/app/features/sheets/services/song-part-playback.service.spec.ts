@@ -1,7 +1,7 @@
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
-import { RhythmPatternPlaybackPlannerService } from '@/app/features/patterns/services/rhythm-pattern-playback-planner.service';
+import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
 describe('SongPartPlaybackService', () => {
   const eGripId = 'o|2|2|1|o|o';
@@ -81,7 +81,7 @@ describe('SongPartPlaybackService', () => {
     const service = new SongPartPlaybackService(
       new PlaybackService(midiService as any),
       songSheetsService as any,
-      new RhythmPatternPlaybackPlannerService()
+      new PlayingPatternPlaybackPlannerService()
     );
 
     await service.toggleMeasurePreview(sheet, part, 'item-1', 0);
@@ -136,7 +136,7 @@ describe('SongPartPlaybackService', () => {
     const service = new SongPartPlaybackService(
       new PlaybackService(midiService as any),
       songSheetsService as any,
-      new RhythmPatternPlaybackPlannerService()
+      new PlayingPatternPlaybackPlannerService()
     );
 
     await service.playSongPart(sheet, part);

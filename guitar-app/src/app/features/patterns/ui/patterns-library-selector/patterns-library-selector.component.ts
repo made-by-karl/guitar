@@ -1,34 +1,34 @@
 import {Component, EventEmitter, OnDestroy, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
-import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
-import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+import {PlayingPatternsService} from '@/app/features/patterns/services/playing-patterns.service';
+import {PlayingPattern} from '@/app/features/patterns/services/playing-patterns.model';
+import {PlayingActionsComponent} from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 import {Subscription} from 'rxjs';
 
 export interface PatternSelectorResult {
-  patterns: RhythmPattern[];
+  patterns: PlayingPattern[];
 }
 
 @Component({
   selector: 'app-patterns-library-selector',
   standalone: true,
-  imports: [CommonModule, FormsModule, RhythmActionsComponent],
+  imports: [CommonModule, FormsModule, PlayingActionsComponent],
   templateUrl: './patterns-library-selector.component.html',
   styleUrls: ['./patterns-library-selector.component.scss']
 })
 export class PatternsLibrarySelectorComponent implements OnDestroy {
   @Output() selectedPatternsChange = new EventEmitter<PatternSelectorResult>();
 
-  patterns: RhythmPattern[] = [];
+  patterns: PlayingPattern[] = [];
   search = '';
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   private selectedPatternIds = new Set<string>();
   private readonly playbackStateSubscription: Subscription;
 
   constructor(
-    public service: RhythmPatternsService,
+    public service: PlayingPatternsService,
     private patternPlayback: PatternPlaybackService
   ) {
     this.playbackState = this.patternPlayback.getSnapshot();
@@ -58,29 +58,29 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
     );
   }
 
-  async playPattern(pattern: RhythmPattern) {
+  async playPattern(pattern: PlayingPattern) {
     if (!pattern.measures || pattern.measures.length === 0) {
       console.error('Pattern has no measures:', pattern);
       return;
     }
 
-    // Use the new MIDI service to play the entire rhythm pattern
+    // Use the new MIDI service to play the entire playing pattern
     try {
       await this.patternPlayback.togglePatternPreview(pattern);
     } catch (error) {
-      console.error('Error playing rhythm pattern:', error);
+      console.error('Error playing playing pattern:', error);
     }
   }
 
-  isPatternPlaybackActive(pattern: RhythmPattern): boolean {
+  isPatternPlaybackActive(pattern: PlayingPattern): boolean {
     return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
   }
 
-  isSelected(pattern: RhythmPattern): boolean {
+  isSelected(pattern: PlayingPattern): boolean {
     return this.selectedPatternIds.has(this.getPatternKey(pattern));
   }
 
-  toggleSelection(pattern: RhythmPattern, isSelected: boolean) {
+  toggleSelection(pattern: PlayingPattern, isSelected: boolean) {
     const patternKey = this.getPatternKey(pattern);
 
     if (isSelected) {
@@ -92,11 +92,11 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
     this.emitSelectedPatterns();
   }
 
-  onPatternCardClick(pattern: RhythmPattern) {
+  onPatternCardClick(pattern: PlayingPattern) {
     this.toggleSelection(pattern, !this.isSelected(pattern));
   }
 
-  onPatternCardKeydown(event: KeyboardEvent, pattern: RhythmPattern) {
+  onPatternCardKeydown(event: KeyboardEvent, pattern: PlayingPattern) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.onPatternCardClick(pattern);
@@ -116,7 +116,7 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
     this.emitSelectedPatterns();
   }
 
-  private getPatternKey(pattern: RhythmPattern): string {
+  private getPatternKey(pattern: PlayingPattern): string {
     return pattern.id;
   }
 }

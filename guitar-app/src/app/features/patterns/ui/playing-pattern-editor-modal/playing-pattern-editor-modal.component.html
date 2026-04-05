@@ -1,6 +1,6 @@
 <div class="modal-content-wrapper">
   <div class="modal-header">
-    <h5 class="modal-title">{{ pattern ? 'Edit Rhythm Pattern' : 'Create Rhythm Pattern' }}</h5>
+    <h5 class="modal-title">{{ pattern ? 'Edit Playing Pattern' : 'Create Playing Pattern' }}</h5>
     <button
       class="btn btn-sm ms-2"
       [class.btn-danger]="isPatternPlaybackActive()"
@@ -14,9 +14,9 @@
   </div>
   <div class="modal-body">
     @if (pattern) {
-      <app-rhythm-pattern-editor #editor
+      <app-playing-pattern-editor #editor
         [pattern]="pattern">
-      </app-rhythm-pattern-editor>
+      </app-playing-pattern-editor>
     }
   </div>
   <div class="modal-footer">

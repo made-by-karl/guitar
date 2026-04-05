@@ -1,12 +1,12 @@
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { PlaybackService } from '@/app/core/services/playback.service';
-import { RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
-import { RhythmPatternPlaybackPlannerService } from '@/app/features/patterns/services/rhythm-pattern-playback-planner.service';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
 describe('PatternPlaybackService', () => {
   const eGripId = 'o|2|2|1|o|o';
 
-  const createPattern = (): RhythmPattern => ({
+  const createPattern = (): PlayingPattern => ({
     id: 'pattern-1',
     name: 'Pattern',
     description: '',
@@ -25,7 +25,7 @@ describe('PatternPlaybackService', () => {
     updatedAt: 1
   });
 
-  const createPercussivePattern = (): RhythmPattern => ({
+  const createPercussivePattern = (): PlayingPattern => ({
     ...createPattern(),
     id: 'pattern-2',
     measures: [{
@@ -50,7 +50,7 @@ describe('PatternPlaybackService', () => {
     };
     const service = new PatternPlaybackService(
       new PlaybackService(midiService as any),
-      new RhythmPatternPlaybackPlannerService()
+      new PlayingPatternPlaybackPlannerService()
     );
     const pattern = createPattern();
 
@@ -77,7 +77,7 @@ describe('PatternPlaybackService', () => {
     };
     const service = new PatternPlaybackService(
       new PlaybackService(midiService as any),
-      new RhythmPatternPlaybackPlannerService()
+      new PlayingPatternPlaybackPlannerService()
     );
 
     await service.togglePatternPreview(createPercussivePattern(), undefined, undefined, 120);
@@ -100,7 +100,7 @@ describe('PatternPlaybackService', () => {
     };
     const service = new PatternPlaybackService(
       new PlaybackService(midiService as any),
-      new RhythmPatternPlaybackPlannerService()
+      new PlayingPatternPlaybackPlannerService()
     );
     const pattern = {
       ...createPattern(),

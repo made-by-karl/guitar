@@ -1,32 +1,32 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {RhythmPatternsService} from '@/app/features/patterns/services/rhythm-patterns.service';
-import {RhythmPattern} from '@/app/features/patterns/services/rhythm-patterns.model';
+import {PlayingPatternsService} from '@/app/features/patterns/services/playing-patterns.service';
+import {PlayingPattern} from '@/app/features/patterns/services/playing-patterns.model';
 import {DialogService} from '@/app/core/services/dialog.service';
 import {ModalService} from '@/app/core/services/modal.service';
 import {
-  RhythmPatternEditorModalComponent
-} from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
-import {RhythmActionsComponent} from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+  PlayingPatternEditorModalComponent
+} from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
+import {PlayingActionsComponent} from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import {Subscription} from 'rxjs';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 
 @Component({
   selector: 'app-patterns-library',
   standalone: true,
-  imports: [CommonModule, FormsModule, RhythmActionsComponent],
+  imports: [CommonModule, FormsModule, PlayingActionsComponent],
   templateUrl: './patterns-library.component.html',
   styleUrls: ['./patterns-library.component.scss']
 })
 export class PatternsLibraryComponent implements OnInit, OnDestroy {
-  patterns: RhythmPattern[] = [];
+  patterns: PlayingPattern[] = [];
   search = '';
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   private readonly playbackStateSubscription: Subscription;
 
   constructor(
-    public service: RhythmPatternsService,
+    public service: PlayingPatternsService,
     private patternPlayback: PatternPlaybackService,
     private dialogService: DialogService,
     private modalService: ModalService
@@ -51,7 +51,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
   }
 
   async startCreate() {
-    const pattern: RhythmPattern = {
+    const pattern: PlayingPattern = {
       id: Date.now().toString(),
       name: '',
       description: '',
@@ -70,12 +70,12 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     await this.openPatternEditor(pattern);
   }
 
-  async startEdit(pattern: RhythmPattern) {
+  async startEdit(pattern: PlayingPattern) {
     await this.openPatternEditor(pattern);
   }
 
-  private async openPatternEditor(pattern: RhythmPattern) {
-    const modalRef = this.modalService.show(RhythmPatternEditorModalComponent, {
+  private async openPatternEditor(pattern: PlayingPattern) {
+    const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
       width: '95vw',
       height: '90vh',
       maxHeight: '90vh',
@@ -96,7 +96,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async onPatternSaved(pattern: RhythmPattern) {
+  private async onPatternSaved(pattern: PlayingPattern) {
     // Check if this is a new pattern (not in our patterns array yet)
     const existingPatternIndex = this.patterns.findIndex(p => p.id === pattern.id);
 
@@ -121,7 +121,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     );
   }
 
-  async playPattern(pattern: RhythmPattern) {
+  async playPattern(pattern: PlayingPattern) {
     if (!pattern.measures || pattern.measures.length === 0) {
       console.error('Pattern has no measures:', pattern);
       return;
@@ -130,15 +130,15 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     try {
       await this.patternPlayback.togglePatternPreview(pattern);
     } catch (error) {
-      console.error('Error playing rhythm pattern:', error);
+      console.error('Error playing playing pattern:', error);
     }
   }
 
-  isPatternPlaybackActive(pattern: RhythmPattern): boolean {
+  isPatternPlaybackActive(pattern: PlayingPattern): boolean {
     return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
   }
 
-  async deletePattern(pattern: RhythmPattern) {
+  async deletePattern(pattern: PlayingPattern) {
     const confirmed = await this.dialogService.confirm(
       'Delete this pattern?',
       'Delete Pattern',

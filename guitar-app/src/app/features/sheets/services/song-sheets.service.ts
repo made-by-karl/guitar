@@ -15,7 +15,7 @@ import {
 import { note } from '@/app/core/music/semitones';
 import { parseGrip } from '@/app/features/grips/services/grips/grip.model';
 import { DatabaseService } from '@/app/core/services/database.service';
-import { getBeatsFromTimeSignature } from '@/app/features/patterns/services/rhythm-patterns.model';
+import { getBeatsFromTimeSignature } from '@/app/features/patterns/services/playing-patterns.model';
 
 @Injectable({ providedIn: 'root' })
 export class SongSheetsService {

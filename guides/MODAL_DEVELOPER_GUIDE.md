@@ -492,7 +492,7 @@ await this.dialogService.alert(
 ### Example 1: Simple Confirm Dialog
 
 ```typescript
-async deletePattern(pattern: RhythmPattern) {
+async deletePattern(pattern: PlayingPattern) {
   const confirmed = await this.dialogService.confirm(
     `Delete pattern "${pattern.name}"?`,
     'Confirm Delete',
@@ -510,8 +510,8 @@ async deletePattern(pattern: RhythmPattern) {
 ### Example 2: Edit Modal with Validation
 
 ```typescript
-async editPattern(pattern: RhythmPattern) {
-  const modalRef = this.modalService.show(RhythmPatternEditorModalComponent, {
+async editPattern(pattern: PlayingPattern) {
+  const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
     width: '95vw',
     height: '95vh',
     maxWidth: '1200px',

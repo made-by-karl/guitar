@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { RhythmPattern, RhythmAction } from '@/app/features/patterns/services/rhythm-patterns.model';
+import { PlayingPattern, PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
 import { DatabaseService } from '@/app/core/services/database.service';
 
 @Injectable({ providedIn: 'root' })
-export class RhythmPatternsService {
+export class PlayingPatternsService {
 
   constructor(private db: DatabaseService) {
     this.initialize();
@@ -11,7 +11,7 @@ export class RhythmPatternsService {
 
   private async initialize() {
     try {
-      const count = await this.db.rhythmPatterns.count();
+      const count = await this.db.playingPatterns.count();
       if (count === 0) {
         await this.addDefaultPatterns();
       }
@@ -20,18 +20,18 @@ export class RhythmPatternsService {
     }
   }
 
-  async getAll(): Promise<RhythmPattern[]> {
+  async getAll(): Promise<PlayingPattern[]> {
     try {
-      return (await this.db.rhythmPatterns.toArray()).map(pattern => this.clonePattern(pattern));
+      return (await this.db.playingPatterns.toArray()).map(pattern => this.clonePattern(pattern));
     } catch (error) {
       console.error('Error loading patterns:', error);
       return [];
     }
   }
 
-  async getById(id: string): Promise<RhythmPattern | undefined> {
+  async getById(id: string): Promise<PlayingPattern | undefined> {
     try {
-      const pattern = await this.db.rhythmPatterns.get(id);
+      const pattern = await this.db.playingPatterns.get(id);
       return pattern ? this.clonePattern(pattern) : undefined;
     } catch (error) {
       console.error('Error loading pattern:', error);
@@ -39,18 +39,18 @@ export class RhythmPatternsService {
     }
   }
 
-  async add(pattern: RhythmPattern): Promise<void> {
+  async add(pattern: PlayingPattern): Promise<void> {
     try {
-      await this.db.rhythmPatterns.add(this.clonePattern(pattern));
+      await this.db.playingPatterns.add(this.clonePattern(pattern));
     } catch (error) {
       console.error('Error adding pattern:', error);
       throw error;
     }
   }
 
-  async update(pattern: RhythmPattern): Promise<void> {
+  async update(pattern: PlayingPattern): Promise<void> {
     try {
-      await this.db.rhythmPatterns.put(this.clonePattern(pattern));
+      await this.db.playingPatterns.put(this.clonePattern(pattern));
     } catch (error) {
       console.error('Error updating pattern:', error);
       throw error;
@@ -59,7 +59,7 @@ export class RhythmPatternsService {
 
   async delete(id: string): Promise<void> {
     try {
-      await this.db.rhythmPatterns.delete(id);
+      await this.db.playingPatterns.delete(id);
     } catch (error) {
       console.error('Error deleting pattern:', error);
       throw error;
@@ -67,7 +67,7 @@ export class RhythmPatternsService {
   }
 
   private async addDefaultPatterns() {
-    const defaults: RhythmPattern[] = [
+    const defaults: PlayingPattern[] = [
       {
         id: 'default-1',
         name: 'Downstrokes Only',
@@ -277,13 +277,13 @@ export class RhythmPatternsService {
       }
     ];
     try {
-      await this.db.rhythmPatterns.bulkAdd(defaults);
+      await this.db.playingPatterns.bulkAdd(defaults);
     } catch (error) {
       console.error('Error adding default patterns:', error);
     }
   }
 
-  private clonePattern(pattern: RhythmPattern): RhythmPattern {
+  private clonePattern(pattern: PlayingPattern): PlayingPattern {
     return {
       ...pattern,
       beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
@@ -302,9 +302,9 @@ export class RhythmPatternsService {
   }
 }
 
-function fromQuarters(actions: (RhythmAction | null)[]): (RhythmAction | null)[] {
+function fromQuarters(actions: (PlayingAction | null)[]): (PlayingAction | null)[] {
   // Convert a pattern defined in quarter notes to 16-action array
-  const sixteenthActions: (RhythmAction | null)[] = Array(16).fill(null);
+  const sixteenthActions: (PlayingAction | null)[] = Array(16).fill(null);
   
   // Place actions on quarter note positions (0, 4, 8, 12)
   for (let i = 0; i < actions.length && i < 4; i++) {
@@ -314,9 +314,9 @@ function fromQuarters(actions: (RhythmAction | null)[]): (RhythmAction | null)[]
   return sixteenthActions;
 }
 
-function fromEigths(actions: (RhythmAction | null)[]): (RhythmAction | null)[] {
+function fromEigths(actions: (PlayingAction | null)[]): (PlayingAction | null)[] {
   // Convert a pattern defined in eighth notes to 16-action array
-  const sixteenthActions: (RhythmAction | null)[] = Array(16).fill(null);
+  const sixteenthActions: (PlayingAction | null)[] = Array(16).fill(null);
   
   // Place actions on eighth note positions (0, 2, 4, 6, 8, 10, 12, 14)
   for (let i = 0; i < actions.length && i < 8; i++) {

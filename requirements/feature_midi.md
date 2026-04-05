@@ -4,7 +4,7 @@
 This feature overhauls the MIDI generation and playback system for the guitar app, enabling expressive, accurate, and real-time guitar rhythm playback. The new system must support:
 - Realistic guitar sounds (including muted and palm-muted strings)
 - Percussive effects (body hits, taps, etc.)
-- Flexible, programmatic MIDI sequence creation from the app's rhythm pattern model
+- Flexible, programmatic MIDI sequence creation from the app's playing pattern model
 - On-the-fly playback in the browser
 
 ## State-of-the-Art Library Recommendation
@@ -28,8 +28,8 @@ This feature overhauls the MIDI generation and playback system for the guitar ap
 - The new `MidiService` must provide:
   - `playSequence(instructions: MidiInstruction[]): Promise<void>`
     - Where `MidiInstruction` encodes note, velocity, duration, instrument/sample, and timing
-  - `generateFromRhythmPattern(pattern: RhythmPattern, tempo: number, ...): MidiInstruction[]`
-    - Converts the app's rhythm pattern model (including techniques, modifiers, and action/timing data) into a sequence of MIDI instructions
+  - `generateFromPlayingPattern(pattern: PlayingPattern, tempo: number, ...): MidiInstruction[]`
+    - Converts the app's playing pattern model (including techniques, modifiers, and action/timing data) into a sequence of MIDI instructions
 - The service must:
   - Support polyphony (multiple notes at once)
   - Support velocity/dynamics (for accents)
@@ -43,7 +43,7 @@ This feature overhauls the MIDI generation and playback system for the guitar ap
   - Muted notes ("chick" sound)
   - Palm-muted notes (short, damped)
   - Percussive hits (body tap, string slap, etc.)
-- Map rhythm pattern techniques/modifiers to the correct sample and velocity
+- Map playing pattern techniques/modifiers to the correct sample and velocity
 - Allow for custom sample sets (user can swap in their own)
 
 ### 4. Percussion Support
@@ -80,5 +80,5 @@ This feature overhauls the MIDI generation and playback system for the guitar ap
 **Summary:**
 - Use Tone.js for all real-time MIDI/audio playback
 - Use high-quality samples for guitar, mute, palm-mute, and percussion
-- Expose a flexible API for playing sequences and converting rhythm patterns to MIDI instructions
+- Expose a flexible API for playing sequences and converting playing patterns to MIDI instructions
 - Ensure extensibility and future-proofing for more advanced guitar techniques and instruments

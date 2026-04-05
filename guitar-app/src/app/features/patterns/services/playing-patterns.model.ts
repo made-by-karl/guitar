@@ -1,9 +1,9 @@
 import { getTimeSignatureParts, TimeSignature } from '@/app/core/music/rhythm/time-signature.model';
 
-export type RhythmTechnique = 'strum' | 'pick' | 'hammer-on' | 'pull-off' | 'slide' | 'percussive';
+export type PlayingTechnique = 'strum' | 'pick' | 'hammer-on' | 'pull-off' | 'slide' | 'percussive';
 
 // Style modifiers that can be applied to strum and pick techniques
-export type RhythmModifier = 'mute' | 'palm-mute' | 'accent';
+export type PlayingModifier = 'mute' | 'palm-mute' | 'accent';
 
 export interface PickingNote {
   string: number; // 0-5 (low E to high E)
@@ -37,29 +37,29 @@ export interface Percussive {
 
 export interface Measure {
   timeSignature: TimeSignature;
-  actions: (RhythmAction | null)[];
+  actions: (PlayingAction | null)[];
 }
 
-export interface RhythmPatternGripReference {
+export interface PlayingPatternGripReference {
   gripId: string;
   chordName: string;
 }
 
-export interface RhythmPatternBeatGrip extends RhythmPatternGripReference {
+export interface PlayingPatternBeatGrip extends PlayingPatternGripReference {
   measureIndex: number;
   beatIndex: number;
 }
 
-export interface RhythmPatternActionGripOverride extends RhythmPatternGripReference {
+export interface PlayingPatternActionGripOverride extends PlayingPatternGripReference {
   measureIndex: number;
   actionIndex: number;
 }
 
-export interface RhythmAction {
-  technique: RhythmTechnique;
+export interface PlayingAction {
+  technique: PlayingTechnique;
   
   // Style modifiers that can be applied to strum and pick techniques
-  modifiers?: RhythmModifier[];
+  modifiers?: PlayingModifier[];
   
   // For strumming patterns
   strum?: StrumPattern;
@@ -74,14 +74,14 @@ export interface RhythmAction {
   percussive?: Percussive;
 }
 
-export interface RhythmPattern {
+export interface PlayingPattern {
   id: string;
   name: string;
   description: string;
   category: string;
   measures: Measure[];
-  beatGrips?: RhythmPatternBeatGrip[];
-  actionGripOverrides?: RhythmPatternActionGripOverride[];
+  beatGrips?: PlayingPatternBeatGrip[];
+  actionGripOverrides?: PlayingPatternActionGripOverride[];
   createdAt: number;
   updatedAt: number;
   isCustom?: boolean;

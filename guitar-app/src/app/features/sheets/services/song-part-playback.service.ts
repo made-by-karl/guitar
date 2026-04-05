@@ -11,9 +11,9 @@ import {
 } from '@/app/features/sheets/services/song-sheets.model';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import {
-  RhythmPatternPlaybackMeasure,
-  RhythmPatternPlaybackPlannerService
-} from '@/app/features/patterns/services/rhythm-pattern-playback-planner.service';
+  PlayingPatternPlaybackMeasure,
+  PlayingPatternPlaybackPlannerService
+} from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
 type SongSheetPlaybackSessionType = 'none' | 'measure' | 'part';
 
@@ -44,7 +44,7 @@ export class SongPartPlaybackService {
   constructor(
     private playback: PlaybackService,
     private songSheetsService: SongSheetsService,
-    private planner: RhythmPatternPlaybackPlannerService
+    private planner: PlayingPatternPlaybackPlannerService
   ) {
     this.session = this.playback.getFiniteSession('song-part-playback');
     this.session.state$.subscribe((state) => {
@@ -211,7 +211,7 @@ export class SongPartPlaybackService {
 
   private buildMeasurePreview(
     sheet: SongSheet | SongSheetWithData,
-    measures: RhythmPatternPlaybackMeasure[],
+    measures: PlayingPatternPlaybackMeasure[],
     absoluteMeasureIndex: number
   ): PlaybackPlan | undefined {
     const targetMeasure = measures[absoluteMeasureIndex];
@@ -228,7 +228,7 @@ export class SongPartPlaybackService {
     );
   }
 
-  private toPlaybackMeasures(resolvedMeasures: ResolvedSongPartMeasure[]): RhythmPatternPlaybackMeasure[] {
+  private toPlaybackMeasures(resolvedMeasures: ResolvedSongPartMeasure[]): PlayingPatternPlaybackMeasure[] {
     return resolvedMeasures.map((resolvedMeasure) => ({
       measure: resolvedMeasure.measure,
       actionGripOverrides: [

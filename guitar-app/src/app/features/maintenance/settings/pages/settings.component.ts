@@ -18,7 +18,7 @@ import { DatabaseService } from '@/app/core/services/database.service';
           <button class="btn btn-warning me-2" (click)="clearData()">
             <i class="bi bi-trash me-1"></i>Clear All Data
           </button>
-          <p><small class="text-muted">This will remove all song sheets, rhythm patterns, and settings.</small></p>
+          <p><small class="text-muted">This will remove all song sheets, playing patterns, and settings.</small></p>
         </div>
       </div>
       
@@ -48,7 +48,7 @@ export class SettingsComponent {
     if (confirmed) {
       try {
         await this.db.songSheets.clear();
-        await this.db.rhythmPatterns.clear();
+        await this.db.playingPatterns.clear();
         await this.dialogService.alert(
           'All data has been cleared. Please refresh the page to see the changes.',
           'Data Cleared',

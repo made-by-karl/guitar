@@ -2,17 +2,17 @@ import { Component, computed, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  RhythmPattern,
-  RhythmAction,
+  PlayingPattern,
+  PlayingAction,
   LegatoNote,
-  RhythmModifier,
+  PlayingModifier,
   Measure,
-  RhythmPatternActionGripOverride,
-  RhythmPatternBeatGrip,
-  RhythmPatternGripReference,
+  PlayingPatternActionGripOverride,
+  PlayingPatternBeatGrip,
+  PlayingPatternGripReference,
   getBeatsFromTimeSignature,
   getSixteenthPerBeatFromTimeSignature
-} from '@/app/features/patterns/services/rhythm-patterns.model';
+} from '@/app/features/patterns/services/playing-patterns.model';
 import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/core/music/rhythm/time-signature.model';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { Subscription } from 'rxjs';
@@ -24,14 +24,14 @@ import { chordToString } from '@/app/core/music/chords';
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
 
 @Component({
-  selector: 'app-rhythm-pattern-editor',
+  selector: 'app-playing-pattern-editor',
   imports: [CommonModule, FormsModule],
-  templateUrl: './rhythm-pattern-editor.component.html',
-  styleUrl: './rhythm-pattern-editor.component.scss'
+  templateUrl: './playing-pattern-editor.component.html',
+  styleUrl: './playing-pattern-editor.component.scss'
 })
-export class RhythmPatternEditorComponent implements OnDestroy {
+export class PlayingPatternEditorComponent implements OnDestroy {
 
-  pattern = model.required<RhythmPattern>();
+  pattern = model.required<PlayingPattern>();
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   
   // Internal display model to manage UI state per measure
@@ -67,7 +67,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     return this.playbackState.status === 'playing' && this.playbackState.patternId === this.pattern()?.id;
   }
 
-  private updatePattern(updatedPattern: RhythmPattern) {
+  private updatePattern(updatedPattern: PlayingPattern) {
     // Update the pattern signal
     this.pattern.set({
       ...updatedPattern,
@@ -164,7 +164,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     
     if (originalIndex < 0 || originalIndex >= measure.actions.length) return;
     
-    let newAction: RhythmAction;
+    let newAction: PlayingAction;
     
     switch (techniqueType) {
       case 'strum-down':
@@ -216,7 +216,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const updatedMeasures = [...pattern.measures];
     updatedMeasures[measureIndex] = updatedMeasure;
     
-    const updatedPattern: RhythmPattern = {
+    const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures,
       beatGrips: this.filterBeatGripsForMeasure(pattern, measureIndex, updatedMeasure),
@@ -232,7 +232,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (!action) return;
     
-    let updatedAction: RhythmAction = { ...action };
+    let updatedAction: PlayingAction = { ...action };
     
     if (action.technique === 'strum') {
       // Ensure strum pattern exists
@@ -300,7 +300,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const updatedMeasures = [...pattern.measures];
     updatedMeasures[measureIndex] = updatedMeasure;
     
-    const updatedPattern: RhythmPattern = {
+    const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures
     };
@@ -324,7 +324,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const updatedMeasures = [...pattern.measures];
     updatedMeasures[measureIndex] = updatedMeasure;
     
-    const updatedPattern: RhythmPattern = {
+    const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures
     };
@@ -347,7 +347,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'pick') {
       const currentPick = action.pick || [];
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         pick: [...currentPick, { string: 0, fret: 0 }]
       };
@@ -364,7 +364,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -381,7 +381,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedPick = [...action.pick];
       updatedPick.splice(noteIndex, 1);
       
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         pick: updatedPick
       };
@@ -398,7 +398,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -416,7 +416,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedPick = [...action.pick];
       updatedPick[noteIndex] = { ...updatedPick[noteIndex], string: stringValue };
       
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         pick: updatedPick
       };
@@ -433,7 +433,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -451,7 +451,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedPick = [...action.pick];
       updatedPick[noteIndex] = { ...updatedPick[noteIndex], fret: fretValue };
       
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         pick: updatedPick
       };
@@ -468,7 +468,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -484,7 +484,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
 
     if (action && action.technique === 'strum' && action.strum) {
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         strum: {
           ...action.strum,
@@ -504,7 +504,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -519,7 +519,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'strum' && action.strum) {
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         strum: {
           ...action.strum,
@@ -539,7 +539,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -554,7 +554,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'percussive') {
-      const updatedAction: RhythmAction = {
+      const updatedAction: PlayingAction = {
         ...action,
         percussive: {
           technique: technique
@@ -573,7 +573,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
       const updatedMeasures = [...pattern.measures];
       updatedMeasures[measureIndex] = updatedMeasure;
       
-      const updatedPattern: RhythmPattern = {
+      const updatedPattern: PlayingPattern = {
         ...pattern,
         measures: updatedMeasures
       };
@@ -601,7 +601,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   }
 
   // Helper method to get available modifiers
-  getAvailableModifiers(): { value: RhythmModifier; label: string }[] {
+  getAvailableModifiers(): { value: PlayingModifier; label: string }[] {
     return [
       { value: 'mute', label: 'Mute' },
       { value: 'palm-mute', label: 'Palm Mute' },
@@ -631,7 +631,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const newActionLength = getSixteenthPerBeatFromTimeSignature(newTimeSignature) * getBeatsFromTimeSignature(newTimeSignature);
     const oldActionLength = measure.actions.length;
     
-    let newActions: (RhythmAction | null)[];
+    let newActions: (PlayingAction | null)[];
     
     if (newActionLength === oldActionLength) {
       // Same length, keep all actions
@@ -654,7 +654,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const updatedMeasures = [...pattern.measures];
     updatedMeasures[measureIndex] = updatedMeasure;
     
-    const updatedPattern: RhythmPattern = {
+    const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures
     };
@@ -666,7 +666,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   }
 
   // Helper method to toggle modifier
-  toggleModifier(measureIndex: number, originalIndex: number, modifier: RhythmModifier): void {
+  toggleModifier(measureIndex: number, originalIndex: number, modifier: PlayingModifier): void {
     const pattern = this.pattern()
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
@@ -675,14 +675,14 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const currentModifiers = action.modifiers || [];
     const index = currentModifiers.indexOf(modifier);
     
-    let updatedModifiers: RhythmModifier[];
+    let updatedModifiers: PlayingModifier[];
     if (index > -1) {
       updatedModifiers = currentModifiers.filter(m => m !== modifier);
     } else {
       updatedModifiers = [...currentModifiers, modifier];
     }
     
-    const updatedAction: RhythmAction = {
+    const updatedAction: PlayingAction = {
       ...action,
       modifiers: updatedModifiers
     };
@@ -699,7 +699,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const updatedMeasures = [...pattern.measures];
     updatedMeasures[measureIndex] = updatedMeasure;
     
-    const updatedPattern: RhythmPattern = {
+    const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures
     };
@@ -708,7 +708,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   }
 
   // Helper method to check if modifier is active
-  hasModifier(action: RhythmAction, modifier: RhythmModifier): boolean {
+  hasModifier(action: PlayingAction, modifier: PlayingModifier): boolean {
     return action.modifiers?.includes(modifier) || false;
   }
 
@@ -719,7 +719,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (!action || !action.legato) return;
 
-    const updatedAction: RhythmAction = {
+    const updatedAction: PlayingAction = {
       ...action,
       legato: {
         ...action.legato,
@@ -746,7 +746,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
   }
 
   // Ensure we have display states initialized for all measures
-  private ensureDisplayStates(pattern: RhythmPattern): void {
+  private ensureDisplayStates(pattern: PlayingPattern): void {
     if (!pattern || !pattern.measures) return;
     
     pattern.measures.forEach((_, index) => {
@@ -756,7 +756,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     });
   }
 
-  getMeasuresForDisplay(pattern: RhythmPattern): { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }[] {
+  getMeasuresForDisplay(pattern: PlayingPattern): { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }[] {
     if (!pattern || !pattern.measures) return [];
 
     return pattern.measures.map((m, i) => ({ 
@@ -794,11 +794,11 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     return measure.actions.map((action, index) => action ? index : -1).filter(index => index >= 0);
   }
 
-  getBeatGrip(measureIndex: number, beatIndex: number): RhythmPatternBeatGrip | undefined {
+  getBeatGrip(measureIndex: number, beatIndex: number): PlayingPatternBeatGrip | undefined {
     return this.pattern()?.beatGrips?.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
   }
 
-  getActionGrip(measureIndex: number, actionIndex: number): RhythmPatternActionGripOverride | undefined {
+  getActionGrip(measureIndex: number, actionIndex: number): PlayingPatternActionGripOverride | undefined {
     return this.pattern()?.actionGripOverrides?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
   }
 
@@ -865,7 +865,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     });
   }
 
-  getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): { position: string; action: RhythmAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] {
+  getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): { position: string; action: PlayingAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] {
     const measure = measureData.measure;
     if (!measure) return [];
 
@@ -873,7 +873,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     const sixteenthPerBeat = getSixteenthPerBeatFromTimeSignature(measure.timeSignature);
     const totalSixteenths = numberOfBeats * sixteenthPerBeat;
     
-    const displayActions: { position: string; action: RhythmAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] = [];
+    const displayActions: { position: string; action: PlayingAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] = [];
 
     for (let i = 0; i < totalSixteenths; i += measureData.useSixteenthSteps ? 1 : 2) {
       displayActions.push({
@@ -901,7 +901,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     return 'sixteenth';
   }
 
-  private filterBeatGripsForMeasure(pattern: RhythmPattern, measureIndex: number, updatedMeasure: Measure): RhythmPatternBeatGrip[] {
+  private filterBeatGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternBeatGrip[] {
     return (pattern.beatGrips ?? []).filter(grip => {
       if (grip.measureIndex !== measureIndex) {
         return true;
@@ -911,7 +911,7 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     });
   }
 
-  private filterActionGripsForMeasure(pattern: RhythmPattern, measureIndex: number, updatedMeasure: Measure): RhythmPatternActionGripOverride[] {
+  private filterActionGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternActionGripOverride[] {
     return (pattern.actionGripOverrides ?? []).filter(grip => {
       if (grip.measureIndex !== measureIndex) {
         return true;
@@ -921,21 +921,21 @@ export class RhythmPatternEditorComponent implements OnDestroy {
     });
   }
 
-  private normalizeBeatGrips(pattern: RhythmPattern): RhythmPatternBeatGrip[] {
+  private normalizeBeatGrips(pattern: PlayingPattern): PlayingPatternBeatGrip[] {
     return (pattern.beatGrips ?? []).filter(grip => {
       const measure = pattern.measures[grip.measureIndex];
       return !!measure && grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(measure.timeSignature);
     });
   }
 
-  private normalizeActionGripOverrides(pattern: RhythmPattern): RhythmPatternActionGripOverride[] {
+  private normalizeActionGripOverrides(pattern: PlayingPattern): PlayingPatternActionGripOverride[] {
     return (pattern.actionGripOverrides ?? []).filter(grip => {
       const measure = pattern.measures[grip.measureIndex];
       return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
     });
   }
 
-  private async selectGrip(chordName?: string): Promise<RhythmPatternGripReference | null | undefined> {
+  private async selectGrip(chordName?: string): Promise<PlayingPatternGripReference | null | undefined> {
     const data: GripSelectorModalData = { chord: chordName };
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,

@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RhythmPatternEditorComponent } from '@/app/features/patterns/ui/rhythm-pattern-editor/rhythm-pattern-editor.component';
-import { RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
+import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playing-pattern-editor/playing-pattern-editor.component';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { BehaviorSubject } from 'rxjs';
 import { ModalService } from '@/app/core/services/modal.service';
 
-describe('RhythmPatternEditorComponent', () => {
-  let component: RhythmPatternEditorComponent;
-  let fixture: ComponentFixture<RhythmPatternEditorComponent>;
+describe('PlayingPatternEditorComponent', () => {
+  let component: PlayingPatternEditorComponent;
+  let fixture: ComponentFixture<PlayingPatternEditorComponent>;
   let mockPatternPlaybackService: jest.Mocked<Pick<PatternPlaybackService, 'getSnapshot' | 'togglePatternPreview' | 'stopPatternPreview'>> & {
     state$: BehaviorSubject<ReturnType<PatternPlaybackService['getSnapshot']>>;
   };
@@ -25,7 +25,7 @@ describe('RhythmPatternEditorComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [RhythmPatternEditorComponent],
+      imports: [PlayingPatternEditorComponent],
       providers: [
         { provide: PatternPlaybackService, useValue: mockPatternPlaybackService },
         { provide: ModalService, useValue: mockModalService }
@@ -33,11 +33,11 @@ describe('RhythmPatternEditorComponent', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RhythmPatternEditorComponent);
+    fixture = TestBed.createComponent(PlayingPatternEditorComponent);
     component = fixture.componentInstance;
     
     // Set the required pattern model
-    const testPattern: RhythmPattern = {
+    const testPattern: PlayingPattern = {
       id: 'test-pattern',
       name: 'Test Pattern',
       description: 'Test pattern for unit testing',

@@ -222,7 +222,7 @@
       <div class="section-header">
         <div>
           <h5 class="mb-0">Pattern Library</h5>
-          <p class="section-copy mb-0">Sheet-local rhythm patterns reused by song parts.</p>
+          <p class="section-copy mb-0">Sheet-local playing patterns reused by song parts.</p>
         </div>
         <button class="btn btn-outline-primary btn-sm" (click)="addPatterns()">
           <i class="bi bi-plus"></i> Add Pattern
@@ -266,7 +266,7 @@
                 @for (measure of pattern.measures; track $index; let measureIndex = $index) {
                 <div class="preview-measure">
                   <div class="preview-header">Measure {{ measureIndex + 1 }}</div>
-                  <app-rhythm-actions [actions]="measure.actions" [showActionIndex]="true" />
+                  <app-playing-actions [actions]="measure.actions" [showActionIndex]="true" />
                 </div>
                 }
               </div>
@@ -460,7 +460,7 @@
                   </div>
 
                   <div class="rhythm-preview mb-3">
-                    <app-rhythm-actions [actions]="measure.actions" [showActionIndex]="true" />
+                    <app-playing-actions [actions]="measure.actions" [showActionIndex]="true" />
                   </div>
 
                   <div class="mb-3">

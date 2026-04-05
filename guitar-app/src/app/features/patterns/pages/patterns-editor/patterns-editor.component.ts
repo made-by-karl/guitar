@@ -3,22 +3,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
-import { RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
-import { RhythmPatternsService } from '@/app/features/patterns/services/rhythm-patterns.service';
-import { RhythmPatternEditorComponent } from '@/app/features/patterns/ui/rhythm-pattern-editor/rhythm-pattern-editor.component';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
+import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playing-pattern-editor/playing-pattern-editor.component';
 
 @Component({
   selector: 'app-patterns-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, RhythmPatternEditorComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PlayingPatternEditorComponent],
   templateUrl: './patterns-editor.component.html',
   styleUrls: ['./patterns-editor.component.scss']
 })
 export class PatternsEditorComponent {
-  pattern?: RhythmPattern;
+  pattern?: PlayingPattern;
 
   constructor(
-    private patternsService: RhythmPatternsService,
+    private patternsService: PlayingPatternsService,
     private route: ActivatedRoute,
     private router: Router
   ) {

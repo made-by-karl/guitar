@@ -2,10 +2,10 @@ import { Note } from '@/app/core/music/semitones';
 import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
   Measure,
-  RhythmPattern,
-  RhythmPatternActionGripOverride,
-  RhythmPatternBeatGrip
-} from '@/app/features/patterns/services/rhythm-patterns.model';
+  PlayingPattern,
+  PlayingPatternActionGripOverride,
+  PlayingPatternBeatGrip
+} from '@/app/features/patterns/services/playing-patterns.model';
 
 export interface SongSheetGrip {
   gripId: string;
@@ -16,7 +16,7 @@ export interface SongSheetGripWithData extends SongSheetGrip {
   grip?: Grip;
 }
 
-export interface SongSheetPattern extends RhythmPattern {}
+export interface SongSheetPattern extends PlayingPattern {}
 
 export interface SongPartMeasureText {
   measureIndex: number;
@@ -24,9 +24,9 @@ export interface SongPartMeasureText {
   notes: string;
 }
 
-export type SongPartBeatGrip = RhythmPatternBeatGrip;
+export type SongPartBeatGrip = PlayingPatternBeatGrip;
 
-export type SongPartActionGrip = RhythmPatternActionGripOverride;
+export type SongPartActionGrip = PlayingPatternActionGripOverride;
 
 export interface SongPartPatternItem {
   id: string;
@@ -69,8 +69,8 @@ export interface ResolvedSongPartMeasure {
   measure: Measure;
   lyrics: string;
   notes: string;
-  patternBeatGrips: RhythmPatternBeatGrip[];
-  patternActionGripOverrides: RhythmPatternActionGripOverride[];
+  patternBeatGrips: PlayingPatternBeatGrip[];
+  patternActionGripOverrides: PlayingPatternActionGripOverride[];
   beatGrips: SongPartBeatGrip[];
   actionGripOverrides: SongPartActionGrip[];
 }

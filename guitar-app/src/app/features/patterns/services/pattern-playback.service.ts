@@ -4,11 +4,11 @@ import { PlaybackService } from '@/app/core/services/playback.service';
 import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
 import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import { note, Note } from '@/app/core/music/semitones';
-import { RhythmPattern } from '@/app/features/patterns/services/rhythm-patterns.model';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import {
-  RhythmPatternPlaybackMeasure,
-  RhythmPatternPlaybackPlannerService
-} from '@/app/features/patterns/services/rhythm-pattern-playback-planner.service';
+  PlayingPatternPlaybackMeasure,
+  PlayingPatternPlaybackPlannerService
+} from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
 export interface PatternPlaybackState {
   status: PlaybackStatus;
@@ -43,7 +43,7 @@ export class PatternPlaybackService {
 
   constructor(
     private playback: PlaybackService,
-    private planner: RhythmPatternPlaybackPlannerService
+    private planner: PlayingPatternPlaybackPlannerService
   ) {
     this.session = this.playback.getFiniteSession('pattern-preview');
     this.session.state$.subscribe((state) => {
@@ -67,7 +67,7 @@ export class PatternPlaybackService {
   }
 
   async togglePatternPreview(
-    pattern: RhythmPattern,
+    pattern: PlayingPattern,
     tuning?: Note[],
     grip?: Grip,
     tempo: number = 80
@@ -78,7 +78,7 @@ export class PatternPlaybackService {
       return;
     }
 
-    const measures = pattern.measures.map<RhythmPatternPlaybackMeasure>((measure, measureIndex) => ({
+    const measures = pattern.measures.map<PlayingPatternPlaybackMeasure>((measure, measureIndex) => ({
       measure,
       beatGrips: (pattern.beatGrips ?? []).filter(gripValue => gripValue.measureIndex === measureIndex),
       actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(gripValue => gripValue.measureIndex === measureIndex)

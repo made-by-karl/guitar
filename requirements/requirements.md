@@ -55,14 +55,14 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
 
 #### Rhythm Patterns
 * [GA-3.0] Rhythm Patterns is a main feature in the app with its own page and menu entry
-    * A rhythm pattern contains picking and strumming techniques
-* [GA-3.1] The app provides a library of common rhythm patterns
+    * A playing pattern contains picking and strumming techniques
+* [GA-3.1] The app provides a library of common playing patterns
     * Patterns include visual representations (arrows for up/down, timing grid, string selection, etc.)
     * Each pattern has a name and description
     * Patterns are categorized (e.g., by genre, time signature, difficulty)
-* [GA-3.2] The user can preview (play back) rhythm patterns as MIDI or audio
+* [GA-3.2] The user can preview (play back) playing patterns as MIDI or audio
     * Playback reflects the rhythm, direction, and string selection of the pattern
-* [GA-3.3] The user can create, edit, and delete custom rhythm patterns
+* [GA-3.3] The user can create, edit, and delete custom playing patterns
     * The editor allows:
         * Setting the time signature (e.g., 4/4, 3/4, 6/8, 12/8)
         * Defining a sequence of steps, where each step specifies:
@@ -71,10 +71,10 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
             * Which string(s) are played (e.g., pick string 6, strum strings 4-1, strum only high strings, pick multiple strings)
         * Adjusting tempo (BPM)
         * Naming and saving the pattern
-* [GA-3.4] The user can add rhythm patterns to Song Sheets
+* [GA-3.4] The user can add playing patterns to Song Sheets
     * Patterns can be associated with specific chords or sections
-* [GA-3.5] All custom rhythm patterns are persisted locally and restored on reload
-* [GA-3.6] The user can view, search, and filter the rhythm pattern library
+* [GA-3.5] All custom playing patterns are persisted locally and restored on reload
+* [GA-3.6] The user can view, search, and filter the playing pattern library
 * [GA-3.7] The following techniques are supported in patterns:
     * Downstroke (D)
     * Upstroke (U)

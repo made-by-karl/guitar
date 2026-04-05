@@ -1,7 +1,7 @@
 import { note } from '@/app/core/music/semitones';
-import { RhythmPatternPlaybackPlannerService } from '@/app/features/patterns/services/rhythm-pattern-playback-planner.service';
+import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
-describe('RhythmPatternPlaybackPlannerService', () => {
+describe('PlayingPatternPlaybackPlannerService', () => {
   const tuning = [
     note('E', 2),
     note('A', 2),
@@ -16,7 +16,7 @@ describe('RhythmPatternPlaybackPlannerService', () => {
   };
 
   it('builds hammer-on instructions with source and target notes', () => {
-    const service = new RhythmPatternPlaybackPlannerService();
+    const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {
@@ -44,7 +44,7 @@ describe('RhythmPatternPlaybackPlannerService', () => {
   });
 
   it('builds pull-off instructions with descending notes', () => {
-    const service = new RhythmPatternPlaybackPlannerService();
+    const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {
@@ -67,7 +67,7 @@ describe('RhythmPatternPlaybackPlannerService', () => {
   });
 
   it('builds slide instructions on the selected string', () => {
-    const service = new RhythmPatternPlaybackPlannerService();
+    const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {

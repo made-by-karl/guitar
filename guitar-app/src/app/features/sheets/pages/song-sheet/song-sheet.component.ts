@@ -16,7 +16,7 @@ import {
   SongSheetWithData
 } from '@/app/features/sheets/services/song-sheets.model';
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
-import { RhythmActionsComponent } from '@/app/features/patterns/ui/rhythm-actions/rhythm-actions.component';
+import { PlayingActionsComponent } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
@@ -24,14 +24,14 @@ import { GripService } from '@/app/features/grips/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from '@/app/core/music/semitones';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
-import { RhythmPattern, getBeatsFromTimeSignature } from '@/app/features/patterns/services/rhythm-patterns.model';
-import { RhythmPatternEditorModalComponent } from '@/app/features/patterns/ui/rhythm-pattern-editor-modal/rhythm-pattern-editor-modal.component';
+import { PlayingPattern, getBeatsFromTimeSignature } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
 import { ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { Chord, chordToString } from '@/app/core/music/chords';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
 import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
-import { RhythmPatternsService } from '@/app/features/patterns/services/rhythm-patterns.service';
+import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
 import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.directive';
 import { Subscription } from 'rxjs';
 
@@ -69,7 +69,7 @@ interface TuningEditorModalTemplateContext {
 @Component({
   selector: 'app-song-sheet',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent, RhythmActionsComponent, DragDropModule, BpmSelectorComponent, TypedContextDirective],
+  imports: [CommonModule, FormsModule, GripDiagramComponent, PlayingActionsComponent, DragDropModule, BpmSelectorComponent, TypedContextDirective],
   templateUrl: './song-sheet.component.html',
   styleUrls: ['./song-sheet.component.scss']
 })
@@ -103,7 +103,7 @@ export class SongSheetComponent implements OnDestroy {
 
   constructor(
     private songSheetService: SongSheetsService,
-    private rhythmPatternsService: RhythmPatternsService,
+    private playingPatternsService: PlayingPatternsService,
     private playback: PlaybackService,
     private songPartPlayback: SongPartPlaybackService,
     private patternPlayback: PatternPlaybackService,
@@ -282,7 +282,7 @@ export class SongSheetComponent implements OnDestroy {
         : undefined;
       await this.patternPlayback.togglePatternPreview(pattern, tuning, undefined, this.sheet?.tempo);
     } catch (error) {
-      console.error('Error playing rhythm pattern:', error);
+      console.error('Error playing playing pattern:', error);
     }
   }
 
@@ -721,7 +721,7 @@ export class SongSheetComponent implements OnDestroy {
     };
   }
 
-  private clonePattern(pattern: RhythmPattern): SongSheetPattern {
+  private clonePattern(pattern: PlayingPattern): SongSheetPattern {
     return {
       ...pattern,
       beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
@@ -931,7 +931,7 @@ export class SongSheetComponent implements OnDestroy {
       return [];
     }
 
-    const importedPatterns = result.patterns.map((pattern: RhythmPattern) => this.toSongSheetPattern(pattern));
+    const importedPatterns = result.patterns.map((pattern: PlayingPattern) => this.toSongSheetPattern(pattern));
     await this.songSheetService.addPatterns(importedPatterns, this.sheet.id);
     await this.refreshData();
     return importedPatterns;
@@ -973,7 +973,7 @@ export class SongSheetComponent implements OnDestroy {
     };
   }
 
-  private toSongSheetPattern(pattern: RhythmPattern): SongSheetPattern {
+  private toSongSheetPattern(pattern: PlayingPattern): SongSheetPattern {
     return this.clonePattern({
       ...pattern,
       id: this.createId('pat'),
@@ -984,7 +984,7 @@ export class SongSheetComponent implements OnDestroy {
   }
 
   private async openPatternEditor(pattern: SongSheetPattern): Promise<SongSheetPattern | undefined> {
-    const modalRef = this.modalService.show(RhythmPatternEditorModalComponent, {
+    const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
       width: '95vw',
       height: '90vh',
       maxHeight: '90vh',
