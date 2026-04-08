@@ -40,8 +40,31 @@ describe('MidiService', () => {
       }
     });
 
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'E2', expect.any(Number), 0.001, expect.any(Number));
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'F#2', expect.any(Number), 0.07100000000000001, expect.any(Number));
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'E2', 0.3, 0.001, expect.any(Number));
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'F#2', 0.3, 0.301, expect.any(Number));
+  });
+
+  it('switches to the target note halfway through a short hammer-on', () => {
+    const { service, guitarSampler } = createService();
+
+    service.triggerInstruction({
+      time: 0,
+      duration: 0.125,
+      velocity: 0.75,
+      technique: 'hammer-on',
+      notes: [
+        { note: note('E', 2) },
+        { note: note('F#', 2) }
+      ],
+      legato: {
+        string: 0,
+        source: { note: note('E', 2) },
+        target: { note: note('F#', 2) }
+      }
+    });
+
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'E2', 0.0625, 0.001, expect.any(Number));
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'F#2', 0.08, 0.0635, expect.any(Number));
   });
 
   it('renders slides with a longer transition before the target note', () => {

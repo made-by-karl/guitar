@@ -41,6 +41,8 @@ export class PatternsEditorComponent {
       name: '',
       description: '',
       category: '',
+      suggestedGenre: '',
+      exampleSong: '',
       measures: [
         {
           timeSignature: '4/4',

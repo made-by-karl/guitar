@@ -2,23 +2,41 @@ import { Component, computed, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  BaseRelativeLegatoEndpoint,
+  BaseRelativePickingNote,
+  ExplicitLegatoNote,
+  ExplicitPickingNote,
+  GripRelativeLegatoEndpoint,
+  GripRelativePickingNote,
+  LegatoMode,
+  RelativeLegatoEndpointNote,
+  RelativeLegatoNote,
   PlayingPattern,
   PlayingAction,
   LegatoNote,
+  PickMode,
+  PickingNote,
   PlayingModifier,
   Measure,
   PlayingPatternActionGripOverride,
   PlayingPatternBeatGrip,
   PlayingPatternGripReference,
+  RelativeNoteAnchor,
+  RelativeStrumRange,
+  RelativeStringRole,
+  StrumRange,
+  getLegatoMode,
   getBeatsFromTimeSignature,
-  getSixteenthPerBeatFromTimeSignature
+  getPickMode,
+  getSixteenthPerBeatFromTimeSignature,
+  isRelativeStrumRange
 } from '@/app/features/patterns/services/playing-patterns.model';
 import { parseTimeSignature, TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/core/music/rhythm/time-signature.model';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { Subscription } from 'rxjs';
 import { ModalService } from '@/app/core/services/modal.service';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
-import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
+import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { chordToString } from '@/app/core/music/chords';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
@@ -30,6 +48,15 @@ type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer
   styleUrl: './playing-pattern-editor.component.scss'
 })
 export class PlayingPatternEditorComponent implements OnDestroy {
+  readonly relativeStringRoles: RelativeStringRole[] = ['bass', 'second-from-bass', 'middle', 'second-from-top', 'top'];
+  readonly strumStringOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'bass', label: 'Bass' },
+    { value: 'treble', label: 'Treble' },
+    { value: 'middle', label: 'Middle' },
+    { value: 'power', label: 'Power' },
+    { value: 'range', label: 'Range' }
+  ] as const;
 
   pattern = model.required<PlayingPattern>();
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
@@ -184,7 +211,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       case 'pick':
         newAction = {
           technique: 'pick',
-          pick: [{ string: 0, fret: 0 }],
+          pickMode: 'relative',
+          pick: [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }],
           modifiers: []
         };
         break;
@@ -199,7 +227,12 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       case 'slide':
         newAction = {
           technique: techniqueType,
-          legato: { string: 0, fromFret: 0, toFret: techniqueType === 'pull-off' ? 0 : 2 }
+          legatoMode: 'relative',
+          legato: techniqueType === 'pull-off'
+            ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'base-note' } }
+            : techniqueType === 'slide'
+              ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'grip-note', fretOffset: 2 } }
+              : { role: 'second-from-bass', start: { anchor: 'base-note' }, target: { anchor: 'grip-note', fretOffset: 0 } }
         };
         break;
     }
@@ -242,16 +275,21 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
       // Remove pick array and percussive if switching from pick/percussive to strum
       delete updatedAction.pick;
+      delete updatedAction.pickMode;
+      delete updatedAction.legatoMode;
       delete updatedAction.percussive;
     } else if (action.technique === 'pick') {
       // Ensure pick array exists
       if (!updatedAction.pick) {
-        updatedAction.pick = [{ string: 0, fret: 0 }];
+        updatedAction.pickMode = 'relative';
+        updatedAction.pick = [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }];
       }
 
       // Remove strum pattern and percussive if switching from strum/percussive to pick
       delete updatedAction.strum;
       delete updatedAction.percussive;
+      delete updatedAction.legato;
+      delete updatedAction.legatoMode;
     } else if (action.technique === 'percussive') {
       // Ensure percussive object exists
       if (!updatedAction.percussive) {
@@ -261,21 +299,31 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       // Remove strum and pick for percussive
       delete updatedAction.strum;
       delete updatedAction.pick;
+      delete updatedAction.pickMode;
       delete updatedAction.legato;
+      delete updatedAction.legatoMode;
     } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
       if (!updatedAction.legato) {
-        updatedAction.legato = { string: 0, fromFret: 0, toFret: action.technique === 'pull-off' ? 0 : 2 };
+        updatedAction.legatoMode = 'relative';
+        updatedAction.legato = action.technique === 'pull-off'
+          ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'base-note' } }
+          : action.technique === 'slide'
+            ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'grip-note', fretOffset: 2 } }
+            : { role: 'second-from-bass', start: { anchor: 'base-note' }, target: { anchor: 'grip-note', fretOffset: 0 } };
       }
 
       delete updatedAction.strum;
       delete updatedAction.pick;
+      delete updatedAction.pickMode;
       delete updatedAction.percussive;
     } else {
       // Remove strum, pick, and percussive for other techniques
       delete updatedAction.strum;
       delete updatedAction.pick;
+      delete updatedAction.pickMode;
       delete updatedAction.percussive;
       delete updatedAction.legato;
+      delete updatedAction.legatoMode;
     }
     
     // Ensure modifiers array exists for strum and pick
@@ -349,7 +397,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       const currentPick = action.pick || [];
       const updatedAction: PlayingAction = {
         ...action,
-        pick: [...currentPick, { string: 0, fret: 0 }]
+        pick: [...currentPick, this.getDefaultPickNote(this.getPickModeForAction(action))]
       };
       
       const measure = pattern.measures[measureIndex];
@@ -407,14 +455,14 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     }
   }
 
-  // Update pick note string with immutable pattern update
-  updatePickNoteString(measureIndex: number, originalIndex: number, noteIndex: number, stringValue: number): void {
+  // Update pick note string role with immutable pattern update
+  updatePickNoteRole(measureIndex: number, originalIndex: number, noteIndex: number, role: RelativeStringRole): void {
     const pattern = this.pattern()
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'pick' && action.pick && action.pick[noteIndex]) {
       const updatedPick = [...action.pick];
-      updatedPick[noteIndex] = { ...updatedPick[noteIndex], string: stringValue };
+      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as GripRelativePickingNote | BaseRelativePickingNote), role };
       
       const updatedAction: PlayingAction = {
         ...action,
@@ -442,6 +490,40 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     }
   }
 
+  updatePickNoteString(measureIndex: number, originalIndex: number, noteIndex: number, stringValue: number): void {
+    const pattern = this.pattern()
+    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
+    const action = pattern.measures[measureIndex].actions[originalIndex];
+    if (action && action.technique === 'pick' && action.pick && action.pick[noteIndex]) {
+      const updatedPick = [...action.pick];
+      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as ExplicitPickingNote), string: stringValue };
+
+      const updatedAction: PlayingAction = {
+        ...action,
+        pick: updatedPick
+      };
+
+      const measure = pattern.measures[measureIndex];
+      const updatedActions = [...measure.actions];
+      updatedActions[originalIndex] = updatedAction;
+
+      const updatedMeasure: Measure = {
+        ...measure,
+        actions: updatedActions
+      };
+
+      const updatedMeasures = [...pattern.measures];
+      updatedMeasures[measureIndex] = updatedMeasure;
+
+      const updatedPattern: PlayingPattern = {
+        ...pattern,
+        measures: updatedMeasures
+      };
+
+      this.updatePattern(updatedPattern);
+    }
+  }
+
   // Update pick note fret with immutable pattern update
   updatePickNoteFret(measureIndex: number, originalIndex: number, noteIndex: number, fretValue: number): void {
     const pattern = this.pattern()
@@ -449,7 +531,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'pick' && action.pick && action.pick[noteIndex]) {
       const updatedPick = [...action.pick];
-      updatedPick[noteIndex] = { ...updatedPick[noteIndex], fret: fretValue };
+      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as ExplicitPickingNote), fret: fretValue };
       
       const updatedAction: PlayingAction = {
         ...action,
@@ -515,37 +597,67 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   // Update strum strings with immutable pattern update
   updateStrumStrings(measureIndex: number, originalIndex: number, strings: string): void {
-    const pattern = this.pattern()
-    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
-    const action = pattern.measures[measureIndex].actions[originalIndex];
-    if (action && action.technique === 'strum' && action.strum) {
-      const updatedAction: PlayingAction = {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'strum' || !action.strum) return action;
+
+      return {
         ...action,
         strum: {
           ...action.strum,
-          strings: strings as any
+          strings: strings as Exclude<StrumRange, number[] | RelativeStrumRange>
         }
       };
-      
-      const measure = pattern.measures[measureIndex];
-      const updatedActions = [...measure.actions];
-      updatedActions[originalIndex] = updatedAction;
-      
-      const updatedMeasure: Measure = {
-        ...measure,
-        actions: updatedActions
+    });
+  }
+
+  updateStrumStringsMode(measureIndex: number, originalIndex: number, value: string): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'strum' || !action.strum) return action;
+
+      return {
+        ...action,
+        strum: {
+          ...action.strum,
+          strings: value === 'range'
+            ? this.getDefaultRelativeStrumRange()
+            : value as Exclude<StrumRange, number[] | RelativeStrumRange>
+        }
       };
-      
-      const updatedMeasures = [...pattern.measures];
-      updatedMeasures[measureIndex] = updatedMeasure;
-      
-      const updatedPattern: PlayingPattern = {
-        ...pattern,
-        measures: updatedMeasures
+    });
+  }
+
+  updateStrumRangeFrom(measureIndex: number, originalIndex: number, from: RelativeStringRole): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'strum' || !action.strum || !isRelativeStrumRange(action.strum.strings)) return action;
+
+      return {
+        ...action,
+        strum: {
+          ...action.strum,
+          strings: {
+            ...action.strum.strings,
+            from
+          }
+        }
       };
-      
-      this.updatePattern(updatedPattern);
-    }
+    });
+  }
+
+  updateStrumRangeTo(measureIndex: number, originalIndex: number, to: RelativeStringRole): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'strum' || !action.strum || !isRelativeStrumRange(action.strum.strings)) return action;
+
+      return {
+        ...action,
+        strum: {
+          ...action.strum,
+          strings: {
+            ...action.strum.strings,
+            to
+          }
+        }
+      };
+    });
   }
 
   // Update percussion technique with immutable pattern update
@@ -588,8 +700,157 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return names[stringIndex] || `String ${stringIndex + 1}`;
   }
 
+  getRelativeStringRoleLabel(role: RelativeStringRole): string {
+    switch (role) {
+      case 'bass': return 'Bass Note';
+      case 'second-from-bass': return '2nd from Bass';
+      case 'middle': return 'Middle';
+      case 'second-from-top': return '2nd from Top';
+      case 'top': return 'Top Note';
+    }
+  }
+
+  getStrumStringsMode(action: PlayingAction): string {
+    if (action.technique !== 'strum' || !action.strum) {
+      return 'all';
+    }
+
+    if (isRelativeStrumRange(action.strum.strings)) {
+      return 'range';
+    }
+
+    return typeof action.strum.strings === 'string' ? action.strum.strings : 'all';
+  }
+
+  isRelativeStrumStrings(action: PlayingAction): boolean {
+    return action.technique === 'strum' && !!action.strum && isRelativeStrumRange(action.strum.strings);
+  }
+
+  getStrumRangeFrom(action: PlayingAction): RelativeStringRole {
+    if (!this.isRelativeStrumStrings(action)) {
+      return 'bass';
+    }
+
+    const strings = action.strum!.strings as RelativeStrumRange;
+    return strings.from;
+  }
+
+  getStrumRangeTo(action: PlayingAction): RelativeStringRole {
+    if (!this.isRelativeStrumStrings(action)) {
+      return 'top';
+    }
+
+    const strings = action.strum!.strings as RelativeStrumRange;
+    return strings.to;
+  }
+
+  getPickModeForAction(action: PlayingAction): PickMode {
+    return getPickMode(action);
+  }
+
+  getLegatoModeForAction(action: PlayingAction): LegatoMode {
+    return getLegatoMode(action);
+  }
+
+  isRelativePickNote(note: PickingNote): note is GripRelativePickingNote | BaseRelativePickingNote {
+    return 'role' in note;
+  }
+
+  isRelativeLegato(legato: LegatoNote): legato is RelativeLegatoNote {
+    return 'role' in legato && 'start' in legato && 'target' in legato;
+  }
+
+  getPickAnchor(note: PickingNote): RelativeNoteAnchor {
+    return this.isRelativePickNote(note) ? note.anchor : 'grip-note';
+  }
+
+  getPickRole(note: PickingNote): RelativeStringRole {
+    return this.isRelativePickNote(note) ? note.role : 'bass';
+  }
+
+  getLegatoRole(legato: LegatoNote): RelativeStringRole {
+    return this.isRelativeLegato(legato) ? legato.role : 'second-from-bass';
+  }
+
+  canEditPickOffset(note: PickingNote): boolean {
+    return this.isRelativePickNote(note) && note.anchor === 'grip-note';
+  }
+
+  getRelativePickOffset(note: PickingNote): number {
+    return this.isRelativePickNote(note) && 'fretOffset' in note ? note.fretOffset : 0;
+  }
+
+  getLegatoStartAnchor(legato: LegatoNote): RelativeNoteAnchor {
+    return this.isRelativeLegato(legato) ? legato.start.anchor : 'base-note';
+  }
+
+  getLegatoTargetAnchor(legato: LegatoNote): RelativeNoteAnchor {
+    return this.isRelativeLegato(legato) ? legato.target.anchor : 'grip-note';
+  }
+
+  canEditLegatoStartOffset(legato: LegatoNote): boolean {
+    return this.isRelativeLegato(legato) && legato.start.anchor === 'grip-note';
+  }
+
+  canEditLegatoTargetOffset(legato: LegatoNote): boolean {
+    return this.isRelativeLegato(legato) && legato.target.anchor === 'grip-note';
+  }
+
+  getRelativeLegatoStartOffset(legato: LegatoNote): number {
+    return this.isRelativeLegato(legato) && 'fretOffset' in legato.start ? legato.start.fretOffset : 0;
+  }
+
+  getRelativeLegatoTargetOffset(legato: LegatoNote): number {
+    return this.isRelativeLegato(legato) && 'fretOffset' in legato.target ? legato.target.fretOffset : 0;
+  }
+
+  setPickMode(measureIndex: number, originalIndex: number, pickMode: PickMode): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'pick') return action;
+
+      return {
+        ...action,
+        pickMode,
+        pick: [this.getDefaultPickNote(pickMode)]
+      };
+    });
+  }
+
+  updatePickNoteOffset(measureIndex: number, originalIndex: number, noteIndex: number, fretOffset: number): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'pick' || !action.pick || !action.pick[noteIndex]) return action;
+
+      const updatedPick = [...action.pick];
+      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as GripRelativePickingNote), fretOffset };
+      return { ...action, pick: updatedPick };
+    });
+  }
+
+  updatePickNoteAnchor(measureIndex: number, originalIndex: number, noteIndex: number, anchor: RelativeNoteAnchor): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || action.technique !== 'pick' || !action.pick || !action.pick[noteIndex]) return action;
+
+      const updatedPick = [...action.pick];
+      updatedPick[noteIndex] = this.toRelativePickWithAnchor(
+        updatedPick[noteIndex] as GripRelativePickingNote | BaseRelativePickingNote,
+        anchor
+      );
+      return { ...action, pick: updatedPick };
+    });
+  }
+
+  updateLegatoRole(measureIndex: number, originalIndex: number, role: RelativeStringRole): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || !action.legato || !this.isRelativeLegato(action.legato)) return action;
+      return { ...action, legato: { ...action.legato, role } };
+    });
+  }
+
   updateLegatoString(measureIndex: number, originalIndex: number, stringValue: number): void {
-    this.updateLegato(measureIndex, originalIndex, { string: stringValue });
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || !action.legato || this.isRelativeLegato(action.legato)) return action;
+      return { ...action, legato: { ...action.legato, string: stringValue } };
+    });
   }
 
   updateLegatoFromFret(measureIndex: number, originalIndex: number, fromFret: number): void {
@@ -598,6 +859,56 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   updateLegatoToFret(measureIndex: number, originalIndex: number, toFret: number): void {
     this.updateLegato(measureIndex, originalIndex, { toFret });
+  }
+
+  setLegatoMode(measureIndex: number, originalIndex: number, legatoMode: LegatoMode): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || (action.technique !== 'hammer-on' && action.technique !== 'pull-off' && action.technique !== 'slide')) {
+        return action;
+      }
+
+      return {
+        ...action,
+        legatoMode,
+        legato: this.getDefaultLegato(action.technique, legatoMode)
+      };
+    });
+  }
+
+  updateLegatoStartFretOffset(measureIndex: number, originalIndex: number, fretOffset: number): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || !action.legato || !this.isRelativeLegato(action.legato) || action.legato.start.anchor !== 'grip-note') return action;
+      return { ...action, legato: { ...action.legato, start: { ...action.legato.start, fretOffset } } };
+    });
+  }
+
+  updateLegatoTargetFretOffset(measureIndex: number, originalIndex: number, fretOffset: number): void {
+    this.updateAction(measureIndex, originalIndex, action => {
+      if (!action || !action.legato || !this.isRelativeLegato(action.legato) || action.legato.target.anchor !== 'grip-note') return action;
+      return { ...action, legato: { ...action.legato, target: { ...action.legato.target, fretOffset } } };
+    });
+  }
+
+  updateLegatoStartAnchor(measureIndex: number, originalIndex: number, anchor: RelativeNoteAnchor): void {
+    const action = this.pattern()?.measures[measureIndex]?.actions[originalIndex];
+    if (!action || !action.legato || !this.isRelativeLegato(action.legato)) return;
+
+    const nextStart = this.toRelativeLegatoEndpointWithAnchor(action.legato.start, anchor, this.getDefaultRelativeLegatoStartOffset(action.technique));
+    this.updateAction(measureIndex, originalIndex, currentAction => {
+      if (!currentAction || !currentAction.legato || !this.isRelativeLegato(currentAction.legato)) return currentAction;
+      return { ...currentAction, legato: { ...currentAction.legato, start: nextStart } };
+    });
+  }
+
+  updateLegatoTargetAnchor(measureIndex: number, originalIndex: number, anchor: RelativeNoteAnchor): void {
+    const action = this.pattern()?.measures[measureIndex]?.actions[originalIndex];
+    if (!action || !action.legato || !this.isRelativeLegato(action.legato)) return;
+
+    const nextTarget = this.toRelativeLegatoEndpointWithAnchor(action.legato.target, anchor, this.getDefaultRelativeLegatoTargetOffset(action.technique));
+    this.updateAction(measureIndex, originalIndex, currentAction => {
+      if (!currentAction || !currentAction.legato || !this.isRelativeLegato(currentAction.legato)) return currentAction;
+      return { ...currentAction, legato: { ...currentAction.legato, target: nextTarget } };
+    });
   }
 
   // Helper method to get available modifiers
@@ -712,19 +1023,22 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return action.modifiers?.includes(modifier) || false;
   }
 
-  private updateLegato(measureIndex: number, originalIndex: number, patch: Partial<LegatoNote>): void {
+  private updateLegato(measureIndex: number, originalIndex: number, patch: Partial<ExplicitLegatoNote>): void {
     const pattern = this.pattern();
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
 
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (!action || !action.legato) return;
+    if (this.isRelativeLegato(action.legato)) return;
+
+    const nextLegato: ExplicitLegatoNote = {
+      ...action.legato,
+      ...patch
+    };
 
     const updatedAction: PlayingAction = {
       ...action,
-      legato: {
-        ...action.legato,
-        ...patch
-      }
+      legato: nextLegato
     };
 
     const measure = pattern.measures[measureIndex];
@@ -745,13 +1059,117 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
+  private updateAction(
+    measureIndex: number,
+    originalIndex: number,
+    updater: (action: PlayingAction | null) => PlayingAction | null
+  ): void {
+    const pattern = this.pattern();
+    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
+
+    const measure = pattern.measures[measureIndex];
+    const updatedActions = [...measure.actions];
+    updatedActions[originalIndex] = updater(updatedActions[originalIndex]);
+
+    const updatedMeasures = [...pattern.measures];
+    updatedMeasures[measureIndex] = {
+      ...measure,
+      actions: updatedActions
+    };
+
+    this.updatePattern({
+      ...pattern,
+      measures: updatedMeasures
+    });
+  }
+
+  private getDefaultPickNote(pickMode: PickMode): PickingNote {
+    return pickMode === 'relative'
+      ? { role: 'bass', anchor: 'grip-note', fretOffset: 0 }
+      : { string: 0, fret: 0 };
+  }
+
+  private getDefaultRelativeStrumRange(): RelativeStrumRange {
+    return {
+      from: 'bass',
+      to: 'top'
+    };
+  }
+
+  private getDefaultLegato(technique: 'hammer-on' | 'pull-off' | 'slide', legatoMode: LegatoMode): LegatoNote {
+    if (legatoMode === 'relative') {
+      return {
+        role: 'second-from-bass',
+        start: technique === 'pull-off'
+          ? { anchor: 'grip-note', fretOffset: 0 }
+          : technique === 'slide'
+            ? { anchor: 'grip-note', fretOffset: 0 }
+            : { anchor: 'base-note' },
+        target: technique === 'pull-off'
+          ? { anchor: 'base-note' }
+          : technique === 'slide'
+            ? { anchor: 'grip-note', fretOffset: 2 }
+            : { anchor: 'grip-note', fretOffset: 0 }
+      };
+    }
+
+    return {
+      string: 0,
+      fromFret: technique === 'pull-off' ? 2 : 0,
+      toFret: technique === 'pull-off' ? 0 : 2
+    };
+  }
+
+  private toRelativePickWithAnchor(
+    note: GripRelativePickingNote | BaseRelativePickingNote,
+    anchor: RelativeNoteAnchor
+  ): GripRelativePickingNote | BaseRelativePickingNote {
+    if (anchor === 'base-note') {
+      return {
+        role: note.role,
+        anchor: 'base-note'
+      };
+    }
+
+    return {
+      role: note.role,
+      anchor: 'grip-note',
+      fretOffset: 'fretOffset' in note ? note.fretOffset : 0
+    };
+  }
+
+  private toRelativeLegatoEndpointWithAnchor(
+    endpoint: RelativeLegatoEndpointNote,
+    anchor: RelativeNoteAnchor,
+    defaultOffset: number
+  ): GripRelativeLegatoEndpoint | BaseRelativeLegatoEndpoint {
+    if (anchor === 'base-note') {
+      return {
+        anchor: 'base-note'
+      };
+    }
+
+    return {
+      anchor: 'grip-note',
+      fretOffset: 'fretOffset' in endpoint ? endpoint.fretOffset : defaultOffset
+    };
+  }
+
+  private getDefaultRelativeLegatoStartOffset(technique: PlayingAction['technique']): number {
+    return technique === 'pull-off' || technique === 'slide' ? 0 : 0;
+  }
+
+  private getDefaultRelativeLegatoTargetOffset(technique: PlayingAction['technique']): number {
+    return technique === 'slide' ? 2 : 0;
+  }
+
   // Ensure we have display states initialized for all measures
   private ensureDisplayStates(pattern: PlayingPattern): void {
     if (!pattern || !pattern.measures) return;
     
-    pattern.measures.forEach((_, index) => {
+    pattern.measures.forEach((measure, index) => {
       if (!this.measureDisplayStates.has(index)) {
-        this.measureDisplayStates.set(index, false);
+        this.measureDisplayStates.set(index, this.measureRequiresSixteenthSteps(measure));
       }
     });
   }
@@ -762,17 +1180,27 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return pattern.measures.map((m, i) => ({ 
       measure: m, 
       measureIndex: i,
-      useSixteenthSteps: this.measureDisplayStates.get(i) ?? false 
+      useSixteenthSteps: this.measureRequiresSixteenthSteps(m) || (this.measureDisplayStates.get(i) ?? false)
     }));
   }
 
   toggleSixteenthSteps(measureIndex: number): void {
+    const measure = this.pattern()?.measures[measureIndex];
+    if (!measure || this.measureRequiresSixteenthSteps(measure)) {
+      return;
+    }
+
     const current = this.measureDisplayStates.get(measureIndex) ?? false;
     this.measureDisplayStates.set(measureIndex, !current);
     
     // Force the computed signal to recalculate by creating a new pattern reference
     const currentPattern = this.pattern();
     this.pattern.set({ ...currentPattern });
+  }
+
+  canToggleSixteenthSteps(measureIndex: number): boolean {
+    const measure = this.pattern()?.measures[measureIndex];
+    return !!measure && !this.measureRequiresSixteenthSteps(measure);
   }
 
   getBeatIndices(measureIndex: number): number[] {
@@ -901,6 +1329,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return 'sixteenth';
   }
 
+  private measureRequiresSixteenthSteps(measure: Measure): boolean {
+    return measure.actions.some((action, index) => index % 2 === 1 && !!action);
+  }
+
   private filterBeatGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternBeatGrip[] {
     return (pattern.beatGrips ?? []).filter(grip => {
       if (grip.measureIndex !== measureIndex) {
@@ -952,7 +1384,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     }
 
     return {
-      gripId: stringifyGrip(result.grips[0] as TunedGrip),
+      gripId: serializeGrip(result.grips[0] as TunedGrip),
       chordName: chordToString(result.chord)
     };
   }

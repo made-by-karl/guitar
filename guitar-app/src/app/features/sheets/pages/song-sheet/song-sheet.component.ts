@@ -29,7 +29,7 @@ import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/p
 import { ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { Chord, chordToString } from '@/app/core/music/chords';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
-import { stringifyGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
+import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
 import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
 import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.directive';
@@ -796,7 +796,7 @@ export class SongSheetComponent implements OnDestroy {
     }
 
     const songSheetGrips = result.grips.map((grip: TunedGrip): SongSheetGrip => ({
-      gripId: stringifyGrip(grip),
+      gripId: serializeGrip(grip),
       chordName: chordToString(result.chord)
     }));
 
@@ -961,6 +961,8 @@ export class SongSheetComponent implements OnDestroy {
       name: '',
       description: '',
       category: '',
+      suggestedGenre: '',
+      exampleSong: '',
       measures: [{
         timeSignature: '4/4',
         actions: Array(16).fill(null)

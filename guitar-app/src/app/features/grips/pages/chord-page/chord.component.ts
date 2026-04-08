@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import type {DissonanceProfile, GripGeneratorOptions} from '@/app/features/grips/services/grips/grip-generator.service';
 import {GripGeneratorService} from '@/app/features/grips/services/grips/grip-generator.service';
-import {Grip, stringifyGrip, TunedGrip} from '@/app/features/grips/services/grips/grip.model';
+import {Grip, serializeGrip, TunedGrip} from '@/app/features/grips/services/grips/grip.model';
 import {ChordService, ChordWithNotes} from '@/app/features/grips/services/chords/chord.service';
 import {GripDiagramComponent} from '@/app/core/ui/grip-diagram/grip-diagram.component';
 import {Chord, chordEquals, chordToString} from '@/app/core/music/chords';
@@ -332,7 +332,7 @@ export class ChordComponent implements OnInit {
   }
 
   private getGripKey(grip: Grip): string {
-    return stringifyGrip(grip);
+    return serializeGrip(grip);
   }
 
   trackGripBy(grip: TunedGrip): string {

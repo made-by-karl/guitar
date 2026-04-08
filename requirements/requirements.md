@@ -75,30 +75,3 @@ Requirements are annotated with [GA-n.m] where n refers to a chapter and m is a 
     * Patterns can be associated with specific chords or sections
 * [GA-3.5] All custom playing patterns are persisted locally and restored on reload
 * [GA-3.6] The user can view, search, and filter the playing pattern library
-* [GA-3.7] The following techniques are supported in patterns:
-    * Downstroke (D)
-    * Upstroke (U)
-    * Muted/Chop (X)
-    * Pause/Rest (-)
-    * Accented stroke (A)
-    * Palm mute (PM)
-    * Percussive hit (P)
-    * Picking individual strings (by string number or name)
-    * Hybrid picking (pick bass, strum treble)
-    * Arpeggios and fingerstyle patterns
-    * Travis picking, alternating bass
-    * Classical/fingerstyle patterns
-    * Muted picking, percussive hits
-    * Strumming only selected strings (e.g., low, high, or mid strings)
-    * Skipping strings during strum (e.g., strum 4-1 only)
-    * Accented strums, palm mute, percussive hits
-* [GA-3.8] The following common patterns are available:
-    * Downstrokes only (D D D D)
-    * Down-Up alternating (D U D U)
-    * Folk/pop (D D U U D U)
-    * Waltz (3/4: D D U)
-    * Reggae (offaction upstrokes)
-    * Shuffle/Swing
-    * Syncopated, triplets, 6/8, 12/8, flamenco, funk, etc.
-    * "Pick bass, strum rest" hybrid patterns
-    * Arpeggios, fingerstyle, and Travis picking patterns

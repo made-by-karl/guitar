@@ -42,6 +42,8 @@ describe('PlayingPatternEditorComponent', () => {
       name: 'Test Pattern',
       description: 'Test pattern for unit testing',
       category: 'Test',
+      suggestedGenre: 'Test Genre',
+      exampleSong: 'Test Song',
       measures: [{
         timeSignature: '4/4',
         actions: [null, null, null, null]
@@ -67,24 +69,128 @@ describe('PlayingPatternEditorComponent', () => {
     expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(component.pattern());
   });
 
+  it('edits pattern genre and example song metadata', async () => {
+    const suggestedGenreInput = fixture.nativeElement.querySelector('input[name="suggestedGenre"]') as HTMLInputElement;
+    const exampleSongInput = fixture.nativeElement.querySelector('input[name="exampleSong"]') as HTMLInputElement;
+
+    expect(suggestedGenreInput.value).toBe('Test Genre');
+    expect(exampleSongInput.value).toBe('Test Song');
+
+    suggestedGenreInput.value = 'Campfire Folk';
+    suggestedGenreInput.dispatchEvent(new Event('input'));
+    exampleSongInput.value = 'Wagon Wheel';
+    exampleSongInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.pattern().suggestedGenre).toBe('Campfire Folk');
+    expect(component.pattern().exampleSong).toBe('Wagon Wheel');
+  });
+
   it('creates a hammer-on action with legato defaults', () => {
     component.addAction(0, 1, 'hammer-on');
 
     expect(component.pattern().measures[0].actions[1]).toEqual({
       technique: 'hammer-on',
-      legato: { string: 0, fromFret: 0, toFret: 2 }
+      legatoMode: 'relative',
+      legato: {
+        role: 'second-from-bass',
+        start: { anchor: 'base-note' },
+        target: { anchor: 'grip-note', fretOffset: 0 }
+      }
     });
   });
 
-  it('updates legato frets immutably', () => {
+  it('switches legato start and target independently', () => {
     component.addAction(0, 0, 'slide');
+    component.setLegatoMode(0, 0, 'relative');
+    component.updateLegatoStartAnchor(0, 0, 'base-note');
+    component.updateLegatoTargetAnchor(0, 0, 'grip-note');
 
-    component.updateLegatoFromFret(0, 0, 5);
-    component.updateLegatoToFret(0, 0, 7);
+    component.updateLegatoTargetFretOffset(0, 0, 7);
 
     expect(component.pattern().measures[0].actions[0]).toEqual({
       technique: 'slide',
-      legato: { string: 0, fromFret: 5, toFret: 7 }
+      legatoMode: 'relative',
+      legato: {
+        role: 'second-from-bass',
+        start: { anchor: 'base-note' },
+        target: { anchor: 'grip-note', fretOffset: 7 }
+      }
     });
+  });
+
+  it('switches pick actions between relative and explicit modes', () => {
+    component.addAction(0, 0, 'pick');
+    component.setPickMode(0, 0, 'explicit');
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'pick',
+      pickMode: 'explicit',
+      pick: [{ string: 0, fret: 0 }],
+      modifiers: []
+    });
+  });
+
+  it('switches a strum action to relative range mode with defaults', () => {
+    component.addAction(0, 0, 'strum-down');
+    component.updateStrumStringsMode(0, 0, 'range');
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'strum',
+      strum: {
+        direction: 'D',
+        strings: { from: 'bass', to: 'top' }
+      },
+      modifiers: []
+    });
+  });
+
+  it('updates the endpoints of a relative strum range independently', () => {
+    component.addAction(0, 0, 'strum-up');
+    component.updateStrumStringsMode(0, 0, 'range');
+    component.updateStrumRangeFrom(0, 0, 'second-from-bass');
+    component.updateStrumRangeTo(0, 0, 'second-from-top');
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'strum',
+      strum: {
+        direction: 'U',
+        strings: { from: 'second-from-bass', to: 'second-from-top' }
+      },
+      modifiers: []
+    });
+  });
+
+  it('removes pick offsets when switching to base-note anchor', () => {
+    component.addAction(0, 0, 'pick');
+    component.updatePickNoteOffset(0, 0, 0, 3);
+    component.updatePickNoteAnchor(0, 0, 0, 'base-note');
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'pick',
+      pickMode: 'relative',
+      pick: [{ role: 'bass', anchor: 'base-note' }],
+      modifiers: []
+    });
+  });
+
+  it('forces sixteenth subdivision display when a measure contains a sixteenth action', () => {
+    component.addAction(0, 1, 'hammer-on');
+
+    const measureData = component.getMeasuresForDisplay(component.pattern())[0];
+
+    expect(measureData.useSixteenthSteps).toBe(true);
+    expect(component.canToggleSixteenthSteps(0)).toBe(false);
+  });
+
+  it('does not allow switching back to eighth subdivision while a sixteenth action exists', () => {
+    component.toggleSixteenthSteps(0);
+    expect(component.getMeasuresForDisplay(component.pattern())[0].useSixteenthSteps).toBe(true);
+
+    component.addAction(0, 1, 'hammer-on');
+    component.toggleSixteenthSteps(0);
+
+    expect(component.getMeasuresForDisplay(component.pattern())[0].useSixteenthSteps).toBe(true);
   });
 });

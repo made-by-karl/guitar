@@ -56,6 +56,8 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
       name: '',
       description: '',
       category: '',
+      suggestedGenre: '',
+      exampleSong: '',
       measures: [{
         timeSignature: '4/4',
         actions: Array(16).fill(null)
@@ -117,6 +119,8 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     return this.patterns.filter(p =>
       p.name.toLowerCase().includes(q) ||
       p.description.toLowerCase().includes(q) ||
+      p.suggestedGenre.toLowerCase().includes(q) ||
+      p.exampleSong.toLowerCase().includes(q) ||
       (p.category && p.category.toLowerCase().includes(q))
     );
   }

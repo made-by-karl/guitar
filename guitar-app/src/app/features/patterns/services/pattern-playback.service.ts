@@ -70,7 +70,7 @@ export class PatternPlaybackService {
     pattern: PlayingPattern,
     tuning?: Note[],
     grip?: Grip,
-    tempo: number = 80
+    tempo: number = 70
   ): Promise<void> {
     const snapshot = this.getSnapshot();
     if (snapshot.status === 'playing' && snapshot.patternId === pattern.id) {

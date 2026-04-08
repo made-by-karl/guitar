@@ -266,15 +266,14 @@ export class MidiService implements OnDestroy {
     const sourceNoteName = this.noteToToneName(instruction.legato.source.note);
     const targetNoteName = this.noteToToneName(instruction.legato.target.note);
 
-    let transitionDelay = 0.07;
+    let transitionDelay = totalDuration / 2;
     let targetVelocityScale = 0.78;
 
     if (instruction.technique === 'pull-off') {
-      transitionDelay = 0.06;
       targetVelocityScale = 0.72;
     }
 
-    const sourceDuration = Math.max(0.05, Math.min(totalDuration * 0.45, transitionDelay + 0.02));
+    const sourceDuration = Math.max(0.03, transitionDelay);
     const targetDuration = Math.max(0.08, totalDuration - transitionDelay);
 
     sampler.triggerAttackRelease(

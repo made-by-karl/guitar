@@ -44,6 +44,8 @@ describe('SongSheetsService', () => {
         name: 'Verse Pattern',
         description: '',
         category: '',
+        suggestedGenre: '',
+        exampleSong: '',
         measures: [
           { timeSignature: '4/4', actions: Array(16).fill(null) },
           { timeSignature: '3/4', actions: Array(12).fill(null) }

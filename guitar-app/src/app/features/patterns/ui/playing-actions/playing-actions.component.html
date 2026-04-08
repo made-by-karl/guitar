@@ -4,7 +4,7 @@
       @switch (action.technique) {
         @case ('strum') {
           <span
-            [title]="'Action ' + actionIndex + ' - Strum ' + (action.strum?.direction === 'D' ? 'Down' : 'Up') + ' on ' + (action.strum?.strings || 'all') + ' strings' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
+            [title]="getStrumTitle(actionIndex, action)">
             @if (action.strum?.direction === 'D') {
               <span>&#8595;</span>
             }
@@ -27,7 +27,7 @@
         }
         @case ('pick') {
           <span
-            [title]="'Action ' + actionIndex + ' - Pick ' + (action.pick?.length || 0) + ' note(s)' + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
+            [title]="getPickTitle(actionIndex, action) + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
             <span class="bi bi-dot"></span>
             @if (showActionIndex()) {
               <span class="text-muted">[{{ actionIndex + 1 }}]</span>
@@ -44,7 +44,7 @@
           </span>
         }
         @case ('hammer-on') {
-          <span [title]="'Action ' + actionIndex + ' - Hammer-on on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+          <span [title]="getLegatoTitle(actionIndex, 'Hammer-on', action)">
             H
             @if (showActionIndex()) {
               <span class="text-muted">[{{ actionIndex + 1 }}]</span>
@@ -52,7 +52,7 @@
           </span>
         }
         @case ('pull-off') {
-          <span [title]="'Action ' + actionIndex + ' - Pull-off on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+          <span [title]="getLegatoTitle(actionIndex, 'Pull-off', action)">
             PO
             @if (showActionIndex()) {
               <span class="text-muted">[{{ actionIndex + 1 }}]</span>
@@ -60,7 +60,7 @@
           </span>
         }
         @case ('slide') {
-          <span [title]="'Action ' + actionIndex + ' - Slide on string ' + ((action.legato?.string ?? 0) + 1) + ' from fret ' + (action.legato?.fromFret ?? 0) + ' to fret ' + (action.legato?.toFret ?? 0)">
+          <span [title]="getLegatoTitle(actionIndex, 'Slide', action)">
             /
             @if (showActionIndex()) {
               <span class="text-muted">[{{ actionIndex + 1 }}]</span>

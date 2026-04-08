@@ -1,5 +1,6 @@
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { PlaybackService } from '@/app/core/services/playback.service';
+import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
@@ -11,6 +12,8 @@ describe('PatternPlaybackService', () => {
     name: 'Pattern',
     description: '',
     category: '',
+    suggestedGenre: '',
+    exampleSong: '',
     measures: [{
       timeSignature: '4/4',
       actions: [{
@@ -88,6 +91,33 @@ describe('PatternPlaybackService', () => {
       percussion: { technique: 'body-knock' },
       technique: 'percussive'
     }));
+    expect(service.getSnapshot()).toEqual({ status: 'idle' });
+  });
+
+  it('keeps the preview active until the last strum tail has elapsed', async () => {
+    jest.useFakeTimers();
+    const midiService = {
+      ensureReady: jest.fn().mockResolvedValue(undefined),
+      triggerInstruction: jest.fn(),
+      playSequence: jest.fn().mockResolvedValue(undefined)
+    };
+    const service = new PatternPlaybackService(
+      new PlaybackService(midiService as any),
+      new PlayingPatternPlaybackPlannerService()
+    );
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Percussive Campfire Groove');
+
+    expect(pattern).toBeDefined();
+
+    await service.togglePatternPreview(pattern!, undefined, undefined, 120);
+
+    jest.advanceTimersByTime(2100);
+    expect(service.getSnapshot()).toMatchObject({
+      status: 'playing',
+      patternId: pattern!.id
+    });
+
+    jest.advanceTimersByTime(1800);
     expect(service.getSnapshot()).toEqual({ status: 'idle' });
   });
 
