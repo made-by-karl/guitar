@@ -3,7 +3,8 @@ import { Note } from '@/app/core/music/semitones';
 
 export interface MidiInstruction {
   time: number;           // When to play (in seconds from start)
-  duration: number;       // How long to hold (in seconds)
+  playbackDuration: number; // How long to hold/ring out (in seconds)
+  actionDuration: number; // Rhythmic source action duration (in seconds)
   notes?: MidiNote[];     // Notes to play (for guitar techniques)
   percussion?: MidiPercussion; // Percussion to play (for body/string percussion)
   legato?: MidiLegato;

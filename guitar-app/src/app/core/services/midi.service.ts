@@ -143,7 +143,7 @@ export class MidiService implements OnDestroy {
     }
 
     // Calculate total duration and wait
-    const totalDuration = Math.max(...instructions.map(i => i.time + i.duration));
+    const totalDuration = Math.max(...instructions.map(i => i.time + i.playbackDuration));
     await new Promise(resolve => setTimeout(resolve, (totalDuration + 0.5) * 1000));
   }
 
@@ -191,7 +191,7 @@ export class MidiService implements OnDestroy {
 
       guitarSampler.triggerAttackRelease(
         noteName,
-        options.duration ?? instruction.duration,
+        options.duration ?? instruction.playbackDuration,
         scheduleTime,
         options.velocity
       );
@@ -224,8 +224,7 @@ export class MidiService implements OnDestroy {
     const notes = instruction.notes;
     if (notes.length === 0) return;
 
-    // Time between each note (in seconds)
-    const noteSpacing = 0.025; // 25ms between notes - adjust for feel
+    const noteSpacing = this.getSequentialNoteSpacing(instruction.actionDuration, notes.length);
     const playMode = instruction.playNotes || 'parallel';
     
     let sortedNotes = [...notes];
@@ -242,11 +241,23 @@ export class MidiService implements OnDestroy {
       
       sampler.triggerAttackRelease(
         noteName,
-        options.duration ?? instruction.duration,
+        options.duration ?? instruction.playbackDuration,
         noteTime,
         options.velocity
       );
     }
+  }
+
+  private getSequentialNoteSpacing(actionDuration: number, noteCount: number): number {
+    const tightStrumSpacing = 0.025;
+
+    if (noteCount <= 1 || actionDuration <= 0.14) {
+      return tightStrumSpacing;
+    }
+
+    const normalStrumSpacing = 0.04;
+    const maxTotalSpread = 0.22;
+    return Math.max(tightStrumSpacing, Math.min(normalStrumSpacing, maxTotalSpread / (noteCount - 1)));
   }
 
   private playLegatoTechnique(
@@ -256,7 +267,7 @@ export class MidiService implements OnDestroy {
   ): void {
     const sampler = this.audioService.getSampler('guitar');
     if (!sampler || !instruction.legato) return;
-    const totalDuration = Math.max(0.12, instruction.duration);
+    const totalDuration = Math.max(0.12, instruction.playbackDuration);
 
     if (instruction.technique === 'slide') {
       this.playSlideTechnique(sampler, instruction, startTime, options, totalDuration);

@@ -172,7 +172,8 @@ export class PlayingPatternPlaybackPlannerService {
       if (eventData.percussionTechnique) {
         instructions.push({
           time: event.time,
-          duration: 0.5,
+          playbackDuration: 0.5,
+          actionDuration,
           percussion: { technique: eventData.percussionTechnique },
           velocity: eventData.velocity,
           technique: 'percussive'
@@ -201,7 +202,8 @@ export class PlayingPatternPlaybackPlannerService {
 
       instructions.push({
         time: event.time,
-        duration,
+        playbackDuration: duration,
+        actionDuration,
         notes: eventData.notes,
         legato: eventData.legato,
         velocity: eventData.velocity,
@@ -219,7 +221,7 @@ export class PlayingPatternPlaybackPlannerService {
 
   private resolveTotalDuration(measureDuration: number, instructions: MidiInstruction[]): number {
     const instructionTail = instructions.reduce((maxTail, instruction) => {
-      return Math.max(maxTail, instruction.time + instruction.duration);
+      return Math.max(maxTail, instruction.time + instruction.playbackDuration);
     }, 0);
 
     return Math.max(measureDuration, instructionTail);

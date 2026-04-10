@@ -14,7 +14,8 @@ describe('PlaybackService', () => {
     expect(midiService.playSequence).toHaveBeenCalledWith([
       expect.objectContaining({
         time: 0,
-        duration: 1.5,
+        playbackDuration: 1.5,
+        actionDuration: 1.5,
         velocity: 0.8,
         technique: 'accented',
         playNotes: 'parallel',
@@ -40,7 +41,8 @@ describe('PlaybackService', () => {
     const plan = {
       instructions: [{
         time: 0,
-        duration: 0.5,
+        playbackDuration: 0.5,
+        actionDuration: 0.5,
         notes: [{ note: { semitone: 'E', octave: 4 } }],
         velocity: 0.7,
         technique: 'normal' as const,

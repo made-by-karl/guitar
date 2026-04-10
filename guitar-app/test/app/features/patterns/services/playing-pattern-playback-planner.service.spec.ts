@@ -35,7 +35,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     expect(plan.instructions).toHaveLength(1);
     expect(plan.instructions[0]).toMatchObject({
       technique: 'hammer-on',
-      duration: 0.25,
+      playbackDuration: 0.25,
+      actionDuration: 0.125,
       legato: {
         string: 1,
         source: { note: { semitone: 'B', octave: 2 } },
@@ -63,7 +64,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
 
     expect(plan.instructions[0]).toMatchObject({
       technique: 'pull-off',
-      duration: 0.25,
+      playbackDuration: 0.25,
+      actionDuration: 0.125,
       legato: {
         string: 2,
         source: { note: { semitone: 'F#', octave: 3 } },
@@ -90,7 +92,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
 
     expect(plan.instructions[0]).toMatchObject({
       technique: 'hammer-on',
-      duration: 0.25
+      playbackDuration: 0.25,
+      actionDuration: 0.125
     });
   });
 
@@ -112,7 +115,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
 
     expect(plan.instructions[0]).toMatchObject({
       technique: 'pull-off',
-      duration: 0.125
+      playbackDuration: 0.125,
+      actionDuration: 0.125
     });
   });
 
@@ -223,6 +227,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     }], tuning, 120, barreGrip as any);
 
     expect(plan.instructions[0]).toMatchObject({
+      actionDuration: 0.125,
       playNotes: 'sequential',
       notes: [
         { note: { semitone: 'A', octave: 3 } },
@@ -246,6 +251,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     }], tuning, 120, barreGrip as any);
 
     expect(plan.instructions[0]).toMatchObject({
+      actionDuration: 0.125,
       playNotes: 'reversed',
       notes: [
         { note: { semitone: 'D', octave: 3 } },
@@ -271,7 +277,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     expect(plan.totalDuration).toBeCloseTo(3.75, 5);
     expect(plan.instructions.at(-1)).toMatchObject({
       time: 1.75,
-      duration: 2,
+      playbackDuration: 2,
+      actionDuration: 0.125,
       technique: 'normal',
       playNotes: 'reversed'
     });

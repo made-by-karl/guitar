@@ -270,7 +270,8 @@ export class PlaybackService {
 
     const instruction: MidiInstruction = {
       time: 0,
-      duration,
+      playbackDuration: duration,
+      actionDuration: duration,
       notes,
       velocity,
       technique,
