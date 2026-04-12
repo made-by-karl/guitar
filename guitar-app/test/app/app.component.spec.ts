@@ -54,6 +54,7 @@ describe('AppComponent', () => {
           { path: 'patterns', component: MockComponent },
           { path: 'patterns/editor', component: MockComponent },
           { path: 'maintenance/settings', component: MockComponent },
+          { path: 'maintenance/logs', component: MockComponent },
           { path: 'maintenance/midi-test', component: MockComponent }
         ]),
         { provide: SongSheetsService, useValue: mockSongSheetsService },

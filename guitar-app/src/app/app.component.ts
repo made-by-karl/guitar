@@ -5,6 +5,7 @@ import {FormsModule} from '@angular/forms';
 import {UpdateService} from '@/app/core/services/update.service';
 import {ScreenWakeLockService} from '@/app/core/services/screen-wake-lock.service';
 import {AudioService} from '@/app/core/services/audio.service';
+import {ConsoleLogStoreService} from '@/app/core/services/console-log-store.service';
 import {timer} from 'rxjs';
 
 @Component({
@@ -22,8 +23,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private updateService: UpdateService,
     public wakeLockService: ScreenWakeLockService,
     // Instantiate early so auto-resume handlers are installed app-wide
-    private audioService: AudioService
+    private audioService: AudioService,
+    private consoleLogStore: ConsoleLogStoreService
   ) {
+    this.consoleLogStore.installConsoleCapture();
   }
 
   ngAfterViewInit(): void {
