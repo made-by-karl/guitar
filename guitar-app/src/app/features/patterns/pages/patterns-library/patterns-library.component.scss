@@ -5,3 +5,9 @@
 .modal.show {
   display: block;
 }
+
+.measure-preview-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

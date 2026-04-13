@@ -1,0 +1,147 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.notation-measure {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.notation-scroll {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d8cdb8;
+  border-radius: 0.4rem;
+}
+
+svg {
+  height: 6.8rem;
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.action-svg {
+  min-width: 0;
+}
+
+.action-svg.has-action-grips {
+  height: 7.8rem;
+}
+
+.string-line {
+  stroke: #8e7f65;
+  stroke-width: 0.9;
+}
+
+.slot-separator {
+  stroke: #e0d8ca;
+  stroke-width: 0.8;
+}
+
+.measure-divider {
+  stroke: #8a8173;
+  stroke-width: 2.2;
+}
+
+.strum-stem {
+  stroke: #6d3f18;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+}
+
+.strum-head {
+  fill: #6d3f18;
+}
+
+.pick-label {
+  font-size: 12px;
+  font-weight: 900;
+  fill: #2d2213;
+  stroke: #fff;
+  stroke-width: 2.4;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.legato-line {
+  stroke: #425f82;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.technique-mark {
+  font-size: 10px;
+  font-weight: 900;
+  fill: #2f4b69;
+  stroke: #fff;
+  stroke-width: 1.6;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.percussive-mark {
+  font-size: 18px;
+  font-weight: 800;
+  fill: #4e4e4e;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.percussive-submark {
+  font-size: 10px;
+  font-weight: 900;
+  fill: #3f3324;
+  stroke: #fff;
+  stroke-width: 1.4;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.modifier {
+  font-size: 8.5px;
+  font-weight: 900;
+  fill: #3f3324;
+  stroke: #fff;
+  stroke-width: 1.6;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.modifier-accent {
+  fill: #9f1c1c;
+}
+
+.rhythm-marker {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #6f6556;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.action-grip-label {
+  font-size: 12px;
+  font-weight: 900;
+  fill: #1f5f64;
+  stroke: #fff;
+  stroke-width: 2.2;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}

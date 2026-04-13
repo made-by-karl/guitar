@@ -37,3 +37,9 @@
 .pattern-item-selected .selection-indicator {
   color: #0d6efd;
 }
+
+.measure-preview-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

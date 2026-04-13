@@ -263,12 +263,11 @@
               </div>
 
               <div class="pattern-measures-preview">
-                @for (measure of pattern.measures; track $index; let measureIndex = $index) {
-                <div class="preview-measure">
-                  <div class="preview-header">Measure {{ measureIndex + 1 }}</div>
-                  <app-playing-actions [actions]="measure.actions" [showActionIndex]="true" />
-                </div>
-                }
+                <app-playing-actions
+                  [measures]="pattern.measures"
+                  [showActionIndex]="true"
+                  [measureWidth]="'100%'"
+                  [notationContexts]="getPatternMeasureNotationContexts(pattern)" />
               </div>
             </div>
           </div>
@@ -460,7 +459,11 @@
                   </div>
 
                   <div class="rhythm-preview mb-3">
-                    <app-playing-actions [actions]="measure.actions" [showActionIndex]="true" />
+                    <app-playing-actions
+                      [measures]="[measure]"
+                      [showActionIndex]="true"
+                      [measureWidth]="'100%'"
+                      [notationContexts]="[getPartMeasureNotationContext(item, pattern, measureIndex)]" />
                   </div>
 
                   <div class="mb-3">

@@ -17,6 +17,7 @@ import {
 } from '@/app/features/sheets/services/song-sheets.model';
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
 import { PlayingActionsComponent } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
@@ -29,7 +30,7 @@ import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/p
 import { ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { Chord, chordToString } from '@/app/core/music/chords';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
-import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
+import { Grip, serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
 import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
 import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.directive';
@@ -615,6 +616,58 @@ export class SongSheetComponent implements OnDestroy {
       .filter(index => index >= 0);
   }
 
+  getPatternMeasureNotationContext(pattern: SongSheetPattern, measureIndex: number): PlayingActionsNotationContext {
+    return {
+      timeSignature: pattern.measures[measureIndex].timeSignature,
+      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex),
+      gripById: this.getGripByIdMap()
+    };
+  }
+
+  getPatternMeasureNotationContexts(pattern: SongSheetPattern): PlayingActionsNotationContext[] {
+    return pattern.measures.map((_, measureIndex) => this.getPatternMeasureNotationContext(pattern, measureIndex));
+  }
+
+  getPartMeasureNotationContext(
+    item: SongPartPatternItem,
+    pattern: SongSheetPattern,
+    measureIndex: number
+  ): PlayingActionsNotationContext {
+    const beatGrips: SongPartBeatGrip[] = [];
+    for (const beatIndex of this.getBeatIndices(pattern, measureIndex)) {
+      const effective = this.getEffectiveBeatGrip(item, pattern, measureIndex, beatIndex);
+      if (effective) {
+        beatGrips.push({
+          measureIndex,
+          beatIndex,
+          gripId: effective.gripId,
+          chordName: effective.chordName
+        });
+      }
+    }
+
+    const actionGripOverrides: SongPartActionGrip[] = [];
+    for (let actionIndex = 0; actionIndex < pattern.measures[measureIndex].actions.length; actionIndex++) {
+      const effective = this.getEffectiveActionGrip(item, pattern, measureIndex, actionIndex);
+      if (effective) {
+        actionGripOverrides.push({
+          measureIndex,
+          actionIndex,
+          gripId: effective.gripId,
+          chordName: effective.chordName
+        });
+      }
+    }
+
+    return {
+      timeSignature: pattern.measures[measureIndex].timeSignature,
+      beatGrips,
+      actionGripOverrides,
+      gripById: this.getGripByIdMap()
+    };
+  }
+
   isMeasurePlaybackActive(item: SongPartPatternItem, measureIndex: number): boolean {
     return this.playbackState.type === 'measure' &&
       this.playbackState.status === 'playing' &&
@@ -666,6 +719,16 @@ export class SongSheetComponent implements OnDestroy {
 
   trackByItemId(_: number, item: SongPartPatternItem): string {
     return item.id;
+  }
+
+  private getGripByIdMap(): Record<string, Grip | undefined> {
+    if (!this.sheet) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      this.sheet.grips.map(grip => [grip.gripId, grip.grip])
+    );
   }
 
   async addGrip(chordName?: string) {

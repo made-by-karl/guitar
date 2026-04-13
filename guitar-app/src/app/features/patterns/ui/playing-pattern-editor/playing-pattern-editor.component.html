@@ -213,7 +213,7 @@
                           <div class="pick-notes">
                             @if (getPickModeForAction(actionData.action) === 'relative') {
                             <div class="pick-note-header small text-muted">
-                              <span>Role</span>
+                              <span>String</span>
                               <span>Note</span>
                               <span>Offset</span>
                               <span></span>
@@ -288,7 +288,7 @@
                             <option value="explicit">Explicit Fret</option>
                           </select>
                           @if (isRelativeLegato(actionData.action.legato)) {
-                          <label class="form-label small">String Role</label>
+                          <label class="form-label small">String</label>
                           <select class="form-select form-select-sm mb-2"
                             [ngModel]="getLegatoRole(actionData.action.legato)"
                             (ngModelChange)="updateLegatoRole(measureData.measureIndex, actionData.originalIndex, $event)"

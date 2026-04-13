@@ -1,84 +1,75 @@
-@for (action of actions(); track actionIndex; let actionIndex = $index) {
-  @if (action) {
-    <span class="me-2">
-      @switch (action.technique) {
-        @case ('strum') {
-          <span
-            [title]="getStrumTitle(actionIndex, action)">
-            @if (action.strum?.direction === 'D') {
-              <span>&#8595;</span>
-            }
-            @if (action.strum?.direction === 'U') {
-              <span>&#8593;</span>
-            }
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-            @if (action.modifiers?.includes('mute')) {
-              <span class="badge bg-secondary ms-1">M</span>
-            }
-            @if (action.modifiers?.includes('palm-mute')) {
-              <span class="badge bg-warning ms-1">PM</span>
-            }
-            @if (action.modifiers?.includes('accent')) {
-              <span class="badge bg-danger ms-1">!</span>
-            }
-          </span>
+<div class="notation-measure" [style.width]="measureWidth()">
+  <div class="notation-scroll">
+    @for (segment of getRenderableSegments(); track segment.actionIndex) {
+      <svg
+        class="action-svg"
+        [class.has-action-grips]="hasActionGripLabels()"
+        [style.width.px]="getActionSvgPixelWidth(segment.actionIndex)"
+        [attr.viewBox]="getActionSvgViewBox(segment.actionIndex)"
+        role="img"
+        aria-hidden="true">
+      @for (stringIndex of strings; track stringIndex) {
+        <line x1="0" [attr.y1]="stringY(stringIndex)" [attr.x2]="getActionSvgWidth(segment.actionIndex)" [attr.y2]="stringY(stringIndex)" class="string-line" />
+      }
+
+      @if (isFirstSegment(segment)) {
+        <line [attr.x1]="getSlotStartSeparatorX()" [attr.y1]="stringY(0) - 4" [attr.x2]="getSlotStartSeparatorX()" [attr.y2]="stringY(5) + 4" class="slot-separator" />
+      }
+
+      @if ((segment.actionIndex + segment.span < getSlotCount() || isLastSegment(segment)) && !hasMeasureDividerAtSegmentEnd(segment)) {
+        <line [attr.x1]="getSlotSeparatorX(segment.actionIndex)" [attr.y1]="stringY(0) - 4" [attr.x2]="getSlotSeparatorX(segment.actionIndex)" [attr.y2]="stringY(5) + 4" class="slot-separator" />
+      }
+
+      @for (divider of getSegmentMeasureDividers(segment); track divider.actionIndex) {
+        <line [attr.x1]="divider.x" [attr.y1]="stringY(0) - 4" [attr.x2]="divider.x" [attr.y2]="stringY(5) + 4" class="measure-divider" />
+      }
+
+      @for (gripLabel of getSegmentActionGripLabels(segment); track gripLabel.actionIndex) {
+        <text [attr.x]="gripLabel.x" [attr.y]="getActionGripLabelY()" class="action-grip-label">{{ gripLabel.label }}</text>
+      }
+
+      @for (slotAction of segment.actions; track slotAction.actionIndex) {
+      @if (slotAction.action; as currentAction) {
+        @if (currentAction.technique === 'strum' && currentAction.strum) {
+          <line
+            [attr.x1]="getActionX(slotAction.actionIndex)"
+            [attr.y1]="getStrumStemTop(slotAction.actionIndex, currentAction)"
+            [attr.x2]="getActionX(slotAction.actionIndex)"
+            [attr.y2]="getStrumStemBottom(slotAction.actionIndex, currentAction)"
+            class="strum-stem" />
+          <polygon [attr.points]="getStrumHeadPoints(slotAction.actionIndex, currentAction)" class="strum-head" />
         }
-        @case ('pick') {
-          <span
-            [title]="getPickTitle(actionIndex, action) + (action.modifiers?.length ? ' (' + (action.modifiers || []).join(', ') + ')' : '')">
-            <span class="bi bi-dot"></span>
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-            @if (action.modifiers?.includes('mute')) {
-              <span class="badge bg-secondary ms-1">M</span>
-            }
-            @if (action.modifiers?.includes('palm-mute')) {
-              <span class="badge bg-warning ms-1">PM</span>
-            }
-            @if (action.modifiers?.includes('accent')) {
-              <span class="badge bg-danger ms-1">!</span>
-            }
-          </span>
+
+        @if (currentAction.technique === 'pick') {
+          @for (mark of getPickMarks(slotAction.actionIndex, currentAction); track $index) {
+            <text [attr.x]="mark.x" [attr.y]="mark.y + 1" class="pick-label">{{ mark.label }}</text>
+          }
         }
-        @case ('hammer-on') {
-          <span [title]="getLegatoTitle(actionIndex, 'Hammer-on', action)">
-            H
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-          </span>
+
+        @if ((currentAction.technique === 'hammer-on' || currentAction.technique === 'pull-off' || currentAction.technique === 'slide') && currentAction.legato) {
+          <line [attr.x1]="getLegatoStartX(slotAction.actionIndex)" [attr.y1]="getLegatoStringY(slotAction.actionIndex, currentAction)" [attr.x2]="getLegatoTargetX(slotAction.actionIndex)" [attr.y2]="getLegatoStringY(slotAction.actionIndex, currentAction)" class="legato-line" />
+          <text [attr.x]="getLegatoStartX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) + 1" class="pick-label">{{ getLegatoStartLabel(slotAction.actionIndex, currentAction) }}</text>
+          <text [attr.x]="getLegatoTargetX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) + 1" class="pick-label">{{ getLegatoTargetLabel(slotAction.actionIndex, currentAction) }}</text>
+          <text [attr.x]="getActionX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) - 7" class="technique-mark">{{ getTechniqueTag(currentAction) }}</text>
         }
-        @case ('pull-off') {
-          <span [title]="getLegatoTitle(actionIndex, 'Pull-off', action)">
-            PO
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-          </span>
+
+        @if (currentAction.technique === 'percussive') {
+          <text [attr.x]="getActionX(slotAction.actionIndex)" y="48" class="percussive-mark">X</text>
+          <text [attr.x]="getActionX(slotAction.actionIndex)" y="60" class="percussive-submark">{{ getPercussiveLabel(currentAction) }}</text>
         }
-        @case ('slide') {
-          <span [title]="getLegatoTitle(actionIndex, 'Slide', action)">
-            /
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-          </span>
-        }
-        @case ('percussive') {
-          <span [title]="'Action ' + actionIndex + ' - Percussion: ' + (action.percussive?.technique || 'body-knock')">
-            P
-            @if (showActionIndex()) {
-              <span class="text-muted">[{{ actionIndex + 1 }}]</span>
-            }
-          </span>
-        }
-        @default {
-          <span>?</span>
+
+        @for (modifier of getModifierMarks(slotAction.actionIndex, currentAction); track $index) {
+          <text [attr.x]="modifier.x" [attr.y]="modifier.y" class="modifier" [class.modifier-accent]="modifier.label === 'A'">{{ modifier.label }}</text>
         }
       }
-    </span>
-  }
-}
+      }
+
+      @if (showActionIndex()) {
+        @for (marker of getSegmentRhythmMarkers(segment); track marker.actionIndex) {
+          <text [attr.x]="getActionSlotCenterX(marker.actionIndex)" [attr.y]="getRhythmMarkerY()" class="rhythm-marker">{{ marker.label }}</text>
+        }
+      }
+      </svg>
+    }
+  </div>
+</div>

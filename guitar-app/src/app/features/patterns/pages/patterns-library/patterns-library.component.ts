@@ -9,6 +9,7 @@ import {
   PlayingPatternEditorModalComponent
 } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
 import {PlayingActionsComponent} from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import {Subscription} from 'rxjs';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 
@@ -140,6 +141,18 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
 
   isPatternPlaybackActive(pattern: PlayingPattern): boolean {
     return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
+  }
+
+  getMeasureNotationContext(pattern: PlayingPattern, measureIndex: number): PlayingActionsNotationContext {
+    return {
+      timeSignature: pattern.measures[measureIndex].timeSignature,
+      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex)
+    };
+  }
+
+  getMeasureNotationContexts(pattern: PlayingPattern): PlayingActionsNotationContext[] {
+    return pattern.measures.map((_, measureIndex) => this.getMeasureNotationContext(pattern, measureIndex));
   }
 
   async deletePattern(pattern: PlayingPattern) {

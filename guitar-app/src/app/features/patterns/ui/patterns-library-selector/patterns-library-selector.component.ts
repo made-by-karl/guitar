@@ -4,6 +4,7 @@ import {FormsModule} from '@angular/forms';
 import {PlayingPatternsService} from '@/app/features/patterns/services/playing-patterns.service';
 import {PlayingPattern} from '@/app/features/patterns/services/playing-patterns.model';
 import {PlayingActionsComponent} from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 import {Subscription} from 'rxjs';
 
@@ -76,6 +77,18 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
 
   isPatternPlaybackActive(pattern: PlayingPattern): boolean {
     return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
+  }
+
+  getMeasureNotationContext(pattern: PlayingPattern, measureIndex: number): PlayingActionsNotationContext {
+    return {
+      timeSignature: pattern.measures[measureIndex].timeSignature,
+      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex)
+    };
+  }
+
+  getMeasureNotationContexts(pattern: PlayingPattern): PlayingActionsNotationContext[] {
+    return pattern.measures.map((_, measureIndex) => this.getMeasureNotationContext(pattern, measureIndex));
   }
 
   isSelected(pattern: PlayingPattern): boolean {

@@ -26,14 +26,13 @@
             <div><strong>Genre:</strong> {{ pattern.suggestedGenre || 'Not set' }}</div>
             <div><strong>Song:</strong> {{ pattern.exampleSong || 'Not set' }}</div>
           </div>
-          <div class="mb-2">
+          <div class="mb-2 measure-preview-wrap">
             @if (pattern.measures && pattern.measures.length > 0) {
-              @for (measure of pattern.measures; track measure; let measureIndex = $index) {
-                @if (measureIndex > 0) {
-                  <span class="me-2 text-muted">|</span>
-                }
-                <app-playing-actions [actions]="measure.actions" [showActionIndex]="true" />
-              }
+              <app-playing-actions
+                [measures]="pattern.measures"
+                [showActionIndex]="true"
+                [measureWidth]="'100%'"
+                [notationContexts]="getMeasureNotationContexts(pattern)" />
             }
           </div>
           <div class="d-flex gap-2 mt-2">
