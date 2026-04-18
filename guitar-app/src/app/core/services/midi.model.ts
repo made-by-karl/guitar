@@ -22,7 +22,7 @@ export interface MidiPercussion {
 }
 
 export interface MidiLegato {
-  source: MidiNote;
+  source?: MidiNote;
   target: MidiNote;
   string: number;
 }

@@ -12,7 +12,7 @@ import {
   PlayingPatternActionGripOverride,
   PlayingPatternBeatGrip,
   RelativeLegatoNote,
-  RelativeStringRole,
+  RelativeString,
   getBeatsFromTimeSignature,
   getLegatoMode,
   getPickMode,
@@ -77,6 +77,18 @@ interface RenderableActionSegment {
   width: number;
 }
 
+interface NotationStringState {
+  fret: number;
+  label: string;
+}
+
+interface ResolvedLegatoRender {
+  string: number;
+  targetFret: number;
+  targetLabel: string;
+  sourceLabel?: string;
+}
+
 @Component({
   selector: 'app-playing-actions',
   imports: [CommonModule],
@@ -90,7 +102,7 @@ export class PlayingActionsComponent {
   readonly baseSvgHeight = 104;
   readonly stringSpacing = 13;
   readonly slotSpacing = 22;
-  readonly legatoSlotSpan = 2;
+  readonly legatoLineSourceGap = 8;
 
   measures = input.required<Measure[]>();
   showActionIndex = input<boolean>(false);
@@ -167,6 +179,23 @@ export class PlayingActionsComponent {
     return timeline;
   });
 
+  readonly resolvedStringStateTimeline = computed(() => {
+    const timeline = new Map<number, Map<number, NotationStringState>>();
+    const stringState = new Map<number, NotationStringState>();
+    const actions = this.getTimelineActions();
+
+    for (let actionIndex = 0; actionIndex < actions.length; actionIndex++) {
+      timeline.set(actionIndex, new Map(stringState));
+
+      const action = actions[actionIndex];
+      if (action) {
+        this.applyActionToStringState(actionIndex, action, stringState);
+      }
+    }
+
+    return timeline;
+  });
+
   getSlotCount(): number {
     return Math.max(1, this.getTimelineActions().length);
   }
@@ -203,7 +232,7 @@ export class PlayingActionsComponent {
 
     const action = this.getTimelineActions()[actionIndex];
     if (action && this.isLegatoAction(action)) {
-      return this.getLegatoContentLeft(actionIndex) + (this.getLegatoContentWidth(actionIndex) / 2);
+      return this.getLegatoTargetX(actionIndex);
     }
 
     return this.getActionSlotLeft(actionIndex) + (this.getActionSlotWidth(actionIndex) / 2);
@@ -428,11 +457,11 @@ export class PlayingActionsComponent {
 
     action.pick.forEach(note => {
       if (mode === 'relative' && isRelativePickingNote(note)) {
-        const stringIndex = resolveRelativeStringIndex(grip, note.role);
+        const stringIndex = resolveRelativeStringIndex(grip, note.string);
         const y = this.stringY(stringIndex);
 
         if (!grip) {
-          marks.push({ x: baseX, y, label: this.getRelativeRoleShortLabel(note.role, note as GripRelativePickingNote | BaseRelativePickingNote) });
+          marks.push({ x: baseX, y, label: this.getRelativeStringShortLabel(note.string, note as GripRelativePickingNote | BaseRelativePickingNote) });
           return;
         }
 
@@ -457,14 +486,18 @@ export class PlayingActionsComponent {
     return resolved ? this.stringY(resolved.string) : this.stringY(2);
   }
 
-  getLegatoStartLabel(actionIndex: number, action: PlayingAction): string {
-    const resolved = this.resolveLegato(actionIndex, action);
-    return resolved?.startLabel ?? '';
-  }
-
   getLegatoTargetLabel(actionIndex: number, action: PlayingAction): string {
     const resolved = this.resolveLegato(actionIndex, action);
     return resolved?.targetLabel ?? '';
+  }
+
+  hasLegatoLine(actionIndex: number, action: PlayingAction): boolean {
+    if (!this.hasLegatoSource(actionIndex, action)) {
+      return false;
+    }
+
+    const previousActionIndex = this.getPreviousRenderableActionIndex(this.getTimelineActions(), actionIndex);
+    return previousActionIndex !== null && this.findSegmentForAction(previousActionIndex) === this.findSegmentForAction(actionIndex);
   }
 
   hasModifier(action: PlayingAction | null, modifier: 'accent' | 'mute' | 'palm-mute'): boolean {
@@ -514,24 +547,14 @@ export class PlayingActionsComponent {
   }
 
   getLegatoStartX(actionIndex: number): number {
-    return this.getLegatoContentLeft(actionIndex) + 8;
+    const previousActionIndex = this.getPreviousRenderableActionIndex(this.getTimelineActions(), actionIndex);
+    return previousActionIndex === null
+      ? this.getActionSlotCenterX(actionIndex)
+      : this.getActionX(previousActionIndex) + this.legatoLineSourceGap;
   }
 
   getLegatoTargetX(actionIndex: number): number {
-    return this.getLegatoContentRight(actionIndex) - 8;
-  }
-
-  private getLegatoContentLeft(actionIndex: number): number {
-    return this.getActionSlotLeft(actionIndex);
-  }
-
-  private getLegatoContentRight(actionIndex: number): number {
-    return this.getLegatoContentLeft(actionIndex) + this.getLegatoContentWidth(actionIndex);
-  }
-
-  private getLegatoContentWidth(actionIndex: number): number {
-    const action = this.getTimelineActions()[actionIndex];
-    return this.slotSpacing * this.getActionSlotSpan(action ?? null);
+    return this.getActionSlotCenterX(actionIndex);
   }
 
   private getActionSlotWidth(actionIndex: number): number {
@@ -584,24 +607,56 @@ export class PlayingActionsComponent {
   ): number {
     const measureEndIndex = Math.min(actions.length, this.getMeasureEndActionIndex(startIndex));
     let endIndex = Math.min(measureEndIndex, startIndex + minimumSegmentSpan);
-    let extended = true;
 
-    while (extended) {
-      extended = false;
-      for (let actionIndex = startIndex; actionIndex < endIndex; actionIndex++) {
-        const actionEndIndex = Math.min(measureEndIndex, actionIndex + this.getActionSlotSpan(actions[actionIndex]));
-        if (actionEndIndex > endIndex) {
-          endIndex = actionEndIndex;
-          extended = true;
-        }
+    while (true) {
+      const connectedLegatoEndIndex = this.getConnectedLegatoEndIndex(actions, startIndex, endIndex, measureEndIndex);
+      if (connectedLegatoEndIndex <= endIndex) {
+        return endIndex;
       }
+
+      endIndex = connectedLegatoEndIndex;
+    }
+  }
+
+  private getConnectedLegatoEndIndex(
+    actions: (PlayingAction | null)[],
+    startIndex: number,
+    endIndex: number,
+    measureEndIndex: number
+  ): number {
+    for (let actionIndex = endIndex; actionIndex < measureEndIndex; actionIndex++) {
+      const action = actions[actionIndex];
+      if (!action) {
+        continue;
+      }
+
+      if (!this.isLegatoAction(action)) {
+        return endIndex;
+      }
+
+      const previousActionIndex = this.getPreviousRenderableActionIndex(actions, actionIndex);
+      if (previousActionIndex !== null && previousActionIndex >= startIndex && previousActionIndex < endIndex) {
+        return actionIndex + 1;
+      }
+
+      return endIndex;
     }
 
     return endIndex;
   }
 
-  private getActionSlotSpan(action: PlayingAction | null): number {
-    return action && this.isLegatoAction(action) ? this.legatoSlotSpan : 1;
+  private getPreviousRenderableActionIndex(actions: (PlayingAction | null)[], actionIndex: number): number | null {
+    for (let previousIndex = actionIndex - 1; previousIndex >= 0; previousIndex--) {
+      if (actions[previousIndex]) {
+        return previousIndex;
+      }
+    }
+
+    return null;
+  }
+
+  private hasLegatoSource(actionIndex: number, action: PlayingAction): boolean {
+    return !!this.resolveLegato(actionIndex, action)?.sourceLabel;
   }
 
   private getSegmentCompression(
@@ -740,7 +795,7 @@ export class PlayingActionsComponent {
     });
   }
 
-  private getRelativeRoleShortLabel(role: RelativeStringRole, note: GripRelativePickingNote | BaseRelativePickingNote): string {
+  private getRelativeStringShortLabel(string: RelativeString, note: GripRelativePickingNote | BaseRelativePickingNote): string {
     if (note.anchor === 'base-note') {
       return `b`;
     }
@@ -752,7 +807,89 @@ export class PlayingActionsComponent {
     return `${note.fretOffset > 0 ? '+' : ''}${note.fretOffset}`;
   }
 
-  private resolveLegato(actionIndex: number, action: PlayingAction): { string: number; startLabel: string; targetLabel: string } | undefined {
+  private applyActionToStringState(
+    actionIndex: number,
+    action: PlayingAction,
+    stringState: Map<number, NotationStringState>
+  ): void {
+    if (action.technique === 'strum' && action.strum) {
+      const grip = this.resolvedGripTimeline().get(actionIndex);
+      if (!grip) {
+        return;
+      }
+
+      for (const stringIndex of this.getStrumStringIndices(actionIndex, action)) {
+        const entry = grip.strings[stringIndex];
+        if (entry === 'x') {
+          stringState.delete(stringIndex);
+          continue;
+        }
+
+        const fret = entry === 'o' ? 0 : Math.max(...entry.map(value => value.fret));
+        stringState.set(stringIndex, { fret, label: `${fret}` });
+      }
+      return;
+    }
+
+    if (action.technique === 'pick' && action.pick) {
+      const mode = getPickMode(action);
+      const grip = this.resolvedGripTimeline().get(actionIndex);
+
+      for (const note of action.pick) {
+        if (mode === 'relative' && isRelativePickingNote(note)) {
+          const stringIndex = resolveRelativeStringIndex(grip, note.string);
+          const fret = resolveRelativePickFret(grip, stringIndex, note as GripRelativePickingNote | BaseRelativePickingNote);
+          const label = grip ? `${fret}` : this.getRelativeStringShortLabel(note.string, note as GripRelativePickingNote | BaseRelativePickingNote);
+          stringState.set(stringIndex, { fret, label });
+          continue;
+        }
+
+        const explicit = note as ExplicitPickingNote;
+        if (explicit.fret < 0) {
+          stringState.delete(explicit.string);
+          continue;
+        }
+
+        stringState.set(explicit.string, { fret: explicit.fret, label: `${explicit.fret}` });
+      }
+      return;
+    }
+
+    if (action.technique === 'percussive' && action.percussive?.technique === 'string-slap') {
+      stringState.clear();
+      return;
+    }
+
+    if (this.isLegatoAction(action)) {
+      const target = this.resolveLegatoTarget(actionIndex, action);
+      if (!target) {
+        return;
+      }
+
+      const source = stringState.get(target.string);
+      if (source || action.technique === 'hammer-on') {
+        stringState.set(target.string, {
+          fret: target.targetFret,
+          label: target.targetLabel
+        });
+      }
+    }
+  }
+
+  private resolveLegato(actionIndex: number, action: PlayingAction): ResolvedLegatoRender | undefined {
+    const target = this.resolveLegatoTarget(actionIndex, action);
+    if (!target) {
+      return undefined;
+    }
+
+    const source = this.resolvedStringStateTimeline().get(actionIndex)?.get(target.string);
+    return {
+      ...target,
+      sourceLabel: source?.label
+    };
+  }
+
+  private resolveLegatoTarget(actionIndex: number, action: PlayingAction): Omit<ResolvedLegatoRender, 'sourceLabel'> | undefined {
     if (!action.legato) {
       return undefined;
     }
@@ -761,27 +898,28 @@ export class PlayingActionsComponent {
       const explicit = action.legato as ExplicitLegatoNote;
       return {
         string: explicit.string,
-        startLabel: `${explicit.fromFret}`,
+        targetFret: explicit.toFret,
         targetLabel: `${explicit.toFret}`
       };
     }
 
     const legato = action.legato as RelativeLegatoNote;
     const grip = this.resolvedGripTimeline().get(actionIndex);
-    const stringIndex = resolveRelativeStringIndex(grip, legato.role);
+    const stringIndex = resolveRelativeStringIndex(grip, legato.string);
 
     if (!grip) {
       return {
         string: stringIndex,
-        startLabel: legato.start.anchor === 'base-note' ? 'b' : (legato.start.fretOffset === 0 ? 'g' : `${legato.start.fretOffset >= 0 ? '+' : ''}${legato.start.fretOffset}`),
+        targetFret: resolveRelativeLegatoEndpointFret(grip, stringIndex, legato.target),
         targetLabel: legato.target.anchor === 'base-note' ? 'b' : (legato.target.fretOffset === 0 ? 'g' : `${legato.target.fretOffset >= 0 ? '+' : ''}${legato.target.fretOffset}`)
       };
     }
 
+    const targetFret = resolveRelativeLegatoEndpointFret(grip, stringIndex, legato.target);
     return {
       string: stringIndex,
-      startLabel: `${resolveRelativeLegatoEndpointFret(grip, stringIndex, legato.start)}`,
-      targetLabel: `${resolveRelativeLegatoEndpointFret(grip, stringIndex, legato.target)}`
+      targetFret,
+      targetLabel: `${targetFret}`
     };
   }
 }

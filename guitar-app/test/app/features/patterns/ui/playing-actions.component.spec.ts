@@ -11,27 +11,37 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 
 describe('PlayingActionsComponent', () => {
   it.each(['hammer-on', 'pull-off', 'slide'] as const)(
-    'draws %s legato actions across two visual slots',
+    'draws %s legato actions as a backward connection to the previous action',
     async technique => {
       await TestBed.configureTestingModule({
         imports: [PlayingActionsComponent]
       }).compileComponents();
 
       const fixture = TestBed.createComponent(PlayingActionsComponent);
+      const sourceFret = technique === 'pull-off' ? 4 : 2;
+      const targetFret = technique === 'pull-off' ? 2 : 4;
       fixture.componentRef.setInput('measures', [createMeasure([
         {
-          technique,
-          legato: { string: 1, fromFret: technique === 'pull-off' ? 4 : 2, toFret: technique === 'pull-off' ? 2 : 4 }
+          technique: 'pick',
+          pick: [{ string: 1, fret: sourceFret }]
         },
-        null
+        {
+          technique,
+          legato: { string: 1, toFret: targetFret }
+        }
       ])]);
       fixture.detectChanges();
 
       const component = fixture.componentInstance;
       const legatoWidth = component.getLegatoTargetX(0) - component.getLegatoStartX(0);
-      expect(legatoWidth).toBe(component.slotSpacing * component.legatoSlotSpan - 16);
-      expect(component.getSlotSeparatorX(0)).toBeCloseTo(component.slotSpacing * component.legatoSlotSpan - 0.4);
+      expect(component.getRenderableSegments()[0]).toMatchObject({ actionIndex: 0, span: 2 });
+      expect(component.getLegatoStartX(1)).toBe(component.getActionX(0) + component.legatoLineSourceGap);
+      expect(component.getLegatoTargetX(1)).toBe(component.getActionSlotCenterX(1));
+      expect(component.getLegatoTargetX(1) - component.getLegatoStartX(1)).toBe(component.slotSpacing - component.legatoLineSourceGap);
+      expect(legatoWidth).toBe(0);
       expect(fixture.nativeElement.querySelectorAll('svg').length).toBe(1);
+      expect(fixture.nativeElement.querySelectorAll('.legato-line').length).toBe(1);
+      expect(fixture.nativeElement.querySelectorAll('.pick-label').length).toBe(2);
     }
   );
 
@@ -66,7 +76,7 @@ describe('PlayingActionsComponent', () => {
     actions[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     actions[1] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     actions[2] = { technique: 'strum', strum: { direction: 'U', strings: 'treble' } };
     actions[4] = { technique: 'pick', pick: [{ string: 5, fret: 0 }] };
@@ -100,11 +110,11 @@ describe('PlayingActionsComponent', () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[0] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     actions[1] = {
       technique: 'pull-off',
-      legato: { string: 1, fromFret: 4, toFret: 2 }
+      legato: { string: 1, toFret: 2 }
     };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.detectChanges();
@@ -112,11 +122,11 @@ describe('PlayingActionsComponent', () => {
     const component = fixture.componentInstance;
     const segments = component.getRenderableSegments();
     expect(segments[0].actions.map(action => action.actionIndex)).toEqual([0, 1]);
-    expect(component.getLegatoStartX(0)).toBe(8);
-    expect(component.getLegatoTargetX(0)).toBe((component.slotSpacing * component.legatoSlotSpan) - 8);
-    expect(component.getLegatoStartX(1)).toBe(component.slotSpacing + 8);
-    expect(component.getLegatoTargetX(1)).toBe((component.slotSpacing * 3) - 8);
-    expect(fixture.nativeElement.querySelectorAll('.legato-line').length).toBe(2);
+    expect(component.getLegatoStartX(0)).toBe(component.slotSpacing / 2);
+    expect(component.getLegatoTargetX(0)).toBe(component.slotSpacing / 2);
+    expect(component.getLegatoStartX(1)).toBe((component.slotSpacing / 2) + component.legatoLineSourceGap);
+    expect(component.getLegatoTargetX(1)).toBe(component.slotSpacing + (component.slotSpacing / 2));
+    expect(fixture.nativeElement.querySelectorAll('.legato-line').length).toBe(1);
   });
 
   it('renders beat and offbeat rhythm markers at their slot centers inside multi-slot SVGs', async () => {
@@ -128,7 +138,7 @@ describe('PlayingActionsComponent', () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[0] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     actions[2] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
@@ -151,7 +161,7 @@ describe('PlayingActionsComponent', () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[0] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.detectChanges();
@@ -176,21 +186,21 @@ describe('PlayingActionsComponent', () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[3] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     actions[4] = {
       technique: 'pull-off',
-      legato: { string: 1, fromFret: 4, toFret: 2 }
+      legato: { string: 1, toFret: 2 }
     };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.detectChanges();
 
     const segments = fixture.componentInstance.getRenderableSegments();
     expect(segments.map(segment => ({ actionIndex: segment.actionIndex, span: segment.span }))).toEqual([
-      { actionIndex: 0, span: 6 },
-      { actionIndex: 6, span: 4 },
-      { actionIndex: 10, span: 4 },
-      { actionIndex: 14, span: 2 }
+      { actionIndex: 0, span: 5 },
+      { actionIndex: 5, span: 4 },
+      { actionIndex: 9, span: 4 },
+      { actionIndex: 13, span: 3 }
     ]);
     expect(segments[0].actions.map(action => action.actionIndex)).toEqual([3, 4]);
   });
@@ -205,7 +215,7 @@ describe('PlayingActionsComponent', () => {
     const secondMeasureActions = Array(16).fill(null) as (PlayingAction | null)[];
     firstMeasureActions[15] = {
       technique: 'hammer-on',
-      legato: { string: 1, fromFret: 2, toFret: 4 }
+      legato: { string: 1, toFret: 4 }
     };
     secondMeasureActions[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     fixture.componentRef.setInput('measures', [
@@ -225,12 +235,12 @@ describe('PlayingActionsComponent', () => {
     expect(nextMeasureSegment!.actions.map(action => action.actionIndex)).toEqual([16]);
     const [divider] = component.getSegmentMeasureDividers(measureEndSegment!);
     expect(divider.actionIndex).toBe(16);
-    expect(component.getLegatoTargetX(15)).toBeGreaterThan(divider.x);
+    expect(component.getLegatoTargetX(15)).toBeLessThan(divider.x);
     expect(component.getActionSlotCenterX(16)).toBe(component.slotSpacing / 2);
     expect(component.getSegmentRhythmMarkers(measureEndSegment!).map(marker => marker.label)).toEqual(['4', '&']);
     expect(component.getSegmentRhythmMarkers(nextMeasureSegment!)[0]).toEqual({ actionIndex: 16, label: '1' });
     expect(fixture.nativeElement.querySelectorAll('.measure-divider').length).toBe(1);
-    expect(fixture.nativeElement.querySelectorAll('.legato-line').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.legato-line').length).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.strum-stem').length).toBe(1);
   });
 
@@ -244,7 +254,7 @@ describe('PlayingActionsComponent', () => {
       {
         technique: 'pick',
         pickMode: 'relative',
-        pick: [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }]
+        pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
       }
     ])]);
     fixture.detectChanges();
@@ -286,7 +296,7 @@ describe('PlayingActionsComponent', () => {
       {
         technique: 'pick',
         pickMode: 'relative',
-        pick: [{ role: 'bass', anchor: 'grip-note', fretOffset: 2 }]
+        pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 2 }]
       }
     ])]);
     fixture.componentRef.setInput('notationContexts', [{

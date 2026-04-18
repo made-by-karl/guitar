@@ -94,17 +94,15 @@ describe('PlayingPatternEditorComponent', () => {
       technique: 'hammer-on',
       legatoMode: 'relative',
       legato: {
-        role: 'second-from-bass',
-        start: { anchor: 'base-note' },
+        string: 'second-from-bass',
         target: { anchor: 'grip-note', fretOffset: 0 }
       }
     });
   });
 
-  it('switches legato start and target independently', () => {
+  it('switches legato target independently', () => {
     component.addAction(0, 0, 'slide');
     component.setLegatoMode(0, 0, 'relative');
-    component.updateLegatoStartAnchor(0, 0, 'base-note');
     component.updateLegatoTargetAnchor(0, 0, 'grip-note');
 
     component.updateLegatoTargetFretOffset(0, 0, 7);
@@ -113,8 +111,7 @@ describe('PlayingPatternEditorComponent', () => {
       technique: 'slide',
       legatoMode: 'relative',
       legato: {
-        role: 'second-from-bass',
-        start: { anchor: 'base-note' },
+        string: 'second-from-bass',
         target: { anchor: 'grip-note', fretOffset: 7 }
       }
     });
@@ -170,7 +167,7 @@ describe('PlayingPatternEditorComponent', () => {
     expect(component.pattern().measures[0].actions[0]).toEqual({
       technique: 'pick',
       pickMode: 'relative',
-      pick: [{ role: 'bass', anchor: 'base-note' }],
+      pick: [{ string: 'bass', anchor: 'base-note' }],
       modifiers: []
     });
   });

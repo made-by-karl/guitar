@@ -4,7 +4,7 @@ export type PlayingTechnique = 'strum' | 'pick' | 'hammer-on' | 'pull-off' | 'sl
 export type PickMode = 'explicit' | 'relative';
 export type LegatoMode = 'explicit' | 'relative';
 export type RelativeNoteAnchor = 'base-note' | 'grip-note';
-export type RelativeStringRole = 'bass' | 'second-from-bass' | 'middle' | 'second-from-top' | 'top';
+export type RelativeString = 'bass' | 'second-from-bass' | 'middle' | 'second-from-top' | 'top';
 
 // Style modifiers that can be applied to strum and pick techniques
 export type PlayingModifier = 'mute' | 'palm-mute' | 'accent';
@@ -15,7 +15,7 @@ export interface ExplicitPickingNote {
 }
 
 export interface RelativePickingNote {
-  role: RelativeStringRole;
+  string: RelativeString;
   anchor: RelativeNoteAnchor;
 }
 
@@ -32,7 +32,6 @@ export type PickingNote = ExplicitPickingNote | GripRelativePickingNote | BaseRe
 
 export interface ExplicitLegatoNote {
   string: number;   // 0-5 (low E to high E)
-  fromFret: number; // starting fret, 0 = open
   toFret: number;   // destination fret, 0 = open
 }
 
@@ -52,16 +51,15 @@ export interface BaseRelativeLegatoEndpoint extends RelativeLegatoEndpoint {
 export type RelativeLegatoEndpointNote = GripRelativeLegatoEndpoint | BaseRelativeLegatoEndpoint;
 
 export interface RelativeLegatoNote {
-  role: RelativeStringRole;
-  start: RelativeLegatoEndpointNote;
+  string: RelativeString;
   target: RelativeLegatoEndpointNote;
 }
 
 export type LegatoNote = ExplicitLegatoNote | RelativeLegatoNote;
 
 export interface RelativeStrumRange {
-  from: RelativeStringRole;
-  to: RelativeStringRole;
+  from: RelativeString;
+  to: RelativeString;
 }
 
 export type StrumRange = 
@@ -190,7 +188,7 @@ export function getRelativeNoteAnchor(note: RelativePickingNote | RelativeLegato
 }
 
 export function isRelativePickingNote(note: PickingNote): note is GripRelativePickingNote | BaseRelativePickingNote {
-  return 'role' in note;
+  return typeof note.string === 'string';
 }
 
 export function isGripRelativePickingNote(note: PickingNote): note is GripRelativePickingNote {
@@ -202,7 +200,7 @@ export function isBaseRelativePickingNote(note: PickingNote): note is BaseRelati
 }
 
 export function isRelativeLegatoNote(note: LegatoNote): note is RelativeLegatoNote {
-  return 'role' in note && 'start' in note && 'target' in note;
+  return typeof note.string === 'string' && 'target' in note;
 }
 
 export function isGripRelativeLegatoEndpoint(note: RelativeLegatoEndpointNote): note is GripRelativeLegatoEndpoint {

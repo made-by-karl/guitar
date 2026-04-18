@@ -19,21 +19,24 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     strings: ['x', [{ fret: 5, isPartOfBarre: true }], [{ fret: 7 }], [{ fret: 7 }], [{ fret: 7 }], [{ fret: 5, isPartOfBarre: true }]]
   };
 
-  it('builds hammer-on instructions with source and target notes', () => {
+  it('resolves hammer-on source from a previous picked note on the same string', () => {
     const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pick: [{ string: 1, fret: 2 }]
+        }, {
           technique: 'hammer-on',
-          legato: { string: 1, fromFret: 2, toFret: 4 }
-        }, null, null, null]
+          legato: { string: 1, toFret: 4 }
+        }, null, null]
       }
     }], tuning, 120, grip as any);
 
-    expect(plan.instructions).toHaveLength(1);
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions).toHaveLength(2);
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'hammer-on',
       playbackDuration: 0.25,
       actionDuration: 0.125,
@@ -43,26 +46,28 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         target: { note: { semitone: 'C#', octave: 3 } }
       },
       notes: [
-        { note: { semitone: 'B', octave: 2 } },
         { note: { semitone: 'C#', octave: 3 } }
       ]
     });
   });
 
-  it('builds pull-off instructions with descending notes', () => {
+  it('resolves pull-off source from a previous picked note on the same string', () => {
     const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pick: [{ string: 2, fret: 4 }]
+        }, {
           technique: 'pull-off',
-          legato: { string: 2, fromFret: 4, toFret: 2 }
-        }, null, null, null]
+          legato: { string: 2, toFret: 2 }
+        }, null, null]
       }
     }], tuning, 120, grip as any);
 
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'pull-off',
       playbackDuration: 0.25,
       actionDuration: 0.125,
@@ -81,16 +86,19 @@ describe('PlayingPatternPlaybackPlannerService', () => {
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pick: [{ string: 1, fret: 2 }]
+        }, {
           technique: 'hammer-on',
-          legato: { string: 1, fromFret: 2, toFret: 4 }
+          legato: { string: 1, toFret: 4 }
         }, {
           technique: 'pick',
           pick: [{ string: 5, fret: 0 }]
-        }, null, null]
+        }, null]
       }
     }], tuning, 120, grip as any);
 
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'hammer-on',
       playbackDuration: 0.25,
       actionDuration: 0.125
@@ -104,16 +112,19 @@ describe('PlayingPatternPlaybackPlannerService', () => {
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pick: [{ string: 2, fret: 4 }]
+        }, {
           technique: 'pull-off',
-          legato: { string: 2, fromFret: 4, toFret: 2 }
+          legato: { string: 2, toFret: 2 }
         }, {
           technique: 'pick',
           pick: [{ string: 2, fret: 0 }]
-        }, null, null]
+        }, null]
       }
     }], tuning, 120, grip as any);
 
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'pull-off',
       playbackDuration: 0.125,
       actionDuration: 0.125
@@ -127,13 +138,16 @@ describe('PlayingPatternPlaybackPlannerService', () => {
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pick: [{ string: 0, fret: 3 }]
+        }, {
           technique: 'slide',
-          legato: { string: 0, fromFret: 3, toFret: 5 }
-        }, null, null, null]
+          legato: { string: 0, toFret: 5 }
+        }, null, null]
       }
     }], tuning, 120, grip as any);
 
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'slide',
       legato: {
         string: 0,
@@ -152,7 +166,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         actions: [{
           technique: 'pick',
           pickMode: 'relative',
-          pick: [{ role: 'second-from-bass', fretOffset: 0, anchor: 'grip-note' }]
+          pick: [{ string: 'second-from-bass', fretOffset: 0, anchor: 'grip-note' }]
         }, null, null, null]
       }
     }], tuning, 120, grip as any);
@@ -164,25 +178,28 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     });
   });
 
-  it('resolves relative hammer-ons from the base note on barred strings', () => {
+  it('resolves relative hammer-ons from a previous relative base-note pick on barred strings', () => {
     const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
       measure: {
         timeSignature: '4/4',
         actions: [{
+          technique: 'pick',
+          pickMode: 'relative',
+          pick: [{ string: 'second-from-bass', anchor: 'base-note' }]
+        }, {
           technique: 'hammer-on',
           legatoMode: 'relative',
           legato: {
-            role: 'second-from-bass',
-            start: { anchor: 'base-note' },
+            string: 'second-from-bass',
             target: { anchor: 'grip-note', fretOffset: 0 }
           }
-        }, null, null, null]
+        }, null, null]
       }
     }], tuning, 120, barreGrip as any);
 
-    expect(plan.instructions[0]).toMatchObject({
+    expect(plan.instructions[1]).toMatchObject({
       technique: 'hammer-on',
       legato: {
         string: 2,
@@ -192,7 +209,138 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     });
   });
 
-  it('resolves bass role against the lowest playable string of the current grip', () => {
+  it('resolves legato source from a previous strum on the same string', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'strum',
+          strum: { direction: 'D', strings: 'all' }
+        }, {
+          technique: 'hammer-on',
+          legato: { string: 1, toFret: 4 }
+        }, null, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions[1]).toMatchObject({
+      technique: 'hammer-on',
+      legato: {
+        string: 1,
+        source: { note: { semitone: 'B', octave: 2 } },
+        target: { note: { semitone: 'C#', octave: 3 } }
+      }
+    });
+  });
+
+  it('uses chained legato targets as the next source on the same string', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [{ string: 1, fret: 2 }]
+        }, {
+          technique: 'hammer-on',
+          legato: { string: 1, toFret: 4 }
+        }, {
+          technique: 'pull-off',
+          legato: { string: 1, toFret: 2 }
+        }, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions[2]).toMatchObject({
+      technique: 'pull-off',
+      legato: {
+        source: { note: { semitone: 'C#', octave: 3 } },
+        target: { note: { semitone: 'B', octave: 2 } }
+      }
+    });
+  });
+
+  it('plays orphan hammer-ons as target-only legato notes', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'hammer-on',
+          legato: { string: 1, toFret: 4 }
+        }, null, null, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions).toHaveLength(1);
+    expect(plan.instructions[0]).toMatchObject({
+      technique: 'hammer-on',
+      legato: {
+        string: 1,
+        target: { note: { semitone: 'C#', octave: 3 } }
+      },
+      notes: [
+        { note: { semitone: 'C#', octave: 3 } }
+      ]
+    });
+    expect(plan.instructions[0].legato?.source).toBeUndefined();
+  });
+
+  it('skips orphan pull-offs and slides', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pull-off',
+          legato: { string: 1, toFret: 0 }
+        }, {
+          technique: 'slide',
+          legato: { string: 2, toFret: 4 }
+        }, null, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions).toHaveLength(0);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
+  it('warns but still plays hammer-ons with non-ascending target frets', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [{ string: 1, fret: 4 }]
+        }, {
+          technique: 'hammer-on',
+          legato: { string: 1, toFret: 2 }
+        }, null, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions[1]).toMatchObject({
+      technique: 'hammer-on',
+      legato: {
+        source: { note: { semitone: 'C#', octave: 3 } },
+        target: { note: { semitone: 'B', octave: 2 } }
+      }
+    });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('hammer-on warning'));
+    warnSpy.mockRestore();
+  });
+
+  it('resolves bass relative string against the lowest playable string of the current grip', () => {
     const service = new PlayingPatternPlaybackPlannerService();
 
     const plan = service.buildPlaybackPlan([{
@@ -201,7 +349,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         actions: [{
           technique: 'pick',
           pickMode: 'relative',
-          pick: [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }]
+          pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
         }, null, null, null]
       }
     }], tuning, 120, barreGrip as any);

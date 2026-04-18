@@ -1,4 +1,5 @@
-import { PlaybackService } from '@/app/core/services/playback.service';
+import { note } from '@/app/core/music/semitones';
+import { PlaybackPlan, PlaybackService } from '@/app/core/services/playback.service';
 
 describe('PlaybackService', () => {
   it('plays a chord by delegating a single instruction sequence to the midi service', async () => {
@@ -38,12 +39,12 @@ describe('PlaybackService', () => {
     const service = new PlaybackService(midiService as any);
     const sessionA = service.getFiniteSession('session-a');
     const sessionB = service.getFiniteSession('session-b');
-    const plan = {
+    const plan: PlaybackPlan = {
       instructions: [{
         time: 0,
         playbackDuration: 0.5,
         actionDuration: 0.5,
-        notes: [{ note: { semitone: 'E', octave: 4 } }],
+        notes: [{ note: note('E', 4) }],
         velocity: 0.7,
         technique: 'normal' as const,
         playNotes: 'parallel' as const

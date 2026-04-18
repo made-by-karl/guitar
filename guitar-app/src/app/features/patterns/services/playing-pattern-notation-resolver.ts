@@ -4,7 +4,7 @@ import {
   GripRelativePickingNote,
   RelativeLegatoEndpointNote,
   RelativeStrumRange,
-  RelativeStringRole
+  RelativeString
 } from '@/app/features/patterns/services/playing-patterns.model';
 
 export function getPlayableStringIndices(grip: Grip | undefined): number[] {
@@ -17,13 +17,13 @@ export function getPlayableStringIndices(grip: Grip | undefined): number[] {
     .filter(index => index >= 0);
 }
 
-export function resolveRelativeStringIndex(grip: Grip | undefined, role: RelativeStringRole): number {
+export function resolveRelativeStringIndex(grip: Grip | undefined, relativeString: RelativeString): number {
   const playableStrings = getPlayableStringIndices(grip);
   if (playableStrings.length === 0) {
     return 0;
   }
 
-  switch (role) {
+  switch (relativeString) {
     case 'bass':
       return playableStrings[0];
     case 'second-from-bass':

@@ -47,8 +47,9 @@
         }
 
         @if ((currentAction.technique === 'hammer-on' || currentAction.technique === 'pull-off' || currentAction.technique === 'slide') && currentAction.legato) {
+          @if (hasLegatoLine(slotAction.actionIndex, currentAction)) {
           <line [attr.x1]="getLegatoStartX(slotAction.actionIndex)" [attr.y1]="getLegatoStringY(slotAction.actionIndex, currentAction)" [attr.x2]="getLegatoTargetX(slotAction.actionIndex)" [attr.y2]="getLegatoStringY(slotAction.actionIndex, currentAction)" class="legato-line" />
-          <text [attr.x]="getLegatoStartX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) + 1" class="pick-label">{{ getLegatoStartLabel(slotAction.actionIndex, currentAction) }}</text>
+          }
           <text [attr.x]="getLegatoTargetX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) + 1" class="pick-label">{{ getLegatoTargetLabel(slotAction.actionIndex, currentAction) }}</text>
           <text [attr.x]="getActionX(slotAction.actionIndex)" [attr.y]="getLegatoStringY(slotAction.actionIndex, currentAction) - 7" class="technique-mark">{{ getTechniqueTag(currentAction) }}</text>
         }

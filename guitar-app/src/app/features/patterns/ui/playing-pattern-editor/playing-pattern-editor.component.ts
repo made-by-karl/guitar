@@ -23,7 +23,7 @@ import {
   PlayingPatternGripReference,
   RelativeNoteAnchor,
   RelativeStrumRange,
-  RelativeStringRole,
+  RelativeString,
   StrumRange,
   getLegatoMode,
   getBeatsFromTimeSignature,
@@ -48,7 +48,7 @@ type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer
   styleUrl: './playing-pattern-editor.component.scss'
 })
 export class PlayingPatternEditorComponent implements OnDestroy {
-  readonly relativeStringRoles: RelativeStringRole[] = ['bass', 'second-from-bass', 'middle', 'second-from-top', 'top'];
+  readonly relativeStrings: RelativeString[] = ['bass', 'second-from-bass', 'middle', 'second-from-top', 'top'];
   readonly strumStringOptions = [
     { value: 'all', label: 'All' },
     { value: 'bass', label: 'Bass' },
@@ -212,7 +212,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
         newAction = {
           technique: 'pick',
           pickMode: 'relative',
-          pick: [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }],
+          pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }],
           modifiers: []
         };
         break;
@@ -228,11 +228,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
         newAction = {
           technique: techniqueType,
           legatoMode: 'relative',
-          legato: techniqueType === 'pull-off'
-            ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'base-note' } }
-            : techniqueType === 'slide'
-              ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'grip-note', fretOffset: 2 } }
-              : { role: 'second-from-bass', start: { anchor: 'base-note' }, target: { anchor: 'grip-note', fretOffset: 0 } }
+          legato: this.getDefaultLegato(techniqueType, 'relative')
         };
         break;
     }
@@ -282,7 +278,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       // Ensure pick array exists
       if (!updatedAction.pick) {
         updatedAction.pickMode = 'relative';
-        updatedAction.pick = [{ role: 'bass', anchor: 'grip-note', fretOffset: 0 }];
+        updatedAction.pick = [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }];
       }
 
       // Remove strum pattern and percussive if switching from strum/percussive to pick
@@ -305,11 +301,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
       if (!updatedAction.legato) {
         updatedAction.legatoMode = 'relative';
-        updatedAction.legato = action.technique === 'pull-off'
-          ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'base-note' } }
-          : action.technique === 'slide'
-            ? { role: 'second-from-bass', start: { anchor: 'grip-note', fretOffset: 0 }, target: { anchor: 'grip-note', fretOffset: 2 } }
-            : { role: 'second-from-bass', start: { anchor: 'base-note' }, target: { anchor: 'grip-note', fretOffset: 0 } };
+        updatedAction.legato = this.getDefaultLegato(action.technique, 'relative');
       }
 
       delete updatedAction.strum;
@@ -455,14 +447,14 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     }
   }
 
-  // Update pick note string role with immutable pattern update
-  updatePickNoteRole(measureIndex: number, originalIndex: number, noteIndex: number, role: RelativeStringRole): void {
+  // Update pick note relative string with immutable pattern update
+  updatePickNoteRelativeString(measureIndex: number, originalIndex: number, noteIndex: number, string: RelativeString): void {
     const pattern = this.pattern()
     if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'pick' && action.pick && action.pick[noteIndex]) {
       const updatedPick = [...action.pick];
-      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as GripRelativePickingNote | BaseRelativePickingNote), role };
+      updatedPick[noteIndex] = { ...(updatedPick[noteIndex] as GripRelativePickingNote | BaseRelativePickingNote), string };
       
       const updatedAction: PlayingAction = {
         ...action,
@@ -626,7 +618,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  updateStrumRangeFrom(measureIndex: number, originalIndex: number, from: RelativeStringRole): void {
+  updateStrumRangeFrom(measureIndex: number, originalIndex: number, from: RelativeString): void {
     this.updateAction(measureIndex, originalIndex, action => {
       if (!action || action.technique !== 'strum' || !action.strum || !isRelativeStrumRange(action.strum.strings)) return action;
 
@@ -643,7 +635,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  updateStrumRangeTo(measureIndex: number, originalIndex: number, to: RelativeStringRole): void {
+  updateStrumRangeTo(measureIndex: number, originalIndex: number, to: RelativeString): void {
     this.updateAction(measureIndex, originalIndex, action => {
       if (!action || action.technique !== 'strum' || !action.strum || !isRelativeStrumRange(action.strum.strings)) return action;
 
@@ -700,8 +692,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return names[stringIndex] || `String ${stringIndex + 1}`;
   }
 
-  getRelativeStringRoleLabel(role: RelativeStringRole): string {
-    switch (role) {
+  getRelativeStringLabel(string: RelativeString): string {
+    switch (string) {
       case 'bass': return 'Bass Note';
       case 'second-from-bass': return '2nd from Bass';
       case 'middle': return 'Middle';
@@ -726,7 +718,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return action.technique === 'strum' && !!action.strum && isRelativeStrumRange(action.strum.strings);
   }
 
-  getStrumRangeFrom(action: PlayingAction): RelativeStringRole {
+  getStrumRangeFrom(action: PlayingAction): RelativeString {
     if (!this.isRelativeStrumStrings(action)) {
       return 'bass';
     }
@@ -735,7 +727,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return strings.from;
   }
 
-  getStrumRangeTo(action: PlayingAction): RelativeStringRole {
+  getStrumRangeTo(action: PlayingAction): RelativeString {
     if (!this.isRelativeStrumStrings(action)) {
       return 'top';
     }
@@ -753,23 +745,23 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   }
 
   isRelativePickNote(note: PickingNote): note is GripRelativePickingNote | BaseRelativePickingNote {
-    return 'role' in note;
+    return typeof note.string === 'string';
   }
 
   isRelativeLegato(legato: LegatoNote): legato is RelativeLegatoNote {
-    return 'role' in legato && 'start' in legato && 'target' in legato;
+    return typeof legato.string === 'string' && 'target' in legato;
   }
 
   getPickAnchor(note: PickingNote): RelativeNoteAnchor {
     return this.isRelativePickNote(note) ? note.anchor : 'grip-note';
   }
 
-  getPickRole(note: PickingNote): RelativeStringRole {
-    return this.isRelativePickNote(note) ? note.role : 'bass';
+  getPickRelativeString(note: PickingNote): RelativeString {
+    return this.isRelativePickNote(note) ? note.string : 'bass';
   }
 
-  getLegatoRole(legato: LegatoNote): RelativeStringRole {
-    return this.isRelativeLegato(legato) ? legato.role : 'second-from-bass';
+  getLegatoRelativeString(legato: LegatoNote): RelativeString {
+    return this.isRelativeLegato(legato) ? legato.string : 'second-from-bass';
   }
 
   canEditPickOffset(note: PickingNote): boolean {
@@ -780,24 +772,12 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return this.isRelativePickNote(note) && 'fretOffset' in note ? note.fretOffset : 0;
   }
 
-  getLegatoStartAnchor(legato: LegatoNote): RelativeNoteAnchor {
-    return this.isRelativeLegato(legato) ? legato.start.anchor : 'base-note';
-  }
-
   getLegatoTargetAnchor(legato: LegatoNote): RelativeNoteAnchor {
     return this.isRelativeLegato(legato) ? legato.target.anchor : 'grip-note';
   }
 
-  canEditLegatoStartOffset(legato: LegatoNote): boolean {
-    return this.isRelativeLegato(legato) && legato.start.anchor === 'grip-note';
-  }
-
   canEditLegatoTargetOffset(legato: LegatoNote): boolean {
     return this.isRelativeLegato(legato) && legato.target.anchor === 'grip-note';
-  }
-
-  getRelativeLegatoStartOffset(legato: LegatoNote): number {
-    return this.isRelativeLegato(legato) && 'fretOffset' in legato.start ? legato.start.fretOffset : 0;
   }
 
   getRelativeLegatoTargetOffset(legato: LegatoNote): number {
@@ -839,10 +819,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  updateLegatoRole(measureIndex: number, originalIndex: number, role: RelativeStringRole): void {
+  updateLegatoRelativeString(measureIndex: number, originalIndex: number, string: RelativeString): void {
     this.updateAction(measureIndex, originalIndex, action => {
       if (!action || !action.legato || !this.isRelativeLegato(action.legato)) return action;
-      return { ...action, legato: { ...action.legato, role } };
+      return { ...action, legato: { ...action.legato, string } };
     });
   }
 
@@ -851,10 +831,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       if (!action || !action.legato || this.isRelativeLegato(action.legato)) return action;
       return { ...action, legato: { ...action.legato, string: stringValue } };
     });
-  }
-
-  updateLegatoFromFret(measureIndex: number, originalIndex: number, fromFret: number): void {
-    this.updateLegato(measureIndex, originalIndex, { fromFret });
   }
 
   updateLegatoToFret(measureIndex: number, originalIndex: number, toFret: number): void {
@@ -875,28 +851,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  updateLegatoStartFretOffset(measureIndex: number, originalIndex: number, fretOffset: number): void {
-    this.updateAction(measureIndex, originalIndex, action => {
-      if (!action || !action.legato || !this.isRelativeLegato(action.legato) || action.legato.start.anchor !== 'grip-note') return action;
-      return { ...action, legato: { ...action.legato, start: { ...action.legato.start, fretOffset } } };
-    });
-  }
-
   updateLegatoTargetFretOffset(measureIndex: number, originalIndex: number, fretOffset: number): void {
     this.updateAction(measureIndex, originalIndex, action => {
       if (!action || !action.legato || !this.isRelativeLegato(action.legato) || action.legato.target.anchor !== 'grip-note') return action;
       return { ...action, legato: { ...action.legato, target: { ...action.legato.target, fretOffset } } };
-    });
-  }
-
-  updateLegatoStartAnchor(measureIndex: number, originalIndex: number, anchor: RelativeNoteAnchor): void {
-    const action = this.pattern()?.measures[measureIndex]?.actions[originalIndex];
-    if (!action || !action.legato || !this.isRelativeLegato(action.legato)) return;
-
-    const nextStart = this.toRelativeLegatoEndpointWithAnchor(action.legato.start, anchor, this.getDefaultRelativeLegatoStartOffset(action.technique));
-    this.updateAction(measureIndex, originalIndex, currentAction => {
-      if (!currentAction || !currentAction.legato || !this.isRelativeLegato(currentAction.legato)) return currentAction;
-      return { ...currentAction, legato: { ...currentAction.legato, start: nextStart } };
     });
   }
 
@@ -1085,7 +1043,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   private getDefaultPickNote(pickMode: PickMode): PickingNote {
     return pickMode === 'relative'
-      ? { role: 'bass', anchor: 'grip-note', fretOffset: 0 }
+      ? { string: 'bass', anchor: 'grip-note', fretOffset: 0 }
       : { string: 0, fret: 0 };
   }
 
@@ -1099,12 +1057,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   private getDefaultLegato(technique: 'hammer-on' | 'pull-off' | 'slide', legatoMode: LegatoMode): LegatoNote {
     if (legatoMode === 'relative') {
       return {
-        role: 'second-from-bass',
-        start: technique === 'pull-off'
-          ? { anchor: 'grip-note', fretOffset: 0 }
-          : technique === 'slide'
-            ? { anchor: 'grip-note', fretOffset: 0 }
-            : { anchor: 'base-note' },
+        string: 'second-from-bass',
         target: technique === 'pull-off'
           ? { anchor: 'base-note' }
           : technique === 'slide'
@@ -1115,7 +1068,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     return {
       string: 0,
-      fromFret: technique === 'pull-off' ? 2 : 0,
       toFret: technique === 'pull-off' ? 0 : 2
     };
   }
@@ -1126,13 +1078,13 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   ): GripRelativePickingNote | BaseRelativePickingNote {
     if (anchor === 'base-note') {
       return {
-        role: note.role,
+        string: note.string,
         anchor: 'base-note'
       };
     }
 
     return {
-      role: note.role,
+      string: note.string,
       anchor: 'grip-note',
       fretOffset: 'fretOffset' in note ? note.fretOffset : 0
     };
@@ -1153,10 +1105,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       anchor: 'grip-note',
       fretOffset: 'fretOffset' in endpoint ? endpoint.fretOffset : defaultOffset
     };
-  }
-
-  private getDefaultRelativeLegatoStartOffset(technique: PlayingAction['technique']): number {
-    return technique === 'pull-off' || technique === 'slide' ? 0 : 0;
   }
 
   private getDefaultRelativeLegatoTargetOffset(technique: PlayingAction['technique']): number {

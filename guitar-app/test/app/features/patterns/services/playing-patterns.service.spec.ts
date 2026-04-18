@@ -1,6 +1,6 @@
 import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
-import { isRelativeStrumRange, PlayingAction, RelativeStringRole } from '@/app/features/patterns/services/playing-patterns.model';
+import { isRelativeStrumRange, PlayingAction, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
 
 describe('PlayingPatternsService', () => {
   it('seeds a broader starter library when the pattern table is empty', async () => {
@@ -70,7 +70,7 @@ describe('PlayingPatternsService', () => {
   });
 
   it('keeps relative upstroke ranges ordered from top toward bass', () => {
-    const roleOrder: Record<RelativeStringRole, number> = {
+    const relativeStringOrder: Record<RelativeString, number> = {
       bass: 0,
       'second-from-bass': 1,
       middle: 2,
@@ -86,7 +86,7 @@ describe('PlayingPatternsService', () => {
             continue;
           }
 
-          if (roleOrder[action.strum!.strings.from] < roleOrder[action.strum!.strings.to]) {
+          if (relativeStringOrder[action.strum!.strings.from] < relativeStringOrder[action.strum!.strings.to]) {
             invalidUpstrokes.push(pattern.name);
           }
         }
@@ -103,7 +103,7 @@ async function flushPromises() {
 }
 
 function isRelativeUpstroke(action: PlayingAction): action is PlayingAction & {
-  strum: { direction: 'U'; strings: { from: RelativeStringRole; to: RelativeStringRole } };
+  strum: { direction: 'U'; strings: { from: RelativeString; to: RelativeString } };
 } {
   return action.technique === 'strum'
     && action.strum?.direction === 'U'

@@ -274,30 +274,20 @@ export class MidiService implements OnDestroy {
       return;
     }
 
-    const sourceNoteName = this.noteToToneName(instruction.legato.source.note);
     const targetNoteName = this.noteToToneName(instruction.legato.target.note);
 
-    let transitionDelay = totalDuration / 2;
     let targetVelocityScale = 0.78;
 
     if (instruction.technique === 'pull-off') {
       targetVelocityScale = 0.72;
+    } else if (instruction.technique === 'hammer-on' && !instruction.legato.source) {
+      targetVelocityScale = 0.62;
     }
-
-    const sourceDuration = Math.max(0.03, transitionDelay);
-    const targetDuration = Math.max(0.08, totalDuration - transitionDelay);
-
-    sampler.triggerAttackRelease(
-      sourceNoteName,
-      sourceDuration,
-      startTime,
-      Math.max(0.2, options.velocity * 0.85)
-    );
 
     sampler.triggerAttackRelease(
       targetNoteName,
-      targetDuration,
-      startTime + transitionDelay,
+      Math.max(0.08, totalDuration),
+      startTime,
       Math.max(0.2, options.velocity * targetVelocityScale)
     );
   }
@@ -310,6 +300,16 @@ export class MidiService implements OnDestroy {
     totalDuration: number
   ): void {
     if (!instruction.legato) return;
+
+    if (!instruction.legato.source) {
+      sampler.triggerAttackRelease(
+        this.noteToToneName(instruction.legato.target.note),
+        totalDuration,
+        startTime,
+        options.velocity
+      );
+      return;
+    }
 
     const interval = getIntervalSemitones(
       instruction.legato.source.note,
@@ -329,7 +329,7 @@ export class MidiService implements OnDestroy {
     }
 
     const notes: Note[] = [];
-    for (let step = 0; step <= distance; step++) {
+    for (let step = 1; step <= distance; step++) {
       notes.push(transpose(instruction.legato.source.note, step * direction));
     }
 

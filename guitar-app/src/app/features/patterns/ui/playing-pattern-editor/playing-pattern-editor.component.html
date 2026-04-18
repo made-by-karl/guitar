@@ -180,16 +180,16 @@
                               [ngModel]="getStrumRangeFrom(actionData.action)"
                               (ngModelChange)="updateStrumRangeFrom(measureData.measureIndex, actionData.originalIndex, $event)"
                               [name]="'strumRangeFrom_' + measureData.measureIndex + '_' + actionData.originalIndex">
-                              @for (role of relativeStringRoles; track role) {
-                              <option [value]="role">{{ getRelativeStringRoleLabel(role) }}</option>
+                              @for (relativeString of relativeStrings; track relativeString) {
+                              <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
                               }
                             </select>
                             <select class="form-select form-select-sm"
                               [ngModel]="getStrumRangeTo(actionData.action)"
                               (ngModelChange)="updateStrumRangeTo(measureData.measureIndex, actionData.originalIndex, $event)"
                               [name]="'strumRangeTo_' + measureData.measureIndex + '_' + actionData.originalIndex">
-                              @for (role of relativeStringRoles; track role) {
-                              <option [value]="role">{{ getRelativeStringRoleLabel(role) }}</option>
+                              @for (relativeString of relativeStrings; track relativeString) {
+                              <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
                               }
                             </select>
                           </div>
@@ -225,11 +225,11 @@
                               <div class="d-flex align-items-center gap-1">
                                 @if (isRelativePickNote(note)) {
                                 <select class="form-select form-select-sm"
-                                  [ngModel]="getPickRole(note)"
-                                  (ngModelChange)="updatePickNoteRole(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
-                                  [name]="'pickRole_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
-                                  @for (role of relativeStringRoles; track role) {
-                                  <option [value]="role">{{ getRelativeStringRoleLabel(role) }}</option>
+                                  [ngModel]="getPickRelativeString(note)"
+                                  (ngModelChange)="updatePickNoteRelativeString(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
+                                  [name]="'pickRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
+                                  @for (relativeString of relativeStrings; track relativeString) {
+                                  <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
                                   }
                                 </select>
                                 <select class="form-select form-select-sm"
@@ -290,33 +290,13 @@
                           @if (isRelativeLegato(actionData.action.legato)) {
                           <label class="form-label small">String</label>
                           <select class="form-select form-select-sm mb-2"
-                            [ngModel]="getLegatoRole(actionData.action.legato)"
-                            (ngModelChange)="updateLegatoRole(measureData.measureIndex, actionData.originalIndex, $event)"
-                            [name]="'legatoRole_' + measureData.measureIndex + '_' + actionData.originalIndex">
-                            @for (role of relativeStringRoles; track role) {
-                            <option [value]="role">{{ getRelativeStringRoleLabel(role) }}</option>
+                            [ngModel]="getLegatoRelativeString(actionData.action.legato)"
+                            (ngModelChange)="updateLegatoRelativeString(measureData.measureIndex, actionData.originalIndex, $event)"
+                            [name]="'legatoRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex">
+                            @for (relativeString of relativeStrings; track relativeString) {
+                            <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
                             }
                           </select>
-
-                          <label class="form-label small">Start</label>
-                          <div class="pick-note mb-2">
-                            <div class="d-flex align-items-center gap-1">
-                              <select class="form-select form-select-sm"
-                                [ngModel]="getLegatoStartAnchor(actionData.action.legato)"
-                                (ngModelChange)="updateLegatoStartAnchor(measureData.measureIndex, actionData.originalIndex, $event)"
-                                [name]="'legatoStartAnchor_' + measureData.measureIndex + '_' + actionData.originalIndex">
-                                <option value="base-note">Base Note</option>
-                                <option value="grip-note">Grip Note</option>
-                              </select>
-                              @if (canEditLegatoStartOffset(actionData.action.legato)) {
-                              <input type="number" class="form-control form-control-sm"
-                                [ngModel]="getRelativeLegatoStartOffset(actionData.action.legato)"
-                                (ngModelChange)="updateLegatoStartFretOffset(measureData.measureIndex, actionData.originalIndex, $event)"
-                                [name]="'legatoStartOffset_' + measureData.measureIndex + '_' + actionData.originalIndex"
-                                min="-24" max="24" placeholder="Start Offset" />
-                              }
-                            </div>
-                          </div>
 
                           <label class="form-label small">Target</label>
                           <div class="pick-note">
@@ -350,15 +330,10 @@
                                 }
                               </select>
                               <input type="number" class="form-control form-control-sm"
-                                [ngModel]="actionData.action.legato.fromFret"
-                                (ngModelChange)="updateLegatoFromFret(measureData.measureIndex, actionData.originalIndex, $event)"
-                                [name]="'legatoFromFret_' + measureData.measureIndex + '_' + actionData.originalIndex"
-                                min="0" max="24" placeholder="From" />
-                              <input type="number" class="form-control form-control-sm"
                                 [ngModel]="actionData.action.legato.toFret"
                                 (ngModelChange)="updateLegatoToFret(measureData.measureIndex, actionData.originalIndex, $event)"
                                 [name]="'legatoToFret_' + measureData.measureIndex + '_' + actionData.originalIndex"
-                                min="0" max="24" placeholder="To" />
+                                min="0" max="24" placeholder="Target" />
                             </div>
                           </div>
                           }

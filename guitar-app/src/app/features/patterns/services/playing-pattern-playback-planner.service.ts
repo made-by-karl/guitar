@@ -4,11 +4,9 @@ import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/mi
 import { Note, transpose } from '@/app/core/music/semitones';
 import { parseGrip, Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
-  BaseRelativeLegatoEndpoint,
   BaseRelativePickingNote,
   ExplicitLegatoNote,
   ExplicitPickingNote,
-  GripRelativeLegatoEndpoint,
   GripRelativePickingNote,
   Measure,
   PlayingAction,
@@ -18,7 +16,7 @@ import {
   RelativeLegatoNote,
   RelativeStrumRange,
   StrumRange,
-  RelativeStringRole,
+  RelativeString,
   getBeatsFromTimeSignature,
   getLegatoMode,
   getPickMode,
@@ -32,6 +30,11 @@ interface FlatPlaybackEvent {
   time: number;
   action: PlayingAction;
   grip?: Grip;
+}
+
+interface SoundingStringState {
+  fret: number;
+  note: MidiNote;
 }
 
 export interface PlayingPatternPlaybackMeasure {
@@ -156,6 +159,7 @@ export class PlayingPatternPlaybackPlannerService {
     tuning: Note[],
     actionDuration: number
   ): MidiInstruction[] {
+    const eventDataByIndex = this.resolveEventInstructionData(flatEvents, tuning);
     const instructions: MidiInstruction[] = [];
     const nextStringPlayTime = new Map<number, number>();
     let nextStringSlapTime: number | null = null;
@@ -163,7 +167,7 @@ export class PlayingPatternPlaybackPlannerService {
 
     for (let index = flatEvents.length - 1; index >= 0; index--) {
       const event = flatEvents[index];
-      const eventData = this.buildEventInstructionData(event.action, event.grip, tuning);
+      const eventData = eventDataByIndex[index];
 
       if (!eventData) {
         continue;
@@ -219,6 +223,15 @@ export class PlayingPatternPlaybackPlannerService {
     return instructions.reverse();
   }
 
+  private resolveEventInstructionData(
+    flatEvents: FlatPlaybackEvent[],
+    tuning: Note[]
+  ): Array<ReturnType<PlayingPatternPlaybackPlannerService['buildEventInstructionData']>> {
+    const stringState = new Map<number, SoundingStringState>();
+
+    return flatEvents.map(event => this.buildEventInstructionData(event.action, event.grip, tuning, stringState));
+  }
+
   private resolveTotalDuration(measureDuration: number, instructions: MidiInstruction[]): number {
     const instructionTail = instructions.reduce((maxTail, instruction) => {
       return Math.max(maxTail, instruction.time + instruction.playbackDuration);
@@ -242,7 +255,8 @@ export class PlayingPatternPlaybackPlannerService {
   private buildEventInstructionData(
     action: PlayingAction,
     grip: Grip | undefined,
-    tuning: Note[]
+    tuning: Note[],
+    stringState: Map<number, SoundingStringState>
   ): {
     notes: MidiNote[];
     affectedStrings: number[];
@@ -250,7 +264,7 @@ export class PlayingPatternPlaybackPlannerService {
     velocity: number;
     playNotes: 'parallel' | 'sequential' | 'reversed';
     legato?: {
-      source: MidiNote;
+      source?: MidiNote;
       target: MidiNote;
       string: number;
     };
@@ -278,6 +292,10 @@ export class PlayingPatternPlaybackPlannerService {
     }
 
     if (action.technique === 'percussive' && action.percussive) {
+      if (action.percussive.technique === 'string-slap') {
+        stringState.clear();
+      }
+
       return {
         notes: [],
         affectedStrings: [],
@@ -292,7 +310,7 @@ export class PlayingPatternPlaybackPlannerService {
     const affectedStrings: number[] = [];
     let playNotes: 'parallel' | 'sequential' | 'reversed' = 'parallel';
     let legato: {
-      source: MidiNote;
+      source?: MidiNote;
       target: MidiNote;
       string: number;
     } | undefined;
@@ -309,22 +327,27 @@ export class PlayingPatternPlaybackPlannerService {
       for (const stringIndex of strings) {
         const entry = grip.strings[stringIndex];
         if (entry === 'x') {
+          stringState.delete(stringIndex);
           continue;
         }
+        let fret = 0;
+        let note: MidiNote;
         if (entry === 'o') {
-          notes.push({ note: tuning[stringIndex] });
-          continue;
+          note = { note: tuning[stringIndex] };
+        } else {
+          fret = Math.max(...entry.map(value => value.fret));
+          note = { note: this.getStringNote(tuning, stringIndex, fret) };
         }
 
-        const fret = Math.max(...entry.map(value => value.fret));
-        notes.push({ note: this.getStringNote(tuning, stringIndex, fret) });
+        notes.push(note);
+        stringState.set(stringIndex, { fret, note });
       }
     } else if (action.technique === 'pick' && action.pick) {
       const pickMode = getPickMode(action);
 
       for (const pickNote of action.pick) {
         const stringIndex = pickMode === 'relative'
-          ? this.resolveRelativeStringIndex(grip, (pickNote as GripRelativePickingNote | BaseRelativePickingNote).role)
+          ? this.resolveRelativeStringIndex(grip, (pickNote as GripRelativePickingNote | BaseRelativePickingNote).string)
           : (pickNote as ExplicitPickingNote).string;
 
         affectedStrings.push(stringIndex);
@@ -333,9 +356,17 @@ export class PlayingPatternPlaybackPlannerService {
           ? this.resolveRelativePickFret(grip, stringIndex, pickNote as GripRelativePickingNote | BaseRelativePickingNote)
           : (pickNote as ExplicitPickingNote).fret;
 
-        notes.push({
+        if (fret < 0) {
+          stringState.delete(stringIndex);
+          continue;
+        }
+
+        const note = {
           note: this.getStringNote(tuning, stringIndex, fret)
-        });
+        };
+
+        notes.push(note);
+        stringState.set(stringIndex, { fret, note });
       }
     } else if ((action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') && action.legato) {
       const legatoMode = getLegatoMode(action);
@@ -343,20 +374,31 @@ export class PlayingPatternPlaybackPlannerService {
         ? this.resolveRelativeLegato(grip, action.legato as RelativeLegatoNote)
         : action.legato as ExplicitLegatoNote;
 
-      const source = {
-        note: this.getStringNote(tuning, resolvedLegato.string, resolvedLegato.fromFret)
-      };
       const target = {
         note: this.getStringNote(tuning, resolvedLegato.string, resolvedLegato.toFret)
       };
+      const sourceState = stringState.get(resolvedLegato.string);
+
+      if (!sourceState && action.technique !== 'hammer-on') {
+        console.warn(`${action.technique} skipped: no previous note is sounding on string ${resolvedLegato.string + 1}`);
+        return undefined;
+      }
+
+      if (sourceState) {
+        this.warnForLegatoDirection(action, resolvedLegato.string, sourceState.fret, resolvedLegato.toFret);
+      }
 
       affectedStrings.push(resolvedLegato.string);
-      notes.push(source, target);
+      notes.push(target);
       legato = {
-        source,
+        source: sourceState?.note,
         target,
         string: resolvedLegato.string
       };
+      stringState.set(resolvedLegato.string, {
+        fret: resolvedLegato.toFret,
+        note: target
+      });
     }
 
     return {
@@ -377,15 +419,32 @@ export class PlayingPatternPlaybackPlannerService {
     grip: Grip | undefined,
     legato: RelativeLegatoNote
   ): ExplicitLegatoNote {
-    const string = this.resolveRelativeStringIndex(grip, legato.role);
-    const fromFret = this.resolveRelativeLegatoEndpointFret(grip, string, legato.start);
-    const toFret = this.resolveRelativeLegatoEndpointFret(grip, string, legato.target);
+    const stringIndex = this.resolveRelativeStringIndex(grip, legato.string);
+    const toFret = this.resolveRelativeLegatoEndpointFret(grip, stringIndex, legato.target);
 
     return {
-      string,
-      fromFret,
+      string: stringIndex,
       toFret
     };
+  }
+
+  private warnForLegatoDirection(
+    action: PlayingAction,
+    stringIndex: number,
+    sourceFret: number,
+    targetFret: number
+  ): void {
+    if (action.technique === 'hammer-on' && targetFret <= sourceFret) {
+      console.warn(`hammer-on warning: target fret ${targetFret} is not higher than source fret ${sourceFret} on string ${stringIndex + 1}`);
+    }
+
+    if (action.technique === 'pull-off' && targetFret >= sourceFret) {
+      console.warn(`pull-off warning: target fret ${targetFret} is not lower than source fret ${sourceFret} on string ${stringIndex + 1}`);
+    }
+
+    if (action.technique === 'slide' && targetFret === sourceFret) {
+      console.warn(`slide warning: source and target are both fret ${targetFret} on string ${stringIndex + 1}`);
+    }
   }
 
   private resolveRelativeLegatoEndpointFret(
@@ -429,13 +488,13 @@ export class PlayingPatternPlaybackPlannerService {
     return this.getPlayableStringIndices(grip).filter(index => index >= start && index <= end);
   }
 
-  private resolveRelativeStringIndex(grip: Grip | undefined, role: RelativeStringRole): number {
+  private resolveRelativeStringIndex(grip: Grip | undefined, relativeString: RelativeString): number {
     const playableStrings = this.getPlayableStringIndices(grip);
     if (playableStrings.length === 0) {
       return 0;
     }
 
-    switch (role) {
+    switch (relativeString) {
       case 'bass':
         return playableStrings[0];
       case 'second-from-bass':

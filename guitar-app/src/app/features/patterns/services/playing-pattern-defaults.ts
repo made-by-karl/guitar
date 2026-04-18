@@ -1,7 +1,7 @@
 import {
   PlayingAction,
   PlayingPattern,
-  RelativeStringRole,
+  RelativeString,
   StrumDirection,
   StrumRange
 } from '@/app/features/patterns/services/playing-patterns.model';
@@ -190,7 +190,7 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
     {
       id: 'default-ballad-fingerpicking',
       name: 'Ballad Fingerpicking',
-      description: 'Gentle role-based fingerpicking for slower songs where the vocal needs space and the guitar still feels active.',
+      description: 'Gentle relative-string fingerpicking for slower songs where the vocal needs space and the guitar still feels active.',
       category: 'Fingerstyle',
       suggestedGenre: 'Acoustic Ballad Fingerstyle',
       exampleSong: 'Hallelujah',
@@ -375,7 +375,7 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
     {
       id: 'default-easy-relative-arpeggio',
       name: 'Easy Relative Arpeggio',
-      description: 'Accessible role-based arpeggio that keeps the harmony clear without requiring full Travis-style independence.',
+      description: 'Accessible relative-string arpeggio that keeps the harmony clear without requiring full Travis-style independence.',
       category: 'Fingerstyle',
       suggestedGenre: 'Acoustic Pop Arpeggio',
       exampleSong: 'Stand by Me',
@@ -453,16 +453,17 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         actions: onEighthSlots(16, [
           relativePick('bass'),
           strum('D', range('middle', 'top')),
-          {
-            technique: 'hammer-on',
-            legatoMode: 'relative',
-            legato: {
-              role: 'second-from-bass',
-              start: { anchor: 'base-note' },
-              target: { anchor: 'grip-note', fretOffset: 0 }
-            },
-            modifiers: []
-          },
+          [
+            relativeBasePick('second-from-bass'),
+            {
+              technique: 'hammer-on',
+              legatoMode: 'relative',
+              legato: {
+                string: 'second-from-bass',
+                target: { anchor: 'grip-note', fretOffset: 0 }
+              }
+            }
+          ],
           strum('U', range('top', 'second-from-top')),
           relativePick('second-from-bass'),
           strum('D', range('middle', 'top'), ['accent']),
@@ -486,32 +487,34 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         actions: onEighthSlots(16, [
           relativePick('bass'),
           strum('D', range('second-from-bass', 'top')),
-          {
-            technique: 'hammer-on',
-            legatoMode: 'relative',
-            legato: {
-              role: 'second-from-bass',
-              start: { anchor: 'base-note' },
-              target: { anchor: 'grip-note', fretOffset: 0 }
-            },
-            modifiers: []
-          },
+          [
+            relativeBasePick('second-from-bass'),
+            {
+              technique: 'hammer-on',
+              legatoMode: 'relative',
+              legato: {
+                string: 'second-from-bass',
+                target: { anchor: 'grip-note', fretOffset: 0 }
+              }
+            }
+          ],
           [
             strum('D', range('middle', 'top')),
             strum('U', range('top', 'middle'))
           ],
           relativePick('bass'),
           strum('D', range('second-from-bass', 'top')),
-          {
-            technique: 'hammer-on',
-            legatoMode: 'relative',
-            legato: {
-              role: 'second-from-bass',
-              start: { anchor: 'base-note' },
-              target: { anchor: 'grip-note', fretOffset: 0 }
-            },
-            modifiers: []
-          },
+          [
+            relativeBasePick('second-from-bass'),
+            {
+              technique: 'hammer-on',
+              legatoMode: 'relative',
+              legato: {
+                string: 'second-from-bass',
+                target: { anchor: 'grip-note', fretOffset: 0 }
+              }
+            }
+          ],
           [
             strum('D', range('middle', 'top')),
             strum('U', range('top', 'middle'))
@@ -559,16 +562,25 @@ function strum(direction: StrumDirection, strings: StrumRange, modifiers: Playin
   };
 }
 
-function relativePick(role: RelativeStringRole, modifiers: PlayingAction['modifiers'] = []): PlayingAction {
+function relativePick(string: RelativeString, fretOffset: number = 0, modifiers: PlayingAction['modifiers'] = []): PlayingAction {
   return {
     technique: 'pick',
     pickMode: 'relative',
-    pick: [{ role, anchor: 'grip-note', fretOffset: 0 }],
+    pick: [{ string, anchor: 'grip-note', fretOffset }],
     modifiers
   };
 }
 
-function range(from: RelativeStringRole, to: RelativeStringRole): StrumRange {
+function relativeBasePick(string: RelativeString, modifiers: PlayingAction['modifiers'] = []): PlayingAction {
+  return {
+    technique: 'pick',
+    pickMode: 'relative',
+    pick: [{ string, anchor: 'base-note' }],
+    modifiers
+  };
+}
+
+function range(from: RelativeString, to: RelativeString): StrumRange {
   return { from, to };
 }
 
