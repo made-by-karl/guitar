@@ -7,7 +7,6 @@ import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.se
 import {
   SongPart,
   SongPartActionGrip,
-  SongPartBeatGrip,
   SongPartMeasureText,
   SongPartPatternItem,
   SongSheetGrip,
@@ -25,7 +24,7 @@ import { GripService } from '@/app/features/grips/services/grips/grip.service';
 import { Note, SEMITONES, Semitone, transpose } from '@/app/core/music/semitones';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
-import { PlayingPattern, getBeatsFromTimeSignature } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPattern, getSixteenthPerBeatFromTimeSignature } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
 import { ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { Chord, chordToString } from '@/app/core/music/chords';
@@ -38,6 +37,13 @@ import { Subscription } from 'rxjs';
 
 type SheetChoiceValue = string;
 type SongSheetTab = 'parts' | 'grips' | 'patterns';
+type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
+
+interface ActionGripPosition {
+  actionIndex: number;
+  label: string;
+  subdivision: ActionSubdivision;
+}
 
 interface SheetChoice {
   value: SheetChoiceValue;
@@ -536,22 +542,8 @@ export class SongSheetComponent implements OnDestroy {
     return text;
   }
 
-  getBeatGrip(item: SongPartPatternItem, measureIndex: number, beatIndex: number): SongPartBeatGrip | undefined {
-    return item.beatGrips.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
-  }
-
-  getEffectiveBeatGrip(
-    item: SongPartPatternItem,
-    pattern: SongSheetPattern,
-    measureIndex: number,
-    beatIndex: number
-  ): SongPartBeatGrip | undefined {
-    return this.getBeatGrip(item, measureIndex, beatIndex) ??
-      pattern.beatGrips?.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
-  }
-
   getActionGrip(item: SongPartPatternItem, measureIndex: number, actionIndex: number): SongPartActionGrip | undefined {
-    return item.actionGripOverrides.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+    return item.actionGrips.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
   }
 
   getEffectiveActionGrip(
@@ -561,37 +553,20 @@ export class SongSheetComponent implements OnDestroy {
     actionIndex: number
   ): SongPartActionGrip | undefined {
     return this.getActionGrip(item, measureIndex, actionIndex) ??
-      pattern.actionGripOverrides?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+      pattern.actionGrips?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
   }
 
-  async assignBeatGrip(item: SongPartPatternItem, measureIndex: number, beatIndex: number) {
-    const selectedGrip = await this.selectGrip(this.getBeatGrip(item, measureIndex, beatIndex)?.chordName);
+  async assignActionGrip(item: SongPartPatternItem, pattern: SongSheetPattern, measureIndex: number, actionIndex: number) {
+    const selectedGrip = await this.selectGrip(this.getEffectiveActionGrip(item, pattern, measureIndex, actionIndex)?.chordName);
     if (selectedGrip === undefined) {
       return;
     }
 
-    item.beatGrips = item.beatGrips.filter(grip => !(grip.measureIndex === measureIndex && grip.beatIndex === beatIndex));
-    if (selectedGrip) {
-      item.beatGrips.push({
-        measureIndex,
-        beatIndex,
-        gripId: selectedGrip.gripId,
-        chordName: selectedGrip.chordName
-      });
-    }
-  }
-
-  async assignActionGrip(item: SongPartPatternItem, measureIndex: number, actionIndex: number) {
-    const selectedGrip = await this.selectGrip(this.getActionGrip(item, measureIndex, actionIndex)?.chordName);
-    if (selectedGrip === undefined) {
-      return;
-    }
-
-    item.actionGripOverrides = item.actionGripOverrides.filter(
+    item.actionGrips = item.actionGrips.filter(
       grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)
     );
     if (selectedGrip) {
-      item.actionGripOverrides.push({
+      item.actionGrips.push({
         measureIndex,
         actionIndex,
         gripId: selectedGrip.gripId,
@@ -601,26 +576,30 @@ export class SongSheetComponent implements OnDestroy {
   }
 
   clearMeasureGrips(item: SongPartPatternItem, measureIndex: number) {
-    item.beatGrips = item.beatGrips.filter(grip => grip.measureIndex !== measureIndex);
-    item.actionGripOverrides = item.actionGripOverrides.filter(grip => grip.measureIndex !== measureIndex);
+    item.actionGrips = item.actionGrips.filter(grip => grip.measureIndex !== measureIndex);
   }
 
-  getBeatIndices(pattern: SongSheetPattern, measureIndex: number): number[] {
+  getActionGripPositions(pattern: SongSheetPattern, measureIndex: number): ActionGripPosition[] {
     const measure = pattern.measures[measureIndex];
-    return Array.from({ length: getBeatsFromTimeSignature(measure.timeSignature) }, (_, index) => index);
-  }
+    if (!measure) {
+      return [];
+    }
 
-  getActionIndices(pattern: SongSheetPattern, measureIndex: number): number[] {
-    return pattern.measures[measureIndex].actions
-      .map((action, index) => action ? index : -1)
-      .filter(index => index >= 0);
+    const sixteenthPerBeat = getSixteenthPerBeatFromTimeSignature(measure.timeSignature);
+    return measure.actions.map((_, actionIndex) => {
+      const subdivision = this.getActionSubdivision(actionIndex);
+      return {
+        actionIndex,
+        subdivision,
+        label: `${Math.floor(actionIndex / sixteenthPerBeat) + 1} ${subdivision.substring(0, 1).toUpperCase()}`
+      };
+    });
   }
 
   getPatternMeasureNotationContext(pattern: SongSheetPattern, measureIndex: number): PlayingActionsNotationContext {
     return {
       timeSignature: pattern.measures[measureIndex].timeSignature,
-      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex),
+      actionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
       gripById: this.getGripByIdMap()
     };
   }
@@ -634,24 +613,11 @@ export class SongSheetComponent implements OnDestroy {
     pattern: SongSheetPattern,
     measureIndex: number
   ): PlayingActionsNotationContext {
-    const beatGrips: SongPartBeatGrip[] = [];
-    for (const beatIndex of this.getBeatIndices(pattern, measureIndex)) {
-      const effective = this.getEffectiveBeatGrip(item, pattern, measureIndex, beatIndex);
-      if (effective) {
-        beatGrips.push({
-          measureIndex,
-          beatIndex,
-          gripId: effective.gripId,
-          chordName: effective.chordName
-        });
-      }
-    }
-
-    const actionGripOverrides: SongPartActionGrip[] = [];
+    const actionGrips: SongPartActionGrip[] = [];
     for (let actionIndex = 0; actionIndex < pattern.measures[measureIndex].actions.length; actionIndex++) {
       const effective = this.getEffectiveActionGrip(item, pattern, measureIndex, actionIndex);
       if (effective) {
-        actionGripOverrides.push({
+        actionGrips.push({
           measureIndex,
           actionIndex,
           gripId: effective.gripId,
@@ -662,10 +628,15 @@ export class SongSheetComponent implements OnDestroy {
 
     return {
       timeSignature: pattern.measures[measureIndex].timeSignature,
-      beatGrips,
-      actionGripOverrides,
+      actionGrips,
       gripById: this.getGripByIdMap()
     };
+  }
+
+  private getActionSubdivision(actionIndex: number): ActionSubdivision {
+    if (actionIndex % 4 === 0) return 'quarter';
+    if (actionIndex % 2 === 0) return 'eighth';
+    return 'sixteenth';
   }
 
   isMeasurePlaybackActive(item: SongPartPatternItem, measureIndex: number): boolean {
@@ -779,16 +750,14 @@ export class SongSheetComponent implements OnDestroy {
       id: item.id,
       patternId: item.patternId,
       measureTexts: item.measureTexts.map(text => ({ ...text })),
-      beatGrips: item.beatGrips.map(grip => ({ ...grip })),
-      actionGripOverrides: item.actionGripOverrides.map(grip => ({ ...grip }))
+      actionGrips: item.actionGrips.map(grip => ({ ...grip }))
     };
   }
 
   private clonePattern(pattern: PlayingPattern): SongSheetPattern {
     return {
       ...pattern,
-      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
+      actionGrips: (pattern.actionGrips ?? []).map(grip => ({ ...grip })),
       measures: pattern.measures.map(measure => ({
         ...measure,
         actions: measure.actions.map(action => action ? {
@@ -1030,8 +999,7 @@ export class SongSheetComponent implements OnDestroy {
         timeSignature: '4/4',
         actions: Array(16).fill(null)
       }],
-      beatGrips: [],
-      actionGripOverrides: [],
+      actionGrips: [],
       createdAt: now,
       updatedAt: now,
       isCustom: true

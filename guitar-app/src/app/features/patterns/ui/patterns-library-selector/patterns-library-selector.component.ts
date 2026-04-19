@@ -82,8 +82,7 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
   getMeasureNotationContext(pattern: PlayingPattern, measureIndex: number): PlayingActionsNotationContext {
     return {
       timeSignature: pattern.measures[measureIndex].timeSignature,
-      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex)
+      actionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex === measureIndex)
     };
   }
 

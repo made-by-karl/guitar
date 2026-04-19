@@ -38,8 +38,7 @@ describe('SongPartPlaybackService', () => {
       id: 'item-1',
       patternId: 'pattern-1',
       measureTexts: [],
-      beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: eGripId, chordName: 'E' }],
-      actionGripOverrides: []
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
     }]
   };
 
@@ -72,10 +71,8 @@ describe('SongPartPlaybackService', () => {
         },
         lyrics: '',
         notes: '',
-        patternBeatGrips: [],
-        patternActionGripOverrides: [],
-        beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: eGripId, chordName: 'E' }],
-        actionGripOverrides: []
+        patternActionGrips: [],
+        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
       }])
     };
     const service = new SongPartPlaybackService(
@@ -102,7 +99,7 @@ describe('SongPartPlaybackService', () => {
     });
   });
 
-  it('prefers part grip overrides over pattern defaults', async () => {
+  it('prefers part action grips over pattern defaults', async () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
@@ -127,10 +124,8 @@ describe('SongPartPlaybackService', () => {
         },
         lyrics: '',
         notes: '',
-        patternBeatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: gGripId, chordName: 'G' }],
-        patternActionGripOverrides: [],
-        beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: eGripId, chordName: 'E' }],
-        actionGripOverrides: []
+        patternActionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: gGripId, chordName: 'G' }],
+        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
       }])
     };
     const service = new SongPartPlaybackService(

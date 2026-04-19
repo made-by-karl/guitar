@@ -80,8 +80,7 @@ export class PatternPlaybackService {
 
     const measures = pattern.measures.map<PlayingPatternPlaybackMeasure>((measure, measureIndex) => ({
       measure,
-      beatGrips: (pattern.beatGrips ?? []).filter(gripValue => gripValue.measureIndex === measureIndex),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(gripValue => gripValue.measureIndex === measureIndex)
+      actionGrips: (pattern.actionGrips ?? []).filter(gripValue => gripValue.measureIndex === measureIndex)
     }));
 
     const preview = this.planner.buildPlaybackPlan(

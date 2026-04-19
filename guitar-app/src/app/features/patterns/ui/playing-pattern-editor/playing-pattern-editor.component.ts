@@ -18,8 +18,7 @@ import {
   PickingNote,
   PlayingModifier,
   Measure,
-  PlayingPatternActionGripOverride,
-  PlayingPatternBeatGrip,
+  PlayingPatternActionGrip,
   PlayingPatternGripReference,
   RelativeNoteAnchor,
   RelativeStrumRange,
@@ -41,10 +40,18 @@ import { chordToString } from '@/app/core/music/chords';
 import { DialogService } from '@/app/core/services/dialog.service';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
+type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
+interface ActionDisplayData {
+  position: string;
+  action: PlayingAction | null;
+  originalIndex: number;
+  isMainPosition: boolean;
+  subdivision: ActionSubdivision;
+}
+
 interface CopiedMeasure {
   measure: Measure;
-  beatGrips: PlayingPatternBeatGrip[];
-  actionGripOverrides: PlayingPatternActionGripOverride[];
+  actionGrips: PlayingPatternActionGrip[];
   useSixteenthSteps: boolean;
 }
 
@@ -107,8 +114,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     // Update the pattern signal
     this.pattern.set({
       ...updatedPattern,
-      beatGrips: this.normalizeBeatGrips(updatedPattern),
-      actionGripOverrides: this.normalizeActionGripOverrides(updatedPattern),
+      actionGrips: this.normalizeActionGrips(updatedPattern),
       updatedAt: Date.now()
     });
   }
@@ -140,10 +146,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     this.copiedMeasure = {
       measure: this.cloneMeasure(measure),
-      beatGrips: (pattern.beatGrips ?? [])
-        .filter(grip => grip.measureIndex === measureIndex)
-        .map(grip => ({ ...grip, measureIndex: 0 })),
-      actionGripOverrides: (pattern.actionGripOverrides ?? [])
+      actionGrips: (pattern.actionGrips ?? [])
         .filter(grip => grip.measureIndex === measureIndex)
         .map(grip => ({ ...grip, measureIndex: 0 })),
       useSixteenthSteps: this.measureDisplayStates.get(measureIndex) ?? this.measureRequiresSixteenthSteps(measure)
@@ -166,13 +169,9 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const updatedPattern = {
       ...pattern,
       measures: updatedMeasures,
-      beatGrips: [
-        ...this.shiftMeasureReferencesForInsert(pattern.beatGrips ?? [], insertIndex),
-        ...(copiedMeasure?.beatGrips ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
-      ],
-      actionGripOverrides: [
-        ...this.shiftMeasureReferencesForInsert(pattern.actionGripOverrides ?? [], insertIndex),
-        ...(copiedMeasure?.actionGripOverrides ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
+      actionGrips: [
+        ...this.shiftMeasureReferencesForInsert(pattern.actionGrips ?? [], insertIndex),
+        ...(copiedMeasure?.actionGrips ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
       ]
     };
     
@@ -197,11 +196,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     this.updatePattern({
       ...pattern,
       measures: updatedMeasures,
-      beatGrips: (pattern.beatGrips ?? []).map(grip => ({
-        ...grip,
-        measureIndex: this.remapMeasureIndexForMove(grip.measureIndex, fromIndex, toIndex)
-      })),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({
+      actionGrips: (pattern.actionGrips ?? []).map(grip => ({
         ...grip,
         measureIndex: this.remapMeasureIndexForMove(grip.measureIndex, fromIndex, toIndex)
       }))
@@ -220,13 +215,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const updatedPattern = {
       ...pattern,
       measures: updatedMeasures,
-      beatGrips: (pattern.beatGrips ?? []).flatMap(grip => {
-        if (grip.measureIndex === measureIndex) {
-          return [];
-        }
-        return [{ ...grip, measureIndex: grip.measureIndex > measureIndex ? grip.measureIndex - 1 : grip.measureIndex }];
-      }),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).flatMap(grip => {
+      actionGrips: (pattern.actionGrips ?? []).flatMap(grip => {
         if (grip.measureIndex === measureIndex) {
           return [];
         }
@@ -316,8 +305,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const updatedPattern: PlayingPattern = {
       ...pattern,
       measures: updatedMeasures,
-      beatGrips: this.filterBeatGripsForMeasure(pattern, measureIndex, updatedMeasure),
-      actionGripOverrides: this.filterActionGripsForMeasure(pattern, measureIndex, updatedMeasure)
+      actionGrips: this.filterActionGripsForMeasure(pattern, measureIndex, updatedMeasure)
     };
     
     this.updatePattern(updatedPattern);
@@ -1219,56 +1207,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return !!measure && !this.measureRequiresSixteenthSteps(measure);
   }
 
-  getBeatIndices(measureIndex: number): number[] {
-    const pattern = this.pattern();
-    const measure = pattern?.measures[measureIndex];
-    if (!measure) {
-      return [];
-    }
-
-    return Array.from({ length: getBeatsFromTimeSignature(measure.timeSignature) }, (_, index) => index);
-  }
-
-  getActionIndices(measureIndex: number): number[] {
-    const measure = this.pattern()?.measures[measureIndex];
-    if (!measure) {
-      return [];
-    }
-
-    return measure.actions.map((action, index) => action ? index : -1).filter(index => index >= 0);
-  }
-
-  getBeatGrip(measureIndex: number, beatIndex: number): PlayingPatternBeatGrip | undefined {
-    return this.pattern()?.beatGrips?.find(grip => grip.measureIndex === measureIndex && grip.beatIndex === beatIndex);
-  }
-
-  getActionGrip(measureIndex: number, actionIndex: number): PlayingPatternActionGripOverride | undefined {
-    return this.pattern()?.actionGripOverrides?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
-  }
-
-  async assignBeatGrip(measureIndex: number, beatIndex: number): Promise<void> {
-    const pattern = this.pattern();
-    if (!pattern) {
-      return;
-    }
-
-    const selectedGrip = await this.selectGrip(this.getBeatGrip(measureIndex, beatIndex)?.chordName);
-    if (selectedGrip === undefined) {
-      return;
-    }
-
-    this.updatePattern({
-      ...pattern,
-      beatGrips: selectedGrip ? [
-        ...(pattern.beatGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.beatIndex === beatIndex)),
-        {
-          measureIndex,
-          beatIndex,
-          gripId: selectedGrip.gripId,
-          chordName: selectedGrip.chordName
-        }
-      ] : (pattern.beatGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.beatIndex === beatIndex))
-    });
+  getActionGrip(measureIndex: number, actionIndex: number): PlayingPatternActionGrip | undefined {
+    return this.pattern()?.actionGrips?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
   }
 
   async assignActionGrip(measureIndex: number, actionIndex: number): Promise<void> {
@@ -1284,15 +1224,15 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     this.updatePattern({
       ...pattern,
-      actionGripOverrides: selectedGrip ? [
-        ...(pattern.actionGripOverrides ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)),
+      actionGrips: selectedGrip ? [
+        ...(pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)),
         {
           measureIndex,
           actionIndex,
           gripId: selectedGrip.gripId,
           chordName: selectedGrip.chordName
         }
-      ] : (pattern.actionGripOverrides ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
+      ] : (pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
     });
   }
 
@@ -1304,12 +1244,11 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     this.updatePattern({
       ...pattern,
-      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex !== measureIndex),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex !== measureIndex)
+      actionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex !== measureIndex)
     });
   }
 
-  getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): { position: string; action: PlayingAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] {
+  getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): ActionDisplayData[] {
     const measure = measureData.measure;
     if (!measure) return [];
 
@@ -1317,11 +1256,11 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const sixteenthPerBeat = getSixteenthPerBeatFromTimeSignature(measure.timeSignature);
     const totalSixteenths = numberOfBeats * sixteenthPerBeat;
     
-    const displayActions: { position: string; action: PlayingAction | null; originalIndex: number; isMainPosition: boolean; subdivision: 'quarter' | 'eighth' | 'sixteenth' }[] = [];
+    const displayActions: ActionDisplayData[] = [];
 
     for (let i = 0; i < totalSixteenths; i += measureData.useSixteenthSteps ? 1 : 2) {
       displayActions.push({
-        position: (Math.floor(i / numberOfBeats) + 1).toString(),
+        position: (Math.floor(i / sixteenthPerBeat) + 1).toString(),
         action: measure.actions[i] || null,
         originalIndex: i,
         isMainPosition: i % 4 === 0,
@@ -1332,6 +1271,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return displayActions;
   }
 
+  getActionPositionLabel(actionData: Pick<ActionDisplayData, 'position' | 'subdivision'>): string {
+    return `${actionData.position} ${actionData.subdivision.substring(0, 1).toUpperCase()}`;
+  }
+
   // Helper method to determine if a action position should be highlighted (main actions)
   isMainAction(actionIndex: number): boolean {
     // Main actions are typically 1, 5, 9, 13 (every 4th action in 16th note subdivision)
@@ -1339,7 +1282,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   }
 
   // Helper method to determine action subdivision level
-  getActionSubdivision(actionIndex: number): 'quarter' | 'eighth' | 'sixteenth' {
+  getActionSubdivision(actionIndex: number): ActionSubdivision {
     if (actionIndex % 4 === 0) return 'quarter';
     if (actionIndex % 2 === 0) return 'eighth';
     return 'sixteenth';
@@ -1349,18 +1292,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return measure.actions.some((action, index) => index % 2 === 1 && !!action);
   }
 
-  private filterBeatGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternBeatGrip[] {
-    return (pattern.beatGrips ?? []).filter(grip => {
-      if (grip.measureIndex !== measureIndex) {
-        return true;
-      }
-
-      return grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(updatedMeasure.timeSignature);
-    });
-  }
-
-  private filterActionGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternActionGripOverride[] {
-    return (pattern.actionGripOverrides ?? []).filter(grip => {
+  private filterActionGripsForMeasure(pattern: PlayingPattern, measureIndex: number, updatedMeasure: Measure): PlayingPatternActionGrip[] {
+    return (pattern.actionGrips ?? []).filter(grip => {
       if (grip.measureIndex !== measureIndex) {
         return true;
       }
@@ -1369,15 +1302,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  private normalizeBeatGrips(pattern: PlayingPattern): PlayingPatternBeatGrip[] {
-    return (pattern.beatGrips ?? []).filter(grip => {
-      const measure = pattern.measures[grip.measureIndex];
-      return !!measure && grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(measure.timeSignature);
-    });
-  }
-
-  private normalizeActionGripOverrides(pattern: PlayingPattern): PlayingPatternActionGripOverride[] {
-    return (pattern.actionGripOverrides ?? []).filter(grip => {
+  private normalizeActionGrips(pattern: PlayingPattern): PlayingPatternActionGrip[] {
+    return (pattern.actionGrips ?? []).filter(grip => {
       const measure = pattern.measures[grip.measureIndex];
       return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
     });

@@ -113,8 +113,7 @@ describe('PlayingPatternsService', () => {
             suggestedGenre: '',
             exampleSong: '',
             measures: [],
-            beatGrips: [],
-            actionGripOverrides: [],
+            actionGrips: [],
             createdAt: 1,
             updatedAt: 1,
             isCustom: true

@@ -120,8 +120,7 @@ export class PlayingPatternsService {
   private clonePattern(pattern: PlayingPattern): PlayingPattern {
     return {
       ...pattern,
-      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
+      actionGrips: (pattern.actionGrips ?? []).map(grip => ({ ...grip })),
       measures: pattern.measures.map(measure => ({
         ...measure,
         actions: measure.actions.map(action => action ? {

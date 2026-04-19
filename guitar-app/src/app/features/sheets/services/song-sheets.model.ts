@@ -3,8 +3,7 @@ import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
   Measure,
   PlayingPattern,
-  PlayingPatternActionGripOverride,
-  PlayingPatternBeatGrip
+  PlayingPatternActionGrip
 } from '@/app/features/patterns/services/playing-patterns.model';
 
 export interface SongSheetGrip {
@@ -24,16 +23,13 @@ export interface SongPartMeasureText {
   notes: string;
 }
 
-export type SongPartBeatGrip = PlayingPatternBeatGrip;
-
-export type SongPartActionGrip = PlayingPatternActionGripOverride;
+export type SongPartActionGrip = PlayingPatternActionGrip;
 
 export interface SongPartPatternItem {
   id: string;
   patternId: string;
   measureTexts: SongPartMeasureText[];
-  beatGrips: SongPartBeatGrip[];
-  actionGripOverrides: SongPartActionGrip[];
+  actionGrips: SongPartActionGrip[];
 }
 
 export interface SongPart {
@@ -69,8 +65,6 @@ export interface ResolvedSongPartMeasure {
   measure: Measure;
   lyrics: string;
   notes: string;
-  patternBeatGrips: PlayingPatternBeatGrip[];
-  patternActionGripOverrides: PlayingPatternActionGripOverride[];
-  beatGrips: SongPartBeatGrip[];
-  actionGripOverrides: SongPartActionGrip[];
+  patternActionGrips: PlayingPatternActionGrip[];
+  actionGrips: SongPartActionGrip[];
 }

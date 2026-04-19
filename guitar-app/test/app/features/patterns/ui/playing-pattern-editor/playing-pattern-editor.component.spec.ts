@@ -54,8 +54,7 @@ describe('PlayingPatternEditorComponent', () => {
         timeSignature: '4/4',
         actions: [null, null, null, null]
       }],
-      beatGrips: [],
-      actionGripOverrides: [],
+      actionGrips: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       isCustom: true
@@ -197,6 +196,16 @@ describe('PlayingPatternEditorComponent', () => {
     expect(component.getMeasuresForDisplay(component.pattern())[0].useSixteenthSteps).toBe(true);
   });
 
+  it('renders action grip controls with rhythm labels in action slots', () => {
+    const text = fixture.nativeElement.textContent;
+
+    expect(text).toContain('1 Q');
+    expect(text).toContain('1 E');
+    expect(text).toContain('Grip');
+    expect(text).not.toContain('Beat Grips');
+    expect(text).not.toContain('Advanced timing overrides');
+  });
+
   it('adds a blank measure at the end when no copied measure is stored', async () => {
     component.pattern.set(createMultiMeasurePattern());
 
@@ -208,11 +217,7 @@ describe('PlayingPatternEditorComponent', () => {
       timeSignature: '3/4',
       actions: Array(12).fill(null)
     });
-    expect(pattern.beatGrips).toEqual([
-      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
-    ]);
-    expect(pattern.actionGripOverrides).toEqual([
+    expect(pattern.actionGrips).toEqual([
       { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
       { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ]);
@@ -226,9 +231,9 @@ describe('PlayingPatternEditorComponent', () => {
 
     const pattern = component.pattern();
     expect(pattern.measures).toHaveLength(2);
-    expect(pattern.beatGrips).toEqual([
-      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    expect(pattern.actionGrips).toEqual([
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ]);
   });
 
@@ -262,12 +267,7 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures).toHaveLength(3);
     expect(pattern.measures[2]).toEqual(pattern.measures[0]);
     expect(pattern.measures[2]).not.toBe(pattern.measures[0]);
-    expect(pattern.beatGrips).toEqual([
-      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' },
-      { measureIndex: 2, beatIndex: 0, gripId: 'g', chordName: 'G' }
-    ]);
-    expect(pattern.actionGripOverrides).toEqual([
+    expect(pattern.actionGrips).toEqual([
       { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
       { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' },
       { measureIndex: 2, actionIndex: 0, gripId: 'g', chordName: 'G' }
@@ -282,9 +282,9 @@ describe('PlayingPatternEditorComponent', () => {
     const pattern = component.pattern();
     expect(pattern.measures[0].timeSignature).toBe('3/4');
     expect(pattern.measures[1].timeSignature).toBe('4/4');
-    expect(pattern.beatGrips).toEqual([
-      { measureIndex: 1, beatIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 0, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    expect(pattern.actionGrips).toEqual([
+      { measureIndex: 1, actionIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 0, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ]);
   });
 
@@ -296,10 +296,7 @@ describe('PlayingPatternEditorComponent', () => {
     const pattern = component.pattern();
     expect(pattern.measures).toHaveLength(1);
     expect(pattern.measures[0].timeSignature).toBe('3/4');
-    expect(pattern.beatGrips).toEqual([
-      { measureIndex: 0, beatIndex: 0, gripId: 'c', chordName: 'C' }
-    ]);
-    expect(pattern.actionGripOverrides).toEqual([
+    expect(pattern.actionGrips).toEqual([
       { measureIndex: 0, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ]);
   });
@@ -332,11 +329,7 @@ function createMultiMeasurePattern(): PlayingPattern {
         ]
       }
     ],
-    beatGrips: [
-      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
-    ],
-    actionGripOverrides: [
+    actionGrips: [
       { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
       { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ],

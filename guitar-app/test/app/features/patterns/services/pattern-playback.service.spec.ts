@@ -22,8 +22,7 @@ describe('PatternPlaybackService', () => {
         modifiers: []
       }, null, null, null]
     }],
-    beatGrips: [],
-    actionGripOverrides: [],
+    actionGrips: [],
     createdAt: 1,
     updatedAt: 1
   });
@@ -121,7 +120,7 @@ describe('PatternPlaybackService', () => {
     expect(service.getSnapshot()).toEqual({ status: 'idle' });
   });
 
-  it('uses pattern-owned beat grips when no explicit grip is passed', async () => {
+  it('uses pattern-owned action grips when no explicit grip is passed', async () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
@@ -134,7 +133,7 @@ describe('PatternPlaybackService', () => {
     );
     const pattern = {
       ...createPattern(),
-      beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: eGripId, chordName: 'E' }]
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
     };
 
     await service.togglePatternPreview(pattern, undefined, undefined, 120);

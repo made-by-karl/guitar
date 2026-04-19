@@ -147,8 +147,7 @@
                 <div class="fw-semibold">{{ getPatternName(item.patternId) }}</div>
                 <div class="small text-muted">
                   {{ item.measureTexts.length }} measures ·
-                  {{ item.beatGrips.length }} beat grips ·
-                  {{ item.actionGripOverrides.length }} overrides
+                  {{ item.actionGrips.length }} action grips
                 </div>
               </div>
               }
@@ -485,38 +484,24 @@
                   </div>
 
                   <div class="mb-3">
-                    <label class="form-label small">Beat Grips</label>
-                    <div class="beat-grid">
-                      @for (beatIndex of getBeatIndices(pattern, measureIndex); track beatIndex) {
+                    <label class="form-label small">Action Grips</label>
+                    <div class="action-grip-grid">
+                      @for (actionData of getActionGripPositions(pattern, measureIndex); track actionData.actionIndex) {
                       <button
                         type="button"
-                        class="btn btn-sm beat-grip-button"
-                        [class.btn-primary]="getEffectiveBeatGrip(item, pattern, measureIndex, beatIndex)"
-                        [class.btn-outline-secondary]="!getEffectiveBeatGrip(item, pattern, measureIndex, beatIndex)"
-                        (click)="assignBeatGrip(item, measureIndex, beatIndex)">
-                        <span class="beat-number">{{ beatIndex + 1 }}</span>
-                        <span class="beat-value">{{ getEffectiveBeatGrip(item, pattern, measureIndex, beatIndex)?.chordName || 'Set grip' }}</span>
+                        class="btn btn-sm action-grip-button"
+                        [class.btn-primary]="getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
+                        [class.btn-outline-secondary]="!getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
+                        (click)="assignActionGrip(item, pattern, measureIndex, actionData.actionIndex)">
+                        <span class="action-grip-label">{{ actionData.label }}</span>
+                        <span class="action-grip-value">
+                          <i class="bi bi-music-note-beamed"></i>
+                          {{ getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.chordName || 'Grip' }}
+                        </span>
                       </button>
                       }
                     </div>
                   </div>
-
-                  <details class="advanced-grips">
-                    <summary>Advanced timing overrides</summary>
-                    <div class="advanced-grid">
-                      @for (actionIndex of getActionIndices(pattern, measureIndex); track actionIndex) {
-                      <button
-                        type="button"
-                        class="btn btn-sm advanced-button"
-                        [class.btn-success]="getEffectiveActionGrip(item, pattern, measureIndex, actionIndex)"
-                        [class.btn-outline-secondary]="!getEffectiveActionGrip(item, pattern, measureIndex, actionIndex)"
-                        (click)="assignActionGrip(item, measureIndex, actionIndex)">
-                        <span>Action {{ actionIndex + 1 }}</span>
-                        <span>{{ getEffectiveActionGrip(item, pattern, measureIndex, actionIndex)?.chordName || 'Override' }}</span>
-                      </button>
-                      }
-                    </div>
-                  </details>
                 </div>
                 }
               </div>

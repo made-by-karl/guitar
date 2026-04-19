@@ -92,12 +92,7 @@ export interface PlayingPatternGripReference {
   chordName: string;
 }
 
-export interface PlayingPatternBeatGrip extends PlayingPatternGripReference {
-  measureIndex: number;
-  beatIndex: number;
-}
-
-export interface PlayingPatternActionGripOverride extends PlayingPatternGripReference {
+export interface PlayingPatternActionGrip extends PlayingPatternGripReference {
   measureIndex: number;
   actionIndex: number;
 }
@@ -131,8 +126,7 @@ export interface PlayingPattern {
   suggestedGenre: string;
   exampleSong: string;
   measures: Measure[];
-  beatGrips?: PlayingPatternBeatGrip[];
-  actionGripOverrides?: PlayingPatternActionGripOverride[];
+  actionGrips?: PlayingPatternActionGrip[];
   createdAt: number;
   updatedAt: number;
   isCustom?: boolean;

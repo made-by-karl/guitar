@@ -10,14 +10,12 @@ import {
   GripRelativePickingNote,
   Measure,
   PlayingAction,
-  PlayingPatternActionGripOverride,
-  PlayingPatternBeatGrip,
+  PlayingPatternActionGrip,
   RelativeLegatoEndpointNote,
   RelativeLegatoNote,
   RelativeStrumRange,
   StrumRange,
   RelativeString,
-  getBeatsFromTimeSignature,
   getLegatoMode,
   getPickMode,
   getStringsForStrum,
@@ -39,8 +37,7 @@ interface SoundingStringState {
 
 export interface PlayingPatternPlaybackMeasure {
   measure: Measure;
-  beatGrips?: PlayingPatternBeatGrip[];
-  actionGripOverrides?: PlayingPatternActionGripOverride[];
+  actionGrips?: PlayingPatternActionGrip[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -115,13 +112,7 @@ export class PlayingPatternPlaybackPlannerService {
     const gripMap = new Map<string, Grip>();
 
     for (const measure of measures) {
-      for (const grip of measure.beatGrips ?? []) {
-        if (!gripMap.has(grip.gripId)) {
-          gripMap.set(grip.gripId, parseGrip(grip.gripId));
-        }
-      }
-
-      for (const grip of measure.actionGripOverrides ?? []) {
+      for (const grip of measure.actionGrips ?? []) {
         if (!gripMap.has(grip.gripId)) {
           gripMap.set(grip.gripId, parseGrip(grip.gripId));
         }
@@ -137,18 +128,9 @@ export class PlayingPatternPlaybackPlannerService {
     gripMap: Map<string, Grip>,
     currentGrip?: Grip
   ): Grip | undefined {
-    const override = measureConfig.actionGripOverrides?.find(grip => grip.actionIndex === actionIndex);
-    if (override) {
-      return gripMap.get(override.gripId) ?? currentGrip;
-    }
-
-    const beats = getBeatsFromTimeSignature(measureConfig.measure.timeSignature);
-    const actionsPerBeat = beats > 0 ? measureConfig.measure.actions.length / beats : measureConfig.measure.actions.length;
-    const beatIndex = Math.floor(actionIndex / Math.max(1, actionsPerBeat));
-    const beatGrip = measureConfig.beatGrips?.find(grip => grip.beatIndex === beatIndex);
-
-    if (beatGrip) {
-      return gripMap.get(beatGrip.gripId) ?? currentGrip;
+    const actionGrip = measureConfig.actionGrips?.find(grip => grip.actionIndex === actionIndex);
+    if (actionGrip) {
+      return gripMap.get(actionGrip.gripId) ?? currentGrip;
     }
 
     return currentGrip;

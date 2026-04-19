@@ -3,7 +3,6 @@ import {
   ResolvedSongPartMeasure,
   SongPart,
   SongPartActionGrip,
-  SongPartBeatGrip,
   SongPartMeasureText,
   SongPartPatternItem,
   SongSheet,
@@ -15,7 +14,6 @@ import {
 import { note } from '@/app/core/music/semitones';
 import { parseGrip } from '@/app/features/grips/services/grips/grip.model';
 import { DatabaseService } from '@/app/core/services/database.service';
-import { getBeatsFromTimeSignature } from '@/app/features/patterns/services/playing-patterns.model';
 
 @Injectable({ providedIn: 'root' })
 export class SongSheetsService {
@@ -151,8 +149,7 @@ export class SongSheetsService {
       ...part,
       items: part.items.map(item => ({
         ...item,
-        beatGrips: item.beatGrips.filter(grip => grip.gripId !== gripId),
-        actionGripOverrides: item.actionGripOverrides.filter(grip => grip.gripId !== gripId)
+        actionGrips: item.actionGrips.filter(grip => grip.gripId !== gripId)
       }))
     }));
 
@@ -368,10 +365,8 @@ export class SongSheetsService {
       measure: this.cloneMeasure(measure),
       lyrics: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.lyrics ?? '',
       notes: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.notes ?? '',
-      patternBeatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
-      patternActionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
-      beatGrips: normalizedItem.beatGrips.filter(grip => grip.measureIndex === measureIndex),
-      actionGripOverrides: normalizedItem.actionGripOverrides.filter(grip => grip.measureIndex === measureIndex)
+      patternActionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
+      actionGrips: normalizedItem.actionGrips.filter(grip => grip.measureIndex === measureIndex)
     }));
   }
 
@@ -384,16 +379,14 @@ export class SongSheetsService {
         lyrics: '',
         notes: ''
       })),
-      beatGrips: [],
-      actionGripOverrides: []
+      actionGrips: []
     };
   }
 
   normalizePartItem(item: SongPartPatternItem, pattern: SongSheetPattern | undefined): SongPartPatternItem {
     if (!pattern) {
       item.measureTexts = [];
-      item.beatGrips = [];
-      item.actionGripOverrides = [];
+      item.actionGrips = [];
       return item;
     }
 
@@ -407,12 +400,7 @@ export class SongSheetsService {
       };
     });
 
-    item.beatGrips = item.beatGrips.filter(grip => {
-      const measure = pattern.measures[grip.measureIndex];
-      return !!measure && grip.beatIndex >= 0 && grip.beatIndex < getBeatsFromTimeSignature(measure.timeSignature);
-    });
-
-    item.actionGripOverrides = item.actionGripOverrides.filter(grip => {
+    item.actionGrips = item.actionGrips.filter(grip => {
       const measure = pattern.measures[grip.measureIndex];
       return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
     });
@@ -445,16 +433,14 @@ export class SongSheetsService {
       id: item.id,
       patternId: item.patternId,
       measureTexts: item.measureTexts.map(text => ({ ...text })),
-      beatGrips: item.beatGrips.map(grip => ({ ...grip })),
-      actionGripOverrides: item.actionGripOverrides.map(grip => ({ ...grip }))
+      actionGrips: item.actionGrips.map(grip => ({ ...grip }))
     };
   }
 
   private clonePattern(pattern: SongSheetPattern): SongSheetPattern {
     return {
       ...pattern,
-      beatGrips: (pattern.beatGrips ?? []).map(grip => ({ ...grip })),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({ ...grip })),
+      actionGrips: (pattern.actionGrips ?? []).map(grip => ({ ...grip })),
       measures: pattern.measures.map(measure => this.cloneMeasure(measure))
     };
   }

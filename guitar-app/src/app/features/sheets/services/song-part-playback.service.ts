@@ -231,13 +231,9 @@ export class SongPartPlaybackService {
   private toPlaybackMeasures(resolvedMeasures: ResolvedSongPartMeasure[]): PlayingPatternPlaybackMeasure[] {
     return resolvedMeasures.map((resolvedMeasure) => ({
       measure: resolvedMeasure.measure,
-      actionGripOverrides: [
-        ...resolvedMeasure.actionGripOverrides,
-        ...resolvedMeasure.patternActionGripOverrides
-      ],
-      beatGrips: [
-        ...resolvedMeasure.beatGrips,
-        ...resolvedMeasure.patternBeatGrips
+      actionGrips: [
+        ...resolvedMeasure.actionGrips,
+        ...resolvedMeasure.patternActionGrips
       ]
     }));
   }

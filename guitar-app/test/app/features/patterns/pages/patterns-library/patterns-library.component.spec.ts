@@ -17,8 +17,7 @@ describe('PatternsLibraryComponent', () => {
         suggestedGenre: 'Folk Singalong',
         exampleSong: 'Leaving on a Jet Plane',
         measures: [{ timeSignature: '4/4', actions: Array(16).fill(null) }],
-        beatGrips: [],
-        actionGripOverrides: [],
+        actionGrips: [],
         createdAt: 1,
         updatedAt: 1,
         isCustom: false
@@ -160,8 +159,7 @@ function createPatternBase() {
     suggestedGenre: 'Folk Singalong',
     exampleSong: 'Leaving on a Jet Plane',
     measures: [{ timeSignature: '4/4', actions: Array(16).fill(null) }],
-    beatGrips: [],
-    actionGripOverrides: [],
+    actionGrips: [],
     createdAt: 1,
     updatedAt: 1,
     isCustom: false

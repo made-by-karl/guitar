@@ -15,8 +15,7 @@ describe('PatternsLibrarySelectorComponent', () => {
         suggestedGenre: 'Singer-Songwriter Ballad',
         exampleSong: 'Let It Be',
         measures: [{ timeSignature: '4/4', actions: Array(16).fill(null) }],
-        beatGrips: [],
-        actionGripOverrides: [],
+        actionGrips: [],
         createdAt: 1,
         updatedAt: 1,
         isCustom: false

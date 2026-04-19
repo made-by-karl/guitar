@@ -9,8 +9,7 @@ import {
   GripRelativePickingNote,
   Measure,
   PlayingAction,
-  PlayingPatternActionGripOverride,
-  PlayingPatternBeatGrip,
+  PlayingPatternActionGrip,
   RelativeLegatoNote,
   RelativeString,
   getBeatsFromTimeSignature,
@@ -30,8 +29,7 @@ import {
 
 export interface PlayingActionsNotationContext {
   timeSignature?: TimeSignature;
-  beatGrips?: PlayingPatternBeatGrip[];
-  actionGripOverrides?: PlayingPatternActionGripOverride[];
+  actionGrips?: PlayingPatternActionGrip[];
   gripById?: Record<string, Grip | undefined>;
   initialGrip?: Grip;
 }
@@ -150,24 +148,14 @@ export class PlayingActionsComponent {
     for (let measureIndex = 0; measureIndex < this.measures().length; measureIndex++) {
       const measure = this.measures()[measureIndex];
       const context = this.getNotationContextForMeasure(measureIndex);
-      const beatGrips = context?.beatGrips ?? [];
-      const actionOverrides = context?.actionGripOverrides ?? [];
+      const actionGrips = context?.actionGrips ?? [];
       const gripById = context?.gripById ?? {};
-
-      const beats = getBeatsFromTimeSignature(context?.timeSignature ?? measure.timeSignature);
-      const actionsPerBeat = beats > 0 ? measure.actions.length / beats : measure.actions.length;
 
       for (let actionIndex = 0; actionIndex < measure.actions.length; actionIndex++) {
         const globalActionIndex = measureStartIndex + actionIndex;
-        const override = actionOverrides.find(grip => grip.actionIndex === actionIndex);
-        if (override?.gripId) {
-          currentGrip = gripById[override.gripId] ?? currentGrip;
-        } else {
-          const beatIndex = Math.floor(actionIndex / Math.max(1, actionsPerBeat));
-          const beatGrip = beatGrips.find(grip => grip.beatIndex === beatIndex);
-          if (beatGrip?.gripId) {
-            currentGrip = gripById[beatGrip.gripId] ?? currentGrip;
-          }
+        const actionGrip = actionGrips.find(grip => grip.actionIndex === actionIndex);
+        if (actionGrip?.gripId) {
+          currentGrip = gripById[actionGrip.gripId] ?? currentGrip;
         }
 
         timeline.set(globalActionIndex, currentGrip);

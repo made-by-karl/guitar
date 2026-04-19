@@ -300,7 +300,7 @@ describe('PlayingActionsComponent', () => {
       }
     ])]);
     fixture.componentRef.setInput('notationContexts', [{
-      beatGrips: [{ measureIndex: 0, beatIndex: 0, gripId: 'g1', chordName: 'G' }],
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', chordName: 'G' }],
       gripById: {
         g1: {
           strings: [[{ fret: 3 }], 'x', 'x', 'x', 'x', 'x']

@@ -65,8 +65,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
         timeSignature: '4/4',
         actions: Array(16).fill(null)
       }],
-      beatGrips: [],
-      actionGripOverrides: [],
+      actionGrips: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       isCustom: true
@@ -158,8 +157,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
   getMeasureNotationContext(pattern: PlayingPattern, measureIndex: number): PlayingActionsNotationContext {
     return {
       timeSignature: pattern.measures[measureIndex].timeSignature,
-      beatGrips: (pattern.beatGrips ?? []).filter(grip => grip.measureIndex === measureIndex),
-      actionGripOverrides: (pattern.actionGripOverrides ?? []).filter(grip => grip.measureIndex === measureIndex)
+      actionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex === measureIndex)
     };
   }
 
