@@ -4,6 +4,7 @@ import { PlayingPattern } from '@/app/features/patterns/services/playing-pattern
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { BehaviorSubject } from 'rxjs';
 import { ModalService } from '@/app/core/services/modal.service';
+import { DialogService } from '@/app/core/services/dialog.service';
 
 describe('PlayingPatternEditorComponent', () => {
   let component: PlayingPatternEditorComponent;
@@ -12,6 +13,7 @@ describe('PlayingPatternEditorComponent', () => {
     state$: BehaviorSubject<ReturnType<PatternPlaybackService['getSnapshot']>>;
   };
   let mockModalService: jest.Mocked<Pick<ModalService, 'show'>>;
+  let mockDialogService: jest.Mocked<Pick<DialogService, 'confirm'>>;
 
   beforeEach(async () => {
     mockPatternPlaybackService = {
@@ -23,12 +25,16 @@ describe('PlayingPatternEditorComponent', () => {
     mockModalService = {
       show: jest.fn()
     };
+    mockDialogService = {
+      confirm: jest.fn().mockResolvedValue(false)
+    };
 
     await TestBed.configureTestingModule({
       imports: [PlayingPatternEditorComponent],
       providers: [
         { provide: PatternPlaybackService, useValue: mockPatternPlaybackService },
-        { provide: ModalService, useValue: mockModalService }
+        { provide: ModalService, useValue: mockModalService },
+        { provide: DialogService, useValue: mockDialogService }
       ]
     })
     .compileComponents();
@@ -190,4 +196,152 @@ describe('PlayingPatternEditorComponent', () => {
 
     expect(component.getMeasuresForDisplay(component.pattern())[0].useSixteenthSteps).toBe(true);
   });
+
+  it('adds a blank measure at the end when no copied measure is stored', async () => {
+    component.pattern.set(createMultiMeasurePattern());
+
+    await component.addMeasure();
+
+    const pattern = component.pattern();
+    expect(pattern.measures).toHaveLength(3);
+    expect(pattern.measures[2]).toEqual({
+      timeSignature: '3/4',
+      actions: Array(12).fill(null)
+    });
+    expect(pattern.beatGrips).toEqual([
+      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+    expect(pattern.actionGripOverrides).toEqual([
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+    expect(mockDialogService.confirm).not.toHaveBeenCalled();
+  });
+
+  it('stores a copied measure without inserting it immediately', () => {
+    component.pattern.set(createMultiMeasurePattern());
+
+    component.copyMeasure(0);
+
+    const pattern = component.pattern();
+    expect(pattern.measures).toHaveLength(2);
+    expect(pattern.beatGrips).toEqual([
+      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+  });
+
+  it('asks whether to use a copied measure when adding a measure', async () => {
+    component.pattern.set(createMultiMeasurePattern());
+    component.copyMeasure(0);
+    mockDialogService.confirm.mockResolvedValue(false);
+
+    await component.addMeasure();
+
+    expect(mockDialogService.confirm).toHaveBeenCalledWith(
+      'Use the copied measure, or create a new empty measure?',
+      'Add Measure',
+      'Use Copy',
+      'New Measure'
+    );
+    expect(component.pattern().measures[2]).toEqual({
+      timeSignature: '3/4',
+      actions: Array(12).fill(null)
+    });
+  });
+
+  it('adds the copied measure with actions and grips when confirmed', async () => {
+    component.pattern.set(createMultiMeasurePattern());
+    component.copyMeasure(0);
+    mockDialogService.confirm.mockResolvedValue(true);
+
+    await component.addMeasure();
+
+    const pattern = component.pattern();
+    expect(pattern.measures).toHaveLength(3);
+    expect(pattern.measures[2]).toEqual(pattern.measures[0]);
+    expect(pattern.measures[2]).not.toBe(pattern.measures[0]);
+    expect(pattern.beatGrips).toEqual([
+      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' },
+      { measureIndex: 2, beatIndex: 0, gripId: 'g', chordName: 'G' }
+    ]);
+    expect(pattern.actionGripOverrides).toEqual([
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' },
+      { measureIndex: 2, actionIndex: 0, gripId: 'g', chordName: 'G' }
+    ]);
+  });
+
+  it('keeps the private moveMeasure helper for measure reordering behavior', () => {
+    component.pattern.set(createMultiMeasurePattern());
+
+    (component as unknown as { moveMeasure(fromIndex: number, toIndex: number): void }).moveMeasure(0, 1);
+
+    const pattern = component.pattern();
+    expect(pattern.measures[0].timeSignature).toBe('3/4');
+    expect(pattern.measures[1].timeSignature).toBe('4/4');
+    expect(pattern.beatGrips).toEqual([
+      { measureIndex: 1, beatIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 0, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+  });
+
+  it('removes a measure and shifts later grip assignments', () => {
+    component.pattern.set(createMultiMeasurePattern());
+
+    component.removeMeasure(0);
+
+    const pattern = component.pattern();
+    expect(pattern.measures).toHaveLength(1);
+    expect(pattern.measures[0].timeSignature).toBe('3/4');
+    expect(pattern.beatGrips).toEqual([
+      { measureIndex: 0, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+    expect(pattern.actionGripOverrides).toEqual([
+      { measureIndex: 0, actionIndex: 0, gripId: 'c', chordName: 'C' }
+    ]);
+  });
 });
+
+function createMultiMeasurePattern(): PlayingPattern {
+  return {
+    id: 'multi-measure-pattern',
+    name: 'Multi Measure',
+    description: 'Pattern with two measures.',
+    category: 'Test',
+    suggestedGenre: 'Test Genre',
+    exampleSong: 'Test Song',
+    measures: [
+      {
+        timeSignature: '4/4',
+        actions: [
+          { technique: 'strum', strum: { direction: 'D', strings: 'all' }, modifiers: [] },
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        timeSignature: '3/4',
+        actions: [
+          { technique: 'pick', pickMode: 'relative', pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }], modifiers: [] },
+          null,
+          null
+        ]
+      }
+    ],
+    beatGrips: [
+      { measureIndex: 0, beatIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, beatIndex: 0, gripId: 'c', chordName: 'C' }
+    ],
+    actionGripOverrides: [
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
+    ],
+    createdAt: 1,
+    updatedAt: 1,
+    isCustom: true
+  };
+}

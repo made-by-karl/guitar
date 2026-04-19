@@ -17,24 +17,24 @@
         </div>
         <!-- Pattern Details -->
         <div class="mb-2">
-          <label>Name</label>
+          <label class="form-label">Name</label>
           <input class="form-control" [(ngModel)]="patternValue.name" name="name" required />
         </div>
         <div class="mb-2">
-          <label>Description</label>
+          <label class="form-label">Description</label>
           <input class="form-control" [(ngModel)]="patternValue.description" name="description" />
         </div>
-        <div class="mb-2 row">
-          <div class="col">
-            <label>Category</label>
+        <div class="mb-2 row g-2">
+          <div class="col-12 col-md-4">
+            <label class="form-label">Category</label>
             <input class="form-control" [(ngModel)]="patternValue.category" name="category" />
           </div>
-          <div class="col">
-            <label>Suggested Genre</label>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Suggested Genre</label>
             <input class="form-control" [(ngModel)]="patternValue.suggestedGenre" name="suggestedGenre" />
           </div>
-          <div class="col">
-            <label>Example Song</label>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Example Song</label>
             <input class="form-control" [(ngModel)]="patternValue.exampleSong" name="exampleSong" />
           </div>
         </div>
@@ -46,6 +46,10 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="mb-0">Measure {{ measureData.measureIndex + 1 }}</h5>
               <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyMeasure(measureData.measureIndex)"
+                  title="Copy measure">
+                  <i class="bi bi-copy"></i>
+                </button>
                 <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeMeasure(measureData.measureIndex)"
                   title="Remove measure">
                   <i class="bi bi-x"></i>

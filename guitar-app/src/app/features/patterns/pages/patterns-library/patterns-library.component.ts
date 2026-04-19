@@ -13,6 +13,8 @@ import { PlayingActionsNotationContext } from '@/app/features/patterns/ui/playin
 import {Subscription} from 'rxjs';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
 
+type PatternEditorMode = 'create' | 'edit' | 'clone';
+
 @Component({
   selector: 'app-patterns-library',
   standalone: true,
@@ -70,14 +72,23 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
       isCustom: true
     };
 
-    await this.openPatternEditor(pattern);
+    await this.openPatternEditor(pattern, 'create');
   }
 
   async startEdit(pattern: PlayingPattern) {
-    await this.openPatternEditor(pattern);
+    if (!pattern.isCustom) {
+      await this.startClone(pattern);
+      return;
+    }
+
+    await this.openPatternEditor(pattern, 'edit');
   }
 
-  private async openPatternEditor(pattern: PlayingPattern) {
+  async startClone(pattern: PlayingPattern) {
+    await this.openPatternEditor(this.service.createClone(pattern), 'clone');
+  }
+
+  private async openPatternEditor(pattern: PlayingPattern, mode: PatternEditorMode) {
     const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
       width: '95vw',
       height: '90vh',
@@ -89,6 +100,7 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     // Set the pattern on the component instance
     if (modalRef.componentInstance) {
       modalRef.componentInstance.pattern = pattern;
+      modalRef.componentInstance.mode = mode;
     }
 
     // Wait for the modal to close
@@ -106,12 +118,12 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     if (existingPatternIndex === -1) {
       // New pattern - add it
       await this.service.add(pattern);
-      this.patterns.push(pattern);
     } else {
       // Existing pattern - update it
       await this.service.update(pattern);
-      this.patterns[existingPatternIndex] = pattern;
     }
+
+    await this.load();
   }
 
   get filteredPatterns() {
@@ -156,8 +168,9 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
   }
 
   async deletePattern(pattern: PlayingPattern) {
+    const restoreHint = pattern.isCustom ? '' : ' You can restore deleted default patterns from the pattern library menu.';
     const confirmed = await this.dialogService.confirm(
-      'Delete this pattern?',
+      `Delete this pattern?${restoreHint}`,
       'Delete Pattern',
       'Delete',
       'Cancel',
@@ -168,5 +181,18 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
       await this.service.delete(pattern.id);
       await this.load();
     }
+  }
+
+  async restoreDefaultPatterns() {
+    const restoredCount = await this.service.restoreMissingDefaults();
+    await this.load();
+    await this.dialogService.alert(
+      restoredCount > 0
+        ? `Restored ${restoredCount} default pattern${restoredCount === 1 ? '' : 's'}.`
+        : 'All default patterns are already in your library.',
+      'Restore Defaults',
+      'OK',
+      { variant: 'success' }
+    );
   }
 }

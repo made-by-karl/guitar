@@ -38,8 +38,15 @@ import { ModalService } from '@/app/core/services/modal.service';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
 import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { chordToString } from '@/app/core/music/chords';
+import { DialogService } from '@/app/core/services/dialog.service';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
+interface CopiedMeasure {
+  measure: Measure;
+  beatGrips: PlayingPatternBeatGrip[];
+  actionGripOverrides: PlayingPatternActionGripOverride[];
+  useSixteenthSteps: boolean;
+}
 
 @Component({
   selector: 'app-playing-pattern-editor',
@@ -63,6 +70,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   
   // Internal display model to manage UI state per measure
   private measureDisplayStates = new Map<number, boolean>();
+  private copiedMeasure?: CopiedMeasure;
   private readonly playbackStateSubscription: Subscription;
 
   // Use a computed signal that recalculates when pattern changes
@@ -75,7 +83,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   constructor(
     private patternPlayback: PatternPlaybackService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private dialogService: DialogService
   ) {
     this.playbackState = this.patternPlayback.getSnapshot();
     this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
@@ -111,33 +120,92 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     this.patternPlayback.stopPatternPreview();
   }
 
-  // Add a new measure
-  addMeasure(): void {
+  async addMeasure(): Promise<void> {
+    const useCopiedMeasure = this.copiedMeasure
+      ? await this.dialogService.confirm(
+        'Use the copied measure, or create a new empty measure?',
+        'Add Measure',
+        'Use Copy',
+        'New Measure'
+      )
+      : false;
+
+    this.insertMeasureAtEnd(useCopiedMeasure);
+  }
+
+  copyMeasure(measureIndex: number): void {
+    const pattern = this.pattern();
+    const measure = pattern?.measures[measureIndex];
+    if (!pattern || !measure) return;
+
+    this.copiedMeasure = {
+      measure: this.cloneMeasure(measure),
+      beatGrips: (pattern.beatGrips ?? [])
+        .filter(grip => grip.measureIndex === measureIndex)
+        .map(grip => ({ ...grip, measureIndex: 0 })),
+      actionGripOverrides: (pattern.actionGripOverrides ?? [])
+        .filter(grip => grip.measureIndex === measureIndex)
+        .map(grip => ({ ...grip, measureIndex: 0 })),
+      useSixteenthSteps: this.measureDisplayStates.get(measureIndex) ?? this.measureRequiresSixteenthSteps(measure)
+    };
+  }
+
+  private insertMeasureAtEnd(useCopiedMeasure: boolean): void {
     const pattern = this.pattern()
     if (!pattern) return;
     
-    // Get time signature from previous measure or default to 4/4
-    const prevMeasure = pattern.measures[pattern.measures.length - 1];
-    const timeSignature: TimeSignature = prevMeasure?.timeSignature || '4/4';
+    const insertIndex = pattern.measures.length;
+    const referenceMeasure = pattern.measures[pattern.measures.length - 1];
+    const timeSignature: TimeSignature = referenceMeasure?.timeSignature || '4/4';
+    const copiedMeasure = useCopiedMeasure ? this.copiedMeasure : undefined;
+    const newMeasure = copiedMeasure ? this.cloneMeasure(copiedMeasure.measure) : this.createEmptyMeasure(timeSignature);
     
-    const actionLength = getSixteenthPerBeatFromTimeSignature(timeSignature) * getBeatsFromTimeSignature(timeSignature);
-    const newMeasure: Measure = {
-      timeSignature,
-      actions: Array(actionLength).fill(null) // Fixed-length array, all initially null
-    };
-    
-    // Create updated pattern with new measure
+    const updatedMeasures = [...pattern.measures];
+    updatedMeasures.splice(insertIndex, 0, newMeasure);
+
     const updatedPattern = {
       ...pattern,
-      measures: [...pattern.measures, newMeasure],
-      beatGrips: [...(pattern.beatGrips ?? [])],
-      actionGripOverrides: [...(pattern.actionGripOverrides ?? [])]
+      measures: updatedMeasures,
+      beatGrips: [
+        ...this.shiftMeasureReferencesForInsert(pattern.beatGrips ?? [], insertIndex),
+        ...(copiedMeasure?.beatGrips ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
+      ],
+      actionGripOverrides: [
+        ...this.shiftMeasureReferencesForInsert(pattern.actionGripOverrides ?? [], insertIndex),
+        ...(copiedMeasure?.actionGripOverrides ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
+      ]
     };
     
-    // Initialize display state for new measure
-    this.measureDisplayStates.set(updatedPattern.measures.length - 1, false);
+    this.measureDisplayStates = this.shiftDisplayStatesForInsert(insertIndex);
+    this.measureDisplayStates.set(insertIndex, copiedMeasure?.useSixteenthSteps ?? false);
     
     this.updatePattern(updatedPattern);
+  }
+
+  private moveMeasure(fromIndex: number, toIndex: number): void {
+    const pattern = this.pattern();
+    if (!pattern || fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= pattern.measures.length || toIndex >= pattern.measures.length) {
+      return;
+    }
+
+    const updatedMeasures = [...pattern.measures];
+    const [movedMeasure] = updatedMeasures.splice(fromIndex, 1);
+    updatedMeasures.splice(toIndex, 0, movedMeasure);
+
+    this.measureDisplayStates = this.moveDisplayState(fromIndex, toIndex);
+
+    this.updatePattern({
+      ...pattern,
+      measures: updatedMeasures,
+      beatGrips: (pattern.beatGrips ?? []).map(grip => ({
+        ...grip,
+        measureIndex: this.remapMeasureIndexForMove(grip.measureIndex, fromIndex, toIndex)
+      })),
+      actionGripOverrides: (pattern.actionGripOverrides ?? []).map(grip => ({
+        ...grip,
+        measureIndex: this.remapMeasureIndexForMove(grip.measureIndex, fromIndex, toIndex)
+      }))
+    });
   }
 
   // Remove a measure
@@ -1313,6 +1381,101 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       const measure = pattern.measures[grip.measureIndex];
       return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
     });
+  }
+
+  private createEmptyMeasure(timeSignature: TimeSignature): Measure {
+    const actionLength = getSixteenthPerBeatFromTimeSignature(timeSignature) * getBeatsFromTimeSignature(timeSignature);
+    return {
+      timeSignature,
+      actions: Array(actionLength).fill(null)
+    };
+  }
+
+  private cloneMeasure(measure: Measure): Measure {
+    return {
+      ...measure,
+      actions: measure.actions.map(action => this.cloneAction(action))
+    };
+  }
+
+  private cloneAction(action: PlayingAction | null): PlayingAction | null {
+    if (!action) {
+      return null;
+    }
+
+    return {
+      ...action,
+      modifiers: action.modifiers ? [...action.modifiers] : undefined,
+      strum: action.strum ? {
+        ...action.strum,
+        strings: this.cloneStrumRange(action.strum.strings)
+      } : undefined,
+      pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
+      legato: action.legato ? this.cloneLegato(action.legato) : undefined,
+      percussive: action.percussive ? { ...action.percussive } : undefined
+    };
+  }
+
+  private cloneStrumRange(strings: StrumRange): StrumRange {
+    if (Array.isArray(strings)) {
+      return [...strings];
+    }
+
+    if (isRelativeStrumRange(strings)) {
+      return { ...strings };
+    }
+
+    return strings;
+  }
+
+  private cloneLegato(legato: LegatoNote): LegatoNote {
+    if (this.isRelativeLegato(legato)) {
+      return {
+        ...legato,
+        target: { ...legato.target }
+      };
+    }
+
+    return { ...legato };
+  }
+
+  private shiftMeasureReferencesForInsert<T extends { measureIndex: number }>(references: T[], insertIndex: number): T[] {
+    return references.map(reference => ({
+      ...reference,
+      measureIndex: reference.measureIndex >= insertIndex ? reference.measureIndex + 1 : reference.measureIndex
+    }));
+  }
+
+  private shiftDisplayStatesForInsert(insertIndex: number): Map<number, boolean> {
+    const updatedDisplayStates = new Map<number, boolean>();
+    this.measureDisplayStates.forEach((value, key) => {
+      updatedDisplayStates.set(key >= insertIndex ? key + 1 : key, value);
+    });
+    return updatedDisplayStates;
+  }
+
+  private moveDisplayState(fromIndex: number, toIndex: number): Map<number, boolean> {
+    const updatedDisplayStates = new Map<number, boolean>();
+    this.measureDisplayStates.forEach((value, key) => {
+      updatedDisplayStates.set(this.remapMeasureIndexForMove(key, fromIndex, toIndex), value);
+    });
+    return updatedDisplayStates;
+  }
+
+  private remapMeasureIndexForMove(currentIndex: number, fromIndex: number, toIndex: number): number {
+    if (currentIndex === fromIndex) {
+      return toIndex;
+    }
+
+    if (fromIndex < toIndex && currentIndex > fromIndex && currentIndex <= toIndex) {
+      return currentIndex - 1;
+    }
+
+    if (fromIndex > toIndex && currentIndex >= toIndex && currentIndex < fromIndex) {
+      return currentIndex + 1;
+    }
+
+    return currentIndex;
   }
 
   private async selectGrip(chordName?: string): Promise<PlayingPatternGripReference | null | undefined> {

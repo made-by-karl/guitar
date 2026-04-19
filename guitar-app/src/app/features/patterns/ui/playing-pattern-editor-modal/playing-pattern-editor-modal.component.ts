@@ -15,6 +15,19 @@ export class PlayingPatternEditorModalComponent implements ModalComponent<Playin
   @ViewChild('editor', { static: false }) editor!: PlayingPatternEditorComponent;
 
   pattern?: PlayingPattern;
+  mode: 'create' | 'edit' | 'clone' = 'edit';
+
+  get title(): string {
+    if (this.mode === 'clone') {
+      return 'Clone Playing Pattern';
+    }
+
+    return this.mode === 'create' ? 'Create Playing Pattern' : 'Edit Playing Pattern';
+  }
+
+  get saveLabel(): string {
+    return this.mode === 'clone' ? 'Save Copy' : 'Save Pattern';
+  }
 
   constructor(
     @Inject(MODAL_REF) public modalRef: ModalRef<PlayingPattern>

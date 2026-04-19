@@ -78,6 +78,36 @@ export class PlayingPatternsService {
     }
   }
 
+  createClone(pattern: PlayingPattern, nameSuffix = 'Copy'): PlayingPattern {
+    const now = Date.now();
+    return this.clonePattern({
+      ...pattern,
+      id: `custom-${now}-${Math.random().toString(36).slice(2, 8)}`,
+      name: `${pattern.name} ${nameSuffix}`.trim(),
+      createdAt: now,
+      updatedAt: now,
+      isCustom: true
+    });
+  }
+
+  async restoreMissingDefaults(): Promise<number> {
+    await this.initializer;
+
+    try {
+      const existingIds = new Set((await this.db.playingPatterns.toArray()).map(pattern => pattern.id));
+      const missingDefaults = createDefaultPlayingPatterns().filter(pattern => !existingIds.has(pattern.id));
+
+      if (missingDefaults.length > 0) {
+        await this.db.playingPatterns.bulkAdd(missingDefaults.map(pattern => this.clonePattern(pattern)));
+      }
+
+      return missingDefaults.length;
+    } catch (error) {
+      console.error('Error restoring default patterns:', error);
+      throw error;
+    }
+  }
+
   private async addDefaultPatterns() {
     const defaults: PlayingPattern[] = createDefaultPlayingPatterns();
     try {

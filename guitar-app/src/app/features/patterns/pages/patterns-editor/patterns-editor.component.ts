@@ -16,6 +16,7 @@ import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playin
 })
 export class PatternsEditorComponent {
   pattern?: PlayingPattern;
+  editorMode: 'create' | 'edit' | 'clone' = 'create';
 
   constructor(
     private patternsService: PlayingPatternsService,
@@ -31,7 +32,13 @@ export class PatternsEditorComponent {
     if (id) {
       const existing = await this.patternsService.getById(id);
       if (existing) {
-        this.pattern = structuredClone(existing);
+        if (existing.isCustom) {
+          this.pattern = structuredClone(existing);
+          this.editorMode = 'edit';
+        } else {
+          this.pattern = this.patternsService.createClone(existing);
+          this.editorMode = 'clone';
+        }
         return;
       }
     }
@@ -55,6 +62,7 @@ export class PatternsEditorComponent {
       updatedAt: Date.now(),
       isCustom: true
     };
+    this.editorMode = 'create';
   }
 
   async save() {
