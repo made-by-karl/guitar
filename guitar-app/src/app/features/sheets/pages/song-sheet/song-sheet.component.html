@@ -62,7 +62,7 @@
           [class.is-active]="activeTab === 'grips'"
           [attr.aria-selected]="activeTab === 'grips'"
           (click)="selectTab('grips')">
-          Grip Library
+          Grips
         </button>
         <button
           class="sheet-tab"
@@ -71,212 +71,27 @@
           [class.is-active]="activeTab === 'patterns'"
           [attr.aria-selected]="activeTab === 'patterns'"
           (click)="selectTab('patterns')">
-          Pattern Library
+          Patterns
         </button>
       </div>
     </div>
 
     @if (activeTab === 'parts') {
-    <div class="sheet-section">
-      <div class="section-header">
-        <div>
-          <h5 class="mb-0">Song Parts</h5>
-          <p class="section-copy mb-0">Arrange sheet-local patterns into verses, choruses, and bridges.</p>
-        </div>
-        <button class="btn btn-primary btn-sm" (click)="showAddPart()">
-          <i class="bi bi-plus-lg"></i> Add Part
-        </button>
-      </div>
-
-      @if (sheet.parts.length > 0) {
-      <div cdkDropList (cdkDropListDropped)="dropPart($event)">
-        @for (part of sheet.parts; track part.id; let partIndex = $index) {
-        <div class="card mb-3" cdkDrag>
-          <div class="card-body">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-              <div class="d-flex gap-2">
-                <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
-                  <i class="bi bi-grip-vertical"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1">{{ part.section }}</h6>
-                  <div class="small text-muted">{{ part.items.length }} pattern item(s)</div>
-                </div>
-              </div>
-
-              <div class="d-flex flex-column align-items-start align-items-sm-end gap-2">
-                <div class="d-flex gap-2 flex-wrap">
-                  @if (isPartPlaybackActive(part)) {
-                  <button
-                    class="btn btn-outline-primary btn-sm"
-                    (click)="isPartPlaybackPaused(part) ? resumePart() : pausePart()">
-                    <i class="bi" [class.bi-play-fill]="isPartPlaybackPaused(part)" [class.bi-pause-fill]="!isPartPlaybackPaused(part)"></i>
-                    {{ isPartPlaybackPaused(part) ? 'Resume' : 'Pause' }}
-                  </button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="rewindPart()" [disabled]="!canRewindPart(part)">
-                    <i class="bi bi-skip-backward-fill"></i> Back
-                  </button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="forwardPart()" [disabled]="!canForwardPart(part)">
-                    <i class="bi bi-skip-forward-fill"></i> Forward
-                  </button>
-                  <button class="btn btn-outline-danger btn-sm" (click)="stopPart()">
-                    <i class="bi bi-stop-fill"></i> Stop
-                  </button>
-                  } @else {
-                  <button class="btn btn-outline-primary btn-sm" (click)="playPart(part)">
-                    <i class="bi bi-play-fill"></i> Play
-                  </button>
-                  }
-                  <button class="btn btn-outline-secondary btn-sm" (click)="startEditingPart(partIndex)">
-                    <i class="bi bi-pencil"></i> Edit
-                  </button>
-                  <button class="btn btn-outline-danger btn-sm" (click)="removePart(partIndex)">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-                @if (isPartPlaybackActive(part)) {
-                <div class="small text-muted">{{ getPartMeasureCounter(part) }}</div>
-                }
-              </div>
-            </div>
-
-            @if (part.items.length > 0) {
-            <div class="part-summary-list mt-3">
-              @for (item of part.items; track item.id) {
-              <div class="part-summary-item">
-                <div class="fw-semibold">{{ getPatternName(item.patternId) }}</div>
-                <div class="small text-muted">
-                  {{ item.measureTexts.length }} measures ·
-                  {{ item.actionGrips.length }} action grips
-                </div>
-              </div>
-              }
-            </div>
-            }
-          </div>
-        </div>
-        }
-      </div>
-      } @else {
-      <div class="alert alert-info mb-0">No song parts yet. Add a part and compose it measure by measure.</div>
-      }
-    </div>
+    <app-song-sheet-parts-tab
+      [sheet]="sheet"
+      (changed)="refreshData()" />
     }
 
     @if (activeTab === 'grips') {
-    <div class="sheet-section">
-      <div class="section-header">
-        <div>
-          <h5 class="mb-0">Grip Library</h5>
-          <p class="section-copy mb-0">Reusable grips for this song sheet.</p>
-        </div>
-        <button class="btn btn-outline-primary btn-sm" (click)="addGrip()">
-          <i class="bi bi-plus"></i> Add Grip
-        </button>
-      </div>
-
-      @if (sheet.grips.length > 0) {
-      <div class="row" cdkDropList (cdkDropListDropped)="dropGrip($event)">
-        @for (grip of sheet.grips; track grip.gripId; let i = $index) {
-        <div class="col-6 col-lg-4 mb-3" cdkDrag>
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-3 gap-2">
-                <div class="drag-handle text-muted" cdkDragHandle title="Drag to reorder">
-                  <i class="bi bi-grip-vertical"></i>
-                </div>
-                <button class="btn btn-link p-0 text-decoration-none grip-title" (click)="addGrip(grip.chordName)">
-                  {{ grip.chordName }}
-                </button>
-                <div class="ms-auto d-flex gap-2">
-                  <button class="btn btn-outline-primary btn-sm" (click)="playGrip(grip)">
-                    <i class="bi bi-play-fill"></i>
-                  </button>
-                  <button class="btn btn-outline-danger btn-sm" (click)="removeGrip(grip.gripId)">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-
-              @if (grip.grip) {
-              <div class="d-flex justify-content-center">
-                <app-grip-diagram [grip]="grip.grip"></app-grip-diagram>
-              </div>
-              } @else {
-              <div class="alert alert-warning mb-0">Grip data not available.</div>
-              }
-            </div>
-          </div>
-        </div>
-        }
-      </div>
-      } @else {
-      <div class="alert alert-info mb-0">No grips yet. Add a few chords to use them directly in part measures.</div>
-      }
-    </div>
+    <app-song-sheet-grips-tab
+      [sheet]="sheet"
+      (changed)="refreshData()" />
     }
 
     @if (activeTab === 'patterns') {
-    <div class="sheet-section">
-      <div class="section-header">
-        <div>
-          <h5 class="mb-0">Pattern Library</h5>
-          <p class="section-copy mb-0">Sheet-local playing patterns reused by song parts.</p>
-        </div>
-        <button class="btn btn-outline-primary btn-sm" (click)="addPatterns()">
-          <i class="bi bi-plus"></i> Add Pattern
-        </button>
-      </div>
-
-      @if (sheet.patterns.length > 0) {
-      <div class="row" cdkDropList (cdkDropListDropped)="dropPattern($event)">
-        @for (pattern of sheet.patterns; track pattern.id) {
-        <div class="col-12 col-xl-6 mb-3" cdkDrag>
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex align-items-start gap-2 mb-3">
-                <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
-                  <i class="bi bi-grip-vertical"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="d-flex flex-wrap align-items-center gap-2">
-                    <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
-                    @for (measure of pattern.measures; track $index) {
-                    <span class="badge bg-info">{{ measure.timeSignature }}</span>
-                    }
-                  </div>
-                  <div class="small text-muted mt-1">{{ pattern.description || 'No description' }}</div>
-                </div>
-                <div class="d-flex gap-2">
-                  <button
-                    class="btn btn-sm"
-                    [class.btn-danger]="isPatternPlaybackActive(pattern)"
-                    [class.btn-outline-primary]="!isPatternPlaybackActive(pattern)"
-                    (click)="playPattern(pattern)">
-                    <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)"></i>
-                  </button>
-                  <button class="btn btn-outline-danger btn-sm" (click)="removePattern(pattern.id)">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div class="pattern-measures-preview">
-                <app-playing-actions
-                  [measures]="pattern.measures"
-                  [showActionIndex]="true"
-                  [measureWidth]="'100%'"
-                  [notationContexts]="getPatternMeasureNotationContexts(pattern)" />
-              </div>
-            </div>
-          </div>
-        </div>
-        }
-      </div>
-      } @else {
-      <div class="alert alert-info mb-0">No patterns yet. Create or import a pattern, then reuse it inside song parts.</div>
-      }
-    </div>
+    <app-song-sheet-patterns-tab
+      [sheet]="sheet"
+      (changed)="refreshData()" />
     }
   </div>
 </div>
@@ -285,250 +100,13 @@
   <div class="alert alert-danger">Song Sheet not found.</div>
 </div>
 }
-
-<ng-template #sheetChoiceModal [typedCtx]="sheetChoiceTemplateType" let-data="data" let-modalRef="modalRef">
-  <div class="modal-content-wrapper">
-    <div class="modal-body p-3">
-      <h5 class="modal-title mb-3">{{ data.title }}</h5>
-      <div class="d-grid gap-2">
-        @for (choice of data.choices; track choice.value) {
-        <button class="btn btn-outline-primary text-start" type="button" (click)="modalRef.close(choice.value)">
-          {{ choice.text }}
-        </button>
-        }
-      </div>
-    </div>
-  </div>
-</ng-template>
-
 <ng-template #tuningEditorModal [typedCtx]="tuningEditorTemplateType" let-modalRef="modalRef">
-  <div class="modal-content-wrapper tuning-editor-modal">
-    <div class="modal-header">
-      <h5 class="modal-title">Tuning, Capo & Tempo</h5>
-      <button type="button" class="btn-close" (click)="cancelTuning(modalRef)"></button>
-    </div>
-    <div class="modal-body">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Capodaster (Fret)</label>
-          <input type="number" class="form-control" [(ngModel)]="tempCapodaster" min="0" max="12" />
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Tempo (BPM)</label>
-          <app-bpm-selector [(ngModel)]="tempTempo" />
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Guitar Tuning (Low to High)</label>
-        <div class="row g-2">
-          @for (tuningNote of tempTuning; track i; let i = $index) {
-          <div class="col-6 col-md-2">
-            <label class="form-label small">String {{ 6 - i }}</label>
-            <div class="input-group input-group-sm">
-              <select class="form-select" [(ngModel)]="tuningNote.semitone">
-                @for (semitone of semitones; track semitone) {
-                <option [value]="semitone">{{ semitone }}</option>
-                }
-              </select>
-              <select class="form-select" [(ngModel)]="tuningNote.octave">
-                @for (octave of octaves; track octave) {
-                <option [value]="octave">{{ octave }}</option>
-                }
-              </select>
-            </div>
-          </div>
-          }
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline-secondary" type="button" (click)="cancelTuning(modalRef)">Cancel</button>
-      <button class="btn btn-success" type="button" (click)="saveTuning(modalRef)">Save Settings</button>
-    </div>
-  </div>
-</ng-template>
-
-<ng-template #partEditorModal [typedCtx]="partEditorTemplateType" let-modalRef="modalRef">
-  <div class="part-editor-modal song-sheet-page">
-    <div class="modal-header">
-      <div class="part-editor-header">
-        <div class="part-editor-header-copy">
-          <div class="small text-uppercase text-muted">{{ editingPartIndex === null ? 'New Part' : 'Editing Part' }}</div>
-          <h5 class="modal-title mb-1">{{ editingPartIndex === null ? 'Create Song Part' : 'Edit Song Part' }}</h5>
-          <p class="text-muted mb-0">Import a pattern, then write lyrics and assign grips directly on the measures.</p>
-        </div>
-
-        <div class="part-editor-toolbar">
-          <div class="part-editor-primary-actions">
-            <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatternItem()">
-              <i class="bi bi-plus"></i> Add Pattern To Part
-            </button>
-          </div>
-
-          @if (tempPart && tempPart.items.length > 0) {
-          <div class="part-editor-playback-block">
-            <div class="part-editor-playback-actions">
-              @if (isPartPlaybackActive(tempPart)) {
-              <button
-                class="btn btn-outline-primary btn-sm"
-                type="button"
-                (click)="isPartPlaybackPaused(tempPart) ? resumePart() : pausePart()">
-                <i class="bi" [class.bi-play-fill]="isPartPlaybackPaused(tempPart)" [class.bi-pause-fill]="!isPartPlaybackPaused(tempPart)"></i>
-                {{ isPartPlaybackPaused(tempPart) ? 'Resume' : 'Pause' }}
-              </button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="rewindPart()" [disabled]="!canRewindPart(tempPart)">
-                <i class="bi bi-skip-backward-fill"></i> Back
-              </button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="forwardPart()" [disabled]="!canForwardPart(tempPart)">
-                <i class="bi bi-skip-forward-fill"></i> Forward
-              </button>
-              <button class="btn btn-outline-danger btn-sm" type="button" (click)="stopPart()">
-                <i class="bi bi-stop-fill"></i> Stop
-              </button>
-              } @else {
-              <button class="btn btn-outline-primary btn-sm" type="button" (click)="playPart(tempPart)">
-                <i class="bi bi-play-fill"></i> Play
-              </button>
-              }
-            </div>
-
-            @if (isPartPlaybackActive(tempPart)) {
-            <div class="small text-muted part-editor-counter">{{ getPartMeasureCounter(tempPart) }}</div>
-            }
-          </div>
-          }
-        </div>
-      </div>
-
-      <button type="button" class="btn-close" (click)="cancelPartEdit(modalRef)"></button>
-    </div>
-
-    <div class="modal-body">
-      @if (tempPart) {
-      <div class="part-editor">
-        <div class="mb-3">
-          <label class="form-label">Section Name</label>
-          <input class="form-control" [(ngModel)]="tempPart.section" placeholder="Verse, Chorus, Bridge..." />
-        </div>
-
-        @if (tempPart.items.length > 0) {
-        <div class="pattern-item-stack">
-          @for (item of tempPart.items; track item.id; let itemIndex = $index) {
-          <div class="pattern-item card">
-            <div class="card-body">
-              <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between mb-3">
-                <div>
-                  <div class="small text-uppercase text-muted">Pattern Item {{ itemIndex + 1 }}</div>
-                  <h6 class="mb-1">{{ getPatternName(item.patternId) }}</h6>
-                  @if (getPattern(item.patternId); as pattern) {
-                  <div class="small text-muted">{{ pattern.measures.length }} measure(s)</div>
-                  }
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                  <button class="btn btn-outline-secondary btn-sm" (click)="changePatternItem(item)">Change</button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="editPattern(item)">Edit Pattern</button>
-                  <button class="btn btn-outline-secondary btn-sm" (click)="duplicatePatternItem(itemIndex)">Duplicate Item</button>
-                  <button class="btn btn-outline-danger btn-sm" (click)="removePatternItem(itemIndex)">Remove</button>
-                </div>
-              </div>
-
-              @if (getPattern(item.patternId); as pattern) {
-              <div class="measure-grid">
-                @for (measure of pattern.measures; track $index; let measureIndex = $index) {
-                <div class="measure-card">
-                  <div class="measure-card-header">
-                    <div>
-                      <div class="measure-title">Measure {{ measureIndex + 1 }}</div>
-                      <div class="measure-subtitle">{{ pattern.name || 'Untitled Pattern' }} · {{ measure.timeSignature }}</div>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
-                      <button
-                        class="btn btn-sm"
-                        [class.btn-danger]="isMeasurePlaybackActive(item, measureIndex)"
-                        [class.btn-outline-primary]="!isMeasurePlaybackActive(item, measureIndex)"
-                        (click)="toggleMeasurePlayback(tempPart, item, measureIndex)">
-                        <i class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(item, measureIndex)" [class.bi-play-fill]="!isMeasurePlaybackActive(item, measureIndex)"></i>
-                        {{ isMeasurePlaybackActive(item, measureIndex) ? 'Stop' : 'Play' }}
-                      </button>
-                      <button class="btn btn-outline-secondary btn-sm" (click)="clearMeasureGrips(item, measureIndex)">
-                        Clear Grips
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="rhythm-preview mb-3">
-                    <app-playing-actions
-                      [measures]="[measure]"
-                      [showActionIndex]="true"
-                      [measureWidth]="'100%'"
-                      [notationContexts]="[getPartMeasureNotationContext(item, pattern, measureIndex)]" />
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label small">Lyrics</label>
-                    <textarea
-                      class="form-control form-control-sm"
-                      rows="2"
-                      [(ngModel)]="getMeasureText(item, measureIndex).lyrics"
-                      placeholder="Lyrics for this measure"></textarea>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label small">Notes</label>
-                    <textarea
-                      class="form-control form-control-sm"
-                      rows="2"
-                      [(ngModel)]="getMeasureText(item, measureIndex).notes"
-                      placeholder="Cues, dynamics, picking notes..."></textarea>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label small">Action Grips</label>
-                    <div class="action-grip-grid">
-                      @for (actionData of getActionGripPositions(pattern, measureIndex); track actionData.actionIndex) {
-                      <button
-                        type="button"
-                        class="btn btn-sm action-grip-button"
-                        [class.btn-primary]="getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
-                        [class.btn-outline-secondary]="!getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
-                        (click)="assignActionGrip(item, pattern, measureIndex, actionData.actionIndex)">
-                        <span class="action-grip-label">{{ actionData.label }}</span>
-                        <span class="action-grip-value">
-                          <i class="bi bi-music-note-beamed"></i>
-                          {{ getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.chordName || 'Grip' }}
-                        </span>
-                      </button>
-                      }
-                    </div>
-                  </div>
-                </div>
-                }
-              </div>
-              } @else {
-              <div class="alert alert-warning mb-0">This item points to a missing pattern.</div>
-              }
-            </div>
-          </div>
-          }
-        </div>
-        } @else {
-        <div class="empty-part-state">
-          <p class="mb-2">No pattern items yet.</p>
-          <button class="btn btn-outline-primary btn-sm" (click)="addPatternItem()">
-            <i class="bi bi-plus"></i> Add First Pattern
-          </button>
-        </div>
-        }
-      </div>
-      }
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-outline-secondary" type="button" (click)="cancelPartEdit(modalRef)">Cancel</button>
-      <button class="btn btn-success" type="button" (click)="savePart(modalRef)" [disabled]="!tempPart?.section?.trim()">
-        <i class="bi bi-check-lg"></i> Save Part
-      </button>
-    </div>
-  </div>
+  <app-song-tuning-editor
+    [tuning]="tempTuning"
+    [semitones]="semitones"
+    [octaves]="octaves"
+    [(capodaster)]="tempCapodaster"
+    [(tempo)]="tempTempo"
+    (cancel)="cancelTuning(modalRef)"
+    (save)="saveTuning(modalRef)" />
 </ng-template>

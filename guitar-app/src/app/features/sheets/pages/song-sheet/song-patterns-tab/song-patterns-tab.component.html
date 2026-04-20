@@ -1,0 +1,64 @@
+<div class="sheet-section">
+  <div class="section-header">
+    <div>
+      <h5 class="mb-0">Pattern Library</h5>
+      <p class="section-copy mb-0">Sheet-local playing patterns reused by song parts.</p>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatterns()">
+      <i class="bi bi-plus"></i> Add Pattern
+    </button>
+  </div>
+
+  @if (sheet().patterns.length > 0) {
+  <div class="row" cdkDropList (cdkDropListDropped)="dropPattern($event)">
+    @for (pattern of sheet().patterns; track pattern.id) {
+    <div class="col-12 col-xl-6 mb-3" cdkDrag>
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-start gap-2 mb-3">
+            <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
+              <i class="bi bi-grip-vertical"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
+                @for (measure of pattern.measures; track $index) {
+                <span class="badge bg-info">{{ measure.timeSignature }}</span>
+                }
+              </div>
+              <div class="small text-muted mt-1">{{ pattern.description || 'No description' }}</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-sm"
+                type="button"
+                [class.btn-danger]="isPatternPlaybackActive(pattern)"
+                [class.btn-outline-primary]="!isPatternPlaybackActive(pattern)"
+                (click)="playPattern(pattern)">
+                <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)"></i>
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyPattern(pattern.id)">
+                <i class="bi bi-copy"></i>
+              </button>
+              <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePattern(pattern.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="pattern-measures-preview">
+            <app-playing-actions
+              [measures]="pattern.measures"
+              [showActionIndex]="true"
+              [measureWidth]="'100%'"
+              [notationContexts]="getPatternMeasureNotationContexts(pattern)" />
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="alert alert-info mb-0">No patterns yet. Create or import a pattern, then reuse it inside song parts.</div>
+  }
+</div>

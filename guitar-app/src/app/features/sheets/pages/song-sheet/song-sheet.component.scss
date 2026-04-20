@@ -58,13 +58,6 @@
     color: #6b6255;
   }
 
-  .sheet-section {
-    padding: 1.25rem;
-    border: 1px solid #e3d8c5;
-    border-radius: 1rem;
-    background: #fffdfa;
-  }
-
   .sheet-tabs {
     display: grid;
     gap: 0;
@@ -81,7 +74,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-
     padding: 0 0 0 0.5rem;
     margin-bottom: -1px;
     background: rgba(241, 237, 230, 0.94);
@@ -130,246 +122,6 @@
       z-index: 1;
     }
   }
-
-  .sheet-tabs > .sheet-section {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .section-copy {
-    color: #7a7063;
-    font-size: 0.95rem;
-  }
-
-  .grip-title {
-    font-weight: 700;
-  }
-
-  .drag-handle {
-    cursor: grab;
-    user-select: none;
-    -webkit-user-select: none;
-    font-size: 1.2rem;
-  }
-
-  .pattern-measures-preview {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .preview-measure {
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background: #f5f1ea;
-    border: 1px solid #e3d8c5;
-  }
-
-  .preview-header {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #7a7063;
-    margin-bottom: 0.5rem;
-  }
-
-  .part-editor {
-    position: relative;
-  }
-
-  .part-editor-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .pattern-item-stack {
-    display: grid;
-    gap: 1rem;
-  }
-
-  .pattern-item {
-    border: 1px solid #ded4c2;
-  }
-
-  .measure-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  }
-
-  .measure-card {
-    padding: 1rem;
-    border-radius: 0.9rem;
-    background: linear-gradient(180deg, #fffdf8 0%, #f6f1e7 100%);
-    border: 1px solid #dfd3bf;
-    box-shadow: 0 0.25rem 0.75rem rgba(74, 53, 28, 0.08);
-  }
-
-  .measure-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .measure-title {
-    font-weight: 700;
-    color: #332a1d;
-  }
-
-  .measure-subtitle {
-    font-size: 0.82rem;
-    color: #7a7063;
-  }
-
-  .rhythm-preview {
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid #e4dac8;
-    overflow-x: auto;
-  }
-
-  .action-grip-grid {
-    display: grid;
-    gap: 0.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  }
-
-  .action-grip-button {
-    min-height: 4rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    text-align: left;
-    white-space: normal;
-  }
-
-  .action-grip-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0;
-    opacity: 0.85;
-    font-weight: 600;
-  }
-
-  .action-grip-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 600;
-  }
-
-  .empty-part-state {
-    padding: 1.25rem;
-    border: 1px dashed #c9baa3;
-    border-radius: 0.85rem;
-    background: #f8f4ec;
-    text-align: center;
-  }
-
-  .part-summary-list {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .part-summary-item {
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background: #f7f3ec;
-    border: 1px solid #e3d8c5;
-  }
-
-  .transport-summary {
-    background: linear-gradient(135deg, #efe7d8, #f8f4ec);
-  }
-}
-
-.part-editor-modal {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow: hidden !important;
-}
-
-.tuning-editor-modal {
-  min-width: min(720px, 95vw);
-}
-
-.part-editor-header {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.part-editor-header-copy {
-  min-width: 0;
-}
-
-.part-editor-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.75rem 1rem;
-}
-
-.part-editor-primary-actions {
-  display: flex;
-  flex-wrap: wrap;
-  flex: 0 0 auto;
-  gap: 0.5rem;
-}
-
-.part-editor-playback-block {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  gap: 0.35rem;
-  min-width: fit-content;
-}
-
-.part-editor-playback-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.part-editor-counter {
-  white-space: nowrap;
-}
-
-.part-editor-modal .modal-body {
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  min-height: 0 !important;
-  padding: 1rem;
-  position: relative;
-}
-
-@media (max-width: 767px) {
-  .part-editor-playback-block {
-    min-width: 0;
-  }
 }
 
 .cdk-drag-preview {
@@ -385,10 +137,7 @@
   border-radius: 0.75rem;
 }
 
-.cdk-drag-animating {
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-}
-
+.cdk-drag-animating,
 .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
@@ -397,11 +146,6 @@
   .song-sheet-page {
     .sheet-name-input {
       flex-basis: auto;
-    }
-
-    .section-header,
-    .measure-card-header {
-      flex-direction: column;
     }
 
     .sheet-tab {
@@ -414,14 +158,6 @@
       .btn {
         flex: 1;
       }
-    }
-
-    .measure-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .action-grip-grid {
-      grid-template-columns: 1fr 1fr;
     }
   }
 }

@@ -8,7 +8,7 @@
       type="button"
       (click)="playPattern()">
       <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive()" [class.bi-play-fill]="!isPatternPlaybackActive()"></i>
-      {{ isPatternPlaybackActive() ? 'Stop Preview' : 'Play Preview' }}
+      {{ isPatternPlaybackActive() ? 'Stop' : 'Play' }}
     </button>
     <button type="button" class="btn-close" (click)="onCancel()"></button>
   </div>

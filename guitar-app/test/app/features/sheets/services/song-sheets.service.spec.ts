@@ -143,4 +143,100 @@ describe('SongSheetsService', () => {
     expect(getStoredSheet()?.grips).toEqual([{ gripId: 'grip-g', chordName: 'G' }]);
     expect(getStoredSheet()?.parts[0].items[0].actionGrips).toEqual([]);
   });
+
+  it('duplicates patterns with a new id and independent nested data', async () => {
+    const sheet = createSheet();
+    sheet.patterns[0].measures[0].actions[0] = {
+      technique: 'strum',
+      modifiers: ['accent'],
+      strum: { direction: 'D', strings: 'all' }
+    };
+    const { service, getStoredSheet } = createService(sheet);
+
+    const copy = await service.duplicatePattern('sheet-1', 'pattern-1', 'Copy');
+    const storedSheet = getStoredSheet();
+    const originalPattern = storedSheet?.patterns[0];
+    const copiedPattern = storedSheet?.patterns[1];
+
+    expect(copy.id).not.toBe('pattern-1');
+    expect(copiedPattern?.id).toBe(copy.id);
+    expect(copiedPattern?.name).toBe('Verse Pattern (Copy)');
+    expect(copiedPattern?.isCustom).toBe(true);
+    expect(copiedPattern?.measures).toEqual(originalPattern?.measures);
+    expect(copiedPattern?.actionGrips).toEqual(originalPattern?.actionGrips);
+    expect(copiedPattern?.measures[0]).not.toBe(originalPattern?.measures[0]);
+    expect(copiedPattern?.measures[0].actions[0]).not.toBe(originalPattern?.measures[0].actions[0]);
+    expect(copiedPattern?.actionGrips?.[0]).not.toBe(originalPattern?.actionGrips?.[0]);
+  });
+
+  it('duplicates parts with copied overlays and reused pattern references', async () => {
+    const sheet = createSheet();
+    sheet.parts = [{
+      id: 'part-1',
+      section: 'Verse',
+      items: [{
+        id: 'item-1',
+        patternId: 'pattern-1',
+        measureTexts: [{ measureIndex: 0, lyrics: 'hello', notes: 'accent' }],
+        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', chordName: 'C' }]
+      }]
+    }];
+    const { service, getStoredSheet } = createService(sheet);
+
+    const copy = await service.duplicatePart('sheet-1', 0);
+    const storedSheet = getStoredSheet();
+    const originalPart = storedSheet?.parts[0];
+    const copiedPart = storedSheet?.parts[1];
+
+    expect(copy.id).not.toBe('part-1');
+    expect(copiedPart?.id).toBe(copy.id);
+    expect(copiedPart?.section).toBe('Verse (Copy)');
+    expect(copiedPart?.items).toHaveLength(1);
+    expect(copiedPart?.items[0].id).not.toBe('item-1');
+    expect(copiedPart?.items[0].patternId).toBe('pattern-1');
+    expect(copiedPart?.items[0].measureTexts).toEqual(originalPart?.items[0].measureTexts);
+    expect(copiedPart?.items[0].actionGrips).toEqual(originalPart?.items[0].actionGrips);
+    expect(copiedPart?.items[0].measureTexts[0]).not.toBe(originalPart?.items[0].measureTexts[0]);
+    expect(copiedPart?.items[0].actionGrips[0]).not.toBe(originalPart?.items[0].actionGrips[0]);
+  });
+
+  it('moves patterns and ignores invalid pattern moves', async () => {
+    const sheet = createSheet();
+    sheet.patterns.push({
+      ...sheet.patterns[0],
+      id: 'pattern-2',
+      name: 'Chorus Pattern',
+      actionGrips: []
+    });
+    const { service, getStoredSheet, db } = createService(sheet);
+
+    await service.movePattern('sheet-1', 0, 1);
+
+    expect(getStoredSheet()?.patterns.map(pattern => pattern.id)).toEqual(['pattern-2', 'pattern-1']);
+
+    jest.clearAllMocks();
+    await service.movePattern('sheet-1', -1, 0);
+
+    expect(db.songSheets.put).not.toHaveBeenCalled();
+    expect(getStoredSheet()?.patterns.map(pattern => pattern.id)).toEqual(['pattern-2', 'pattern-1']);
+  });
+
+  it('moves parts and ignores invalid part moves', async () => {
+    const sheet = createSheet();
+    sheet.parts = [
+      { id: 'part-1', section: 'Verse', items: [] },
+      { id: 'part-2', section: 'Chorus', items: [] }
+    ];
+    const { service, getStoredSheet, db } = createService(sheet);
+
+    await service.movePart('sheet-1', 0, 1);
+
+    expect(getStoredSheet()?.parts.map(part => part.id)).toEqual(['part-2', 'part-1']);
+
+    jest.clearAllMocks();
+    await service.movePart('sheet-1', 0, 2);
+
+    expect(db.songSheets.put).not.toHaveBeenCalled();
+    expect(getStoredSheet()?.parts.map(part => part.id)).toEqual(['part-2', 'part-1']);
+  });
 });

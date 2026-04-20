@@ -1,0 +1,111 @@
+<div class="sheet-section">
+  <div class="section-header">
+    <div>
+      <h5 class="mb-0">Song Parts</h5>
+      <p class="section-copy mb-0">Arrange sheet-local patterns into verses, choruses, and bridges.</p>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPart()">
+      <i class="bi bi-plus-lg"></i> Add Part
+    </button>
+  </div>
+
+  @if (sheet().parts.length > 0) {
+  <div cdkDropList (cdkDropListDropped)="dropPart($event)">
+    @for (part of sheet().parts; track part.id; let partIndex = $index) {
+    <div class="card mb-3" cdkDrag>
+      <div class="card-body">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+          <div class="d-flex gap-2">
+            <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
+              <i class="bi bi-grip-vertical"></i>
+            </div>
+            <div>
+              <h6 class="mb-1">{{ part.section }}</h6>
+              <div class="small text-muted">{{ part.items.length }} pattern item(s)</div>
+            </div>
+          </div>
+
+          <div class="d-flex flex-column align-items-start align-items-sm-end gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+              @if (isPartPlaybackActive(part)) {
+              <button
+                class="btn btn-outline-primary btn-sm"
+                type="button"
+                (click)="isPartPlaybackPaused(part) ? resumePart() : pausePart()">
+                <i class="bi" [class.bi-play-fill]="isPartPlaybackPaused(part)" [class.bi-pause-fill]="!isPartPlaybackPaused(part)"></i>
+                {{ isPartPlaybackPaused(part) ? 'Resume' : 'Pause' }}
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="rewindPart()" [disabled]="!canRewindPart(part)">
+                <i class="bi bi-skip-backward-fill"></i> Back
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="forwardPart()" [disabled]="!canForwardPart(part)">
+                <i class="bi bi-skip-forward-fill"></i> Forward
+              </button>
+              <button class="btn btn-outline-danger btn-sm" type="button" (click)="stopPart()">
+                <i class="bi bi-stop-fill"></i> Stop
+              </button>
+              } @else {
+              <button class="btn btn-outline-primary btn-sm" type="button" (click)="playPart(part)">
+                <i class="bi bi-play-fill"></i> Play
+              </button>
+              }
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="editPart(partIndex)">
+                <i class="bi bi-pencil"></i> Edit
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyPart(partIndex)">
+                <i class="bi bi-copy"></i> Copy
+              </button>
+              <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePart(partIndex)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            @if (isPartPlaybackActive(part)) {
+            <div class="small text-muted">{{ getPartMeasureCounter(part) }}</div>
+            }
+          </div>
+        </div>
+
+        @if (part.items.length > 0) {
+        <div class="part-detail-list mt-3">
+          @for (item of part.items; track item.id) {
+          <div class="part-pattern-detail">
+            @if (getPartItemMeasures(item); as measures) {
+            @if (measures.length > 0) {
+            <div class="part-pattern-label">{{ getPatternName(item.patternId) }}</div>
+            <div class="part-measure-list">
+              @for (measure of measures; track measure.itemId + ':' + measure.measureIndex) {
+              <div class="part-measure-detail">
+                @if (hasMeasureNotes(measure)) {
+                <div class="measure-notes">{{ measure.notes }}</div>
+                }
+
+                <div class="measure-actions">
+                  <app-playing-actions
+                    [measures]="[measure.measure]"
+                    [showActionIndex]="true"
+                    [measureWidth]="'100%'"
+                    [notationContexts]="[getMeasureNotationContext(measure)]" />
+                </div>
+
+                @if (hasMeasureLyrics(measure)) {
+                <div class="measure-lyrics">{{ measure.lyrics }}</div>
+                }
+              </div>
+              }
+            </div>
+            } @else if (!hasPattern(item.patternId)) {
+            <div class="alert alert-warning mb-0">This item points to a missing pattern.</div>
+            }
+            }
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="alert alert-info mb-0">No song parts yet. Add a part and compose it measure by measure.</div>
+  }
+</div>

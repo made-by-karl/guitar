@@ -1,8 +1,21 @@
 :host {
   display: block;
+  min-width: 0;
+}
+
+.grip-selector-container {
+  max-width: 100%;
+}
+
+.grip-list-wrapper,
+.grip-list {
+  min-width: 0;
+  width: 100%;
 }
 
 .grip-item {
+  width: 100%;
+  min-width: 0;
   border: 1px solid #dee2e6;
   border-radius: 0.5rem;
   padding: 0.75rem;
@@ -40,4 +53,40 @@
 
 .grip-item-selected .selection-indicator {
   color: #0d6efd;
+}
+
+.grip-card-content {
+  display: flex;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.grip-diagram-panel,
+.grip-detail-panel {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.grip-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.grip-note-list {
+  overflow-wrap: anywhere;
+}
+
+.grip-play-button {
+  align-self: flex-start;
+}
+
+@media (max-width: 575px) {
+  .grip-card-content {
+    flex-direction: column;
+  }
+
+  .grip-play-button {
+    width: 100%;
+  }
 }

@@ -132,7 +132,7 @@
                         <div style="flex: 1; display: flex; flex-direction: column;">
                           <div>
                             @for (note of grip.notes; track $index) {
-                            <span class="note">{{ note ?? '-' }},</span>
+                              <span class="note">{{ note ?? 'x' }}@if (!$last) {,}</span>
                             }
                           </div>
                           @if (grip.inversion && grip.inversion !== 'root') {

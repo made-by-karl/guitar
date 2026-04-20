@@ -295,6 +295,31 @@ export class SongSheetsService {
     await this.update(sheet);
   }
 
+  async duplicatePart(sheetId: string, partIndex: number): Promise<SongPart> {
+    const sheet = await this.getById(sheetId);
+    if (!sheet) {
+      throw new Error('Song sheet not found');
+    }
+
+    const part = sheet.parts[partIndex];
+    if (!part) {
+      throw new Error('Song part not found on song sheet');
+    }
+
+    const copy: SongPart = {
+      id: this.createId('sp'),
+      section: part.section ? part.section + ' (Copy)' : 'Copy',
+      items: part.items.map(item => ({
+        ...this.clonePartItem(item),
+        id: this.createId('spi')
+      }))
+    };
+
+    sheet.parts.push(copy);
+    await this.update(sheet);
+    return copy;
+  }
+
   async movePart(sheetId: string, fromIndex: number, toIndex: number): Promise<void> {
     const sheet = await this.getById(sheetId);
     if (!sheet || fromIndex === toIndex || fromIndex < 0 || toIndex < 0 ||

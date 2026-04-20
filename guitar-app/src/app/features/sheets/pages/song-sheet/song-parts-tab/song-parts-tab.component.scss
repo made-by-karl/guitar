@@ -1,0 +1,88 @@
+.sheet-section {
+  padding: 1.25rem;
+  border: 1px solid #e3d8c5;
+  border-radius: 0 0 1rem 1rem;
+  background: #fffdfa;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-copy {
+  color: #7a7063;
+  font-size: 0.95rem;
+}
+
+.drag-handle {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: 1.2rem;
+}
+
+.part-detail-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.part-pattern-detail {
+  min-width: 0;
+}
+
+.part-pattern-label {
+  margin-bottom: 0.4rem;
+  color: #5f5549;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.part-measure-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.part-measure-detail {
+  min-width: 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e5dccf;
+}
+
+.part-measure-detail:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.measure-notes,
+.measure-lyrics {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #3c3327;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.measure-notes {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.measure-actions {
+  min-width: 0;
+}
+
+.measure-lyrics {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .section-header {
+    flex-direction: column;
+  }
+}

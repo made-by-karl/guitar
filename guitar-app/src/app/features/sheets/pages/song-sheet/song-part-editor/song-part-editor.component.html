@@ -1,0 +1,292 @@
+<div class="part-editor-modal song-sheet-page">
+  <div class="modal-header">
+    <div class="part-editor-header">
+      <div class="part-editor-header-copy">
+        <div class="small text-uppercase text-muted">{{ editingPartIndex === null ? 'New Part' : 'Editing Part' }}</div>
+        <h5 class="modal-title mb-1">{{ editingPartIndex === null ? 'Create Song Part' : 'Edit Song Part' }}</h5>
+        <p class="text-muted mb-0">Import a pattern, then write lyrics and assign grips directly on the measures.</p>
+      </div>
+
+      <div class="part-editor-toolbar">
+        <div class="part-editor-primary-actions">
+          <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatternItem()">
+            <i class="bi bi-plus"></i> Add Pattern To Part
+          </button>
+        </div>
+
+        @if (tempPart(); as part) {
+          @if (part.items.length > 0) {
+            <div class="part-editor-playback-block">
+              <div class="part-editor-playback-actions">
+                @if (isPartPlaybackActive(part)) {
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    type="button"
+                    (click)="isPartPlaybackPaused(part) ? resumePart() : pausePart()">
+                    <i class="bi" [class.bi-play-fill]="isPartPlaybackPaused(part)" [class.bi-pause-fill]="!isPartPlaybackPaused(part)"></i>
+                    {{ isPartPlaybackPaused(part) ? 'Resume' : 'Pause' }}
+                  </button>
+                  <button class="btn btn-outline-secondary btn-sm" type="button" (click)="rewindPart()" [disabled]="!canRewindPart(part)">
+                    <i class="bi bi-skip-backward-fill"></i> Back
+                  </button>
+                  <button class="btn btn-outline-secondary btn-sm" type="button" (click)="forwardPart()" [disabled]="!canForwardPart(part)">
+                    <i class="bi bi-skip-forward-fill"></i> Forward
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" type="button" (click)="stopPart()">
+                    <i class="bi bi-stop-fill"></i> Stop
+                  </button>
+                } @else {
+                  <button class="btn btn-outline-primary btn-sm" type="button" (click)="playPart(part)">
+                    <i class="bi bi-play-fill"></i> Play
+                  </button>
+                }
+              </div>
+
+              @if (isPartPlaybackActive(part)) {
+                <div class="small text-muted part-editor-counter">{{ getPartMeasureCounter(part) }}</div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <button type="button" class="btn-close" (click)="cancel()"></button>
+  </div>
+
+  <div class="modal-body">
+    @if (tempPart(); as part) {
+      <div class="part-editor">
+        <div class="mb-3">
+          <label class="form-label">Section Name</label>
+          <input class="form-control" [ngModel]="part.section" (ngModelChange)="updateSectionName($event)" placeholder="Verse, Chorus, Bridge..." />
+        </div>
+
+        @if (part.items.length > 0) {
+          <div class="pattern-item-stack" cdkDropList (cdkDropListDropped)="dropPatternItem($event)">
+            @for (item of part.items; track item.id; let itemIndex = $index) {
+              <div
+                class="pattern-item card"
+                [class.is-drag-collapsed]="isDraggingPatternItem()"
+                cdkDrag
+                (cdkDragStarted)="isDraggingPatternItem.set(true)"
+                (cdkDragEnded)="isDraggingPatternItem.set(false)">
+                <div class="card-body">
+                  <div
+                    class="d-flex flex-column flex-lg-row gap-3 justify-content-between"
+                    [class.mb-3]="!isDraggingPatternItem()"
+                    [class.mb-0]="isDraggingPatternItem()">
+                    <div class="d-flex gap-2">
+                      <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
+                        <i class="bi bi-grip-vertical"></i>
+                      </div>
+                      <div>
+                        <div class="small text-uppercase text-muted">Pattern Item {{ itemIndex + 1 }}</div>
+                        <h6 class="mb-1">{{ getPatternName(item.patternId) }}</h6>
+                        @if (!isDraggingPatternItem()) {
+                          @if (getPattern(item.patternId); as pattern) {
+                            <div class="small text-muted">{{ pattern.measures.length }} measure(s)</div>
+                          }
+                        }
+                      </div>
+                    </div>
+                    @if (!isDraggingPatternItem()) {
+                      <div class="d-flex flex-wrap gap-2">
+                        <button
+                          class="btn btn-outline-secondary btn-sm"
+                          type="button"
+                          title="Change pattern"
+                          aria-label="Change pattern"
+                          (click)="changePatternItem(item)">
+                          <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-secondary btn-sm"
+                          type="button"
+                          title="Edit pattern"
+                          aria-label="Edit pattern"
+                          (click)="editPattern(item)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-secondary btn-sm"
+                          type="button"
+                          title="Duplicate pattern item"
+                          aria-label="Duplicate pattern item"
+                          (click)="duplicatePatternItem(itemIndex)">
+                          <i class="bi bi-copy"></i>
+                        </button>
+                        <button
+                          class="btn btn-outline-danger btn-sm"
+                          type="button"
+                          title="Remove pattern item"
+                          aria-label="Remove pattern item"
+                          (click)="removePatternItem(itemIndex)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+
+                  @if (!isDraggingPatternItem()) {
+                    @if (getPattern(item.patternId); as pattern) {
+                      <div class="measure-grid">
+                        @for (measure of pattern.measures; track $index; let measureIndex = $index) {
+                          <div class="measure-card">
+                            <div class="measure-card-header">
+                              <div>
+                                <div class="measure-title">Measure {{ measureIndex + 1 }}</div>
+                                <div class="measure-subtitle">{{ pattern.name || 'Untitled Pattern' }} · {{ measure.timeSignature }}</div>
+                              </div>
+                              <div class="d-flex gap-2 flex-wrap">
+                                <button
+                                  class="btn btn-sm"
+                                  type="button"
+                                  [class.btn-danger]="isMeasurePlaybackActive(item, measureIndex)"
+                                  [class.btn-outline-primary]="!isMeasurePlaybackActive(item, measureIndex)"
+                                  (click)="toggleMeasurePlayback(part, item, measureIndex)">
+                                  <i class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(item, measureIndex)" [class.bi-play-fill]="!isMeasurePlaybackActive(item, measureIndex)"></i>
+                                  {{ isMeasurePlaybackActive(item, measureIndex) ? 'Stop' : 'Play' }}
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" type="button" (click)="clearMeasureGrips(item, measureIndex)">
+                                  Clear Grips
+                                </button>
+                              </div>
+                            </div>
+
+                            <div class="rhythm-preview mb-3">
+                              <app-playing-actions
+                                [measures]="[measure]"
+                                [showActionIndex]="true"
+                                [measureWidth]="'100%'"
+                                [notationContexts]="[getPartMeasureNotationContext(item, pattern, measureIndex)]" />
+                            </div>
+
+                            <div class="mb-3">
+                              <label class="form-label small">Lyrics</label>
+                              <textarea
+                                class="form-control form-control-sm"
+                                rows="2"
+                                [(ngModel)]="getMeasureText(item, measureIndex).lyrics"
+                                placeholder="Lyrics for this measure"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                              <label class="form-label small">Notes</label>
+                              <textarea
+                                class="form-control form-control-sm"
+                                rows="2"
+                                [(ngModel)]="getMeasureText(item, measureIndex).notes"
+                                placeholder="Cues, dynamics, picking notes..."></textarea>
+                            </div>
+
+                            <div class="measure-grips-panel">
+                              <button
+                                class="measure-grips-toggle"
+                                type="button"
+                                [attr.aria-expanded]="isMeasureGripsExpanded(item, measureIndex)"
+                                (click)="toggleMeasureGrips(item, measureIndex)">
+                                <span class="measure-grips-toggle-copy">
+                                  <span class="measure-grips-label d-inline-flex align-items-center gap-1 small text-uppercase fw-bold text-muted">
+                                    <i class="bi bi-music-note-beamed"></i>
+                                    Grips
+                                  </span>
+                                  @if (getMeasureGripNames(item, pattern, measureIndex); as gripNames) {
+                                    <span class="measure-grip-sequence d-flex flex-wrap gap-1">
+                                      @if (gripNames.length > 0) {
+                                        @for (gripName of gripNames; track $index) {
+                                          <span class="measure-grip-chip">{{ gripName }}</span>
+                                        }
+                                      } @else {
+                                        <span class="text-muted small">No grips</span>
+                                      }
+                                    </span>
+                                  }
+                                </span>
+                                <i
+                                  class="bi measure-grips-chevron text-muted flex-shrink-0"
+                                  [class.bi-chevron-up]="isMeasureGripsExpanded(item, measureIndex)"
+                                  [class.bi-chevron-down]="!isMeasureGripsExpanded(item, measureIndex)"></i>
+                              </button>
+
+                              @if (isMeasureGripsExpanded(item, measureIndex)) {
+                                <div class="action-grip-grid mt-2">
+                                  @for (actionData of getActionGripPositions(pattern, measureIndex); track actionData.actionIndex) {
+                                    <button
+                                      type="button"
+                                      class="btn btn-sm action-grip-button"
+                                      [class.btn-primary]="getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
+                                      [class.btn-outline-secondary]="!getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)"
+                                      (click)="assignActionGrip(item, pattern, measureIndex, actionData.actionIndex)">
+                                      <span class="action-grip-label">{{ actionData.label }}</span>
+                                      <span class="action-grip-value">
+                                        <i class="bi bi-music-note-beamed"></i>
+                                        {{ getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.chordName || 'Grip' }}
+                                      </span>
+                                    </button>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="alert alert-warning mb-0">This item points to a missing pattern.</div>
+                    }
+                  }
+                </div>
+
+                <ng-template cdkDragPreview>
+                  <div class="pattern-item card is-drag-collapsed pattern-item-drag-preview">
+                    <div class="card-body">
+                      <div class="d-flex gap-2">
+                        <div class="drag-handle text-muted">
+                          <i class="bi bi-grip-vertical"></i>
+                        </div>
+                        <div>
+                          <div class="small text-uppercase text-muted">Pattern Item {{ itemIndex + 1 }}</div>
+                          <h6 class="mb-0">{{ getPatternName(item.patternId) }}</h6>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-template>
+
+                <ng-template cdkDragPlaceholder>
+                  <div class="pattern-item card is-drag-collapsed pattern-item-drag-placeholder">
+                    <div class="card-body">
+                      <div class="d-flex gap-2">
+                        <div class="drag-handle text-muted">
+                          <i class="bi bi-grip-vertical"></i>
+                        </div>
+                        <div>
+                          <div class="small text-uppercase text-muted">Pattern Item {{ itemIndex + 1 }}</div>
+                          <h6 class="mb-0">{{ getPatternName(item.patternId) }}</h6>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-template>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-part-state">
+            <p class="mb-2">No pattern items yet.</p>
+            <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatternItem()">
+              <i class="bi bi-plus"></i> Add First Pattern
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn-success" type="button" (click)="save()" [disabled]="!tempPart().section.trim()">
+      <i class="bi bi-check-lg"></i> Save Part
+    </button>
+  </div>
+</div>
