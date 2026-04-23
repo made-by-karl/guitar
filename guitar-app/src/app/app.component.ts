@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnDestroy} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, TemplateRef} from '@angular/core';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -7,6 +7,7 @@ import {ScreenWakeLockService} from '@/app/core/services/screen-wake-lock.servic
 import {AudioService} from '@/app/core/services/audio.service';
 import {ConsoleLogStoreService} from '@/app/core/services/console-log-store.service';
 import {NotificationSnackbarComponent} from '@/app/core/ui/notification-snackbar/notification-snackbar.component';
+import {isPageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
 import {timer} from 'rxjs';
 
 @Component({
@@ -19,6 +20,8 @@ import {timer} from 'rxjs';
 export class AppComponent implements AfterViewInit, OnDestroy {
   title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
+  pageToolbarTemplate: TemplateRef<object> | null = null;
+  pageToolbarContext: object | null = null;
 
   constructor(
     private updateService: UpdateService,
@@ -57,8 +60,27 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     return this.wakeLockService.isWakeLockSupported();
   }
 
+  onRouteActivate(component: unknown): void {
+    if (!isPageToolbarProvider(component)) {
+      this.clearPageToolbar();
+      return;
+    }
+
+    this.pageToolbarTemplate = component.toolbarTemplate;
+    this.pageToolbarContext = component.toolbarContext ?? null;
+  }
+
+  onRouteDeactivate(): void {
+    this.clearPageToolbar();
+  }
+
   ngOnDestroy() {
     // Release wake lock when app is destroyed
     this.wakeLockService.releaseWakeLock();
+  }
+
+  private clearPageToolbar(): void {
+    this.pageToolbarTemplate = null;
+    this.pageToolbarContext = null;
   }
 }

@@ -62,12 +62,16 @@
 </nav>
 
 <div class="secondary-bar">
-  <div class="container d-flex align-items-center justify-content-between py-2">
-    <div class="d-flex align-items-center">
-
+  <div class="container secondary-bar-content">
+    <div class="secondary-bar-start">
+      @if (pageToolbarTemplate) {
+      <ng-container
+        [ngTemplateOutlet]="pageToolbarTemplate"
+        [ngTemplateOutletContext]="pageToolbarContext"></ng-container>
+      }
     </div>
     @if (isKeepScreenOnSupported()) {
-    <div class="d-flex align-items-center">
+    <div class="secondary-bar-end d-flex align-items-center">
       <i class="bi bi-{{ isKeepScreenOnActive() ? 'brightness-high-fill' : 'brightness-high' }} me-2 text-muted"></i>
       <span class="small text-muted me-2">Keep Screen On</span>
       <div class="form-check form-switch mb-0">
@@ -86,7 +90,7 @@
 </div>
 
 <div class="app-content-container">
-  <router-outlet></router-outlet>
+  <router-outlet (activate)="onRouteActivate($event)" (deactivate)="onRouteDeactivate()"></router-outlet>
 </div>
 
 <app-notification-snackbar></app-notification-snackbar>

@@ -8,6 +8,46 @@ import { ModalService } from '@/app/core/services/modal.service';
 import { NotificationService } from '@/app/core/services/notification.service';
 
 describe('PatternsLibraryComponent', () => {
+  let originalIntersectionObserver: typeof IntersectionObserver | undefined;
+  let observerCallback: IntersectionObserverCallback | undefined;
+
+  beforeEach(() => {
+    originalIntersectionObserver = globalThis.IntersectionObserver;
+    observerCallback = undefined;
+
+    globalThis.IntersectionObserver = class MockIntersectionObserver implements IntersectionObserver {
+      readonly root: Element | Document | null;
+      readonly rootMargin = '';
+      readonly thresholds = [0.1];
+
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        observerCallback = callback;
+        this.root = options?.root ?? null;
+      }
+
+      disconnect(): void {}
+      observe(): void {}
+      unobserve(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
+        return [];
+      }
+    };
+
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'app-content-container';
+    document.body.appendChild(scrollContainer);
+  });
+
+  afterEach(() => {
+    document.querySelector('.app-content-container')?.remove();
+
+    if (originalIntersectionObserver) {
+      globalThis.IntersectionObserver = originalIntersectionObserver;
+    } else {
+      delete (globalThis as Partial<typeof globalThis>).IntersectionObserver;
+    }
+  });
+
   it('renders suggested genre and example song for a pattern', async () => {
     const service = {
       getAll: jest.fn().mockResolvedValue([{
@@ -50,6 +90,42 @@ describe('PatternsLibraryComponent', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Genre: Folk Singalong');
     expect(text).toContain('Song: Leaving on a Jet Plane');
+  });
+
+  it('provides a toolbar create button only after the header scrolls out of view', async () => {
+    const service = {
+      getAll: jest.fn().mockResolvedValue([]),
+      createClone: jest.fn(),
+      restoreMissingDefaults: jest.fn()
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [PatternsLibraryComponent],
+      providers: [
+        { provide: PlayingPatternsService, useValue: service },
+        { provide: PatternPlaybackService, useValue: createPatternPlaybackMock() },
+        { provide: DialogService, useValue: { confirm: jest.fn(), alert: jest.fn() } },
+        { provide: ModalService, useValue: { show: jest.fn() } },
+        { provide: NotificationService, useValue: { success: jest.fn() } }
+      ]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(PatternsLibraryComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.toolbarTemplate).toBeTruthy();
+    expect(fixture.componentInstance.showToolbarCreateButton).toBe(false);
+    expect(observerCallback).toBeDefined();
+
+    observerCallback?.(
+      [{ isIntersecting: false } as IntersectionObserverEntry],
+      {} as IntersectionObserver
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.showToolbarCreateButton).toBe(true);
   });
 
   it('offers clone and delete for default patterns without edit', async () => {

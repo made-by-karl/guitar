@@ -1,5 +1,5 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {CommonModule, DOCUMENT} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {PlayingPatternsService} from '@/app/features/patterns/services/playing-patterns.service';
 import {PlayingPattern} from '@/app/features/patterns/services/playing-patterns.model';
@@ -13,6 +13,7 @@ import {PlayingActionsComponent} from '@/app/features/patterns/ui/playing-action
 import { PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import {Subscription} from 'rxjs';
 import {PatternPlaybackService} from '@/app/features/patterns/services/pattern-playback.service';
+import {PageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
 
 type PatternEditorMode = 'create' | 'edit' | 'clone';
 
@@ -23,18 +24,25 @@ type PatternEditorMode = 'create' | 'edit' | 'clone';
   templateUrl: './patterns-library.component.html',
   styleUrls: ['./patterns-library.component.scss']
 })
-export class PatternsLibraryComponent implements OnInit, OnDestroy {
+export class PatternsLibraryComponent implements OnInit, AfterViewInit, OnDestroy, PageToolbarProvider {
+  @ViewChild('pageToolbar', { static: true }) private readonly pageToolbarTemplateRef?: TemplateRef<object>;
+  @ViewChild('pageHeader', { read: ElementRef }) private readonly pageHeaderRef?: ElementRef<HTMLElement>;
+
   patterns: PlayingPattern[] = [];
   search = '';
+  showToolbarCreateButton = false;
+  readonly toolbarContext = null;
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   private readonly playbackStateSubscription: Subscription;
+  private headerVisibilityObserver?: IntersectionObserver;
 
   constructor(
     public service: PlayingPatternsService,
     private patternPlayback: PatternPlaybackService,
     private dialogService: DialogService,
     private modalService: ModalService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    @Inject(DOCUMENT) private document: Document
   ) {
     this.playbackState = this.patternPlayback.getSnapshot();
     this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
@@ -46,9 +54,18 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  ngAfterViewInit(): void {
+    this.observePageHeaderVisibility();
+  }
+
   ngOnDestroy(): void {
+    this.headerVisibilityObserver?.disconnect();
     this.playbackStateSubscription.unsubscribe();
     this.patternPlayback.stopPatternPreview();
+  }
+
+  get toolbarTemplate(): TemplateRef<object> | null {
+    return this.pageToolbarTemplateRef ?? null;
   }
 
   async load() {
@@ -198,5 +215,27 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
       'OK',
       { variant: 'success' }
     );
+  }
+
+  private observePageHeaderVisibility(): void {
+    const headerElement = this.pageHeaderRef?.nativeElement;
+    const scrollContainer = this.document.querySelector('.app-content-container');
+
+    if (!headerElement || !(scrollContainer instanceof HTMLElement) || typeof IntersectionObserver === 'undefined') {
+      this.showToolbarCreateButton = true;
+      return;
+    }
+
+    this.headerVisibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        this.showToolbarCreateButton = !entry.isIntersecting;
+      },
+      {
+        root: scrollContainer,
+        threshold: 0.1
+      }
+    );
+
+    this.headerVisibilityObserver.observe(headerElement);
   }
 }
