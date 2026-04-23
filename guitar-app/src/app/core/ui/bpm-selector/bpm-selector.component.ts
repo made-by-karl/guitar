@@ -11,11 +11,11 @@ type BpmPreset = {
 };
 
 const BPM_PRESETS: readonly BpmPreset[] = [
-  { id: 'very-slow', label: 'Very slow (60)', bpm: 60 },
-  { id: 'slow', label: 'Slow (85)', bpm: 85 },
-  { id: 'moderate', label: 'Moderate (120)', bpm: 120 },
-  { id: 'fast', label: 'Fast (140)', bpm: 140 },
-  { id: 'very-fast', label: 'Very fast (180)', bpm: 180 }
+  { id: 'very-slow', label: 'Very slow (45)', bpm: 45 },
+  { id: 'slow', label: 'Slow (60)', bpm: 60 },
+  { id: 'moderate', label: 'Moderate (80)', bpm: 80 },
+  { id: 'fast', label: 'Fast (110)', bpm: 110 },
+  { id: 'very-fast', label: 'Very fast (140)', bpm: 140 }
 ];
 
 @Component({

@@ -36,7 +36,7 @@ export class MetronomeService implements OnDestroy {
     running: false,
     config: { bpm: 80, timeSignature: '4/4', subdivision: '8th' },
     labels: buildMetronomeLabels('4/4', '8th'),
-    activeIndex: 0,
+    activeIndex: -1,
     tickAudioTime: 0,
     tickDurationSeconds: 0.5
   });
@@ -78,7 +78,9 @@ export class MetronomeService implements OnDestroy {
     if (previous.running) {
       this.stateSubject.next({
         ...previous,
-        running: false
+        running: false,
+        activeIndex: -1,
+        tickAudioTime: 0
       });
     }
   }
@@ -156,15 +158,21 @@ export class MetronomeService implements OnDestroy {
     const labels = buildMetronomeLabels(timeSignature, subdivision);
     const tickDurationSeconds = this.computeTickDurationSeconds(bpm, parts.bottom, subdivision);
     const previous = this.stateSubject.getValue();
+    const isBpmOnlyUpdate = startTransport &&
+      previous.running &&
+      previous.config.timeSignature === timeSignature &&
+      previous.config.subdivision === subdivision;
 
-    this.tickIndex = -1;
+    if (!isBpmOnlyUpdate) {
+      this.tickIndex = -1;
+    }
 
     this.stateSubject.next({
       running: startTransport,
       config: { bpm, timeSignature, subdivision },
       labels,
-      activeIndex: 0,
-      tickAudioTime: this.audioService.now(),
+      activeIndex: isBpmOnlyUpdate ? previous.activeIndex : (startTransport ? -1 : previous.activeIndex),
+      tickAudioTime: isBpmOnlyUpdate ? previous.tickAudioTime : 0,
       tickDurationSeconds
     });
 
@@ -178,10 +186,16 @@ export class MetronomeService implements OnDestroy {
     const transport = this.audioService.getTransport();
     transport.bpm.value = bpm;
     transport.timeSignature = [parts.top, parts.bottom];
+
+    if (isBpmOnlyUpdate) {
+      return;
+    }
+
+    const repeatStartTime = transport.seconds + 0.05;
     this.scheduler.replaceSchedule(() => [
       transport.scheduleRepeat((time) => {
         this.onTick(time);
-      }, this.getRepeatInterval(parts.bottom, subdivision), '+0.05')
+      }, this.getRepeatInterval(parts.bottom, subdivision), repeatStartTime)
     ], true);
   }
 

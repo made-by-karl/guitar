@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BehaviorSubject } from 'rxjs';
 import { MetronomeComponent } from '@/app/features/metronome/pages/metronome-page/metronome.component';
 import { MetronomeConfig, MetronomeService, MetronomeState } from '@/app/features/metronome/services/metronome.service';
 import { AudioService } from '@/app/core/services/audio.service';
+import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
 import { buildMetronomeLabels } from '@/app/features/metronome/services/metronome-labels';
 
 describe('MetronomeComponent', () => {
@@ -88,5 +90,20 @@ describe('MetronomeComponent', () => {
       subdivision: '16th'
     });
     expect(component.labels).toEqual(['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a']);
+  });
+
+  it('updates playback immediately when the bpm changes', () => {
+    const bpmSelector = fixture.debugElement.query(By.directive(BpmSelectorComponent)).componentInstance as BpmSelectorComponent;
+
+    bpmSelector.onModeChange('custom');
+    bpmSelector.onCustomInput('132');
+    fixture.detectChanges();
+
+    expect(component.bpm).toBe(132);
+    expect(mockMetronomeService.updateConfig).toHaveBeenCalledWith({
+      bpm: 132,
+      timeSignature: '4/4',
+      subdivision: '8th'
+    });
   });
 });

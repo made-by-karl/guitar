@@ -109,7 +109,7 @@ describe('MetronomeService', () => {
       subdivision: '16th'
     });
 
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalledWith(expect.any(Function), '16n', '+0.05');
+    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalledWith(expect.any(Function), '16n', 0.05);
     expect(service.getSnapshot().tickDurationSeconds).toBeCloseTo(0.125);
   });
 
@@ -118,7 +118,7 @@ describe('MetronomeService', () => {
     const service = new MetronomeService(audio);
 
     (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 0;
+    (Tone as any).Transport.seconds = 12.5;
     (Tone as any).Transport.scheduleRepeat
       .mockReturnValueOnce(11)
       .mockReturnValueOnce(12);
@@ -136,8 +136,44 @@ describe('MetronomeService', () => {
     });
 
     expect((Tone as any).Transport.clear).toHaveBeenCalledWith(11);
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenLastCalledWith(expect.any(Function), '16n', '+0.05');
+    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenLastCalledWith(expect.any(Function), '16n', 12.55);
     expect(service.getSnapshot().labels).toEqual(['1', 'e', '2', 'e', '3', 'e', '4', 'e', '5', 'e', '6', 'e']);
+    expect(service.getSnapshot().activeIndex).toBe(-1);
+    expect(service.getSnapshot().running).toBe(true);
+  });
+
+  it('updates bpm without rebuilding the repeat schedule when only tempo changes while running', async () => {
+    const audio = new AudioService();
+    const service = new MetronomeService(audio);
+
+    (Tone as any).Transport.state = 'started';
+    (Tone as any).Transport.seconds = 8;
+    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(21);
+
+    await service.start({
+      bpm: 60,
+      timeSignature: '4/4',
+      subdivision: '8th'
+    });
+
+    const callback = (Tone as any).Transport.scheduleRepeat.mock.calls[0][0];
+    callback(8.1);
+
+    (Tone as any).Transport.clear.mockClear();
+    (Tone as any).Transport.scheduleRepeat.mockClear();
+
+    await service.updateConfig({
+      bpm: 120,
+      timeSignature: '4/4',
+      subdivision: '8th'
+    });
+
+    expect((Tone as any).Transport.bpm.value).toBe(120);
+    expect((Tone as any).Transport.clear).not.toHaveBeenCalled();
+    expect((Tone as any).Transport.scheduleRepeat).not.toHaveBeenCalled();
+    expect(service.getSnapshot().activeIndex).toBe(0);
+    expect(service.getSnapshot().tickAudioTime).toBe(8.1);
+    expect(service.getSnapshot().tickDurationSeconds).toBeCloseTo(0.25);
     expect(service.getSnapshot().running).toBe(true);
   });
 

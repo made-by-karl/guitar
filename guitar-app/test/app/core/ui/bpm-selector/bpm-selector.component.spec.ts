@@ -20,21 +20,21 @@ describe('BpmSelectorComponent', () => {
     const changes: number[] = [];
     component.registerOnChange(value => changes.push(value));
 
-    component.writeValue(128);
+    component.writeValue(103);
     component.onModeChange('tempo');
 
-    expect(component.selectedPresetId).toBe('moderate');
-    expect(changes.at(-1)).toBe(120);
+    expect(component.selectedPresetId).toBe('fast');
+    expect(changes.at(-1)).toBe(110);
   });
 
   it('breaks ties toward the slower preset', () => {
     const changes: number[] = [];
     component.registerOnChange(value => changes.push(value));
 
-    component.writeValue(130);
+    component.writeValue(125);
     component.onModeChange('tempo');
 
-    expect(component.selectedPresetId).toBe('moderate');
-    expect(changes.at(-1)).toBe(120);
+    expect(component.selectedPresetId).toBe('fast');
+    expect(changes.at(-1)).toBe(110);
   });
 });

@@ -29,7 +29,7 @@ export class MetronomeComponent implements OnInit, OnDestroy {
 
   labels: string[] = [];
   scales: number[] = [];
-  activeIndex = 0;
+  activeIndex = -1;
   running = false;
 
   private tickAudioTime = 0;
@@ -81,6 +81,10 @@ export class MetronomeComponent implements OnInit, OnDestroy {
 
   stop(): void {
     this.metronomeService.stop();
+  }
+
+  async onBpmChange(): Promise<void> {
+    await this.syncConfig();
   }
 
   async onTimeSignatureChange(): Promise<void> {
@@ -150,7 +154,9 @@ export class MetronomeComponent implements OnInit, OnDestroy {
       const elapsed = now - this.tickAudioTime;
       const progress = this.tickDurationSeconds > 0 ? Math.min(1, Math.max(0, elapsed / this.tickDurationSeconds)) : 1;
       const scale = 1 + 0.6 * (1 - progress);
-      scales[this.activeIndex] = scale;
+      if (this.activeIndex >= 0 && this.activeIndex < scales.length) {
+        scales[this.activeIndex] = scale;
+      }
     }
 
     // Avoid re-render work when nothing changes
