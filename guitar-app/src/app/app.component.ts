@@ -6,12 +6,13 @@ import {UpdateService} from '@/app/core/services/update.service';
 import {ScreenWakeLockService} from '@/app/core/services/screen-wake-lock.service';
 import {AudioService} from '@/app/core/services/audio.service';
 import {ConsoleLogStoreService} from '@/app/core/services/console-log-store.service';
+import {NotificationSnackbarComponent} from '@/app/core/ui/notification-snackbar/notification-snackbar.component';
 import {timer} from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule, FormsModule, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, CommonModule, FormsModule, RouterLinkActive, NotificationSnackbarComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })

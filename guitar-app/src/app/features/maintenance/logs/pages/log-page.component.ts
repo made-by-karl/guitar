@@ -2,6 +2,7 @@ import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ConsoleLogStoreService, ConsoleLogEntry } from '@/app/core/services/console-log-store.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 @Component({
   selector: 'app-log-page',
@@ -92,7 +93,8 @@ export class LogPageComponent {
 
   constructor(
     private consoleLogStore: ConsoleLogStoreService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private notificationService: NotificationService
   ) {}
 
   async clear(): Promise<void> {
@@ -122,6 +124,7 @@ export class LogPageComponent {
 
     try {
       await navigator.clipboard.writeText(this.consoleLogStore.exportJson());
+      this.notificationService.success('Copied logs to clipboard');
     } catch (error) {
       console.error('Failed to copy logs:', error);
       await this.dialogService.alert(

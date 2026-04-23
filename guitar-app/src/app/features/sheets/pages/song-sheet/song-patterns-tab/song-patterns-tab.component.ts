@@ -2,6 +2,7 @@ import { Component, OnDestroy, inject, input, output } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ModalService } from '@/app/core/services/modal.service';
 import { DialogService } from '@/app/core/services/dialog.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 import { transpose } from '@/app/core/music/semitones';
 import { PatternPlaybackService, PatternPlaybackState } from '@/app/features/patterns/services/pattern-playback.service';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
@@ -37,6 +38,7 @@ export class SongPatternsTabComponent implements OnDestroy {
   private readonly songSheetService = inject(SongSheetsService);
   private readonly dialogService = inject(DialogService);
   private readonly modalService = inject(ModalService);
+  private readonly notificationService = inject(NotificationService);
   private readonly patternPlaybackSubscription: Subscription;
 
   constructor() {
@@ -92,7 +94,8 @@ export class SongPatternsTabComponent implements OnDestroy {
   }
 
   async copyPattern(patternId: string): Promise<void> {
-    await this.songSheetService.duplicatePattern(this.sheet().id, patternId, 'Copy');
+    const copy = await this.songSheetService.duplicatePattern(this.sheet().id, patternId, 'Copy');
+    this.notificationService.success(`Copied pattern "${copy.name || 'Untitled Pattern'}"`);
     this.changed.emit();
   }
 

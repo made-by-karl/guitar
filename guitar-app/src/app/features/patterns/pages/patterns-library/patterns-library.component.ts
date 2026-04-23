@@ -5,6 +5,7 @@ import {PlayingPatternsService} from '@/app/features/patterns/services/playing-p
 import {PlayingPattern} from '@/app/features/patterns/services/playing-patterns.model';
 import {DialogService} from '@/app/core/services/dialog.service';
 import {ModalService} from '@/app/core/services/modal.service';
+import {NotificationService} from '@/app/core/services/notification.service';
 import {
   PlayingPatternEditorModalComponent
 } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
@@ -32,7 +33,8 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     public service: PlayingPatternsService,
     private patternPlayback: PatternPlaybackService,
     private dialogService: DialogService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private notificationService: NotificationService
   ) {
     this.playbackState = this.patternPlayback.getSnapshot();
     this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
@@ -106,11 +108,11 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     const result = await modalRef.afterClosed();
 
     if (result) {
-      await this.onPatternSaved(result);
+      await this.onPatternSaved(result, mode);
     }
   }
 
-  private async onPatternSaved(pattern: PlayingPattern) {
+  private async onPatternSaved(pattern: PlayingPattern, mode: PatternEditorMode) {
     // Check if this is a new pattern (not in our patterns array yet)
     const existingPatternIndex = this.patterns.findIndex(p => p.id === pattern.id);
 
@@ -123,6 +125,10 @@ export class PatternsLibraryComponent implements OnInit, OnDestroy {
     }
 
     await this.load();
+
+    if (mode === 'clone') {
+      this.notificationService.success(`Cloned pattern "${pattern.name || 'Untitled Pattern'}"`);
+    }
   }
 
   get filteredPatterns() {

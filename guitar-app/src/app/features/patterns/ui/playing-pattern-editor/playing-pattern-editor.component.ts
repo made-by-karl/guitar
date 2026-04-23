@@ -38,6 +38,7 @@ import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/feature
 import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { chordToString } from '@/app/core/music/chords';
 import { DialogService } from '@/app/core/services/dialog.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
 type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
@@ -91,7 +92,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   constructor(
     private patternPlayback: PatternPlaybackService,
     private modalService: ModalService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private notificationService: NotificationService
   ) {
     this.playbackState = this.patternPlayback.getSnapshot();
     this.playbackStateSubscription = this.patternPlayback.state$.subscribe(state => {
@@ -151,6 +153,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
         .map(grip => ({ ...grip, measureIndex: 0 })),
       useSixteenthSteps: this.measureDisplayStates.get(measureIndex) ?? this.measureRequiresSixteenthSteps(measure)
     };
+    this.notificationService.success(`Copied measure ${measureIndex + 1}`);
   }
 
   private insertMeasureAtEnd(useCopiedMeasure: boolean): void {

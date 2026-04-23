@@ -2,6 +2,7 @@ import { Component, OnDestroy, computed, inject, input, output } from '@angular/
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ModalService } from '@/app/core/services/modal.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 import { PlayingPatternActionGrip } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { ResolvedSongPartMeasure, SongPart, SongPartPatternItem, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
@@ -34,6 +35,7 @@ export class SongPartsTabComponent implements OnDestroy {
   private readonly songSheetService = inject(SongSheetsService);
   private readonly dialogService = inject(DialogService);
   private readonly modalService = inject(ModalService);
+  private readonly notificationService = inject(NotificationService);
   private readonly songPartPlayback = inject(SongPartPlaybackService);
   private readonly patternNames = computed(() => (
     new Map(this.sheet().patterns.map(pattern => [pattern.id, pattern.name || 'Untitled Pattern']))
@@ -61,7 +63,8 @@ export class SongPartsTabComponent implements OnDestroy {
   }
 
   async copyPart(partIndex: number): Promise<void> {
-    await this.songSheetService.duplicatePart(this.sheet().id, partIndex);
+    const copy = await this.songSheetService.duplicatePart(this.sheet().id, partIndex);
+    this.notificationService.success(`Copied part "${copy.section}"`);
     this.changed.emit();
   }
 

@@ -5,6 +5,7 @@ import { PatternPlaybackService } from '@/app/features/patterns/services/pattern
 import { BehaviorSubject } from 'rxjs';
 import { ModalService } from '@/app/core/services/modal.service';
 import { DialogService } from '@/app/core/services/dialog.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 describe('PlayingPatternEditorComponent', () => {
   let component: PlayingPatternEditorComponent;
@@ -14,6 +15,7 @@ describe('PlayingPatternEditorComponent', () => {
   };
   let mockModalService: jest.Mocked<Pick<ModalService, 'show'>>;
   let mockDialogService: jest.Mocked<Pick<DialogService, 'confirm'>>;
+  let mockNotificationService: jest.Mocked<Pick<NotificationService, 'success'>>;
 
   beforeEach(async () => {
     mockPatternPlaybackService = {
@@ -28,13 +30,17 @@ describe('PlayingPatternEditorComponent', () => {
     mockDialogService = {
       confirm: jest.fn().mockResolvedValue(false)
     };
+    mockNotificationService = {
+      success: jest.fn()
+    };
 
     await TestBed.configureTestingModule({
       imports: [PlayingPatternEditorComponent],
       providers: [
         { provide: PatternPlaybackService, useValue: mockPatternPlaybackService },
         { provide: ModalService, useValue: mockModalService },
-        { provide: DialogService, useValue: mockDialogService }
+        { provide: DialogService, useValue: mockDialogService },
+        { provide: NotificationService, useValue: mockNotificationService }
       ]
     })
     .compileComponents();
@@ -235,6 +241,7 @@ describe('PlayingPatternEditorComponent', () => {
       { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
       { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
     ]);
+    expect(mockNotificationService.success).toHaveBeenCalledWith('Copied measure 1');
   });
 
   it('asks whether to use a copied measure when adding a measure', async () => {

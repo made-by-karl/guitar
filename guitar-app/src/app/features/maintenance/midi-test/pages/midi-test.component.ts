@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { MidiService } from '@/app/core/services/midi.service';
 import { MidiTechnique } from '@/app/core/services/midi.model';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 @Component({
   selector: 'app-midi-test',
@@ -109,13 +110,6 @@ import { MidiTechnique } from '@/app/core/services/midi.model';
         </div>
       </div>
       
-      <div class="row mt-4" *ngIf="status">
-        <div class="col-12">
-          <div class="alert alert-info">
-            <strong>Status:</strong> {{ status }}
-          </div>
-        </div>
-      </div>
     </div>
   `,
   styles: [`
@@ -128,23 +122,21 @@ import { MidiTechnique } from '@/app/core/services/midi.model';
   `]
 })
 export class MidiTestComponent {
-  status: string = '';
-
   // Standard guitar tuning (open strings)
   private openStrings = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
 
   constructor(
     private playbackService: PlaybackService,
-    private midiService: MidiService
+    private midiService: MidiService,
+    private notificationService: NotificationService
   ) {}
 
   async playChord(notes: string[]) {
     try {
-      this.status = `Playing chord: ${notes.join(', ')}`;
+      this.notificationService.info(`Playing chord: ${notes.join(', ')}`);
       await this.playbackService.playChordFromNotes(notes, 2.0, 0.7, 'normal');
-      this.status = 'Chord finished playing';
     } catch (error) {
-      this.status = `Error playing chord: ${error}`;
+      this.notificationService.error('Could not play chord.');
       console.error('Error playing chord:', error);
     }
   }
@@ -153,12 +145,10 @@ export class MidiTestComponent {
     try {
       // Play a C major chord with the specified technique
       const chordNotes = ['C4', 'E4', 'G4'];
-      this.status = `Playing C major chord with ${technique} technique`;
-      
+      this.notificationService.info(`Playing ${this.getTechniqueLabel(technique)} technique`);
       await this.playbackService.playChordFromNotes(chordNotes, 1.5, 0.7, technique);
-      this.status = `${technique} technique finished playing`;
     } catch (error) {
-      this.status = `Error playing ${technique}: ${error}`;
+      this.notificationService.error(`Could not play ${this.getTechniqueLabel(technique)} technique.`);
       console.error(`Error playing ${technique}:`, error);
     }
   }
@@ -167,24 +157,37 @@ export class MidiTestComponent {
     try {
       const note = this.openStrings[stringIndex];
       const stringName = ['Low E (6th)', 'A (5th)', 'D (4th)', 'G (3rd)', 'B (2nd)', 'High E (1st)'][stringIndex];
-      
-      this.status = `Playing ${stringName} string: ${note}`;
+
+      this.notificationService.info(`Playing ${stringName}: ${note}`);
       await this.playbackService.playChordFromNotes([note], 2.0, 0.7, 'normal');
-      this.status = `${stringName} string finished playing`;
     } catch (error) {
-      this.status = `Error playing string: ${error}`;
+      this.notificationService.error('Could not play string.');
       console.error('Error playing string:', error);
     }
   }
 
   async playPercussion(technique: string) {
     try {
-      this.status = `Playing percussion technique: ${technique}`;
+      this.notificationService.info(`Playing ${this.getPercussionLabel(technique)}`);
       await this.midiService.playPercussionTechnique(technique);
-      this.status = `Percussion technique ${technique} finished`;
     } catch (error) {
-      this.status = `Error playing percussion ${technique}: ${error}`;
+      this.notificationService.error(`Could not play ${this.getPercussionLabel(technique)}.`);
       console.error(`Error playing percussion ${technique}:`, error);
+    }
+  }
+
+  private getTechniqueLabel(technique: MidiTechnique): string {
+    return technique.replace(/-/g, ' ');
+  }
+
+  private getPercussionLabel(technique: string): string {
+    switch (technique) {
+      case 'body_knock':
+        return 'body knock percussion';
+      case 'string_slap':
+        return 'string slap percussion';
+      default:
+        return technique;
     }
   }
 }

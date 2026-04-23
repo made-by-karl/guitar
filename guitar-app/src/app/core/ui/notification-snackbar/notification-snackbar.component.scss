@@ -1,0 +1,45 @@
+.notification-snackbar-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1080;
+  pointer-events: none;
+  width: min(100vw - 24px, 420px);
+}
+
+.notification-snackbar {
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: rgba(33, 37, 41, 0.96);
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  animation: notification-snackbar-enter 180ms ease-out;
+}
+
+.notification-snackbar.is-success {
+  background: rgba(25, 135, 84, 0.96);
+}
+
+.notification-snackbar.is-danger {
+  background: rgba(220, 53, 69, 0.98);
+}
+
+.notification-message {
+  display: block;
+}
+
+@keyframes notification-snackbar-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

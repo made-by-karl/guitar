@@ -1,0 +1,11 @@
+@if (notificationService.notification(); as notification) {
+  <div class="notification-snackbar-wrap" aria-live="polite" aria-atomic="true">
+    <div
+      class="notification-snackbar"
+      [class.is-success]="notification.variant === 'success'"
+      [class.is-danger]="notification.variant === 'danger'"
+      role="status">
+      <span class="notification-message">{{ notification.message }}</span>
+    </div>
+  </div>
+}

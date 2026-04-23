@@ -5,6 +5,7 @@ import { PlayingPatternsService } from '@/app/features/patterns/services/playing
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ModalService } from '@/app/core/services/modal.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 describe('PatternsLibraryComponent', () => {
   it('renders suggested genre and example song for a pattern', async () => {
@@ -36,7 +37,8 @@ describe('PatternsLibraryComponent', () => {
         { provide: PlayingPatternsService, useValue: service },
         { provide: PatternPlaybackService, useValue: patternPlayback },
         { provide: DialogService, useValue: { confirm: jest.fn() } },
-        { provide: ModalService, useValue: { show: jest.fn() } }
+        { provide: ModalService, useValue: { show: jest.fn() } },
+        { provide: NotificationService, useValue: { success: jest.fn() } }
       ]
     }).compileComponents();
 
@@ -64,7 +66,8 @@ describe('PatternsLibraryComponent', () => {
         { provide: PlayingPatternsService, useValue: service },
         { provide: PatternPlaybackService, useValue: patternPlayback },
         { provide: DialogService, useValue: { confirm: jest.fn(), alert: jest.fn() } },
-        { provide: ModalService, useValue: { show: jest.fn() } }
+        { provide: ModalService, useValue: { show: jest.fn() } },
+        { provide: NotificationService, useValue: { success: jest.fn() } }
       ]
     }).compileComponents();
 
@@ -93,7 +96,8 @@ describe('PatternsLibraryComponent', () => {
         { provide: PlayingPatternsService, useValue: service },
         { provide: PatternPlaybackService, useValue: patternPlayback },
         { provide: DialogService, useValue: { confirm: jest.fn(), alert: jest.fn() } },
-        { provide: ModalService, useValue: { show: jest.fn() } }
+        { provide: ModalService, useValue: { show: jest.fn() } },
+        { provide: NotificationService, useValue: { success: jest.fn() } }
       ]
     }).compileComponents();
 
@@ -122,7 +126,8 @@ describe('PatternsLibraryComponent', () => {
         { provide: PlayingPatternsService, useValue: service },
         { provide: PatternPlaybackService, useValue: createPatternPlaybackMock() },
         { provide: DialogService, useValue: dialog },
-        { provide: ModalService, useValue: { show: jest.fn() } }
+        { provide: ModalService, useValue: { show: jest.fn() } },
+        { provide: NotificationService, useValue: { success: jest.fn() } }
       ]
     }).compileComponents();
 
@@ -140,6 +145,44 @@ describe('PatternsLibraryComponent', () => {
       'OK',
       { variant: 'success' }
     );
+  });
+
+  it('shows a success notification after saving a cloned pattern', async () => {
+    const clonedPattern = createPattern({ id: 'pattern-2', isCustom: true, name: 'Folk Strum Copy' });
+    const service = {
+      getAll: jest.fn().mockResolvedValue([createPattern({ id: 'pattern-1', isCustom: false })]),
+      createClone: jest.fn().mockReturnValue(clonedPattern),
+      restoreMissingDefaults: jest.fn(),
+      add: jest.fn().mockResolvedValue(undefined),
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    const notificationService = { success: jest.fn() };
+    const modalService = {
+      show: jest.fn().mockReturnValue({
+        componentInstance: {},
+        afterClosed: jest.fn().mockResolvedValue(clonedPattern)
+      })
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [PatternsLibraryComponent],
+      providers: [
+        { provide: PlayingPatternsService, useValue: service },
+        { provide: PatternPlaybackService, useValue: createPatternPlaybackMock() },
+        { provide: DialogService, useValue: { confirm: jest.fn(), alert: jest.fn() } },
+        { provide: ModalService, useValue: modalService },
+        { provide: NotificationService, useValue: notificationService }
+      ]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(PatternsLibraryComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await fixture.componentInstance.startClone(createPattern({ id: 'pattern-1', isCustom: false }));
+
+    expect(service.add).toHaveBeenCalledWith(clonedPattern);
+    expect(notificationService.success).toHaveBeenCalledWith('Cloned pattern "Folk Strum Copy"');
   });
 });
 

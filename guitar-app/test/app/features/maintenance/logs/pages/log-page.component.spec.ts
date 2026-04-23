@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { LogPageComponent } from '@/app/features/maintenance/logs/pages/log-page.component';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ConsoleLogStoreService } from '@/app/core/services/console-log-store.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 
 describe('LogPageComponent', () => {
   const fakeStore = {
@@ -23,6 +24,9 @@ describe('LogPageComponent', () => {
     confirm: jest.fn().mockResolvedValue(true),
     alert: jest.fn().mockResolvedValue(undefined)
   };
+  const notificationService = {
+    success: jest.fn()
+  };
 
   beforeEach(async () => {
     fakeStore.entries.set([
@@ -38,12 +42,14 @@ describe('LogPageComponent', () => {
     fakeStore.exportJson.mockClear();
     dialogService.confirm.mockClear();
     dialogService.alert.mockClear();
+    notificationService.success.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [LogPageComponent],
       providers: [
         { provide: ConsoleLogStoreService, useValue: fakeStore },
-        { provide: DialogService, useValue: dialogService }
+        { provide: DialogService, useValue: dialogService },
+        { provide: NotificationService, useValue: notificationService }
       ]
     }).compileComponents();
   });
@@ -78,6 +84,7 @@ describe('LogPageComponent', () => {
     await fixture.componentInstance.copyAll();
     expect(fakeStore.exportJson).toHaveBeenCalled();
     expect(writeText).toHaveBeenCalledWith('[{"message":"x"}]');
+    expect(notificationService.success).toHaveBeenCalledWith('Copied logs to clipboard');
   });
 
   it('shows alert when clipboard api is unavailable', async () => {

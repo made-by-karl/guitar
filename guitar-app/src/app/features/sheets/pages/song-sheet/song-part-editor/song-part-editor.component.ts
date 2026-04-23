@@ -3,6 +3,7 @@ import { Component, Inject, OnDestroy, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MODAL_DATA, MODAL_REF, ModalComponent, ModalDataComponent, ModalRef, ModalService } from '@/app/core/services/modal.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 import { Chord, chordToString } from '@/app/core/music/chords';
 import { getSixteenthPerBeatFromTimeSignature, PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
@@ -80,7 +81,8 @@ export class SongPartEditorComponent implements
     @Inject(MODAL_DATA) public data: SongPartEditorModalData,
     private readonly songSheetService: SongSheetsService,
     private readonly songPartPlayback: SongPartPlaybackService,
-    private readonly modalService: ModalService
+    private readonly modalService: ModalService,
+    private readonly notificationService: NotificationService
   ) {
     this.sheet = signal<SongSheetWithData>(this.data.sheet);
     this.tempPart = signal<SongPart>(cloneSongPart(this.data.part));
@@ -128,6 +130,7 @@ export class SongPartEditorComponent implements
       ...part,
       items: nextItems
     });
+    this.notificationService.success(`Copied pattern item ${itemIndex + 1}`);
   }
 
   dropPatternItem(event: CdkDragDrop<SongPartPatternItem[]>): void {
@@ -359,6 +362,7 @@ export class SongPartEditorComponent implements
         patternToEdit = await this.songSheetService.duplicatePattern(this.sheet().id, pattern.id);
         item.patternId = patternToEdit.id;
         await this.refreshSheet();
+        this.notificationService.success(`Created variation "${patternToEdit.name || 'Untitled Pattern'}"`);
       }
     }
 
