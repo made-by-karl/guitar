@@ -23,6 +23,23 @@ body {
   background: #f8f9fa;
 }
 
+/* iOS Safari auto-zooms focused form controls below 16px. Keep mobile inputs at or above 16px. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  textarea,
+  select,
+  .form-control,
+  .form-select,
+  .form-control-sm,
+  .form-select-sm {
+    font-size: 16px !important;
+  }
+
+  .song-sheet-page .sheet-name-input {
+    font-size: 1.5rem !important;
+  }
+}
+
 /* Prevent scrolling when modal is open */
 body.modal-open {
   overflow: hidden;
