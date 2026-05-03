@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 import { AudioService } from '@/app/core/services/audio.service';
 import { TransportRepeatPlaybackScheduler } from '@/app/core/services/playback-scheduler.service';
 import {
@@ -31,6 +31,8 @@ export interface MetronomeState {
 export class MetronomeService implements OnDestroy {
   private tickIndex = -1;
   private readonly scheduler: TransportRepeatPlaybackScheduler;
+  private readonly audioResumeSubscription: Subscription;
+  private recoveringAfterResume = false;
 
   private readonly stateSubject = new BehaviorSubject<MetronomeState>({
     running: false,
@@ -45,9 +47,13 @@ export class MetronomeService implements OnDestroy {
 
   constructor(private audioService: AudioService) {
     this.scheduler = new TransportRepeatPlaybackScheduler(audioService);
+    this.audioResumeSubscription = this.audioService.resumed$.subscribe(() => {
+      void this.recoverAfterAudioResume();
+    });
   }
 
   ngOnDestroy(): void {
+    this.audioResumeSubscription.unsubscribe();
     this.stop();
     this.scheduler.destroy();
     this.audioService.disposeSampler('metronome');
@@ -101,6 +107,37 @@ export class MetronomeService implements OnDestroy {
       attack: 0.001,
       volume: 0
     });
+  }
+
+  private async recoverAfterAudioResume(): Promise<void> {
+    const state = this.stateSubject.getValue();
+    if (!state.running || this.recoveringAfterResume) {
+      return;
+    }
+
+    this.recoveringAfterResume = true;
+
+    try {
+      await this.ensureInitialized();
+
+      const snapshot = this.stateSubject.getValue();
+      if (!snapshot.running) {
+        return;
+      }
+
+      this.tickIndex = -1;
+      this.scheduler.stop();
+      this.stateSubject.next({
+        ...snapshot,
+        running: false,
+        activeIndex: -1,
+        tickAudioTime: 0
+      });
+
+      this.applyConfig(snapshot.config, true);
+    } finally {
+      this.recoveringAfterResume = false;
+    }
   }
 
   private onTick(time: number): void {

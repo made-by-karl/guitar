@@ -8,7 +8,12 @@ describe('MetronomeService', () => {
     (Tone as any).Transport.scheduleRepeat.mockClear();
     (Tone as any).Transport.clear.mockClear();
     (Tone as any).Transport.start.mockClear();
+    (Tone as any).Transport.stop.mockClear();
     (Tone as any).loaded.mockClear();
+    (Tone as any).context.resume.mockClear();
+    (Tone as any).context.state = 'running';
+    (Tone as any).Transport.state = 'stopped';
+    (Tone as any).Transport.seconds = 0;
   });
 
   it('schedules repeat ticks and clears only its own ids on stop', async () => {
@@ -140,6 +145,40 @@ describe('MetronomeService', () => {
     expect(service.getSnapshot().labels).toEqual(['1', 'e', '2', 'e', '3', 'e', '4', 'e', '5', 'e', '6', 'e']);
     expect(service.getSnapshot().activeIndex).toBe(-1);
     expect(service.getSnapshot().running).toBe(true);
+  });
+
+  it('rebuilds the running metronome schedule after the audio context resumes', async () => {
+    const audio = new AudioService();
+    const service = new MetronomeService(audio);
+
+    (Tone as any).Transport.state = 'started';
+    (Tone as any).Transport.seconds = 3;
+    (Tone as any).Transport.scheduleRepeat
+      .mockReturnValueOnce(31)
+      .mockReturnValueOnce(32);
+
+    await service.start({
+      bpm: 90,
+      timeSignature: '4/4',
+      subdivision: '8th'
+    });
+
+    (Tone as any).Transport.clear.mockClear();
+    (Tone as any).Transport.stop.mockClear();
+    (Tone as any).Transport.start.mockClear();
+    (Tone as any).Transport.scheduleRepeat.mockClear();
+
+    (Tone as any).context.state = 'suspended';
+    await audio.resumeIfSuspended();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect((Tone as any).context.resume).toHaveBeenCalled();
+    expect((Tone as any).Transport.stop).toHaveBeenCalled();
+    expect((Tone as any).Transport.clear).toHaveBeenCalledWith(31);
+    expect((Tone as any).Transport.start).toHaveBeenCalled();
+    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalledWith(expect.any(Function), '8n', 3.05);
+    expect(service.getSnapshot().running).toBe(true);
+    expect(service.getSnapshot().activeIndex).toBe(-1);
   });
 
   it('updates bpm without rebuilding the repeat schedule when only tempo changes while running', async () => {

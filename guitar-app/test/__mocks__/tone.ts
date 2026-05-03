@@ -32,9 +32,15 @@ export const Transport = {
   timeSignature: [4, 4],
   seconds: 0,
   state: 'stopped',
-  start: jest.fn(),
-  pause: jest.fn(),
-  stop: jest.fn(),
+  start: jest.fn(() => {
+    Transport.state = 'started';
+  }),
+  pause: jest.fn(() => {
+    Transport.state = 'paused';
+  }),
+  stop: jest.fn(() => {
+    Transport.state = 'stopped';
+  }),
   schedule: jest.fn(),
   scheduleRepeat: jest.fn().mockReturnValue(1),
   clear: jest.fn()
@@ -42,7 +48,9 @@ export const Transport = {
 
 export const context = {
   state: 'running',
-  resume: jest.fn()
+  resume: jest.fn(async () => {
+    context.state = 'running';
+  })
 };
 
 export const getContext = jest.fn().mockReturnValue(context);

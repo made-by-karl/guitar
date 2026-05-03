@@ -1,4 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import * as Tone from 'tone';
 
 @Injectable({
@@ -8,9 +9,12 @@ export class AudioService implements OnDestroy {
   private context: Tone.BaseContext | null = null;
   private startPromise: Promise<void> | null = null;
   private handlersInstalled = false;
+  private readonly resumedSubject = new Subject<void>();
 
   private readonly samplers = new Map<string, Tone.Sampler>();
   private readonly samplerInitPromises = new Map<string, Promise<void>>();
+
+  readonly resumed$: Observable<void> = this.resumedSubject.asObservable();
 
   constructor() {
     this.installAutoResumeHandlers();
@@ -18,27 +22,33 @@ export class AudioService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.disposeAllSamplers();
+    this.resumedSubject.complete();
   }
 
   private installAutoResumeHandlers(): void {
     if (this.handlersInstalled) return;
     this.handlersInstalled = true;
 
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
 
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden) {
-        await this.resumeIfSuspended();
-      }
-    });
-
-    const resumeOnInteraction = async () => {
+    const attemptResume = async () => {
       await this.resumeIfSuspended();
     };
 
-    document.addEventListener('touchstart', resumeOnInteraction, { once: false, passive: true });
-    document.addEventListener('touchend', resumeOnInteraction, { once: false, passive: true });
-    document.addEventListener('click', resumeOnInteraction, { once: false, passive: true });
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden) {
+        await attemptResume();
+      }
+    });
+
+    window.addEventListener('pageshow', attemptResume);
+    window.addEventListener('focus', attemptResume);
+
+    document.addEventListener('pointerdown', attemptResume, { once: false, passive: true });
+    document.addEventListener('touchstart', attemptResume, { once: false, passive: true });
+    document.addEventListener('touchend', attemptResume, { once: false, passive: true });
+    document.addEventListener('click', attemptResume, { once: false, passive: true });
+    document.addEventListener('keydown', attemptResume, { once: false, passive: true });
   }
 
   /**
@@ -185,11 +195,15 @@ export class AudioService implements OnDestroy {
    * Attempts to resume audio if a context exists and is suspended.
    */
   async resumeIfSuspended(): Promise<void> {
-    if (!this.context) return;
+    const context = this.context;
+    if (!context) return;
 
     try {
-      if (this.context.state === 'suspended') {
-        await Tone.start();
+      if (context.state === 'suspended') {
+        await context.resume();
+        if (this.isRunningState(context.state)) {
+          this.resumedSubject.next();
+        }
       }
     } catch (error) {
       console.error('Failed to resume audio context:', error);
@@ -206,5 +220,9 @@ export class AudioService implements OnDestroy {
 
   now(): number {
     return Tone.now();
+  }
+
+  private isRunningState(state: AudioContextState): state is 'running' {
+    return state === 'running';
   }
 }
