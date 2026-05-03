@@ -39,6 +39,14 @@ import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/gr
 import { chordToString } from '@/app/core/music/chords';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { NotificationService } from '@/app/core/services/notification.service';
+import {
+  CustomGripEditorModalComponent,
+  CustomGripEditorResult
+} from '@/app/features/grips/ui/custom-grip-editor-modal/custom-grip-editor-modal.component';
+import {
+  GripSourceSelectorModalComponent,
+  GripSourceSelectorResult
+} from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
 type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
@@ -1220,7 +1228,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       return;
     }
 
-    const selectedGrip = await this.selectGrip(this.getActionGrip(measureIndex, actionIndex)?.chordName);
+    const selectedGrip = await this.selectGrip(this.getActionGrip(measureIndex, actionIndex)?.name);
     if (selectedGrip === undefined) {
       return;
     }
@@ -1233,7 +1241,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
           measureIndex,
           actionIndex,
           gripId: selectedGrip.gripId,
-          chordName: selectedGrip.chordName
+          name: selectedGrip.name
         }
       ] : (pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
     });
@@ -1407,8 +1415,21 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return currentIndex;
   }
 
-  private async selectGrip(chordName?: string): Promise<PlayingPatternGripReference | null | undefined> {
-    const data: GripSelectorModalData = { chord: chordName };
+  private async selectGrip(name?: string): Promise<PlayingPatternGripReference | null | undefined> {
+    const source = await this.openGripSourceSelector();
+    if (!source || source.kind === 'cancel') {
+      return undefined;
+    }
+
+    if (source.kind === 'clear') {
+      return null;
+    }
+
+    if (source.kind === 'custom') {
+      return this.openCustomGripEditor(name);
+    }
+
+    const data: GripSelectorModalData = {};
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',
@@ -1425,7 +1446,50 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     return {
       gripId: serializeGrip(result.grips[0] as TunedGrip),
-      chordName: chordToString(result.chord)
+      name: chordToString(result.chord)
+    };
+  }
+
+  private async openGripSourceSelector(): Promise<GripSourceSelectorResult | undefined> {
+    const modalRef = this.modalService.show(GripSourceSelectorModalComponent, {
+      data: {
+        title: 'Set Grip',
+        allowSavedGripSelection: false,
+        allowClear: true
+      },
+      width: '420px',
+      maxWidth: '95vw',
+      closeOnBackdropClick: true
+    });
+
+    return modalRef.afterClosed();
+  }
+
+  private async openCustomGripEditor(name?: string): Promise<PlayingPatternGripReference | undefined> {
+    const modalRef = this.modalService.show(CustomGripEditorModalComponent, {
+      data: {
+        title: 'Create Custom Grip',
+        submitLabel: 'Use Grip',
+        initialName: name
+      },
+      width: '95vw',
+      maxWidth: '720px',
+      maxHeight: '90vh',
+      closeOnBackdropClick: true
+    });
+
+    const result = await modalRef.afterClosed();
+    if (!result) {
+      return undefined;
+    }
+
+    return this.toGripReference(result);
+  }
+
+  private toGripReference(result: CustomGripEditorResult): PlayingPatternGripReference {
+    return {
+      gripId: serializeGrip(result.grip),
+      name: result.name
     };
   }
 }

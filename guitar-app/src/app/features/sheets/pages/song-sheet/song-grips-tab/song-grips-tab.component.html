@@ -19,9 +19,7 @@
             <div class="drag-handle text-muted" cdkDragHandle title="Drag to reorder">
               <i class="bi bi-grip-vertical"></i>
             </div>
-            <button class="btn btn-link p-0 text-decoration-none grip-title" type="button" (click)="addGrip(grip.chordName)">
-              {{ grip.chordName }}
-            </button>
+            <span class="grip-title">{{ grip.name }}</span>
             <div class="ms-auto d-flex gap-2">
               <button class="btn btn-outline-primary btn-sm" type="button" (click)="playGrip(grip)">
                 <i class="bi bi-play-fill"></i>

@@ -8,7 +8,7 @@ import {
 
 export interface SongSheetGrip {
   gripId: string;
-  chordName: string;
+  name: string;
 }
 
 export interface SongSheetGripWithData extends SongSheetGrip {

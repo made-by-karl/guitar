@@ -36,8 +36,8 @@ describe('SongSheetsService', () => {
       capodaster: 0,
       tempo: 90,
       grips: [
-        { gripId: 'grip-c', chordName: 'C' },
-        { gripId: 'grip-g', chordName: 'G' }
+        { gripId: 'grip-c', name: 'C' },
+        { gripId: 'grip-g', name: 'G' }
       ],
       patterns: [{
         id: 'pattern-1',
@@ -50,7 +50,7 @@ describe('SongSheetsService', () => {
           { timeSignature: '4/4', actions: Array(16).fill(null) },
           { timeSignature: '3/4', actions: Array(12).fill(null) }
         ],
-        actionGrips: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', chordName: 'G' }],
+        actionGrips: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', name: 'G' }],
         createdAt: 1,
         updatedAt: 1
       }],
@@ -82,8 +82,8 @@ describe('SongSheetsService', () => {
       patternId: pattern.id,
       measureTexts: [{ measureIndex: 1, lyrics: 'line', notes: '' }],
       actionGrips: [
-        { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', chordName: 'C' },
-        { measureIndex: 1, actionIndex: 20, gripId: 'grip-g', chordName: 'G' }
+        { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', name: 'C' },
+        { measureIndex: 1, actionIndex: 20, gripId: 'grip-g', name: 'G' }
       ]
     };
 
@@ -94,7 +94,7 @@ describe('SongSheetsService', () => {
       { measureIndex: 1, lyrics: 'line', notes: '' }
     ]);
     expect(item.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', chordName: 'C' }
+      { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', name: 'C' }
     ]);
   });
 
@@ -108,7 +108,7 @@ describe('SongSheetsService', () => {
         { measureIndex: 0, lyrics: 'hello', notes: 'accent' },
         { measureIndex: 1, lyrics: '', notes: 'hold' }
       ],
-      actionGrips: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', chordName: 'G' }]
+      actionGrips: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', name: 'G' }]
     };
 
     const resolved = service.resolvePartItem(sheet, item);
@@ -132,7 +132,7 @@ describe('SongSheetsService', () => {
         id: 'item-1',
         patternId: 'pattern-1',
         measureTexts: [],
-        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', chordName: 'C' }]
+        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
       }]
     }];
 
@@ -140,7 +140,7 @@ describe('SongSheetsService', () => {
 
     await service.removeGrip('sheet-1', 'grip-c');
 
-    expect(getStoredSheet()?.grips).toEqual([{ gripId: 'grip-g', chordName: 'G' }]);
+    expect(getStoredSheet()?.grips).toEqual([{ gripId: 'grip-g', name: 'G' }]);
     expect(getStoredSheet()?.parts[0].items[0].actionGrips).toEqual([]);
   });
 
@@ -178,7 +178,7 @@ describe('SongSheetsService', () => {
         id: 'item-1',
         patternId: 'pattern-1',
         measureTexts: [{ measureIndex: 0, lyrics: 'hello', notes: 'accent' }],
-        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', chordName: 'C' }]
+        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
       }]
     }];
     const { service, getStoredSheet } = createService(sheet);

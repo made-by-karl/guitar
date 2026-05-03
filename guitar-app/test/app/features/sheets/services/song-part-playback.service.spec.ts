@@ -22,7 +22,7 @@ describe('SongPartPlaybackService', () => {
     tempo: 120,
     grips: [{
       gripId: eGripId,
-      chordName: 'E',
+      name: 'E',
       grip: { strings: ['o', [{ fret: 2 }], [{ fret: 2 }], [{ fret: 1 }], 'o', 'o'] }
     }],
     patterns: [],
@@ -38,7 +38,7 @@ describe('SongPartPlaybackService', () => {
       id: 'item-1',
       patternId: 'pattern-1',
       measureTexts: [],
-      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, name: 'E' }]
     }]
   };
 
@@ -72,7 +72,7 @@ describe('SongPartPlaybackService', () => {
         lyrics: '',
         notes: '',
         patternActionGrips: [],
-        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
+        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, name: 'E' }]
       }])
     };
     const service = new SongPartPlaybackService(
@@ -124,8 +124,8 @@ describe('SongPartPlaybackService', () => {
         },
         lyrics: '',
         notes: '',
-        patternActionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: gGripId, chordName: 'G' }],
-        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
+        patternActionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: gGripId, name: 'G' }],
+        actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, name: 'E' }]
       }])
     };
     const service = new SongPartPlaybackService(

@@ -1,0 +1,51 @@
+<div class="source-modal">
+  <div class="modal-body p-3 p-md-4">
+    <div class="source-header">
+      <div class="small text-uppercase text-muted">Grip Source</div>
+      <h5 class="modal-title mb-0">{{ title }}</h5>
+      <p class="text-muted mb-0">Choose an existing grip or create a new one.</p>
+    </div>
+
+    <div class="source-actions">
+      @if (data.allowSavedGripSelection && savedGrips.length > 0) {
+        <section class="source-section">
+          <div class="section-title">Saved Grips</div>
+          <div class="saved-grip-list">
+            @for (grip of savedGrips; track grip.gripId) {
+              <button class="btn btn-outline-secondary text-start saved-grip-button" type="button" (click)="chooseSavedGrip(grip.gripId)">
+                <span class="saved-grip-name">{{ grip.name }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="source-section">
+        <div class="section-title">Create</div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary source-button text-start" type="button" (click)="chooseFromChord()">
+            <span class="source-button-title">Grip From Chord</span>
+            <span class="source-button-copy">Generate and choose from chord shapes.</span>
+          </button>
+          <button class="btn btn-outline-primary source-button text-start" type="button" (click)="chooseCustom()">
+            <span class="source-button-title">Custom Grip</span>
+            <span class="source-button-copy">Build the string presses manually.</span>
+          </button>
+        </div>
+      </section>
+
+      @if (data.allowClear) {
+        <section class="source-section">
+          <button class="btn btn-outline-danger w-100 text-start source-button" type="button" (click)="clear()">
+            <span class="source-button-title">Clear Assignment</span>
+            <span class="source-button-copy">Remove the grip from this position.</span>
+          </button>
+        </section>
+      }
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+  </div>
+</div>

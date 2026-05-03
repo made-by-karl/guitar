@@ -1,7 +1,14 @@
-export type String = ('x' | 'o' | { fret: number; finger?: 1 | 2 | 3 | 4, isPartOfBarre?: boolean; }[])
+export interface GripStringEntry {
+  fret: number;
+  finger?: 1 | 2 | 3 | 4;
+  isPartOfBarre?: boolean;
+}
+
+export type GripString = 'x' | 'o' | GripStringEntry[];
+export type String = GripString;
 
 export interface Grip {
-  strings: String[]; // 0 = low E, 5 = high E
+  strings: GripString[]; // 0 = low E, 5 = high E
 }
 
 export interface TunedGrip extends Grip {
@@ -42,11 +49,11 @@ export function parseGrip(gripString: string): Grip {
   return { strings };
 }
 
-function stringifyGripEntry(entry: { fret: number; finger?: 1 | 2 | 3 | 4; isPartOfBarre?: boolean; }): string {
+function stringifyGripEntry(entry: GripStringEntry): string {
   return `${entry.fret}${entry.isPartOfBarre ? 'b' : ''}`;
 }
 
-function parseGripEntry(value: string): { fret: number; finger?: 1 | 2 | 3 | 4; isPartOfBarre?: boolean; } {
+function parseGripEntry(value: string): GripStringEntry {
   const match = value.match(/^(\d+)(b)?$/);
   if (!match) {
     throw new Error(`Invalid grip entry: ${value}`);

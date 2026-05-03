@@ -11,7 +11,7 @@ import { Grip } from '@/app/features/grips/services/grips/grip.model';
 export class GripDiagramComponent implements OnChanges {
   @Input() grip!: Grip | undefined;
 
-  public svg: any;
+  public svg: SafeHtml = '';
 
   constructor(private sanitizer: DomSanitizer) {
 
@@ -94,10 +94,16 @@ export class GripDiagramComponent implements OnChanges {
     });
 
     barres.forEach((strings, fret) => {
-      const y = 40 + ((fret - startFret) + 0.5) * fretHeight;
-      const x1 = 20 + strings[0] * stringSpacing;
-      const x2 = 20 + strings[strings.length - 1] * stringSpacing;
-      lines.push(`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="black" stroke-width="${barreThickness}"/>`);
+      for (const group of this.groupContiguousStrings(strings)) {
+        if (group.length < 2) {
+          continue;
+        }
+
+        const y = 40 + ((fret - startFret) + 0.5) * fretHeight;
+        const x1 = 20 + group[0] * stringSpacing;
+        const x2 = 20 + group[group.length - 1] * stringSpacing;
+        lines.push(`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="black" stroke-width="${barreThickness}" stroke-linecap="round"/>`);
+      }
     });
 
     return `
@@ -107,5 +113,26 @@ export class GripDiagramComponent implements OnChanges {
         ${label}
       </svg>
     `;
+  }
+
+  private groupContiguousStrings(strings: number[]): number[][] {
+    if (strings.length === 0) {
+      return [];
+    }
+
+    const sorted = [...new Set(strings)].sort((a, b) => a - b);
+    const groups: number[][] = [[sorted[0]]];
+
+    for (let index = 1; index < sorted.length; index++) {
+      const value = sorted[index];
+      const group = groups[groups.length - 1];
+      if (value === group[group.length - 1] + 1) {
+        group.push(value);
+      } else {
+        groups.push([value]);
+      }
+    }
+
+    return groups;
   }
 }

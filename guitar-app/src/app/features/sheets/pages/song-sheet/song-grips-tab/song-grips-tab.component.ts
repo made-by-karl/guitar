@@ -3,13 +3,21 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { ModalService } from '@/app/core/services/modal.service';
 import { transpose } from '@/app/core/music/semitones';
-import { Chord, chordToString } from '@/app/core/music/chords';
+import { chordToString } from '@/app/core/music/chords';
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
 import { GripService } from '@/app/features/grips/services/grips/grip.service';
 import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
 import { SongSheetGrip, SongSheetGripWithData, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
+import {
+  CustomGripEditorModalComponent,
+  CustomGripEditorResult
+} from '@/app/features/grips/ui/custom-grip-editor-modal/custom-grip-editor-modal.component';
+import {
+  GripSourceSelectorModalComponent,
+  GripSourceSelectorResult
+} from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
 
 @Component({
   selector: 'app-song-sheet-grips-tab',
@@ -27,8 +35,8 @@ export class SongGripsTabComponent {
   private readonly gripService = inject(GripService);
   private readonly modalService = inject(ModalService);
 
-  async addGrip(chordName?: string): Promise<void> {
-    const added = await this.openGripSelector(chordName);
+  async addGrip(name?: string): Promise<void> {
+    const added = await this.openAddGripFlow(name);
     if (added) {
       this.changed.emit();
     }
@@ -67,8 +75,21 @@ export class SongGripsTabComponent {
     this.changed.emit();
   }
 
-  private async openGripSelector(chord?: Chord | string): Promise<boolean> {
-    const data: GripSelectorModalData = { chord };
+  private async openAddGripFlow(name?: string): Promise<boolean> {
+    const source = await this.openGripSourceSelector();
+    if (!source || source.kind === 'cancel' || source.kind === 'clear') {
+      return false;
+    }
+
+    if (source.kind === 'custom') {
+      return this.openCustomGripEditor(name);
+    }
+
+    return this.openGripSelector();
+  }
+
+  private async openGripSelector(): Promise<boolean> {
+    const data: GripSelectorModalData = {};
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',
@@ -85,10 +106,54 @@ export class SongGripsTabComponent {
 
     const songSheetGrips = result.grips.map((grip: TunedGrip): SongSheetGrip => ({
       gripId: serializeGrip(grip),
-      chordName: chordToString(result.chord)
+      name: chordToString(result.chord)
     }));
 
     await this.songSheetService.addGrips(songSheetGrips, this.sheet().id);
     return true;
+  }
+
+  private async openCustomGripEditor(name?: string): Promise<boolean> {
+    const modalRef = this.modalService.show(CustomGripEditorModalComponent, {
+      data: {
+        title: 'Create Custom Grip',
+        submitLabel: 'Save Grip',
+        initialName: name
+      },
+      width: '95vw',
+      maxWidth: '720px',
+      maxHeight: '90vh',
+      closeOnBackdropClick: true
+    });
+
+    const result = await modalRef.afterClosed();
+    if (!result) {
+      return false;
+    }
+
+    await this.songSheetService.addGrip(this.toSongSheetGrip(result), this.sheet().id);
+    return true;
+  }
+
+  private async openGripSourceSelector(): Promise<GripSourceSelectorResult | undefined> {
+    const modalRef = this.modalService.show(GripSourceSelectorModalComponent, {
+      data: {
+        title: 'Add Grip',
+        allowSavedGripSelection: false,
+        allowClear: false
+      },
+      width: '420px',
+      maxWidth: '95vw',
+      closeOnBackdropClick: true
+    });
+
+    return modalRef.afterClosed();
+  }
+
+  private toSongSheetGrip(result: CustomGripEditorResult): SongSheetGrip {
+    return {
+      gripId: serializeGrip(result.grip),
+      name: result.name
+    };
   }
 }

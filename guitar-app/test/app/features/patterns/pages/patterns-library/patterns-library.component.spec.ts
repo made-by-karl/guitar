@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { PatternsLibraryComponent } from '@/app/features/patterns/pages/patterns-library/patterns-library.component';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingPatternsService } from '@/app/features/patterns/services/playing-patterns.service';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -50,19 +51,10 @@ describe('PatternsLibraryComponent', () => {
 
   it('renders suggested genre and example song for a pattern', async () => {
     const service = {
-      getAll: jest.fn().mockResolvedValue([{
-        id: 'pattern-1',
-        name: 'Folk Strum',
-        description: 'Classic campfire groove.',
-        category: 'Campfire',
+      getAll: jest.fn().mockResolvedValue([createPattern({
         suggestedGenre: 'Folk Singalong',
-        exampleSong: 'Leaving on a Jet Plane',
-        measures: [{ timeSignature: '4/4', actions: Array(16).fill(null) }],
-        actionGrips: [],
-        createdAt: 1,
-        updatedAt: 1,
-        isCustom: false
-      }])
+        exampleSong: 'Leaving on a Jet Plane'
+      })])
     };
     const patternPlayback = {
       state$: of({ status: 'idle' }),
@@ -262,14 +254,14 @@ describe('PatternsLibraryComponent', () => {
   });
 });
 
-function createPattern(overrides: Partial<ReturnType<typeof createPatternBase>> = {}) {
+function createPattern(overrides: Partial<PlayingPattern> = {}): PlayingPattern {
   return {
     ...createPatternBase(),
     ...overrides
   };
 }
 
-function createPatternBase() {
+function createPatternBase(): PlayingPattern {
   return {
     id: 'pattern-1',
     name: 'Folk Strum',

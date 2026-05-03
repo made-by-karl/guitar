@@ -89,7 +89,7 @@ export interface Measure {
 
 export interface PlayingPatternGripReference {
   gripId: string;
-  chordName: string;
+  name: string;
 }
 
 export interface PlayingPatternActionGrip extends PlayingPatternGripReference {

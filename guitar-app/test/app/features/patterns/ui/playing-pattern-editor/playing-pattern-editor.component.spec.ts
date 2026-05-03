@@ -224,8 +224,8 @@ describe('PlayingPatternEditorComponent', () => {
       actions: Array(12).fill(null)
     });
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
     ]);
     expect(mockDialogService.confirm).not.toHaveBeenCalled();
   });
@@ -238,8 +238,8 @@ describe('PlayingPatternEditorComponent', () => {
     const pattern = component.pattern();
     expect(pattern.measures).toHaveLength(2);
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
     ]);
     expect(mockNotificationService.success).toHaveBeenCalledWith('Copied measure 1');
   });
@@ -275,9 +275,9 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures[2]).toEqual(pattern.measures[0]);
     expect(pattern.measures[2]).not.toBe(pattern.measures[0]);
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' },
-      { measureIndex: 2, actionIndex: 0, gripId: 'g', chordName: 'G' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' },
+      { measureIndex: 2, actionIndex: 0, gripId: 'g', name: 'G' }
     ]);
   });
 
@@ -290,8 +290,8 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures[0].timeSignature).toBe('3/4');
     expect(pattern.measures[1].timeSignature).toBe('4/4');
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 1, actionIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 0, actionIndex: 0, gripId: 'c', chordName: 'C' }
+      { measureIndex: 1, actionIndex: 0, gripId: 'g', name: 'G' },
+      { measureIndex: 0, actionIndex: 0, gripId: 'c', name: 'C' }
     ]);
   });
 
@@ -304,7 +304,7 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures).toHaveLength(1);
     expect(pattern.measures[0].timeSignature).toBe('3/4');
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'c', chordName: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'c', name: 'C' }
     ]);
   });
 });
@@ -337,8 +337,8 @@ function createMultiMeasurePattern(): PlayingPattern {
       }
     ],
     actionGrips: [
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', chordName: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', chordName: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
     ],
     createdAt: 1,
     updatedAt: 1,

@@ -209,7 +209,7 @@ export class PlayingActionsComponent {
   }
 
   hasActionGripLabels(): boolean {
-    return (this.notationContexts() ?? []).some(context => (context.actionGrips ?? []).some(grip => !!grip.chordName));
+    return (this.notationContexts() ?? []).some(context => (context.actionGrips ?? []).some(grip => !!grip.name));
   }
 
   getActionX(actionIndex: number): number {
@@ -324,10 +324,10 @@ export class PlayingActionsComponent {
 
     for (let actionIndex = segment.actionIndex; actionIndex < endIndex; actionIndex++) {
       const actionGrip = this.getActionGripForGlobalAction(actionIndex);
-      if (actionGrip?.chordName) {
+      if (actionGrip?.name) {
         labels.push({
           actionIndex,
-          label: actionGrip.chordName,
+          label: actionGrip.name,
           x: this.getActionSlotCenterX(actionIndex)
         });
       }

@@ -300,7 +300,7 @@ describe('PlayingActionsComponent', () => {
       }
     ])]);
     fixture.componentRef.setInput('notationContexts', [{
-      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', chordName: 'G' }],
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', name: 'G' }],
       gripById: {
         g1: {
           strings: [[{ fret: 3 }], 'x', 'x', 'x', 'x', 'x']
@@ -322,7 +322,7 @@ describe('PlayingActionsComponent', () => {
     actions[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.componentRef.setInput('notationContexts', [{
-      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', chordName: 'G' }]
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', name: 'G' }]
     }]);
     fixture.detectChanges();
 
@@ -373,7 +373,7 @@ describe('PlayingActionsComponent', () => {
     ]);
     fixture.componentRef.setInput('notationContexts', [
       { actionGrips: [] },
-      { actionGrips: [{ measureIndex: 1, actionIndex: 0, gripId: 'g1', chordName: 'Em' }] }
+      { actionGrips: [{ measureIndex: 1, actionIndex: 0, gripId: 'g1', name: 'Em' }] }
     ]);
     fixture.detectChanges();
 
@@ -391,7 +391,7 @@ describe('PlayingActionsComponent', () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.componentRef.setInput('notationContexts', [{
-      actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'g1', chordName: 'C' }]
+      actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'g1', name: 'C' }]
     }]);
     fixture.detectChanges();
 

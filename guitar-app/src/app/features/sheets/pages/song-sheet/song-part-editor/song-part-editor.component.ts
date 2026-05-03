@@ -4,13 +4,21 @@ import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MODAL_DATA, MODAL_REF, ModalComponent, ModalDataComponent, ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { NotificationService } from '@/app/core/services/notification.service';
-import { Chord, chordToString } from '@/app/core/music/chords';
+import { chordToString } from '@/app/core/music/chords';
 import { getSixteenthPerBeatFromTimeSignature, PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
 import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
 import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
+import {
+  CustomGripEditorModalComponent,
+  CustomGripEditorResult
+} from '@/app/features/grips/ui/custom-grip-editor-modal/custom-grip-editor-modal.component';
+import {
+  GripSourceSelectorModalComponent,
+  GripSourceSelectorResult
+} from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
 import {
   SongPart,
   SongPartActionGrip,
@@ -202,8 +210,8 @@ export class SongPartEditorComponent implements
 
   getMeasureGripNames(item: SongPartPatternItem, pattern: SongSheetPattern, measureIndex: number): string[] {
     return this.getActionGripPositions(pattern, measureIndex)
-      .map(actionData => this.getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.chordName)
-      .filter((chordName): chordName is string => !!chordName);
+      .map(actionData => this.getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.name)
+      .filter((name): name is string => !!name);
   }
 
   getActionGripPositions(pattern: SongSheetPattern, measureIndex: number): ActionGripPosition[] {
@@ -236,7 +244,7 @@ export class SongPartEditorComponent implements
           measureIndex,
           actionIndex,
           gripId: effective.gripId,
-          chordName: effective.chordName
+          name: effective.name
         });
       }
     }
@@ -389,7 +397,7 @@ export class SongPartEditorComponent implements
   ): Promise<void> {
     const effectiveGrip = item.actionGrips.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex) ??
       pattern.actionGrips?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
-    const selectedGrip = await this.selectGrip(effectiveGrip?.chordName);
+    const selectedGrip = await this.selectGrip(effectiveGrip?.name);
     if (selectedGrip === undefined) {
       return;
     }
@@ -402,7 +410,7 @@ export class SongPartEditorComponent implements
         measureIndex,
         actionIndex,
         gripId: selectedGrip.gripId,
-        chordName: selectedGrip.chordName
+        name: selectedGrip.name
       });
     }
   }
@@ -506,40 +514,73 @@ export class SongPartEditorComponent implements
     return this.sheet().patterns.find(pattern => pattern.id === choice);
   }
 
-  private async selectGrip(chordName?: string): Promise<SongSheetGrip | null | undefined> {
-    const choices: SongSheetChoice[] = this.sheet().grips.map(grip => ({
-      value: 'grip:' + grip.gripId,
-      text: grip.chordName
-    }));
-    choices.push(
-      { value: 'grip-from-chord', text: 'Grip from chord' },
-      { value: 'clear', text: 'Clear assignment' }
-    );
-
-    const choice = await this.openChoiceDialog({
-      title: 'Select Grip',
-      choices
-    });
-
-    if (!choice) {
+  private async selectGrip(name?: string): Promise<SongSheetGrip | null | undefined> {
+    const source = await this.openGripSourceSelector();
+    if (!source || source.kind === 'cancel') {
       return undefined;
     }
 
-    if (choice === 'clear') {
+    if (source.kind === 'clear') {
       return null;
     }
 
-    if (choice === 'grip-from-chord') {
-      return this.openGripSelector(chordName);
+    if (source.kind === 'saved') {
+      const selectedGrip = this.sheet().grips.find(grip => grip.gripId === source.gripId);
+      return selectedGrip ? { gripId: selectedGrip.gripId, name: selectedGrip.name } : undefined;
     }
 
-    const gripId = choice.replace('grip:', '');
-    const selectedGrip = this.sheet().grips.find(grip => grip.gripId === gripId);
-    return selectedGrip ? { gripId: selectedGrip.gripId, chordName: selectedGrip.chordName } : undefined;
+    if (source.kind === 'custom') {
+      return this.openCustomGripEditor(name);
+    }
+
+    return this.openGripSelector();
   }
 
-  private async openGripSelector(chord?: Chord | string): Promise<SongSheetGrip | undefined> {
-    const data: GripSelectorModalData = { chord };
+  private async openGripSourceSelector(): Promise<GripSourceSelectorResult | undefined> {
+    const modalRef = this.modalService.show(GripSourceSelectorModalComponent, {
+      data: {
+        title: 'Select Grip',
+        allowSavedGripSelection: this.sheet().grips.length > 0,
+        allowClear: true,
+        savedGrips: this.sheet().grips.map(grip => ({
+          gripId: grip.gripId,
+          name: grip.name
+        }))
+      },
+      width: '420px',
+      maxWidth: '95vw',
+      closeOnBackdropClick: true
+    });
+
+    return modalRef.afterClosed();
+  }
+
+  private async openCustomGripEditor(name?: string): Promise<SongSheetGrip | undefined> {
+    const modalRef = this.modalService.show(CustomGripEditorModalComponent, {
+      data: {
+        title: 'Create Custom Grip',
+        submitLabel: 'Save Grip',
+        initialName: name
+      },
+      width: '95vw',
+      maxWidth: '720px',
+      maxHeight: '90vh',
+      closeOnBackdropClick: true
+    });
+
+    const result = await modalRef.afterClosed();
+    if (!result) {
+      return undefined;
+    }
+
+    const createdGrip = this.toSongSheetGrip(result);
+    await this.songSheetService.addGrip(createdGrip, this.sheet().id);
+    await this.refreshSheet();
+    return this.sheet().grips.find(grip => grip.gripId === createdGrip.gripId) ?? createdGrip;
+  }
+
+  private async openGripSelector(): Promise<SongSheetGrip | undefined> {
+    const data: GripSelectorModalData = {};
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',
@@ -556,12 +597,19 @@ export class SongPartEditorComponent implements
 
     const songSheetGrips = result.grips.map((grip: TunedGrip): SongSheetGrip => ({
       gripId: serializeGrip(grip),
-      chordName: chordToString(result.chord)
+      name: chordToString(result.chord)
     }));
 
     await this.songSheetService.addGrips(songSheetGrips, this.sheet().id);
     await this.refreshSheet();
-    return songSheetGrips[0];
+    return this.sheet().grips.find(grip => grip.gripId === songSheetGrips[0].gripId) ?? songSheetGrips[0];
+  }
+
+  private toSongSheetGrip(result: CustomGripEditorResult): SongSheetGrip {
+    return {
+      gripId: serializeGrip(result.grip),
+      name: result.name
+    };
   }
 
   private async openChoiceDialog(context: SongSheetChoiceModalData): Promise<string | undefined> {

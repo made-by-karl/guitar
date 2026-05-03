@@ -54,7 +54,7 @@ export class SongSheetsService {
 
     const gripsWithData: SongSheetGripWithData[] = sheet.grips.map(grip => ({
       gripId: grip.gripId,
-      chordName: grip.chordName,
+      name: grip.name,
       grip: parseGrip(grip.gripId)
     }));
 
@@ -120,7 +120,7 @@ export class SongSheetsService {
     for (const grip of grips) {
       const cleanGrip: SongSheetGrip = {
         gripId: grip.gripId,
-        chordName: grip.chordName
+        name: grip.name
       };
 
       if (!sheet.grips.find(existing => existing.gripId === grip.gripId)) {
@@ -438,7 +438,7 @@ export class SongSheetsService {
       ...sheet,
       grips: sheet.grips.map(grip => ({
         gripId: grip.gripId,
-        chordName: grip.chordName
+        name: grip.name
       })),
       patterns: sheet.patterns.map(pattern => this.clonePattern(pattern)),
       parts: sheet.parts.map(part => this.clonePart(part))

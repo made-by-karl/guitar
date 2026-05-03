@@ -1,0 +1,87 @@
+<div class="custom-grip-modal">
+  <div class="modal-header">
+    <h5 class="modal-title">{{ title }}</h5>
+    <button type="button" class="btn-close" (click)="cancel()" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body">
+    <div class="editor-stack">
+      <section class="card shadow-sm border-0">
+        <div class="card-body">
+          <label class="form-label fw-semibold" for="customGripName">Grip Name</label>
+          <input
+            id="customGripName"
+            class="form-control form-control-lg"
+            [(ngModel)]="name"
+            placeholder="Example: Verse Walk-Up"
+            maxlength="60" />
+          <div class="form-text">Give the grip a reusable name.</div>
+        </div>
+      </section>
+
+      <section class="card shadow-sm border-0 preview-card">
+        <div class="card-body">
+          <div class="preview-header">
+            <div>
+              <div class="small text-uppercase text-muted">Preview</div>
+              <h6 class="mb-0">{{ name.trim() || 'Unnamed Grip' }}</h6>
+            </div>
+            <span class="badge text-bg-light">{{ stringStates.length }} strings</span>
+          </div>
+          <div class="preview-diagram">
+            <app-grip-diagram [grip]="previewGrip"></app-grip-diagram>
+          </div>
+        </div>
+      </section>
+
+      <section class="string-editor">
+        <div class="section-label">Strings</div>
+        <div class="string-card-list">
+          @for (state of stringStates; track state.label) {
+            <article class="card shadow-sm border-0 string-card">
+              <div class="card-body">
+                <div class="string-card-header">
+                  <div>
+                    <div class="string-label">{{ state.label }}</div>
+                    <div class="small text-muted">String {{ $index + 1 }}</div>
+                  </div>
+                </div>
+
+                <div class="string-control-grid">
+                  <div>
+                    <label class="form-label small">Press Type</label>
+                    <select
+                      class="form-select"
+                      [ngModel]="state.mode"
+                      (ngModelChange)="updateMode(state, $event)">
+                      @for (option of modeOptions; track option.value) {
+                        <option [ngValue]="option.value">{{ option.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label small">Fret</label>
+                    <input
+                      class="form-control"
+                      type="number"
+                      min="1"
+                      step="1"
+                      [disabled]="!requiresFret(state.mode)"
+                      [ngModel]="state.fret"
+                      (ngModelChange)="updateFret(state, $event)" />
+                  </div>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn-primary" type="button" [disabled]="!canSave" (click)="save()">{{ submitLabel }}</button>
+  </div>
+</div>

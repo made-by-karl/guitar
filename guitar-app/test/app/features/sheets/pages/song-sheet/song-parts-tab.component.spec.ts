@@ -86,11 +86,11 @@ describe('SongPartsTabComponent', () => {
       lyrics: 'Walk down slow',
       notes: 'Let the bass ring',
       patternActionGrips: [
-        { measureIndex: 0, actionIndex: 0, gripId: 'grip-c', chordName: 'C' },
-        { measureIndex: 0, actionIndex: 4, gripId: 'grip-em', chordName: 'Em' }
+        { measureIndex: 0, actionIndex: 0, gripId: 'grip-c', name: 'C' },
+        { measureIndex: 0, actionIndex: 4, gripId: 'grip-em', name: 'Em' }
       ],
       actionGrips: [
-        { measureIndex: 0, actionIndex: 0, gripId: 'grip-g', chordName: 'G' }
+        { measureIndex: 0, actionIndex: 0, gripId: 'grip-g', name: 'G' }
       ]
     };
     const songSheetsService = {

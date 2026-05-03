@@ -133,7 +133,7 @@ describe('PatternPlaybackService', () => {
     );
     const pattern = {
       ...createPattern(),
-      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, chordName: 'E' }]
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: eGripId, name: 'E' }]
     };
 
     await service.togglePatternPreview(pattern, undefined, undefined, 120);
