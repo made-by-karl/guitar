@@ -52,7 +52,6 @@ describe('AppComponent', () => {
     } as any;
 
     mockUpdateService = {
-      checkVersion: jest.fn()
     } as any;
 
     mockWakeLockService = {
@@ -73,6 +72,7 @@ describe('AppComponent', () => {
           { path: 'patterns', component: MockComponent },
           { path: 'patterns/editor', component: MockComponent },
           { path: 'toolbar', component: MockToolbarPageComponent },
+          { path: 'maintenance/about', component: MockComponent },
           { path: 'maintenance/settings', component: MockComponent },
           { path: 'maintenance/logs', component: MockComponent },
           { path: 'maintenance/midi-test', component: MockComponent }

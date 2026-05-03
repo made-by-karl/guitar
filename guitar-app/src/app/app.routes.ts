@@ -3,6 +3,7 @@ import { MetronomeComponent } from '@/app/features/metronome/pages/metronome-pag
 import { SettingsComponent } from '@/app/features/maintenance/settings/pages/settings.component';
 import { MidiTestComponent } from '@/app/features/maintenance/midi-test/pages/midi-test.component';
 import { LogPageComponent } from '@/app/features/maintenance/logs/pages/log-page.component';
+import { AboutComponent } from '@/app/features/maintenance/about/pages/about.component';
 import { PatternsLibraryComponent } from '@/app/features/patterns/pages/patterns-library/patterns-library.component';
 import { PatternsEditorComponent } from '@/app/features/patterns/pages/patterns-editor/patterns-editor.component';
 import { SheetsListComponent } from '@/app/features/sheets/pages/sheets-list/sheets-list.component';
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'patterns', component: PatternsLibraryComponent },
   { path: 'patterns/editor', component: PatternsEditorComponent },
   { path: 'metronome', component: MetronomeComponent },
+  { path: 'maintenance/about', component: AboutComponent },
   { path: 'maintenance/midi-test', component: MidiTestComponent },
   { path: 'maintenance/logs', component: LogPageComponent },
   { path: 'maintenance/settings', component: SettingsComponent }

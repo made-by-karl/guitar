@@ -1,6 +1,6 @@
 {
   "name": "my-guitar-sheets",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
@@ -9,8 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "jest --config test/jest.config.js",
     "test:watch": "jest --config test/jest.config.js --watch",
-    "postbuild": "node ../scripts/generate-version.js",
-    "postbuild-prod": "node ../scripts/generate-version.js"
+    "prebuild": "node ../scripts/generate-version.js",
+    "prebuild-prod": "node ../scripts/generate-version.js"
   },
   "private": true,
   "dependencies": {

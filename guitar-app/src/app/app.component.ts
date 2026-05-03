@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnDestroy, TemplateRef} from '@angular/core';
+import {Component, OnDestroy, TemplateRef} from '@angular/core';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -8,7 +8,6 @@ import {AudioService} from '@/app/core/services/audio.service';
 import {ConsoleLogStoreService} from '@/app/core/services/console-log-store.service';
 import {NotificationSnackbarComponent} from '@/app/core/ui/notification-snackbar/notification-snackbar.component';
 import {isPageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
-import {timer} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +16,7 @@ import {timer} from 'rxjs';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements AfterViewInit, OnDestroy {
+export class AppComponent implements OnDestroy {
   title = 'My Guitar Sheets';
   isNavbarCollapsed = true;
   pageToolbarTemplate: TemplateRef<object> | null = null;
@@ -31,12 +30,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private consoleLogStore: ConsoleLogStoreService
   ) {
     this.consoleLogStore.installConsoleCapture();
-  }
-
-  ngAfterViewInit(): void {
-    timer(1).subscribe(() => {
-      this.updateService.checkVersion();
-    });
   }
 
   closeNavbar() {
