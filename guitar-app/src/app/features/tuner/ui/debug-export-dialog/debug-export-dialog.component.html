@@ -1,0 +1,26 @@
+<div class="modal-content-wrapper debug-export-dialog">
+  <div class="modal-header">
+    <h5 class="modal-title">Label Debug Export</h5>
+  </div>
+  <div class="modal-body">
+    <p class="text-muted mb-3">
+      Add an optional description so the sample can be identified later.
+    </p>
+    <label class="form-label" for="tuner-debug-description">Description</label>
+    <textarea
+      id="tuner-debug-description"
+      class="form-control"
+      rows="4"
+      maxlength="160"
+      [(ngModel)]="description"
+      placeholder="Example: Soft E4, normal pluck, settles late"></textarea>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      Cancel
+    </button>
+    <button type="button" class="btn btn-primary" (click)="confirm()">
+      Download Debug Data
+    </button>
+  </div>
+</div>

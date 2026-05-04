@@ -1,0 +1,117 @@
+<div class="container py-5 tuner-page">
+  <div class="tuner-header mb-4">
+    <h2 class="mb-0"><i class="bi bi-broadcast-pin me-2"></i>Tuner</h2>
+  </div>
+
+  <div class="tuner-layout">
+    <section
+      class="card tuner-track-card"
+      [class.tuner-track-card--signal]="trackTone() === 'signal'"
+      [class.tuner-track-card--locked]="trackTone() === 'locked'"
+      [class.tuner-track-card--matched]="trackTone() === 'matched'"
+      [class.tuner-track-card--interrupted]="trackTone() === 'interrupted'"
+      [class.tuner-track-card--error]="trackTone() === 'error'">
+      <div class="card-body">
+        <div class="tuner-card__eyebrow">{{ tunerCardLabel() }}</div>
+        <div class="tuner-summary" [class.tuner-summary--hidden]="!showTunerSummary()" [attr.aria-hidden]="!showTunerSummary()">
+          <div class="tuner-summary__primary">{{ primaryReadout() }}</div>
+          <div class="tuner-summary__secondary">{{ secondaryReadout() }}</div>
+        </div>
+
+        <div class="tuner-track">
+          @if (showTolerance()) {
+            <div
+              class="tuner-track__tolerance tuner-track__tolerance--close"
+              [class.tuner-track__tolerance--active]="state.signalPresent || state.pitchLocked"
+              [style.left]="toleranceLeft()"
+              [style.width]="closeToleranceWidth()"
+              aria-hidden="true"></div>
+            <div
+              class="tuner-track__tolerance tuner-track__tolerance--exact"
+              [class.tuner-track__tolerance--active]="state.signalPresent || state.pitchLocked"
+              [class.tuner-track__tolerance--matched]="state.inTune && state.pitchLocked"
+              [style.left]="toleranceLeft()"
+              [style.width]="inTuneToleranceWidth()"
+              aria-hidden="true"></div>
+          }
+          <div class="tuner-track__center-line" aria-hidden="true"></div>
+          <div class="tuner-track__edge-fade" aria-hidden="true"></div>
+
+          @if (showMarkers()) {
+            @for (marker of markers; track trackByMidi($index, marker)) {
+              <div
+                class="track-marker"
+                [class.track-marker--active]="markerActive(marker)"
+                [class.track-marker--matched]="state.inTune && markerActive(marker)"
+                [style.left]="markerLeft(marker)"
+                [style.transform]="markerTransform(marker)"
+                [style.opacity]="markerOpacity(marker)">
+                <span class="track-marker__line"></span>
+                <span class="track-marker__box">{{ marker.label }}</span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="card tuner-controls-card">
+      <div class="card-body">
+        <div class="tuner-card__eyebrow">{{ micCardLabel() }}</div>
+        <div class="tuner-controls-card__topline">
+          <div class="tuner-controls-card__actions">
+            <button
+              class="btn"
+              type="button"
+              [class.btn-primary]="!state.running"
+              [class.btn-outline-danger]="state.running"
+              (click)="toggle()">
+              {{ toggleButtonLabel() }}
+            </button>
+          </div>
+
+          <div
+            class="input-meter"
+            [class.input-meter--live]="state.running"
+            [class.input-meter--signal]="state.signalPresent"
+            [class.input-meter--locked]="state.pitchLocked"
+            [class.input-meter--matched]="state.inTune && state.pitchLocked">
+            <div class="input-meter__rail" aria-label="Microphone signal level">
+              <div class="input-meter__fill" [style.transform]="meterFillScale()"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    @if (debugEnabled()) {
+      <section class="card tuner-debug-card">
+        <div class="card-body">
+          <div class="tuner-card__eyebrow">Debug Data</div>
+          <div class="tuner-debug-card__topline">
+            <div class="tuner-debug-card__meta">{{ telemetryLabel() }}</div>
+            <button class="btn btn-outline-dark" type="button" (click)="downloadDebugData()" [disabled]="!canDownloadDebugData()">
+              Export Debug
+            </button>
+          </div>
+
+          <div class="candidate-list">
+            <div class="candidate-list__label">Frequency Candidates</div>
+            @if (state.pitchCandidates.length > 0) {
+              <div class="candidate-list__items">
+                @for (candidate of state.pitchCandidates; track trackByCandidate($index, candidate)) {
+                  <div class="candidate-list__item">
+                    <span class="candidate-list__frequency">{{ candidate.frequencyHz.toFixed(1) }} Hz</span>
+                    <span class="candidate-list__probability">{{ candidateProbability(candidate) }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="candidate-list__empty">No stable candidates yet.</div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+</div>

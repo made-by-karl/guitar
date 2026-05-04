@@ -9,6 +9,7 @@ import { PatternsEditorComponent } from '@/app/features/patterns/pages/patterns-
 import { SheetsListComponent } from '@/app/features/sheets/pages/sheets-list/sheets-list.component';
 import { SongSheetComponent } from '@/app/features/sheets/pages/song-sheet/song-sheet.component';
 import { ChordComponent } from '@/app/features/grips/pages/chord-page/chord.component';
+import { TunerComponent } from '@/app/features/tuner/pages/tuner-page/tuner.component';
 
 
 export const routes: Routes = [
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'patterns', component: PatternsLibraryComponent },
   { path: 'patterns/editor', component: PatternsEditorComponent },
   { path: 'metronome', component: MetronomeComponent },
+  { path: 'tuner', component: TunerComponent },
   { path: 'maintenance/about', component: AboutComponent },
   { path: 'maintenance/midi-test', component: MidiTestComponent },
   { path: 'maintenance/logs', component: LogPageComponent },

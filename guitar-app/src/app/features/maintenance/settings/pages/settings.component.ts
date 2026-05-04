@@ -1,14 +1,17 @@
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DialogService } from '@/app/core/services/dialog.service';
 import { DatabaseService } from '@/app/core/services/database.service';
+import { DebugSettingsService } from '@/app/core/services/debug-settings.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
+  imports: [FormsModule],
   template: `
     <div class="container py-5">
       <h2 class="mb-4"><i class="bi bi-gear me-2"></i>Settings</h2>
-      
+
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="bi bi-database me-2"></i>Data Management</h5>
@@ -21,10 +24,27 @@ import { DatabaseService } from '@/app/core/services/database.service';
           <p><small class="text-muted">This will remove all song sheets, playing patterns, and settings.</small></p>
         </div>
       </div>
-      
-      <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        More settings coming soon!
+
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-bug me-2"></i>Developer Tools</h5>
+        </div>
+        <div class="card-body">
+          <div class="form-check form-switch">
+            <input
+              id="tunerDebugEnabled"
+              class="form-check-input"
+              type="checkbox"
+              [ngModel]="debugSettings.tunerDebugEnabled()"
+              (ngModelChange)="setTunerDebugEnabled($event)">
+            <label class="form-check-label" for="tunerDebugEnabled">
+              Enable tuner debug mode
+            </label>
+          </div>
+          <p class="text-muted mt-2 mb-0">
+            Stores per-frame tuner diagnostics locally and enables debug export on the tuner page.
+          </p>
+        </div>
       </div>
     </div>
   `,
@@ -33,8 +53,13 @@ import { DatabaseService } from '@/app/core/services/database.service';
 export class SettingsComponent {
   constructor(
     private dialogService: DialogService,
-    private db: DatabaseService
+    private db: DatabaseService,
+    readonly debugSettings: DebugSettingsService
   ) {}
+
+  setTunerDebugEnabled(enabled: boolean): void {
+    this.debugSettings.setTunerDebugEnabled(enabled);
+  }
 
   async clearData() {
     const confirmed = await this.dialogService.confirm(
@@ -44,7 +69,7 @@ export class SettingsComponent {
       'Cancel',
       { variant: 'danger' }
     );
-    
+
     if (confirmed) {
       try {
         await this.db.songSheets.clear();
