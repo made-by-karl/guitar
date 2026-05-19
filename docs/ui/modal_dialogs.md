@@ -16,7 +16,7 @@ A comprehensive guide for creating and using modal dialogs in the application.
 ### Opening a Modal
 
 ```typescript
-import { ModalService } from './services/modal.service';
+import { ModalService } from '@/app/core/services/modal.service';
 
 constructor(private modalService: ModalService) {}
 
@@ -44,11 +44,21 @@ Create three separate files for your modal component:
 ```typescript
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MODAL_REF, MODAL_DATA, ModalRef } from '../../services/modal.service';
+import {
+  MODAL_REF,
+  MODAL_DATA,
+  ModalComponent,
+  ModalDataComponent,
+  ModalRef
+} from '@/app/core/services/modal.service';
 
 export interface MyModalData {
   title: string;
   // Add your data properties
+}
+
+export interface MyModalResult {
+  success: boolean;
 }
 
 @Component({
@@ -58,18 +68,19 @@ export interface MyModalData {
   templateUrl: './my-modal.component.html',
   styleUrls: ['./my-modal.component.scss']
 })
-export class MyModalComponent {
+export class MyModalComponent
+  implements ModalComponent<MyModalResult>, ModalDataComponent<MyModalData> {
   constructor(
-    @Inject(MODAL_REF) private modalRef: ModalRef<any>,
+    @Inject(MODAL_REF) public modalRef: ModalRef<MyModalResult>,
     @Inject(MODAL_DATA) public data: MyModalData
   ) {}
 
   onSave() {
-    this.modalRef.close({ success: true, data: /* your result */ });
+    this.modalRef.close({ success: true });
   }
 
   onCancel() {
-    this.modalRef.close(null);
+    this.modalRef.close();
   }
 }
 ```
@@ -193,7 +204,14 @@ Use modern Angular control flow syntax:
 ### Import
 
 ```typescript
-import { ModalService, MODAL_REF, MODAL_DATA, ModalRef } from './services/modal.service';
+import {
+  ModalService,
+  MODAL_REF,
+  MODAL_DATA,
+  ModalComponent,
+  ModalDataComponent,
+  ModalRef
+} from '@/app/core/services/modal.service';
 ```
 
 ### Show Modal
@@ -252,8 +270,8 @@ modalRef.afterClosed().then(result => {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `width` | string | 'auto' | Modal width (e.g., '500px', '80%') |
-| `height` | string | 'auto' | Modal height (e.g., '600px', '90vh') |
+| `width` | string | unset | Modal width (e.g., '500px', '80%') |
+| `height` | string | unset | Modal height (e.g., '600px', '90vh') |
 | `maxWidth` | string | '95vw' | Maximum width |
 | `maxHeight` | string | '95vh' | Maximum height |
 | `closeOnBackdropClick` | boolean | true | Close when clicking backdrop |
@@ -344,7 +362,9 @@ modalRef = this.modalService.show(MyComponent, {
 });
 
 // In component
-constructor(@Inject(MODAL_DATA) public data: { item: Item }) {}
+export class MyComponent implements ModalDataComponent<{ item: Item }> {
+  constructor(@Inject(MODAL_DATA) public data: { item: Item }) {}
+}
 ```
 
 **Option 2: Via component instance**
@@ -366,12 +386,14 @@ interface SaveResult {
 }
 
 // In component
-constructor(
-  @Inject(MODAL_REF) private modalRef: ModalRef<SaveResult>
-) {}
+export class MyComponent implements ModalComponent<SaveResult> {
+  constructor(
+    @Inject(MODAL_REF) public modalRef: ModalRef<SaveResult>
+  ) {}
 
-onSave() {
-  this.modalRef.close({ success: true, data: this.myData });
+  onSave() {
+    this.modalRef.close({ success: true, data: this.myData });
+  }
 }
 
 // In caller
@@ -448,7 +470,7 @@ The `DialogService` provides convenient methods for common dialogs:
 ### Import
 
 ```typescript
-import { DialogService } from './services/dialog.service';
+import { DialogService } from '@/app/core/services/dialog.service';
 
 constructor(private dialogService: DialogService) {}
 ```
