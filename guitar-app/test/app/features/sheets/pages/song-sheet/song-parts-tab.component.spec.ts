@@ -54,6 +54,7 @@ describe('SongPartsTabComponent', () => {
       tuning: [],
       capodaster: 0,
       tempo: 80,
+      links: [],
       grips: [],
       patterns: [],
       parts: [{ id: 'part-1', section: 'Intro', items: [] }],
@@ -125,6 +126,7 @@ describe('SongPartsTabComponent', () => {
       tuning: [],
       capodaster: 0,
       tempo: 80,
+      links: [],
       grips: [],
       patterns: [{
         id: 'pattern-1',
@@ -195,6 +197,7 @@ describe('SongPartsTabComponent', () => {
       tuning: [],
       capodaster: 0,
       tempo: 80,
+      links: [],
       grips: [],
       patterns: [],
       parts: [{

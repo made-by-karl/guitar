@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
+import { SongSheetLink, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { Note, SEMITONES, Semitone } from '@/app/core/music/semitones';
@@ -13,6 +13,7 @@ import { SongPartsTabComponent } from './song-parts-tab/song-parts-tab.component
 import { SongGripsTabComponent } from './song-grips-tab/song-grips-tab.component';
 import { SongPatternsTabComponent } from './song-patterns-tab/song-patterns-tab.component';
 import { SongTuningEditorComponent } from './song-tuning-editor/song-tuning-editor.component';
+import { SongSheetLinkEditorModalComponent } from './song-sheet-link-editor-modal.component';
 
 type SongSheetTab = 'parts' | 'grips' | 'patterns';
 
@@ -135,6 +136,43 @@ export class SongSheetComponent implements OnDestroy {
     this.activeTab = tab;
   }
 
+  async startAddingLink(): Promise<void> {
+    await this.openLinkEditorDialog();
+  }
+
+  async startEditingLink(link: SongSheetLink): Promise<void> {
+    await this.openLinkEditorDialog(link);
+  }
+
+  async removeLink(linkId: string): Promise<void> {
+    if (!this.sheet) {
+      return;
+    }
+
+    this.sheet = {
+      ...this.sheet,
+      links: this.sheet.links.filter(link => link.id !== linkId)
+    };
+    await this.songSheetService.update(this.sheet);
+
+  }
+
+  getLinkDisplayLabel(url: string): string {
+    const parsed = this.tryParseUrl(url);
+    if (!parsed) {
+      return url;
+    }
+
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    const path = parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '');
+    return path ? hostname + path : hostname;
+  }
+
+  getLinkText(link: SongSheetLink): string {
+    const description = link.description.trim();
+    return description.length > 0 ? description : this.getLinkDisplayLabel(link.url);
+  }
+
   getTuningDisplay(): string {
     if (!this.sheet) {
       return '';
@@ -164,5 +202,52 @@ export class SongSheetComponent implements OnDestroy {
     );
 
     await modalRef.afterClosed();
+  }
+
+  private async openLinkEditorDialog(link?: SongSheetLink): Promise<void> {
+    if (!this.sheet) {
+      return;
+    }
+
+    const modalRef = this.modalService.show(SongSheetLinkEditorModalComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      closeOnBackdropClick: false,
+      data: {
+        title: link ? 'Edit Link' : 'Add Link',
+        link: link ? { url: link.url, description: link.description } : null
+      }
+    });
+
+    const result = await modalRef.afterClosed();
+    if (!result) {
+      return;
+    }
+
+    const nextLink: SongSheetLink = {
+      id: link?.id ?? this.createLinkId(),
+      url: result.url,
+      description: result.description
+    };
+
+    this.sheet = {
+      ...this.sheet,
+      links: link
+        ? this.sheet.links.map(existing => existing.id === link.id ? nextLink : existing)
+        : [...this.sheet.links, nextLink]
+    };
+    await this.songSheetService.update(this.sheet);
+  }
+
+  private tryParseUrl(value: string): URL | null {
+    try {
+      return new URL(value);
+    } catch {
+      return null;
+    }
+  }
+
+  private createLinkId(): string {
+    return 'ssl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
   }
 }

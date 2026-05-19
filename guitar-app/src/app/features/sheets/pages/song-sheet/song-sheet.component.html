@@ -43,6 +43,49 @@
     </button>
   </div>
 
+  <section class="sheet-links card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="sheet-links-header">
+        <div>
+          <h2 class="sheet-links-title">Links</h2>
+          <p class="sheet-links-subtitle mb-0">Open tutorials, tabs, or reference pages outside the app.</p>
+        </div>
+        <button class="btn btn-outline-primary btn-sm links-add-button" type="button" (click)="startAddingLink()">
+          <i class="bi bi-plus-lg"></i> Add Link
+        </button>
+      </div>
+
+      @if (sheet.links.length === 0) {
+      <p class="text-muted mb-0">No external links yet.</p>
+      } @else {
+      <div class="sheet-links-list">
+        @for (link of sheet.links; track link.id) {
+        <article class="sheet-link-item">
+          <div class="sheet-link-copy">
+            <a
+              class="sheet-link-anchor"
+              [href]="link.url"
+              [attr.title]="link.url"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ getLinkText(link) }}
+            </a>
+          </div>
+          <div class="sheet-link-actions">
+            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="startEditingLink(link)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeLink(link.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </article>
+        }
+      </div>
+      }
+    </div>
+  </section>
+
   <div class="sheet-tabs mb-4">
     <div class="sheet-tab-panel">
       <div class="sheet-tab-list" role="tablist" aria-label="Song sheet sections">

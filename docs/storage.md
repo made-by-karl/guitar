@@ -6,7 +6,7 @@ Client-side persistence is handled with Dexie/IndexedDB in `guitar-app/src/app/c
 
 ## Tables
 
-Current schema version is `2` with two tables:
+Current schema version is `3` with two tables:
 
 - `songSheets`: keyed by `id`, indexed by `created` and `updated`
 - `playingPatterns`: keyed by `id`, indexed by `category` and `isCustom`
@@ -21,6 +21,7 @@ Version 2 also clears `playingPatterns` during upgrade so defaults can be rebuil
 
 - sheet metadata
 - tuning, capo, tempo
+- external links with optional descriptions
 - sheet-local grip references
 - sheet-local pattern copies
 - part structure and per-measure overlays

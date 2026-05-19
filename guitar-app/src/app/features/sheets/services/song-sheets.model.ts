@@ -17,6 +17,12 @@ export interface SongSheetGripWithData extends SongSheetGrip {
 
 export interface SongSheetPattern extends PlayingPattern {}
 
+export interface SongSheetLink {
+  id: string;
+  url: string;
+  description: string;
+}
+
 export interface SongPartMeasureText {
   measureIndex: number;
   lyrics: string;
@@ -44,6 +50,7 @@ export interface SongSheet {
   tuning: Note[];
   capodaster: number;
   tempo: number;
+  links: SongSheetLink[];
   grips: SongSheetGrip[];
   patterns: SongSheetPattern[];
   parts: SongPart[];

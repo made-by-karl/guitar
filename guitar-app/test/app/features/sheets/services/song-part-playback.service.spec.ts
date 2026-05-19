@@ -20,6 +20,7 @@ describe('SongPartPlaybackService', () => {
     ],
     capodaster: 0,
     tempo: 120,
+    links: [],
     grips: [{
       gripId: eGripId,
       name: 'E',

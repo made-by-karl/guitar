@@ -5,6 +5,7 @@ import {
   SongPartActionGrip,
   SongPartMeasureText,
   SongPartPatternItem,
+  SongSheetLink,
   SongSheet,
   SongSheetGrip,
   SongSheetGripWithData,
@@ -72,6 +73,7 @@ export class SongSheetsService {
       tuning: this.defaultTuning,
       capodaster: 0,
       tempo: 80,
+      links: [],
       grips: [],
       patterns: [],
       parts: [],
@@ -436,6 +438,7 @@ export class SongSheetsService {
   private cleanSheetForStorage(sheet: SongSheet): SongSheet {
     return {
       ...sheet,
+      links: sheet.links.map(link => this.cloneLink(link)),
       grips: sheet.grips.map(grip => ({
         gripId: grip.gripId,
         name: grip.name
@@ -450,6 +453,14 @@ export class SongSheetsService {
       id: part.id,
       section: part.section,
       items: part.items.map(item => this.clonePartItem(item))
+    };
+  }
+
+  private cloneLink(link: SongSheetLink): SongSheetLink {
+    return {
+      id: link.id,
+      url: link.url,
+      description: link.description
     };
   }
 

@@ -1,0 +1,44 @@
+<div class="modal-content-wrapper song-sheet-link-editor-modal">
+  <div class="modal-header">
+    <h5 class="modal-title">{{ data.title }}</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="cancel()"></button>
+  </div>
+
+  <div class="modal-body">
+    <p class="text-muted mb-3">
+      Add a tutorial, tab, or reference page that should open outside the installed app.
+    </p>
+
+    <div class="mb-3">
+      <label class="form-label" for="song-sheet-link-url">URL</label>
+      <input
+        id="song-sheet-link-url"
+        class="form-control"
+        [class.is-invalid]="!!error"
+        [(ngModel)]="url"
+        (ngModelChange)="clearError()"
+        placeholder="https://www.youtube.com/watch?v=..." />
+      @if (error) {
+      <div class="invalid-feedback d-block">{{ error }}</div>
+      }
+    </div>
+
+    <div>
+      <label class="form-label" for="song-sheet-link-description">Description</label>
+      <input
+        id="song-sheet-link-description"
+        class="form-control"
+        [(ngModel)]="description"
+        placeholder="Optional note about why this link is useful" />
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      Cancel
+    </button>
+    <button type="button" class="btn btn-primary" (click)="save()">
+      Save Link
+    </button>
+  </div>
+</div>

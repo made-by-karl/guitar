@@ -23,5 +23,10 @@ export class DatabaseService extends Dexie {
     }).upgrade(async tx => {
       await tx.table('playingPatterns').clear();
     });
+
+    this.version(3).stores({
+      songSheets: 'id, created, updated',
+      playingPatterns: 'id, category, isCustom'
+    });
   }
 }

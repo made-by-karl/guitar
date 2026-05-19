@@ -68,6 +68,7 @@ describe('SongPatternsTabComponent', () => {
       tuning: [],
       capodaster: 0,
       tempo: 90,
+      links: [],
       grips: [],
       patterns: [{
         id: 'pattern-1',

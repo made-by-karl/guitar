@@ -35,6 +35,7 @@ describe('SongSheetsService', () => {
       tuning: [],
       capodaster: 0,
       tempo: 90,
+      links: [],
       grips: [
         { gripId: 'grip-c', name: 'C' },
         { gripId: 'grip-g', name: 'G' }
@@ -59,6 +60,14 @@ describe('SongSheetsService', () => {
       updated: 1
     };
   }
+
+  it('creates sheets with an empty external links list', async () => {
+    const { service } = createService();
+
+    const sheet = await service.create('New Song');
+
+    expect(sheet.links).toEqual([]);
+  });
 
   it('creates normalized pattern items from sheet-local patterns', () => {
     const { service } = createService();
@@ -238,5 +247,27 @@ describe('SongSheetsService', () => {
 
     expect(db.songSheets.put).not.toHaveBeenCalled();
     expect(getStoredSheet()?.parts.map(part => part.id)).toEqual(['part-2', 'part-1']);
+  });
+
+  it('stores normalized external link objects when updating a sheet', async () => {
+    const sheet = createSheet();
+    const { service, getStoredSheet } = createService(sheet);
+
+    await service.update({
+      ...sheet,
+      links: [{
+        id: 'link-1',
+        url: 'https://example.com/tutorial',
+        description: 'Video walkthrough',
+        transient: true
+      } as any]
+    });
+
+    expect(getStoredSheet()?.links).toEqual([{
+      id: 'link-1',
+      url: 'https://example.com/tutorial',
+      description: 'Video walkthrough'
+    }]);
+    expect((getStoredSheet()?.links[0] as any).transient).toBeUndefined();
   });
 });
