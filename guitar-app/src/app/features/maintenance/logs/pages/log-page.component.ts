@@ -9,7 +9,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="container py-4">
+    <div class="container app-page">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
           <h2 class="mb-1"><i class="bi bi-journal-text me-2"></i>Application Logs</h2>

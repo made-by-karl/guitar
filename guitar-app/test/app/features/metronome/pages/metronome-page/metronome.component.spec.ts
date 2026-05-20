@@ -106,4 +106,39 @@ describe('MetronomeComponent', () => {
       subdivision: '8th'
     });
   });
+
+  it('shows one toggle button that switches between Play and Stop', () => {
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.btn') as HTMLButtonElement;
+    expect(button.textContent).toContain('Play');
+
+    stateSubject.next({
+      ...stateSubject.getValue(),
+      running: true
+    });
+    fixture.detectChanges();
+
+    expect(button.textContent).toContain('Stop');
+  });
+
+  it('starts and stops playback from the toggle button', () => {
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.btn') as HTMLButtonElement;
+
+    button.click();
+
+    expect(mockMetronomeService.start).toHaveBeenCalledWith({
+      bpm: 80,
+      timeSignature: '4/4',
+      subdivision: '8th'
+    });
+
+    stateSubject.next({
+      ...stateSubject.getValue(),
+      running: true
+    });
+    fixture.detectChanges();
+
+    button.click();
+
+    expect(mockMetronomeService.stop).toHaveBeenCalled();
+  });
 });

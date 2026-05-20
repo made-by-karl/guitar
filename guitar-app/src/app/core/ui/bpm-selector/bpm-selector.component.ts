@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef } from '@angular/core';
+import { Component, forwardRef, input } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 type BpmMode = 'tempo' | 'custom';
@@ -34,6 +34,7 @@ const BPM_PRESETS: readonly BpmPreset[] = [
 })
 export class BpmSelectorComponent implements ControlValueAccessor {
   readonly presets = BPM_PRESETS;
+  readonly controlId = input<string | null>(null);
 
   mode: BpmMode = 'tempo';
   selectedPresetId: string = BPM_PRESETS[0].id;

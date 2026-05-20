@@ -1,8 +1,12 @@
 @if (sheet) {
-<div class="container py-4 py-md-5 song-sheet-page">
+<div class="container app-page song-sheet-page">
   <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between align-items-lg-center mb-4">
     <div class="sheet-title-row">
+      <label class="visually-hidden" for="songSheetName">Song sheet name</label>
       <input
+        id="songSheetName"
+        name="songSheetName"
+        type="text"
         [ngModel]="renaming ? tempName : sheet.name"
         (ngModelChange)="tempName = $event"
         class="form-control sheet-name-input"

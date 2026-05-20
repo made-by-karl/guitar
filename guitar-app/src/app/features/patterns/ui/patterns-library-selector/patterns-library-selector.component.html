@@ -5,7 +5,7 @@
     <button class="btn btn-outline-secondary" (click)="search = ''"><i class="bi bi-x"></i></button>
   </div>
   <div class="row">
-    @for (pattern of filteredPatterns; track pattern.id || pattern.name) {
+    @for (pattern of filteredPatterns; track pattern.id) {
     <div class="col-md-4 mb-4">
       <div
         class="card h-100 pattern-item"
@@ -37,7 +37,7 @@
           <div class="mb-2">
             <span class="badge bg-info">{{ pattern.category }}</span>
             @if (pattern.measures && pattern.measures.length > 0) {
-              @for (measure of pattern.measures; track measure; let first = $first; let last = $last) {
+              @for (measure of pattern.measures; track $index; let first = $first; let last = $last) {
                 <span class="badge bg-light text-dark ms-1">{{ measure.timeSignature }}</span>
                 @if (!last && pattern.measures.length > 1) {
                   <span class="text-muted mx-1">→</span>

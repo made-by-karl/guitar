@@ -9,7 +9,7 @@ import { DebugSettingsService } from '@/app/core/services/debug-settings.service
   standalone: true,
   imports: [FormsModule],
   template: `
-    <div class="container py-5">
+    <div class="container app-page">
       <h2 class="mb-4"><i class="bi bi-gear me-2"></i>Settings</h2>
 
       <div class="card mb-4">

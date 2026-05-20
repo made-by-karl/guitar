@@ -1,4 +1,4 @@
-<div class="container py-3">
+<div class="container app-page">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="mb-0">
       <i class="bi bi-music-note-beamed me-2"></i>
@@ -17,16 +17,16 @@
   @if (pattern) {
     <div class="row g-3 mb-3">
       <div class="col-12 col-md-4">
-        <label class="form-label">Name</label>
-        <input class="form-control" [(ngModel)]="pattern.name" />
+        <label class="form-label" for="patternEditorName">Name</label>
+        <input id="patternEditorName" name="patternEditorName" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.name" />
       </div>
       <div class="col-12 col-md-4">
-        <label class="form-label">Category</label>
-        <input class="form-control" [(ngModel)]="pattern.category" />
+        <label class="form-label" for="patternEditorCategory">Category</label>
+        <input id="patternEditorCategory" name="patternEditorCategory" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.category" />
       </div>
       <div class="col-12 col-md-4">
-        <label class="form-label">Description</label>
-        <input class="form-control" [(ngModel)]="pattern.description" />
+        <label class="form-label" for="patternEditorDescription">Description</label>
+        <input id="patternEditorDescription" name="patternEditorDescription" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.description" />
       </div>
     </div>
 

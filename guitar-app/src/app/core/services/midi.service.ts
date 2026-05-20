@@ -102,27 +102,27 @@ export class MidiService implements OnDestroy {
           duration: 0.3, // Still short but less abrupt
           velocity: velocity * 0.6
         };
-      
+
       case 'palm-muted':
         return {
           ...baseOptions,
           duration: 0.8, // Longer than muted but shorter than open
           velocity: velocity * 0.7
         };
-      
+
       case 'percussive':
         return {
           ...baseOptions,
           duration: 0.015, // Very short for percussive effect
           velocity: velocity * 0.8
         };
-      
+
       case 'accented':
         return {
           ...baseOptions,
           velocity: Math.min(1.0, velocity * 1.6)
         };
-      
+
       default: // normal
         return baseOptions;
     }
@@ -214,8 +214,8 @@ export class MidiService implements OnDestroy {
    * Play notes sequentially or in reverse order
    */
   private playSequentialNotes(
-    instruction: MidiInstruction, 
-    startTime: number, 
+    instruction: MidiInstruction,
+    startTime: number,
     options: any
   ): void {
     const sampler = this.audioService.getSampler('guitar');
@@ -226,9 +226,9 @@ export class MidiService implements OnDestroy {
 
     const noteSpacing = this.getSequentialNoteSpacing(instruction.actionDuration, notes.length);
     const playMode = instruction.playNotes || 'parallel';
-    
+
     let sortedNotes = [...notes];
-    
+
     if (playMode === 'reversed') {
       sortedNotes = sortedNotes.reverse();
     }
@@ -238,7 +238,7 @@ export class MidiService implements OnDestroy {
       const note = sortedNotes[i];
       const noteTime = startTime + (i * noteSpacing);
       const noteName = this.noteToToneName(note.note);
-      
+
       sampler.triggerAttackRelease(
         noteName,
         options.duration ?? instruction.playbackDuration,
@@ -362,14 +362,13 @@ export class MidiService implements OnDestroy {
     if (!percussionSampler) throw new Error('Percussion sampler not initialized');
 
     const techniqueMapping: { [key: string]: string } = {
-      'body_knock': 'C3', 
+      'body_knock': 'C3',
       'string_slap': 'C#3'
     };
 
     const note = techniqueMapping[technique];
     if (note) {
       percussionSampler.triggerAttackRelease(note, '8n');
-      console.log(`Playing percussion technique: ${technique}`);
     } else {
       console.warn(`Unknown percussion technique: ${technique}`);
     }

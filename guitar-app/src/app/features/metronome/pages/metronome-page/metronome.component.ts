@@ -79,6 +79,15 @@ export class MetronomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  async toggle(): Promise<void> {
+    if (this.running) {
+      this.stop();
+      return;
+    }
+
+    await this.start();
+  }
+
   stop(): void {
     this.metronomeService.stop();
   }

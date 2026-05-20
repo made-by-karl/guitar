@@ -17,25 +17,25 @@
         </div>
         <!-- Pattern Details -->
         <div class="mb-2">
-          <label class="form-label">Name</label>
-          <input class="form-control" [(ngModel)]="patternValue.name" name="name" required />
+          <label class="form-label" for="playingPatternName">Name</label>
+          <input id="playingPatternName" class="form-control" [(ngModel)]="patternValue.name" name="name" type="text" autocomplete="off" required />
         </div>
         <div class="mb-2">
-          <label class="form-label">Description</label>
-          <input class="form-control" [(ngModel)]="patternValue.description" name="description" />
+          <label class="form-label" for="playingPatternDescription">Description</label>
+          <input id="playingPatternDescription" class="form-control" [(ngModel)]="patternValue.description" name="description" type="text" autocomplete="off" />
         </div>
         <div class="mb-2 row g-2">
           <div class="col-12 col-md-4">
-            <label class="form-label">Category</label>
-            <input class="form-control" [(ngModel)]="patternValue.category" name="category" />
+            <label class="form-label" for="playingPatternCategory">Category</label>
+            <input id="playingPatternCategory" class="form-control" [(ngModel)]="patternValue.category" name="category" type="text" autocomplete="off" />
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label">Suggested Genre</label>
-            <input class="form-control" [(ngModel)]="patternValue.suggestedGenre" name="suggestedGenre" />
+            <label class="form-label" for="playingPatternSuggestedGenre">Suggested Genre</label>
+            <input id="playingPatternSuggestedGenre" class="form-control" [(ngModel)]="patternValue.suggestedGenre" name="suggestedGenre" type="text" autocomplete="off" />
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label">Example Song</label>
-            <input class="form-control" [(ngModel)]="patternValue.exampleSong" name="exampleSong" />
+            <label class="form-label" for="playingPatternExampleSong">Example Song</label>
+            <input id="playingPatternExampleSong" class="form-control" [(ngModel)]="patternValue.exampleSong" name="exampleSong" type="text" autocomplete="off" />
           </div>
         </div>
 
@@ -61,8 +61,9 @@
             <div class="measure-controls mb-3">
               <div class="row align-items-center">
                 <div class="col-md-4">
-                  <label class="form-label small">Time Signature</label>
+                  <label class="form-label small" [attr.for]="'timeSignature_' + measureData.measureIndex">Time Signature</label>
                   <select class="form-select form-select-sm"
+                    [id]="'timeSignature_' + measureData.measureIndex"
                     [ngModel]="measureData.measure.timeSignature"
                     (ngModelChange)="changeTimeSignature(measureData.measureIndex, $event)"
                     [name]="'timeSignature_' + measureData.measureIndex">
@@ -72,12 +73,13 @@
                   </select>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label small">Subdivision</label>
+                  <label class="form-label small" [attr.for]="'subdivisionSwitch_' + measureData.measureIndex">Subdivision</label>
                   <div class="d-flex align-items-center gap-2">
                     <span class="small" [class.fw-bold]="!measureData.useSixteenthSteps">8th</span>
                     <div class="form-check form-switch mb-0">
                       <input class="form-check-input" type="checkbox"
                         [id]="'subdivisionSwitch_' + measureData.measureIndex"
+                        [name]="'subdivisionSwitch_' + measureData.measureIndex"
                         [checked]="measureData.useSixteenthSteps"
                         [disabled]="!canToggleSixteenthSteps(measureData.measureIndex)"
                         (change)="toggleSixteenthSteps(measureData.measureIndex)">
@@ -86,7 +88,7 @@
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label small">Actions</label>
+                  <div class="form-label small">Actions</div>
                   <div class="small text-muted">
                     {{ getActionsForDisplay(measureData).length }} positions
                   </div>
@@ -143,7 +145,7 @@
                         <!-- Modifiers (for strum and pick only) -->
                         @if (actionData.action.technique === 'strum' || actionData.action.technique === 'pick') {
                         <div class="modifiers-section">
-                          <label class="form-label small">Modifiers</label>
+                          <div class="form-label small">Modifiers</div>
                           <div class="d-flex gap-1 flex-wrap">
                             @for (modifier of getAvailableModifiers(); track modifier.value) {
                             <div class="form-check form-check-inline">
@@ -164,8 +166,9 @@
                         <!-- Direction (for strum only) -->
                         @if (actionData.action.technique === 'strum' && actionData.action.strum) {
                         <div class="direction-section">
-                          <label class="form-label small">Direction</label>
+                          <label class="form-label small" [attr.for]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex">Direction</label>
                           <select class="form-select form-select-sm"
+                            [id]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="actionData.action.strum.direction"
                             (ngModelChange)="updateStrumDirection(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'direction_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -177,8 +180,9 @@
                         <!-- Strum Pattern -->
                         @if (actionData.action.strum) {
                         <div class="strum-section">
-                          <label class="form-label small">Strings</label>
+                          <label class="form-label small" [attr.for]="'strumStrings_' + measureData.measureIndex + '_' + actionData.originalIndex">Strings</label>
                           <select class="form-select form-select-sm"
+                            [id]="'strumStrings_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="getStrumStringsMode(actionData.action)"
                             (ngModelChange)="updateStrumStringsMode(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'strumStrings_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -189,6 +193,7 @@
                           @if (isRelativeStrumStrings(actionData.action)) {
                           <div class="d-flex gap-2 mt-2">
                             <select class="form-select form-select-sm"
+                              [attr.aria-label]="'Strum range start for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                               [ngModel]="getStrumRangeFrom(actionData.action)"
                               (ngModelChange)="updateStrumRangeFrom(measureData.measureIndex, actionData.originalIndex, $event)"
                               [name]="'strumRangeFrom_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -197,6 +202,7 @@
                               }
                             </select>
                             <select class="form-select form-select-sm"
+                              [attr.aria-label]="'Strum range end for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                               [ngModel]="getStrumRangeTo(actionData.action)"
                               (ngModelChange)="updateStrumRangeTo(measureData.measureIndex, actionData.originalIndex, $event)"
                               [name]="'strumRangeTo_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -213,15 +219,16 @@
                         <!-- Pick Pattern -->
                         @if (actionData.action.technique === 'pick') {
                         <div class="pick-section">
-                          <label class="form-label small">Pick Mode</label>
+                          <label class="form-label small" [attr.for]="'pickMode_' + measureData.measureIndex + '_' + actionData.originalIndex">Pick Mode</label>
                           <select class="form-select form-select-sm mb-2"
+                            [id]="'pickMode_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="getPickModeForAction(actionData.action)"
                             (ngModelChange)="setPickMode(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'pickMode_' + measureData.measureIndex + '_' + actionData.originalIndex">
                             <option value="relative">Relative to Grip</option>
                             <option value="explicit">Explicit Fret</option>
                           </select>
-                          <label class="form-label small">Notes</label>
+                          <div class="form-label small">Notes</div>
                           <div class="pick-notes">
                             @if (getPickModeForAction(actionData.action) === 'relative') {
                             <div class="pick-note-header small text-muted">
@@ -237,6 +244,7 @@
                               <div class="d-flex align-items-center gap-1">
                                 @if (isRelativePickNote(note)) {
                                 <select class="form-select form-select-sm"
+                                  [attr.aria-label]="'Relative pick string for note ' + (noteIndex + 1) + ' in measure ' + (measureData.measureIndex + 1)"
                                   [ngModel]="getPickRelativeString(note)"
                                   (ngModelChange)="updatePickNoteRelativeString(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
@@ -245,6 +253,7 @@
                                   }
                                 </select>
                                 <select class="form-select form-select-sm"
+                                  [attr.aria-label]="'Pick note anchor for note ' + (noteIndex + 1) + ' in measure ' + (measureData.measureIndex + 1)"
                                   [ngModel]="getPickAnchor(note)"
                                   (ngModelChange)="updatePickNoteAnchor(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickAnchor_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
@@ -253,6 +262,8 @@
                                 </select>
                                 @if (canEditPickOffset(note)) {
                                 <input type="number" class="form-control form-control-sm"
+                                  autocomplete="off"
+                                  [attr.aria-label]="'Pick note offset for note ' + (noteIndex + 1) + ' in measure ' + (measureData.measureIndex + 1)"
                                   [ngModel]="getRelativePickOffset(note)"
                                   (ngModelChange)="updatePickNoteOffset(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickOffset_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex"
@@ -260,6 +271,7 @@
                                 }
                                 } @else {
                                 <select class="form-select form-select-sm"
+                                  [attr.aria-label]="'Pick string for note ' + (noteIndex + 1) + ' in measure ' + (measureData.measureIndex + 1)"
                                   [ngModel]="note.string"
                                   (ngModelChange)="updatePickNoteString(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickString_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex">
@@ -268,6 +280,8 @@
                                   }
                                 </select>
                                 <input type="number" class="form-control form-control-sm"
+                                  autocomplete="off"
+                                  [attr.aria-label]="'Pick fret for note ' + (noteIndex + 1) + ' in measure ' + (measureData.measureIndex + 1)"
                                   [ngModel]="note.fret"
                                   (ngModelChange)="updatePickNoteFret(measureData.measureIndex, actionData.originalIndex, noteIndex, $event)"
                                   [name]="'pickFret_' + measureData.measureIndex + '_' + actionData.originalIndex + '_' + noteIndex"
@@ -291,8 +305,9 @@
 
                         @if ((actionData.action.technique === 'hammer-on' || actionData.action.technique === 'pull-off' || actionData.action.technique === 'slide') && actionData.action.legato) {
                         <div class="pick-section">
-                          <label class="form-label small">Legato Mode</label>
+                          <label class="form-label small" [attr.for]="'legatoMode_' + measureData.measureIndex + '_' + actionData.originalIndex">Legato Mode</label>
                           <select class="form-select form-select-sm mb-2"
+                            [id]="'legatoMode_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="getLegatoModeForAction(actionData.action)"
                             (ngModelChange)="setLegatoMode(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'legatoMode_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -300,8 +315,9 @@
                             <option value="explicit">Explicit Fret</option>
                           </select>
                           @if (isRelativeLegato(actionData.action.legato)) {
-                          <label class="form-label small">String</label>
+                          <label class="form-label small" [attr.for]="'legatoRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex">String</label>
                           <select class="form-select form-select-sm mb-2"
+                            [id]="'legatoRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="getLegatoRelativeString(actionData.action.legato)"
                             (ngModelChange)="updateLegatoRelativeString(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'legatoRelativeString_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -310,10 +326,11 @@
                             }
                           </select>
 
-                          <label class="form-label small">Target</label>
+                          <div class="form-label small">Target</div>
                           <div class="pick-note">
                             <div class="d-flex align-items-center gap-1">
                               <select class="form-select form-select-sm"
+                                [attr.aria-label]="'Legato target anchor for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                                 [ngModel]="getLegatoTargetAnchor(actionData.action.legato)"
                                 (ngModelChange)="updateLegatoTargetAnchor(measureData.measureIndex, actionData.originalIndex, $event)"
                                 [name]="'legatoTargetAnchor_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -322,6 +339,8 @@
                               </select>
                               @if (canEditLegatoTargetOffset(actionData.action.legato)) {
                               <input type="number" class="form-control form-control-sm"
+                                autocomplete="off"
+                                [attr.aria-label]="'Legato target offset for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                                 [ngModel]="getRelativeLegatoTargetOffset(actionData.action.legato)"
                                 (ngModelChange)="updateLegatoTargetFretOffset(measureData.measureIndex, actionData.originalIndex, $event)"
                                 [name]="'legatoTargetOffset_' + measureData.measureIndex + '_' + actionData.originalIndex"
@@ -330,10 +349,11 @@
                             </div>
                           </div>
                           } @else {
-                          <label class="form-label small">Legato Note</label>
+                          <div class="form-label small">Legato Note</div>
                           <div class="pick-note">
                             <div class="d-flex align-items-center gap-1">
                               <select class="form-select form-select-sm"
+                                [attr.aria-label]="'Legato string for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                                 [ngModel]="actionData.action.legato.string"
                                 (ngModelChange)="updateLegatoString(measureData.measureIndex, actionData.originalIndex, $event)"
                                 [name]="'legatoString_' + measureData.measureIndex + '_' + actionData.originalIndex">
@@ -342,6 +362,8 @@
                                 }
                               </select>
                               <input type="number" class="form-control form-control-sm"
+                                autocomplete="off"
+                                [attr.aria-label]="'Legato target fret for measure ' + (measureData.measureIndex + 1) + ' action ' + getActionPositionLabel(actionData)"
                                 [ngModel]="actionData.action.legato.toFret"
                                 (ngModelChange)="updateLegatoToFret(measureData.measureIndex, actionData.originalIndex, $event)"
                                 [name]="'legatoToFret_' + measureData.measureIndex + '_' + actionData.originalIndex"
@@ -355,8 +377,9 @@
                         <!-- Percussion Technique -->
                         @if (actionData.action.technique === 'percussive') {
                         <div class="percussion-section">
-                          <label class="form-label small">Percussion Technique</label>
+                          <label class="form-label small" [attr.for]="'percussionTechnique_' + measureData.measureIndex + '_' + actionData.originalIndex">Percussion Technique</label>
                           <select class="form-select form-select-sm"
+                            [id]="'percussionTechnique_' + measureData.measureIndex + '_' + actionData.originalIndex"
                             [ngModel]="actionData.action.percussive?.technique || 'body-knock'"
                             (ngModelChange)="updatePercussionTechnique(measureData.measureIndex, actionData.originalIndex, $event)"
                             [name]="'percussionTechnique_' + measureData.measureIndex + '_' + actionData.originalIndex">

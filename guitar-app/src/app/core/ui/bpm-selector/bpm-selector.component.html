@@ -1,6 +1,7 @@
 <div class="input-group">
   <select
     class="form-select bpm-mode"
+    [attr.name]="(controlId() ?? 'bpm') + '-mode'"
     [ngModel]="mode"
     (ngModelChange)="onModeChange($event)"
     [disabled]="disabled"
@@ -11,7 +12,9 @@
 
   @if (mode === 'tempo') {
     <select
+      [id]="controlId()"
       class="form-select"
+      [attr.name]="(controlId() ?? 'bpm') + '-value'"
       [ngModel]="selectedPresetId"
       (ngModelChange)="onPresetChange($event)"
       [disabled]="disabled"
@@ -22,7 +25,9 @@
     </select>
   } @else {
     <input
+      [id]="controlId()"
       class="form-control"
+      [attr.name]="(controlId() ?? 'bpm') + '-value'"
       [ngModel]="customText"
       (ngModelChange)="onCustomInput($event)"
       (blur)="onCustomBlur()"

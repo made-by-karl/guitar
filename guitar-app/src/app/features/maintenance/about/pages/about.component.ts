@@ -7,7 +7,7 @@ import { UpdateService } from '@/app/core/services/update.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="container py-4">
+    <div class="container app-page">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
           <h2 class="mb-1"><i class="bi bi-info-circle me-2"></i>About</h2>

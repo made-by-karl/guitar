@@ -23,6 +23,11 @@ body {
   background: #f8f9fa;
 }
 
+.app-page {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
 /* iOS Safari auto-zooms focused form controls below 16px. Keep mobile inputs at or above 16px. */
 @media (hover: none) and (pointer: coarse) {
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),

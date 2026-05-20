@@ -11,6 +11,8 @@
           <label class="form-label fw-semibold" for="customGripName">Grip Name</label>
           <input
             id="customGripName"
+            name="customGripName"
+            type="text"
             class="form-control form-control-lg"
             [(ngModel)]="name"
             placeholder="Example: Verse Walk-Up"
@@ -49,8 +51,10 @@
 
                 <div class="string-control-grid">
                   <div>
-                    <label class="form-label small">Press Type</label>
+                    <label class="form-label small" [attr.for]="'customGripMode' + $index">Press Type</label>
                     <select
+                      [id]="'customGripMode' + $index"
+                      [name]="'customGripMode' + $index"
                       class="form-select"
                       [ngModel]="state.mode"
                       (ngModelChange)="updateMode(state, $event)">
@@ -61,8 +65,10 @@
                   </div>
 
                   <div>
-                    <label class="form-label small">Fret</label>
+                    <label class="form-label small" [attr.for]="'customGripFret' + $index">Fret</label>
                     <input
+                      [id]="'customGripFret' + $index"
+                      [name]="'customGripFret' + $index"
                       class="form-control"
                       type="number"
                       min="1"

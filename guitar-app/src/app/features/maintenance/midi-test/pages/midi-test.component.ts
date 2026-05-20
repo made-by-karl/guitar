@@ -10,7 +10,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="container mt-4">
+    <div class="container app-page">
       <h2>🎸 Guitar MIDI Test</h2>
       <p class="text-muted">Test different guitar playing techniques and sounds</p>
       

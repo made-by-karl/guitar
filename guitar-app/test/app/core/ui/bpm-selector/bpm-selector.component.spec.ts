@@ -37,4 +37,38 @@ describe('BpmSelectorComponent', () => {
     expect(component.selectedPresetId).toBe('fast');
     expect(changes.at(-1)).toBe(110);
   });
+
+  it('applies the provided control id to the active BPM field across modes', () => {
+    fixture.componentRef.setInput('controlId', 'bpm');
+    fixture.detectChanges();
+
+    let activeField = fixture.nativeElement.querySelector('#bpm') as HTMLSelectElement | HTMLInputElement | null;
+    expect(activeField?.tagName).toBe('SELECT');
+
+    component.onModeChange('custom');
+    fixture.detectChanges();
+
+    activeField = fixture.nativeElement.querySelector('#bpm') as HTMLSelectElement | HTMLInputElement | null;
+    expect(activeField?.tagName).toBe('INPUT');
+  });
+
+  it('assigns stable names to the BPM mode and value fields', () => {
+    fixture.componentRef.setInput('controlId', 'metronome-bpm');
+    fixture.detectChanges();
+
+    let modeField = fixture.nativeElement.querySelector('select.bpm-mode') as HTMLSelectElement | null;
+    let valueField = fixture.nativeElement.querySelector('#metronome-bpm') as HTMLSelectElement | HTMLInputElement | null;
+
+    expect(modeField?.getAttribute('name')).toBe('metronome-bpm-mode');
+    expect(valueField?.getAttribute('name')).toBe('metronome-bpm-value');
+
+    component.onModeChange('custom');
+    fixture.detectChanges();
+
+    modeField = fixture.nativeElement.querySelector('select.bpm-mode') as HTMLSelectElement | null;
+    valueField = fixture.nativeElement.querySelector('#metronome-bpm') as HTMLSelectElement | HTMLInputElement | null;
+
+    expect(modeField?.getAttribute('name')).toBe('metronome-bpm-mode');
+    expect(valueField?.getAttribute('name')).toBe('metronome-bpm-value');
+  });
 });
