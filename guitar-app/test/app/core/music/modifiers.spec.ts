@@ -32,7 +32,9 @@ describe('Modifiers', () => {
             // Check that it contains key modifier types
             expect(MODIFIER_DEFINITIONS['m']).toBeDefined();
             expect(MODIFIER_DEFINITIONS['7']).toBeDefined();
+            expect(MODIFIER_DEFINITIONS['9']).toBeDefined();
             expect(MODIFIER_DEFINITIONS['maj7']).toBeDefined();
+            expect(MODIFIER_DEFINITIONS['6/9']).toBeDefined();
             expect(MODIFIER_DEFINITIONS['dim']).toBeDefined();
             expect(MODIFIER_DEFINITIONS['aug']).toBeDefined();
             expect(MODIFIER_DEFINITIONS['sus2']).toBeDefined();
@@ -82,7 +84,9 @@ describe('Modifiers', () => {
         it('should contain expected modifier strings', () => {
             expect(MODIFIERS).toContain('m');
             expect(MODIFIERS).toContain('7');
+            expect(MODIFIERS).toContain('9');
             expect(MODIFIERS).toContain('maj7');
+            expect(MODIFIERS).toContain('6/9');
             expect(MODIFIERS).toContain('dim');
             expect(MODIFIERS).toContain('aug');
             expect(MODIFIERS).toContain('sus2');
@@ -97,7 +101,9 @@ describe('Modifiers', () => {
         it('should return true for valid modifiers', () => {
             expect(isModifier('m')).toBe(true);
             expect(isModifier('7')).toBe(true);
+            expect(isModifier('9')).toBe(true);
             expect(isModifier('maj7')).toBe(true);
+            expect(isModifier('6/9')).toBe(true);
             expect(isModifier('dim')).toBe(true);
             expect(isModifier('aug')).toBe(true);
             expect(isModifier('sus2')).toBe(true);
@@ -129,6 +135,8 @@ describe('Modifiers', () => {
             expect(getModifierDescription('m')).toBe('Minor triad (♭3)');
             expect(getModifierDescription('maj7')).toBe('Major 7th (♮7)');
             expect(getModifierDescription('7')).toBe('Dominant 7th (♭7)');
+            expect(getModifierDescription('9')).toBe('Dominant 9th (♭7 + 9)');
+            expect(getModifierDescription('6/9')).toBe('Six-nine chord (add 6th and 9th)');
             expect(getModifierDescription('dim')).toBe('Diminished triad (♭3, ♭5)');
             expect(getModifierDescription('aug')).toBe('Augmented triad (♯5)');
             expect(getModifierDescription('sus2')).toBe('Suspend 2nd (replace 3rd with 2nd)');
@@ -169,13 +177,16 @@ describe('Modifiers', () => {
         it('should detect major7 chords based on modifiers', () => {
             expect(isMajor7Chord({ modifiers: ['maj7'] })).toBe(true);
             expect(isMajor7Chord({ modifiers: ['maj9'] })).toBe(true);
+            expect(isMajor7Chord({ modifiers: ['9'] })).toBe(false);
             expect(isMajor7Chord({ modifiers: ['7'] })).toBe(false);
         });
 
         it('should detect seventh chords, respecting no7', () => {
             expect(hasSeventhChord({ modifiers: ['7'] })).toBe(true);
+            expect(hasSeventhChord({ modifiers: ['9'] })).toBe(true);
             expect(hasSeventhChord({ modifiers: ['maj7'] })).toBe(true);
             expect(hasSeventhChord({ modifiers: ['maj9'] })).toBe(true);
+            expect(hasSeventhChord({ modifiers: ['6/9'] })).toBe(false);
             expect(hasSeventhChord({ modifiers: ['no7'] })).toBe(false);
             expect(hasSeventhChord({ modifiers: ['7', 'no7'] })).toBe(false);
         });
@@ -208,6 +219,19 @@ describe('Modifiers', () => {
             expect(getExpectedDissonanceCategory({ modifiers: ['7', 'b9'] })).toBe('altered');
             expect(getExpectedDissonanceCategory({ modifiers: ['7', '#11'] })).toBe('altered');
         });
+
+        it('should classify 9 and 6/9 as color chords', () => {
+            expect(getExpectedDissonanceCategory({ modifiers: ['9'] })).toBe('color');
+            expect(getExpectedDissonanceCategory({ modifiers: ['6/9'] })).toBe('color');
+
+            const nineProfile = getExpectedDissonanceProfile({ modifiers: ['9'] });
+            expect(nineProfile.bassIntervalRelief.has(2)).toBe(true);
+            expect(nineProfile.bassIntervalRelief.has(10)).toBe(true);
+
+            const sixNineProfile = getExpectedDissonanceProfile({ modifiers: ['6/9'] });
+            expect(sixNineProfile.expectedTensionPitchClasses.has(2)).toBe(true);
+            expect(sixNineProfile.expectedTensionPitchClasses.has(9)).toBe(true);
+        });
     });
 
     describe('canAddModifier', () => {
@@ -215,9 +239,11 @@ describe('Modifiers', () => {
             it('should allow compatible modifiers', () => {
                 expect(canAddModifier([], 'm')).toBe(true);
                 expect(canAddModifier(['m'], '7')).toBe(true);
+                expect(canAddModifier(['m'], '9')).toBe(true);
                 expect(canAddModifier(['7'], 'b9')).toBe(true);
                 expect(canAddModifier(['maj7'], 'add9')).toBe(true);
                 expect(canAddModifier(['add9'], '#11')).toBe(true);
+                expect(canAddModifier(['6'], 'add9')).toBe(true);
             });
 
             it('should allow same modifier (duplicates)', () => {
@@ -285,6 +311,10 @@ describe('Modifiers', () => {
                 const result4 = canAddModifier(['maj9'], 'no7');
                 expect(result4).not.toBe(true);
                 expect(result4).toContain('seventh conflict');
+
+                const result5 = canAddModifier(['9'], 'no7');
+                expect(result5).not.toBe(true);
+                expect(result5).toContain('seventh conflict');
             });
 
             it('should detect ninth conflicts', () => {
@@ -303,6 +333,10 @@ describe('Modifiers', () => {
                 const result4 = canAddModifier(['maj9'], 'b9');
                 expect(result4).not.toBe(true);
                 expect(result4).toContain('ninth conflict');
+
+                const result5 = canAddModifier(['9'], 'b9');
+                expect(result5).not.toBe(true);
+                expect(result5).toContain('ninth conflict');
             });
 
             it('should detect eleventh conflicts', () => {
@@ -337,6 +371,16 @@ describe('Modifiers', () => {
         it('should return error message for unknown modifiers', () => {
             const result = canAddModifier([], 'unknown' as Modifier);
             expect(result).toContain('Unknown modifier');
+        });
+    });
+
+    describe('isModifierSubset', () => {
+        it('should recognize compound extension supersets', () => {
+            expect(isModifierSubset('7', '9')).toBe(true);
+            expect(isModifierSubset('add9', '9')).toBe(true);
+            expect(isModifierSubset('6', '6/9')).toBe(true);
+            expect(isModifierSubset('add9', '6/9')).toBe(true);
+            expect(isModifierSubset('9', '6/9')).toBe(false);
         });
     });
 

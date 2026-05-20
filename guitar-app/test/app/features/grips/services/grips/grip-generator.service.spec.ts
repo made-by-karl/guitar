@@ -245,6 +245,28 @@ describe('GripGeneratorService', () => {
       }
     });
 
+    it('should generate dominant 9 grips that retain both the b7 and the 9', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'A#', 'D'], ['9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+
+      expect(grips.length).toBeGreaterThan(0);
+      expect(grips.some(g =>
+        g.notes.some(note => note?.startsWith('A#')) &&
+        g.notes.some(note => note?.startsWith('D'))
+      )).toBe(true);
+    });
+
+    it('should generate 6/9 grips that retain both the 6th and the 9th', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'A', 'D'], ['6/9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'harmonic' });
+
+      expect(grips.length).toBeGreaterThan(0);
+      expect(grips.some(g =>
+        g.notes.some(note => note?.startsWith('A')) &&
+        g.notes.some(note => note?.startsWith('D'))
+      )).toBe(true);
+    });
+
     it('should keep modifier-aware relief specific to chords that expect the tension', () => {
       const cAdd9 = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
       const colorGrips = service.generateGrips(cAdd9, { dissonanceProfile: 'harmonic' });

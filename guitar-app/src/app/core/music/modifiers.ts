@@ -49,12 +49,28 @@ export const MODIFIER_DEFINITIONS: Record<string, ModifierDefinition> = {
     operations: [{ type: 'add', interval: '6' }],
     defines: { thirteenth: 'major' }
   },
+  '6/9': {
+    description: 'Six-nine chord (add 6th and 9th)',
+    operations: [
+      { type: 'add', interval: '6' },
+      { type: 'add', interval: '9' }
+    ],
+    defines: { ninth: 'major', thirteenth: 'major' }
+  },
 
   // Sevenths
   '7': {
     description: 'Dominant 7th (♭7)',
     operations: [{ type: 'add', interval: 'b7' }],
     defines: { seventh: 'minor' }
+  },
+  '9': {
+    description: 'Dominant 9th (♭7 + 9)',
+    operations: [
+      { type: 'add', interval: 'b7' },
+      { type: 'add', interval: '9' }
+    ],
+    defines: { seventh: 'minor', ninth: 'major' }
   },
   'maj7': {
     description: 'Major 7th (♮7)',
@@ -188,9 +204,9 @@ export const MODIFIERS: Modifier[] = [
   // Triad qualities
   'm', 'dim', 'aug',
   // Power chord and sixth
-  '5', '6',
+  '5', '6', '6/9',
   // Sevenths
-  '7', 'maj7', 'ø7', 'dim7', 'aug7',
+  '7', '9', 'maj7', 'ø7', 'dim7', 'aug7',
   // Extensions
   'maj9', 'add9', 'add11', 'add13',
   // Suspended
@@ -415,7 +431,7 @@ export type ExpectedDissonanceProfile = {
 };
 
 const COLOR_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
-  '6', '7', 'maj7', 'maj9', 'add9', 'add11', 'add13', 'sus2', 'sus4',
+  '6', '6/9', '7', '9', 'maj7', 'maj9', 'add9', 'add11', 'add13', 'sus2', 'sus4',
 ]);
 
 const STRUCTURALLY_TENSE_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
@@ -482,7 +498,7 @@ const MAJOR7_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
 ]);
 
 const SEVENTH_MODIFIERS: ReadonlySet<Modifier> = new Set<Modifier>([
-  '7', 'maj7', 'ø7', 'dim7', 'aug7', 'maj9',
+  '7', '9', 'maj7', 'ø7', 'dim7', 'aug7', 'maj9',
 ]);
 
 export function isAlteredChord(chord: ChordModifierCarrier): boolean {

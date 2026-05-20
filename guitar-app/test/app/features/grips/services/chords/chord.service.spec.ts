@@ -59,6 +59,42 @@ describe('ChordService', () => {
                 modifiers: ["aug", "add9", "no3"],
                 notes: ["C", "G#", "D"]
             }
+        },
+        {
+            input: "C9",
+            expected: {
+                root: "C",
+                bass: undefined,
+                modifiers: ["9"],
+                notes: ["C", "E", "G", "A#", "D"]
+            }
+        },
+        {
+            input: "Cm9",
+            expected: {
+                root: "C",
+                bass: undefined,
+                modifiers: ["m", "9"],
+                notes: ["C", "G", "D#", "A#", "D"]
+            }
+        },
+        {
+            input: "C6/9",
+            expected: {
+                root: "C",
+                bass: undefined,
+                modifiers: ["6/9"],
+                notes: ["C", "E", "G", "A", "D"]
+            }
+        },
+        {
+            input: "C6/9/E",
+            expected: {
+                root: "C",
+                bass: "E",
+                modifiers: ["6/9"],
+                notes: ["C", "E", "G", "A", "D"]
+            }
         }
     ])('should analyze chord $input correctly', ({ input, expected }) => {
         expect(service.calculateNotes(input)).toEqual(expected);
@@ -108,6 +144,22 @@ describe('ChordService', () => {
         it('should create major triad when no modifiers present', () => {
             const { notes } = service.calculateNotes({ root: 'C', modifiers: [] });
             expect(notes).toEqual(['C', 'E', 'G']);
+        });
+    });
+
+    describe('numeric extension parsing', () => {
+        it('parses 6/9 as a modifier rather than a slash bass', () => {
+            const chord = service.parseChord('C6/9');
+            expect(chord).toEqual({ root: 'C', modifiers: ['6/9'], bass: undefined });
+        });
+
+        it('parses a slash bass after a 6/9 modifier', () => {
+            const chord = service.parseChord('C6/9/E');
+            expect(chord).toEqual({ root: 'C', modifiers: ['6/9'], bass: 'E' });
+        });
+
+        it('throws when a slash suffix is not a note name', () => {
+            expect(() => service.parseChord('C/9')).toThrow('Invalid slash chord bass note');
         });
     });
 });

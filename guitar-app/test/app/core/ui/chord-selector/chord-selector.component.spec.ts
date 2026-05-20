@@ -108,6 +108,29 @@ describe('ChordSelectorComponent', () => {
     expect(changes.at(-1)).toMatchObject({ root: 'C', modifiers: ['maj9'] });
   });
 
+  it('collapses 7 into 9 when selecting the larger extension', () => {
+    const changes: Array<Chord | null> = [];
+    component.registerOnChange((value) => changes.push(value));
+
+    component.onRootChange('C');
+    component.toggleModifier('7');
+    component.toggleModifier('9');
+
+    expect(changes.at(-1)).toMatchObject({ root: 'C', modifiers: ['9'] });
+  });
+
+  it('collapses 6 and add9 into 6/9 when selecting the combined modifier', () => {
+    const changes: Array<Chord | null> = [];
+    component.registerOnChange((value) => changes.push(value));
+
+    component.onRootChange('C');
+    component.toggleModifier('6');
+    component.toggleModifier('add9');
+    component.toggleModifier('6/9');
+
+    expect(changes.at(-1)).toMatchObject({ root: 'C', modifiers: ['6/9'] });
+  });
+
   it('emits modifiers in canonical order (not selection order)', () => {
     const changes: Array<Chord | null> = [];
     component.registerOnChange((value) => changes.push(value));
@@ -119,6 +142,16 @@ describe('ChordSelectorComponent', () => {
     component.toggleModifier('m');
 
     expect(changes.at(-1)).toMatchObject({ root: 'C', modifiers: ['m', 'maj7'] });
+  });
+
+  it('round-trips a literal 6/9 modifier in writeValue', () => {
+    const value: Chord = { root: 'C', modifiers: ['6/9'], bass: 'E' };
+
+    component.writeValue(value);
+
+    expect(component.selectedRoot).toBe('C');
+    expect(component.selectedModifiers).toEqual(['6/9']);
+    expect(component.selectedBass).toBe('E');
   });
 
   it('opens modifier modal via ModalService', () => {

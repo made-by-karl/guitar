@@ -16,10 +16,10 @@ export type ChordWithNotes = Chord & {
  * Supported
  * Basic triads: maj, m, dim, aug
  * Power chords: 5
- * Major 6th
- * Sevenths: 7, maj7, dim7, aug7
+ * Sixth chords: 6, 6/9
+ * Sevenths: 7, 9, maj7, dim7, aug7
  * Suspensions: sus2, sus4
- * Extensions: add9, add11, add13
+ * Extensions: maj9, add9, add11, add13
  * Alterations: b5, #5, b9, #9, #11, b13
  * Slash chords (bass note)
  */
@@ -78,23 +78,22 @@ export class ChordService {
   }
 
   public parseChord(input: string): Chord {
-    const [mainPart, bassRaw] = input.split('/');
-    const bass = bassRaw ? normalize(bassRaw) : undefined;
-
-    const rootMatch = mainPart.match(/^([A-G][b#]?)/);
+    const rootMatch = input.match(/^([A-G][b#]?)/);
     if (!rootMatch) throw new Error('Invalid chord root');
     const root = normalize(rootMatch[1]);
-    let rest = mainPart.slice(root.length);
+    let rest = input.slice(root.length);
 
     const modifiers: Modifier[] = [];
     const patterns: [RegExp, Modifier][] = [
+      [/^6\/9/, '6/9'],
       [/^ø7/, 'ø7'],
       [/^dim7|°7/, 'dim7'],
       [/^dim|°/, 'dim'],
       [/^aug7/, 'aug7'],
       [/^aug|\+/, 'aug'],
-      [/^maj7/, 'maj7'],
       [/^maj9/, 'maj9'],
+      [/^maj7/, 'maj7'],
+      [/^9/, '9'],
       [/^sus2/, 'sus2'],
       [/^sus4/, 'sus4'],
       [/^b5/, 'b5'],
@@ -129,6 +128,20 @@ export class ChordService {
         }
       }
       if (!matched) break;
+    }
+
+    let bass: Semitone | undefined;
+    if (rest.startsWith('/')) {
+      const bassMatch = rest.match(/^\/([A-G][b#]?)$/);
+      if (!bassMatch) {
+        throw new Error(`Invalid slash chord bass note: ${rest}`);
+      }
+      bass = normalize(bassMatch[1]);
+      rest = '';
+    }
+
+    if (rest.length > 0) {
+      throw new Error(`Invalid chord suffix: ${rest}`);
     }
 
     return { root, modifiers: sortChordModifiers(modifiers), bass };
