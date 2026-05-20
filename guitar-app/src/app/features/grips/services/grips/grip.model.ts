@@ -11,9 +11,13 @@ export interface Grip {
   strings: GripString[]; // 0 = low E, 5 = high E
 }
 
+export type OmittedToneRole = 'root' | 'third' | 'fifth' | 'seventh' | 'ninth' | 'eleventh' | 'thirteenth';
+
 export interface TunedGrip extends Grip {
   notes: (string | null)[]; // Semitone+octave, i.e. E4
   inversion: 'root' | '1st' | '2nd' | 'other' | undefined;
+  isIncomplete: boolean;
+  omittedToneRoles: OmittedToneRole[];
 }
 
 export function stringifyGrip(grip: Grip): string {

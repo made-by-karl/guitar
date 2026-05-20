@@ -21,6 +21,12 @@ export class GripService {
       return null; // Should not happen
     }).map(note => note ? `${note.semitone}${note.octave}` : null);
 
-    return { ...grip, notes, inversion: undefined };
+    return {
+      ...grip,
+      notes,
+      inversion: undefined,
+      isIncomplete: false,
+      omittedToneRoles: []
+    };
   }
 }

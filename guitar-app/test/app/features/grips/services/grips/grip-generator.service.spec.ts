@@ -4,6 +4,7 @@ import type { ChordWithNotes } from '@/app/features/grips/services/chords/chord.
 import { Semitone } from '@/app/core/music/semitones';
 import { Modifier } from '@/app/core/music/modifiers';
 import { stringifyGrip } from '@/app/features/grips/services/grips/grip.model';
+import type { GripGeneratorOptions, DissonanceProfile } from '@/app/features/grips/services/grips/grip-generator.service';
 
 
 describe('GripGeneratorService', () => {
@@ -16,6 +17,19 @@ describe('GripGeneratorService', () => {
     modifiers,
     bass
   });
+
+  const gripShapeSet = (
+    chord: ChordWithNotes,
+    profile: DissonanceProfile,
+    options: GripGeneratorOptions = {}
+  ): Set<string> =>
+    new Set(service.generateGrips(chord, { ...options, dissonanceProfile: profile }).map(stringifyGrip));
+
+  const expectGripSubset = (subset: Set<string>, superset: Set<string>): void => {
+    subset.forEach(shape => {
+      expect(superset.has(shape)).toBe(true);
+    });
+  };
 
   beforeEach(() => {
     fretboardService = new FretboardService();
@@ -224,6 +238,19 @@ describe('GripGeneratorService', () => {
       expect(harmonicShape).toBeFalsy();
     });
 
+    it('should keep a higher-position Dm9 voicing for dissonant and all, but not neutral', () => {
+      const chord = createChord('D', ['D', 'F', 'A', 'C', 'E'], ['m', '9']);
+      const targetShape = 'x|5|7|5|6|o';
+      const allGrips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+      const neutralGrips = service.generateGrips(chord, { dissonanceProfile: 'neutral' });
+      expect(neutralGrips.some(g => stringifyGrip(g) === targetShape)).toBe(false);
+
+      const dissonantGrips = service.generateGrips(chord, { dissonanceProfile: 'dissonant' });
+      expect(dissonantGrips.some(g => stringifyGrip(g) === targetShape)).toBe(true);
+
+      expect(allGrips.some(g => stringifyGrip(g) === targetShape)).toBe(true);
+    });
+
     it('should allow all grips when using the all profile', () => {
       const chord = createChord('B', ['B', 'D', 'F#', 'A'], ['m', '7']);
 
@@ -232,6 +259,44 @@ describe('GripGeneratorService', () => {
 
       const allGrips = service.generateGrips(chord, { dissonanceProfile: 'all' });
       expect(allGrips.some(g => stringifyGrip(g) === 'x|2|o|2|o|2')).toBe(true);
+    });
+
+    it('should keep profile result sets monotonic for color chords', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
+      const options = { allowIncompleteChords: false };
+
+      const harmonic = gripShapeSet(chord, 'harmonic', options);
+      const neutral = gripShapeSet(chord, 'neutral', options);
+      const dissonant = gripShapeSet(chord, 'dissonant', options);
+      const all = gripShapeSet(chord, 'all', options);
+
+      expect(harmonic.size).toBeGreaterThan(0);
+      expect(neutral.size).toBeGreaterThan(0);
+      expect(dissonant.size).toBeGreaterThan(0);
+      expect(all.size).toBeGreaterThan(0);
+
+      expectGripSubset(harmonic, neutral);
+      expectGripSubset(neutral, dissonant);
+      expectGripSubset(dissonant, all);
+    });
+
+    it('should keep profile result sets monotonic for structurally tense chords', () => {
+      const chord = createChord('C', ['C', 'E', 'G#'], ['aug']);
+      const options = { allowIncompleteChords: false };
+
+      const harmonic = gripShapeSet(chord, 'harmonic', options);
+      const neutral = gripShapeSet(chord, 'neutral', options);
+      const dissonant = gripShapeSet(chord, 'dissonant', options);
+      const all = gripShapeSet(chord, 'all', options);
+
+      expect(harmonic.size).toBeGreaterThan(0);
+      expect(neutral.size).toBeGreaterThan(0);
+      expect(dissonant.size).toBeGreaterThan(0);
+      expect(all.size).toBeGreaterThan(0);
+
+      expectGripSubset(harmonic, neutral);
+      expectGripSubset(neutral, dissonant);
+      expectGripSubset(dissonant, all);
     });
 
     it('should generate common Cadd9 voicings under the harmonic profile', () => {
@@ -279,6 +344,91 @@ describe('GripGeneratorService', () => {
       });
 
       expect(clusterGrips.every(g => stringifyGrip(g) !== 'x|3|2|o|2|o')).toBe(true);
+    });
+
+    it('should allow perfect-fifth omissions for maj9 when no complete grip exists at that fret', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'B', 'D'], ['maj9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+
+      const omit5Grip = grips.find(g => stringifyGrip(g) === 'x|3|2|4|3|o');
+      expect(omit5Grip).toBeTruthy();
+      expect(omit5Grip).toMatchObject({
+        isIncomplete: true,
+        omittedToneRoles: ['fifth']
+      });
+    });
+
+    it('should allow narrow no3 fallback only on seventh-plus-extension chords', () => {
+      const c9 = createChord('C', ['C', 'E', 'G', 'A#', 'D'], ['9']);
+      const c9Grips = service.generateGrips(c9, { dissonanceProfile: 'all' });
+      const no3Fallback = c9Grips.find(g => stringifyGrip(g) === 'x|3|o|3|1|3');
+
+      expect(no3Fallback).toBeTruthy();
+      expect(no3Fallback).toMatchObject({
+        isIncomplete: true,
+        omittedToneRoles: ['third']
+      });
+
+      const cAdd9 = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
+      const add9Grips = service.generateGrips(cAdd9, { dissonanceProfile: 'all' });
+      expect(
+        add9Grips.every(g => !(g.isIncomplete && g.omittedToneRoles.length === 1 && g.omittedToneRoles[0] === 'third'))
+      ).toBe(true);
+    });
+
+    it('should keep incomplete grips even when a complete grip exists at the same minimum fret', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'A#', 'D'], ['9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+      const gripsByMinFret = new Map<number, typeof grips>();
+
+      for (const grip of grips) {
+        const minFret = grip.strings.reduce((currentMin, string) => {
+          if (string === 'x' || string === 'o') return currentMin;
+          return Math.min(currentMin, ...string.map(entry => entry.fret));
+        }, Infinity);
+        const groupKey = minFret === Infinity ? 0 : minFret;
+        const existing = gripsByMinFret.get(groupKey) ?? [];
+        existing.push(grip);
+        gripsByMinFret.set(groupKey, existing);
+      }
+
+      expect(
+        [...gripsByMinFret.values()].some(group =>
+          group.some(grip => !grip.isIncomplete) &&
+          group.some(grip => grip.isIncomplete)
+        )
+      ).toBe(true);
+    });
+
+    it('should keep requested add9 tones when incomplete add9 variations are also shown', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'D'], ['add9']);
+      const grips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+
+      expect(grips.length).toBeGreaterThan(0);
+      expect(grips.some(g => stringifyGrip(g) === 'x|3|2|o|3|o')).toBe(true);
+      expect(grips.every(g => g.notes.some(note => note?.startsWith('D')))).toBe(true);
+    });
+
+    it('should disable practical omissions when allowIncompleteChords is false', () => {
+      const chord = createChord('C', ['C', 'E', 'G', 'B', 'D'], ['maj9']);
+
+      const defaultGrips = service.generateGrips(chord, { dissonanceProfile: 'all' });
+      expect(defaultGrips.some(g => g.isIncomplete)).toBe(true);
+
+      const strictGrips = service.generateGrips(chord, {
+        allowIncompleteChords: false,
+        dissonanceProfile: 'all'
+      });
+      expect(strictGrips.every(g => !g.isIncomplete)).toBe(true);
+      expect(strictGrips.some(g => stringifyGrip(g) === 'x|3|2|4|3|o')).toBe(false);
+    });
+
+    it('should not omit altered fifths in diminished chords', () => {
+      const chord = createChord('C', ['C', 'D#', 'F#'], ['dim']);
+      const grips = service.generateGrips(chord, { allowIncompleteChords: true, dissonanceProfile: 'all' });
+
+      expect(grips.length).toBeGreaterThan(0);
+      expect(grips.every(g => !g.isIncomplete)).toBe(true);
     });
   });
 });

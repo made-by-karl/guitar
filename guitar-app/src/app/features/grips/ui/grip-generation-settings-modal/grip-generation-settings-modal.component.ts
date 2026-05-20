@@ -23,7 +23,7 @@ export class GripGenerationSettingsModalComponent implements ModalComponent<Grip
     minimalPlayableStrings: 3,
     allowBarre: true,
     allowInversions: false,
-    allowIncompleteChords: false,
+    allowIncompleteChords: true,
     allowMutedStringsInside: false,
     allowDuplicateNotes: false,
     dissonanceProfile: 'neutral'

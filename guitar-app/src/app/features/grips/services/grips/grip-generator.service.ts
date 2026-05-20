@@ -1,12 +1,18 @@
 import { Injectable } from "@angular/core";
-import { getExpectedDissonanceProfile } from "@/app/core/music/modifiers";
-import { getNoteMidi, note, Note, SEMITONES, Semitone } from "@/app/core/music/semitones";
+import { ExpectedDissonanceCategory, getExpectedDissonanceProfile, hasSeventhChord, Modifier, MODIFIER_DEFINITIONS } from "@/app/core/music/modifiers";
+import { getNoteMidi, note, Note, SEMITONES, Semitone, transpose } from "@/app/core/music/semitones";
 import { FretboardService } from "@/app/features/grips/services/fretboard.service";
 import type { ChordWithNotes } from '@/app/features/grips/services/chords/chord.service';
-import { TunedGrip, String } from '@/app/features/grips/services/grips/grip.model';
+import { OmittedToneRole, TunedGrip, String } from '@/app/features/grips/services/grips/grip.model';
 
 const MIDI_A2 = getNoteMidi(note('A', 2));
 const MIDI_E3 = getNoteMidi(note('E', 3));
+const ROLE_ORDER: readonly OmittedToneRole[] = ['root', 'third', 'fifth', 'seventh', 'ninth', 'eleventh', 'thirteenth'];
+const EXTENSION_ROLES: readonly OmittedToneRole[] = ['ninth', 'eleventh', 'thirteenth'];
+const SUSPENSION_INTERVALS: Readonly<Record<'sus2' | 'sus4', number>> = {
+  sus2: 2,
+  sus4: 5
+};
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +40,7 @@ export class GripGeneratorService {
       minimalPlayableStrings: options.minimalPlayableStrings ?? 3,
       allowBarre: options.allowBarre ?? true,
       allowInversions: options.allowInversions ?? false,
-      allowIncompleteChords: options.allowIncompleteChords ?? false,
+      allowIncompleteChords: options.allowIncompleteChords ?? true,
       allowMutedStringsInside: options.allowMutedStringsInside ?? false,
       allowDuplicateNotes: options.allowDuplicateNotes ?? false,
       dissonanceProfile: options.dissonanceProfile ?? 'neutral'
@@ -57,7 +63,8 @@ export class GripGeneratorService {
       grips: [],
       fretboardMatrix,
       fingers,
-      expectedNotes
+      expectedNotes,
+      toneAnalysis: this.analyzeChordTones(chord)
     };
   }
 
@@ -334,11 +341,12 @@ export class GripGeneratorService {
     config: GripGenerationConfig,
     context: GripGenerationContext
   ): boolean {
-    if (!this.isValidGrip(strings, notes, chord, config, context)) {
+    const completeness = this.getGripCompleteness(notes, chord, config, context);
+    if (!completeness || !this.isValidGrip(strings, notes, chord, config, context)) {
       return false;
     }
 
-    const grip = this.createGrip(strings, notes, chord);
+    const grip = this.createGrip(strings, notes, chord, completeness);
     const addResult = this.addGripToCollection(grip, context.grips);
 
     return addResult;
@@ -359,12 +367,6 @@ export class GripGeneratorService {
       return false; // Barre not allowed
     }
 
-    const expectedNotes = context.expectedNotes;
-    const playedSemitones = notes.map(n => n?.semitone).filter(s => s !== undefined);
-    if (!config.allowIncompleteChords && !expectedNotes.every(e => playedSemitones.includes(e))) {
-      return false; // Incomplete chord
-    }
-
     if (!config.allowDuplicateNotes && this.hasDuplicateNotes(notes)) {
       return false;
     }
@@ -381,16 +383,99 @@ export class GripGeneratorService {
     return true;
   }
 
+  private getGripCompleteness(
+    notes: (Note | null)[],
+    chord: ChordWithNotes,
+    config: GripGenerationConfig,
+    context: GripGenerationContext
+  ): GripCompleteness | null {
+    const playedSemitones = new Set(
+      notes.map(n => n?.semitone).filter((semitone): semitone is Semitone => semitone !== undefined)
+    );
+    const missingRequiredExtras = [...context.toneAnalysis.requiredNonRoleSemitones]
+      .filter(semitone => !playedSemitones.has(semitone));
+
+    if (missingRequiredExtras.length > 0) {
+      return null;
+    }
+
+    const missingRoles = ROLE_ORDER.filter(role => {
+      const semitone = context.toneAnalysis.roleSemitones[role];
+      return semitone !== undefined && !playedSemitones.has(semitone);
+    });
+
+    if (missingRoles.length === 0) {
+      return {
+        isIncomplete: false,
+        omittedToneRoles: []
+      };
+    }
+
+    if (!config.allowIncompleteChords || missingRoles.length !== 1) {
+      return null;
+    }
+
+    const [missingRole] = missingRoles;
+    if (missingRole === 'fifth' && context.toneAnalysis.allowFifthOmission) {
+      return {
+        isIncomplete: true,
+        omittedToneRoles: [missingRole]
+      };
+    }
+
+    if (
+      missingRole === 'third' &&
+      context.toneAnalysis.allowThirdFallback &&
+      this.isValidThirdFallback(playedSemitones, context.toneAnalysis, chord)
+    ) {
+      return {
+        isIncomplete: true,
+        omittedToneRoles: [missingRole]
+      };
+    }
+
+    return null;
+  }
+
+  private isValidThirdFallback(
+    playedSemitones: ReadonlySet<Semitone>,
+    analysis: ChordToneAnalysis,
+    chord: ChordWithNotes
+  ): boolean {
+    const root = analysis.roleSemitones.root;
+    const seventh = analysis.roleSemitones.seventh;
+
+    if (!root || !seventh || !playedSemitones.has(root) || !playedSemitones.has(seventh)) {
+      return false;
+    }
+
+    if (!analysis.hasExplicitExtensionTone) {
+      return false;
+    }
+
+    return EXTENSION_ROLES.every(role => {
+      const semitone = analysis.roleSemitones[role];
+      return semitone === undefined || playedSemitones.has(semitone);
+    }) && !chord.modifiers.includes('5');
+  }
+
   private hasDuplicateNotes(notes: (Note | null)[]): boolean {
     const noteStrings = notes.filter(n => n !== null).map(n => n!.semitone + n!.octave);
     return new Set(noteStrings).size !== noteStrings.length;
   }
 
-  private createGrip(strings: String[], notes: (Note | null)[], chord: ChordWithNotes): TunedGrip {
+  private createGrip(
+    strings: String[],
+    notes: (Note | null)[],
+    chord: ChordWithNotes,
+    completeness: GripCompleteness
+  ): TunedGrip {
     return {
       strings,
       notes: notes.map(n => n ? (n.semitone + n.octave) : null),
-      inversion: this.determineInversion(chord, notes)
+      inversion: this.determineInversion(chord, notes),
+      isIncomplete: completeness.isIncomplete,
+      omittedToneRoles: completeness.omittedToneRoles
     };
   }
 
@@ -561,6 +646,176 @@ export class GripGeneratorService {
       return candidatePositions;
     }
 
+  private analyzeChordTones(chord: ChordWithNotes): ChordToneAnalysis {
+    const definitions = this.getChordToneDefinitions(chord.modifiers);
+    const roleSemitones: Partial<Record<OmittedToneRole, Semitone>> = {
+      root: chord.root
+    };
+    const requiredNonRoleSemitones = new Set<Semitone>();
+
+    const thirdSemitone = this.getSemitoneForThird(chord.root, definitions.third);
+    if (thirdSemitone) {
+      roleSemitones.third = thirdSemitone;
+    }
+
+    const fifthSemitone = this.getSemitoneForFifth(chord.root, definitions.fifth);
+    if (fifthSemitone) {
+      roleSemitones.fifth = fifthSemitone;
+    }
+
+    const seventhSemitone = this.getSemitoneForSeventh(chord.root, definitions.seventh);
+    if (seventhSemitone) {
+      roleSemitones.seventh = seventhSemitone;
+    }
+
+    const ninthSemitone = this.getSemitoneForNinth(chord.root, definitions.ninth);
+    if (ninthSemitone) {
+      roleSemitones.ninth = ninthSemitone;
+    }
+
+    const eleventhSemitone = this.getSemitoneForEleventh(chord.root, definitions.eleventh);
+    if (eleventhSemitone) {
+      roleSemitones.eleventh = eleventhSemitone;
+    }
+
+    const thirteenthSemitone = this.getSemitoneForThirteenth(chord.root, definitions.thirteenth);
+    if (thirteenthSemitone) {
+      roleSemitones.thirteenth = thirteenthSemitone;
+    }
+
+    if (chord.modifiers.includes('sus2')) {
+      requiredNonRoleSemitones.add(transpose(chord.root, SUSPENSION_INTERVALS.sus2));
+    }
+    if (chord.modifiers.includes('sus4')) {
+      requiredNonRoleSemitones.add(transpose(chord.root, SUSPENSION_INTERVALS.sus4));
+    }
+
+    const hasExplicitExtensionTone = EXTENSION_ROLES.some(role => roleSemitones[role] !== undefined);
+
+    return {
+      roleSemitones,
+      requiredNonRoleSemitones,
+      allowFifthOmission: definitions.fifth === 'perfect' && !chord.modifiers.includes('5'),
+      allowThirdFallback:
+        definitions.third !== 'none' &&
+        hasSeventhChord(chord) &&
+        hasExplicitExtensionTone,
+      hasExplicitExtensionTone
+    };
+  }
+
+  private getChordToneDefinitions(modifiers: readonly Modifier[]): ChordToneDefinitions {
+    const definitions: ChordToneDefinitions = {
+      third: 'major',
+      fifth: 'perfect',
+      seventh: undefined,
+      ninth: undefined,
+      eleventh: undefined,
+      thirteenth: undefined
+    };
+
+    for (const modifier of modifiers) {
+      const definedTones = MODIFIER_DEFINITIONS[modifier]?.defines;
+      if (!definedTones) {
+        continue;
+      }
+
+      if (definedTones.third !== undefined) {
+        definitions.third = definedTones.third;
+      }
+      if (definedTones.fifth !== undefined) {
+        definitions.fifth = definedTones.fifth;
+      }
+      if (definedTones.seventh !== undefined) {
+        definitions.seventh = definedTones.seventh;
+      }
+      if (definedTones.ninth !== undefined) {
+        definitions.ninth = definedTones.ninth;
+      }
+      if (definedTones.eleventh !== undefined) {
+        definitions.eleventh = definedTones.eleventh;
+      }
+      if (definedTones.thirteenth !== undefined) {
+        definitions.thirteenth = definedTones.thirteenth;
+      }
+    }
+
+    return definitions;
+  }
+
+  private getSemitoneForThird(
+    root: Semitone,
+    quality: ChordToneDefinitions['third']
+  ): Semitone | undefined {
+    if (quality === 'major') return transpose(root, 4);
+    if (quality === 'minor') return transpose(root, 3);
+    return undefined;
+  }
+
+  private getSemitoneForFifth(
+    root: Semitone,
+    quality: ChordToneDefinitions['fifth']
+  ): Semitone | undefined {
+    if (quality === 'perfect') return transpose(root, 7);
+    if (quality === 'diminished') return transpose(root, 6);
+    if (quality === 'augmented') return transpose(root, 8);
+    return undefined;
+  }
+
+  private getSemitoneForSeventh(
+    root: Semitone,
+    quality: ChordToneDefinitions['seventh']
+  ): Semitone | undefined {
+    if (quality === 'major') return transpose(root, 11);
+    if (quality === 'minor') return transpose(root, 10);
+    if (quality === 'diminished') return transpose(root, 9);
+    return undefined;
+  }
+
+  private getSemitoneForNinth(
+    root: Semitone,
+    quality: ChordToneDefinitions['ninth']
+  ): Semitone | undefined {
+    if (quality === 'major') return transpose(root, 2);
+    if (quality === 'minor') return transpose(root, 1);
+    if (quality === 'augmented') return transpose(root, 3);
+    return undefined;
+  }
+
+  private getSemitoneForEleventh(
+    root: Semitone,
+    quality: ChordToneDefinitions['eleventh']
+  ): Semitone | undefined {
+    if (quality === 'perfect') return transpose(root, 5);
+    if (quality === 'augmented') return transpose(root, 6);
+    return undefined;
+  }
+
+  private getSemitoneForThirteenth(
+    root: Semitone,
+    quality: ChordToneDefinitions['thirteenth']
+  ): Semitone | undefined {
+    if (quality === 'major') return transpose(root, 9);
+    if (quality === 'minor') return transpose(root, 8);
+    return undefined;
+  }
+
+  private getMinFret(grip: TunedGrip): number {
+    let minFret = Infinity;
+
+    for (const string of grip.strings) {
+      if (string === 'x' || string === 'o') continue;
+
+      for (const placement of string) {
+        if (placement.fret < minFret) {
+          minFret = placement.fret;
+        }
+      }
+    }
+
+    return minFret === Infinity ? 0 : minFret;
+  }
+
   private combineElements<T>(array: T[]): T[][] {
     const result: T[][] = [];
 
@@ -651,12 +906,34 @@ export class GripGeneratorService {
 
     if (openStrings >= 2) threshold -= 1;
 
-    // Dissonance profile (generic tolerance control)
-    if (profile === 'neutral' && expectedProfile.category !== 'plain') threshold += 2;
-    if (profile === 'harmonic') threshold -= 1;
-    if (profile === 'dissonant') threshold += 2;
+    threshold += this.profileThresholdAdjustment(profile, expectedProfile.category);
 
     return threshold;
+  }
+
+  private profileThresholdAdjustment(
+    profile: DissonanceProfile,
+    category: ExpectedDissonanceCategory
+  ): number {
+    switch (profile) {
+      case 'harmonic':
+        return -1;
+      case 'neutral':
+        return category === 'plain' ? 0 : 2;
+      case 'dissonant':
+        switch (category) {
+          case 'plain':
+            return 2;
+          case 'color':
+            return 6;
+          case 'structurally-tense':
+            return 7;
+          case 'altered':
+            return 8;
+        }
+      case 'all':
+        return 0;
+    }
   }
 
   private baseThreshold(chord: ChordWithNotes): number {
@@ -850,4 +1127,27 @@ type GripGenerationContext = {
   fretboardMatrix: Note[][];
   fingers: Finger[];
   expectedNotes: Semitone[];
+  toneAnalysis: ChordToneAnalysis;
+}
+
+type GripCompleteness = {
+  isIncomplete: boolean;
+  omittedToneRoles: OmittedToneRole[];
+}
+
+type ChordToneDefinitions = {
+  third: 'major' | 'minor' | 'none';
+  fifth: 'perfect' | 'diminished' | 'augmented' | 'none';
+  seventh?: 'major' | 'minor' | 'diminished' | 'none';
+  ninth?: 'major' | 'minor' | 'augmented' | 'none';
+  eleventh?: 'perfect' | 'augmented' | 'none';
+  thirteenth?: 'major' | 'minor' | 'none';
+}
+
+type ChordToneAnalysis = {
+  roleSemitones: Partial<Record<OmittedToneRole, Semitone>>;
+  requiredNonRoleSemitones: ReadonlySet<Semitone>;
+  allowFifthOmission: boolean;
+  allowThirdFallback: boolean;
+  hasExplicitExtensionTone: boolean;
 }

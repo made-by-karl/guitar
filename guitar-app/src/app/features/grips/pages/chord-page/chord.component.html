@@ -135,11 +135,14 @@
                               <span class="note">{{ note ?? 'x' }}@if (!$last) {,}</span>
                             }
                           </div>
-                          @if (grip.inversion && grip.inversion !== 'root') {
                           <div class="mb-2">
+                            @if (grip.isIncomplete) {
+                              <span class="badge text-bg-warning">Incomplete: {{ grip.omittedToneRoles.join(', ') }}</span>
+                            }
+                            @if (grip.inversion && grip.inversion !== 'root') {
                             <span class="badge bg-secondary ms-2">Inversion: {{ grip.inversion }}</span>
+                            }
                           </div>
-                          }
                           <button class="btn btn-primary" (click)="playChord(grip)">
                             <i class="bi bi-play-fill"></i> Play Chord
                           </button>

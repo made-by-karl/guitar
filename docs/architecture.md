@@ -47,5 +47,6 @@ The application is a single Angular 19 standalone app rooted in `guitar-app/`. I
 
 - Storage details: `docs/storage.md`
 - Audio and playback details: `docs/audio.md`
+- Grip search details: `docs/grip-finding.md`
 - Tuner internals: `docs/tuner/README.md`
 - Testing patterns: `docs/testing.md`

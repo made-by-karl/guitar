@@ -56,6 +56,7 @@ export class GripScorerService {
 
     // Penalize barre chords (optional, can be tuned)
     const barrePenalty = frets.length !== new Set(frets).size ? 3 : 0;
+    const incompletenessPenalty = this.incompletenessPenalty(grip);
 
     // Total score: lower is better
     return (
@@ -65,7 +66,25 @@ export class GripScorerService {
       mutedPenalty +
       mutedAreaPenalty +
       barrePenalty -
-      openBonus
+      openBonus +
+      incompletenessPenalty
     );
+  }
+
+  private incompletenessPenalty(grip: TunedGrip): number {
+    if (!grip.isIncomplete || grip.omittedToneRoles.length !== 1) {
+      return 0;
+    }
+
+    const [omittedRole] = grip.omittedToneRoles;
+    if (omittedRole === 'fifth') {
+      return 2;
+    }
+
+    if (omittedRole === 'third') {
+      return 6;
+    }
+
+    return 0;
   }
 }
