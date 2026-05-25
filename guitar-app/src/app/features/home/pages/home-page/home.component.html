@@ -1,0 +1,64 @@
+<div class="home-page">
+  <div class="container app-page">
+    <section class="hero-banner overflow-hidden shadow-sm">
+      <img
+        src="images/home-hero-banner-v2.png"
+        alt="Illustrated acoustic guitar on a warm textured background"
+        class="hero-image">
+      <div class="hero-overlay">
+        <div class="hero-copy">
+          <span class="eyebrow text-uppercase">Self-guided guitar practice</span>
+          <h1 class="display-4 fw-semibold mt-3 mb-0">Guitar Companion</h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero-intro">
+      <div class="hero-intro-copy">
+        <p class="lead mb-0">
+          A focused helper for practicing guitar on your own. Keep songs, chord grips,
+          patterns, timing tools, and tuning support close while you work.
+        </p>
+      </div>
+
+      @if (updateService.updatePending()) {
+        <div class="alert alert-warning d-flex flex-column flex-sm-row align-items-sm-center gap-3 mt-3 mb-0">
+          <div>
+            <div class="fw-semibold">Update available</div>
+            <div class="small">A new version is ready to apply.</div>
+          </div>
+          <a class="btn btn-sm btn-outline-dark ms-sm-auto" routerLink="/maintenance/about">
+            Open About
+          </a>
+        </div>
+      }
+    </section>
+
+    <section class="mt-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="h4 mb-1">Start where you need support</h2>
+          <p class="text-muted mb-0">
+            Jump into the tools that help you structure and maintain your own practice flow.
+          </p>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        @for (entry of featureEntries; track entry.route) {
+          <div class="col-12 col-md-6 col-xl-4">
+            <a class="feature-card card h-100 text-decoration-none" [routerLink]="entry.route">
+              <div class="card-body">
+                <div class="feature-icon">
+                  <i class="bi bi-{{ entry.icon }}"></i>
+                </div>
+                <h3 class="h5 mt-3 mb-2 text-body">{{ entry.title }}</h3>
+                <p class="text-muted mb-0">{{ entry.description }}</p>
+              </div>
+            </a>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+</div>

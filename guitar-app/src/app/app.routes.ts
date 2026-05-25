@@ -4,6 +4,7 @@ import { SettingsComponent } from '@/app/features/maintenance/settings/pages/set
 import { MidiTestComponent } from '@/app/features/maintenance/midi-test/pages/midi-test.component';
 import { LogPageComponent } from '@/app/features/maintenance/logs/pages/log-page.component';
 import { AboutComponent } from '@/app/features/maintenance/about/pages/about.component';
+import { HomeComponent } from '@/app/features/home/pages/home-page/home.component';
 import { PatternsLibraryComponent } from '@/app/features/patterns/pages/patterns-library/patterns-library.component';
 import { PatternsEditorComponent } from '@/app/features/patterns/pages/patterns-editor/patterns-editor.component';
 import { SheetsListComponent } from '@/app/features/sheets/pages/sheets-list/sheets-list.component';
@@ -13,7 +14,7 @@ import { TunerComponent } from '@/app/features/tuner/pages/tuner-page/tuner.comp
 
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/sheets', pathMatch: 'full' },
+  { path: '', component: HomeComponent },
   { path: 'grips/:chord', component: ChordComponent },
   { path: 'grips', component: ChordComponent },
   { path: 'sheets', component: SheetsListComponent },

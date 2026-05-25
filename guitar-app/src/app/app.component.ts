@@ -17,7 +17,7 @@ import {isPageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnDestroy {
-  title = 'My Guitar Sheets';
+  title = 'Guitar Companion';
   isNavbarCollapsed = true;
   pageToolbarTemplate: TemplateRef<object> | null = null;
   pageToolbarContext: object | null = null;

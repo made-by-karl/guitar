@@ -65,6 +65,7 @@ describe('AppComponent', () => {
       imports: [AppComponent],
       providers: [
         provideRouter([
+          { path: '', component: MockComponent },
           { path: 'sheets', component: MockComponent },
           { path: 'sheets/:id', component: MockComponent },
           { path: 'grips', component: MockComponent },
@@ -94,10 +95,10 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'My Guitar Sheets' title`, () => {
+  it(`should have the 'Guitar Companion' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('My Guitar Sheets');
+    expect(app.title).toEqual('Guitar Companion');
   });
 
   it('should render root outlet', () => {

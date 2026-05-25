@@ -11,7 +11,7 @@ import { UpdateService } from '@/app/core/services/update.service';
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
           <h2 class="mb-1"><i class="bi bi-info-circle me-2"></i>About</h2>
-          <p class="text-muted mb-0">Version and update status for the installed app.</p>
+          <p class="text-muted mb-0">Project details, release information, and update status.</p>
         </div>
       </div>
 
@@ -19,7 +19,24 @@ import { UpdateService } from '@/app/core/services/update.service';
         <div class="card-body">
           <dl class="row mb-4">
             <dt class="col-sm-4 text-muted">Application</dt>
-            <dd class="col-sm-8">My Guitar Sheets</dd>
+            <dd class="col-sm-8">Guitar Companion</dd>
+
+            <dt class="col-sm-4 text-muted">Hosted at</dt>
+            <dd class="col-sm-8">
+              <a href="https://guitar.made-by-karl.de" target="_blank" rel="noreferrer">
+                guitar.made-by-karl.de
+              </a>
+            </dd>
+
+            <dt class="col-sm-4 text-muted">Developed at</dt>
+            <dd class="col-sm-8">
+              <a href="https://github.com/made-by-karl/guitar" target="_blank" rel="noreferrer">
+                github.com/made-by-karl/guitar
+              </a>
+            </dd>
+
+            <dt class="col-sm-4 text-muted">License</dt>
+            <dd class="col-sm-8">GNU GPL v3.0</dd>
 
             <dt class="col-sm-4 text-muted">Current version</dt>
             <dd class="col-sm-8"><code>{{ updateService.appVersion }}</code></dd>

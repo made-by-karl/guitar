@@ -1,6 +1,6 @@
 {
-  "name": "my-guitar-sheets",
-  "short_name": "guitar-sheets",
+  "name": "Guitar Companion",
+  "short_name": "Guitar Companion",
   "theme_color": "#1976d2",
   "background_color": "#fafafa",
   "display": "standalone",

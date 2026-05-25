@@ -33,6 +33,9 @@ describe('AboutComponent', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Guitar Companion');
+    expect(root.textContent).toContain('github.com/made-by-karl/guitar');
+    expect(root.textContent).toContain('GNU GPL v3.0');
     expect(root.textContent).toContain('1.2.3');
     expect(root.textContent).toContain('No pending update');
     expect(root.querySelector('button')?.textContent).toContain('Search for update');
