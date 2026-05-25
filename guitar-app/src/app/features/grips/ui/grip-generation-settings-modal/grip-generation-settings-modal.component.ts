@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MODAL_REF, ModalComponent, ModalRef } from '@/app/core/services/modal.service';
-import type { DissonanceProfile, GripGeneratorOptions } from '@/app/features/grips/services/grips/grip-generator.service';
+import type { GripGeneratorOptions } from '@/app/features/grips/services/grips/grip-generator.service';
 
 export interface GripGenerationSettingsModalData {
   settings: GripGeneratorOptions;
-  dissonanceProfiles: { value: DissonanceProfile; label: string }[];
 }
 
 @Component({
@@ -28,16 +27,12 @@ export class GripGenerationSettingsModalComponent implements ModalComponent<Grip
     allowDuplicateNotes: false,
     dissonanceProfile: 'neutral'
   };
-
-  dissonanceProfiles: { value: DissonanceProfile; label: string }[] = [];
-
   constructor(
     @Inject(MODAL_REF) public modalRef: ModalRef<GripGeneratorOptions | undefined>
   ) {}
 
   initialize(data: GripGenerationSettingsModalData) {
     this.settings = { ...data.settings };
-    this.dissonanceProfiles = data.dissonanceProfiles;
   }
 
   onCancel() {

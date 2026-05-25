@@ -1,22 +1,38 @@
 <div class="container app-page">
-  <h2 class="mb-4"><i class="bi bi-music-note-beamed me-2"></i>Grips</h2>
+  <div class="page-header mb-4">
+    <h2 class="page-title"><i class="bi bi-music-note-beamed me-2"></i>Grips</h2>
+    <button
+      class="btn btn-outline-secondary btn-sm"
+      type="button"
+      (click)="openSettingsModal()"
+      aria-label="Open grip generation settings">
+      <i class="bi bi-gear"></i>
+    </button>
+  </div>
 
   <!-- Compact Chord Builder -->
   <div class="card mb-4">
     <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-10">
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-8">
           <app-chord-selector
             [(ngModel)]="activeChord"
             (ngModelChange)="onChordChange($event)"
           ></app-chord-selector>
         </div>
 
-        <div class="col-md-2">
-          <div class="form-label">Settings:</div>
-          <button class="btn btn-outline-secondary w-100" type="button" (click)="openSettingsModal()">
-            <i class="bi bi-gear"></i>
-          </button>
+        <div class="col-lg-4">
+          <label class="form-label" [for]="dissonanceProfileInputId">Dissonance</label>
+          <select
+            class="form-select"
+            [id]="dissonanceProfileInputId"
+            [ngModel]="gripSettings.dissonanceProfile"
+            (ngModelChange)="onDissonanceProfileChange($event)">
+            @for (profile of dissonanceProfiles; track profile.value) {
+              <option [value]="profile.value">{{ profile.label }}</option>
+            }
+          </select>
+          <div class="form-text">Controls how strictly dissonant voicings are filtered.</div>
         </div>
       </div>
     </div>

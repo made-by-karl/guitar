@@ -29,6 +29,8 @@ import {
   styleUrls: ['./chord.component.scss']
 })
 export class ChordComponent implements OnInit {
+  readonly dissonanceProfileInputId = 'grips-page-dissonance-profile';
+
   grips: TunedGrip[] = [];
 
   activeChord: ChordWithNotes | null = null
@@ -134,8 +136,7 @@ export class ChordComponent implements OnInit {
     });
 
     modalRef.componentInstance.initialize({
-      settings: this.gripSettings,
-      dissonanceProfiles: this.dissonanceProfiles
+      settings: this.gripSettings
     });
 
     const updatedSettings = await modalRef.afterClosed();
@@ -160,6 +161,15 @@ export class ChordComponent implements OnInit {
         this.isGeneratingGrips = false;
       }
     }, 10);
+  }
+
+  onDissonanceProfileChange(profile: DissonanceProfile) {
+    this.gripSettings = {
+      ...this.gripSettings,
+      dissonanceProfile: profile
+    };
+
+    this.regenerateGrips();
   }
 
   private sortGripsByFretAndScore(grips: TunedGrip[]): TunedGrip[] {

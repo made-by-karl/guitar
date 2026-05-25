@@ -29,6 +29,8 @@ export interface GripSelectorResult {
   styleUrls: ['./grip-selector.component.scss']
 })
 export class GripSelectorComponent implements OnInit {
+  readonly dissonanceProfileInputId = 'grip-selector-dissonance-profile';
+
   @Output() selectedGripsChange = new EventEmitter<GripSelectorResult>();
 
   chord = model.required<Chord | null>();
@@ -85,8 +87,7 @@ export class GripSelectorComponent implements OnInit {
     });
 
     modalRef.componentInstance.initialize({
-      settings: this.gripSettings,
-      dissonanceProfiles: this.dissonanceProfiles
+      settings: this.gripSettings
     });
 
     const updatedSettings = await modalRef.afterClosed();
@@ -117,6 +118,15 @@ export class GripSelectorComponent implements OnInit {
         this.isGeneratingGrips = false;
       }
     }, 10);
+  }
+
+  onDissonanceProfileChange(profile: DissonanceProfile) {
+    this.gripSettings = {
+      ...this.gripSettings,
+      dissonanceProfile: profile
+    };
+
+    this.regenerateGrips();
   }
 
   isSelected(grip: TunedGrip): boolean {

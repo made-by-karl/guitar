@@ -4,19 +4,35 @@
   <!-- Compact Chord Builder -->
   <div class="card mb-4">
     <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-10">
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-8">
           <app-chord-selector
             [(ngModel)]="chord"
             (ngModelChange)="onChordChange($event)"
           ></app-chord-selector>
         </div>
 
-        <div class="col-md-2">
-          <div class="form-label">Settings:</div>
-          <button class="btn btn-outline-secondary w-100" type="button" (click)="openSettingsModal()">
-            <i class="bi bi-gear"></i>
-          </button>
+        <div class="col-lg-4">
+          <label class="form-label" [for]="dissonanceProfileInputId">Dissonance</label>
+          <select
+            class="form-select"
+            [id]="dissonanceProfileInputId"
+            [ngModel]="gripSettings.dissonanceProfile"
+            (ngModelChange)="onDissonanceProfileChange($event)">
+            @for (profile of dissonanceProfiles; track profile.value) {
+              <option [value]="profile.value">{{ profile.label }}</option>
+            }
+          </select>
+          <div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+            <small class="text-muted">Advanced grip options stay in settings.</small>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              (click)="openSettingsModal()"
+              aria-label="Open grip generation settings">
+              <i class="bi bi-gear"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>

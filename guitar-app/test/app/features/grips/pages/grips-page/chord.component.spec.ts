@@ -15,6 +15,7 @@ import type { TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 describe('ChordViewerComponent', () => {
   let component: ChordComponent;
   let fixture: ComponentFixture<ChordComponent>;
+  let generateGrips: jest.Mock;
 
   const chord: ChordWithNotes = {
     root: 'C',
@@ -33,13 +34,15 @@ describe('ChordViewerComponent', () => {
   ];
 
   beforeEach(async () => {
+    generateGrips = jest.fn(() => grips);
+
     await TestBed.configureTestingModule({
       imports: [ChordComponent],
       providers: [
         {
           provide: GripGeneratorService,
           useValue: {
-            generateGrips: jest.fn(() => grips)
+            generateGrips
           }
         },
         {
@@ -101,4 +104,26 @@ describe('ChordViewerComponent', () => {
     expect(text).toContain('Incomplete: fifth');
     expect(text).toContain('Inversion: 1st');
   });
+
+  it('promotes dissonance selection into the chord form and keeps settings in the header', fakeAsync(() => {
+    const hostElement: HTMLElement = fixture.nativeElement;
+    const headerSettingsButton = hostElement.querySelector('button[aria-label="Open grip generation settings"]');
+    const dissonanceSelect = hostElement.querySelector('#grips-page-dissonance-profile') as HTMLSelectElement | null;
+
+    expect(headerSettingsButton).not.toBeNull();
+    expect(dissonanceSelect).not.toBeNull();
+    expect(hostElement.textContent).not.toContain('Settings:');
+
+    dissonanceSelect!.value = 'harmonic';
+    dissonanceSelect!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    tick(10);
+
+    expect(generateGrips).toHaveBeenLastCalledWith(
+      chord,
+      expect.objectContaining({
+        dissonanceProfile: 'harmonic'
+      })
+    );
+  }));
 });
