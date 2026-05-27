@@ -286,6 +286,38 @@ describe('PlayingActionsComponent', () => {
     expect(marks[0].x).toBe(fixture.componentInstance.getActionX(0));
   });
 
+  it('renders grouped relative pick labels for a seeded-style pinch against the current grip', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PlayingActionsComponent]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    fixture.componentRef.setInput('measures', [createMeasure([
+      {
+        technique: 'pick',
+        pickMode: 'relative',
+        pick: [
+          { string: 'bass', anchor: 'grip-note', fretOffset: 0 },
+          { string: 'second-from-top', anchor: 'grip-note', fretOffset: 0 },
+          { string: 'top', anchor: 'grip-note', fretOffset: 0 }
+        ]
+      }
+    ])]);
+    fixture.componentRef.setInput('notationContexts', [{
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', name: 'G' }],
+      gripById: {
+        g1: {
+          strings: [[{ fret: 3 }], 'o', 'o', 'o', [{ fret: 3 }], [{ fret: 3 }]]
+        }
+      }
+    }]);
+    fixture.detectChanges();
+
+    const marks = fixture.componentInstance.getPickMarks(0, fixture.componentInstance.measures()[0].actions[0]!);
+    expect(marks).toHaveLength(3);
+    expect(marks.map(mark => mark.label)).toEqual(['3', '3', '3']);
+  });
+
   it('renders resolved fret numbers for relative pick when grip context exists', async () => {
     await TestBed.configureTestingModule({
       imports: [PlayingActionsComponent]

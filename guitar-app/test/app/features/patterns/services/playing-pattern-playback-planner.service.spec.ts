@@ -413,7 +413,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
 
   it('extends total duration to include the final strum tail', () => {
     const service = new PlayingPatternPlaybackPlannerService();
-    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Percussive Campfire Groove');
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Chorus Lift Strum');
 
     expect(pattern).toBeDefined();
 
@@ -427,14 +427,14 @@ describe('PlayingPatternPlaybackPlannerService', () => {
       time: 1.75,
       playbackDuration: 2,
       actionDuration: 0.125,
-      technique: 'normal',
+      technique: 'accented',
       playNotes: 'reversed'
     });
   });
 
   it('plays rewritten seeded relative patterns against the current grip', () => {
     const service = new PlayingPatternPlaybackPlannerService();
-    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Bass + Brush Hybrid');
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Boom-Chick Bass + Brush');
 
     expect(pattern).toBeDefined();
 
@@ -449,6 +449,26 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     });
     expect(plan.instructions[1]).toMatchObject({
       playNotes: 'sequential'
+    });
+  });
+
+  it('keeps seeded grouped fingerstyle picks as parallel note playback', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === '6/8 Bass + Pinch');
+
+    expect(pattern).toBeDefined();
+
+    const plan = service.buildPlaybackPlan([{
+      measure: pattern!.measures[0]
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions[0]).toMatchObject({
+      playNotes: 'parallel',
+      notes: [
+        { note: { semitone: 'E', octave: 2 } },
+        { note: { semitone: 'B', octave: 3 } },
+        { note: { semitone: 'E', octave: 4 } }
+      ]
     });
   });
 });

@@ -3,6 +3,105 @@ import { MidiInstruction, MidiTechnique } from '@/app/core/services/midi.model';
 import { getIntervalSemitones, Note, transpose } from '@/app/core/music/semitones';
 import { AudioService } from '@/app/core/services/audio.service';
 
+type PlaybackOptions = {
+  velocity: number;
+  duration?: number;
+};
+
+const SAMPLER_KEYS = {
+  guitar: 'guitar',
+  percussion: 'percussion'
+} as const;
+
+const PERCUSSION_NOTES = {
+  'body-knock': 'C3',
+  'string-slap': 'C#3'
+} as const;
+
+const PERCUSSION_TECHNIQUE_ALIASES = {
+  body_knock: 'body-knock',
+  string_slap: 'string-slap'
+} as const;
+
+const MILLISECONDS_PER_SECOND = 1000;
+
+/**
+ * Central tuning values for MIDI playback feel.
+ * Keep timing, envelope, and velocity knobs here so the service behavior can
+ * be adjusted without hunting through the implementation.
+ */
+const MIDI_PLAYBACK_CONFIG = {
+  dynamics: {
+    maxVelocity: 1
+  },
+  scheduling: {
+    // Small lead time gives Tone.js room to schedule notes sample-accurately.
+    triggerLeadTimeSeconds: 0.001,
+    // Extra wait time keeps long releases from being cut off at sequence end.
+    sequenceTailBufferSeconds: 0.5
+  },
+  samplers: {
+    guitar: {
+      releaseSeconds: 3,
+      attackSeconds: 0.005,
+      volumeDb: 0
+    },
+    percussion: {
+      releaseSeconds: 0.5,
+      attackSeconds: 0.001,
+      volumeDb: 1,
+      instructionHitDurationSeconds: 0.5,
+      manualHitDuration: '8n' as const
+    }
+  },
+  techniques: {
+    muted: {
+      durationSeconds: 0.3,
+      velocityScale: 0.6
+    },
+    palmMuted: {
+      durationSeconds: 0.8,
+      velocityScale: 0.7
+    },
+    percussive: {
+      durationSeconds: 0.015,
+      velocityScale: 0.8
+    },
+    accented: {
+      velocityScale: 1.6
+    }
+  },
+  sequentialStrum: {
+    // Sixteenth-note-like motions stay very tight to avoid sounding arpeggiated.
+    shortActionThresholdSeconds: 0.14,
+    tightSpacingSeconds: 0.025,
+    // Eighth-note-like strums get a slightly wider rake for a natural sweep.
+    defaultSpacingSeconds: 0.03,
+    maxSpreadSeconds: 0.22
+  },
+  legato: {
+    minimumTotalDurationSeconds: 0.12,
+    minimumAudibleDurationSeconds: 0.08,
+    minimumTargetVelocity: 0.2,
+    targetVelocityScale: {
+      default: 0.78,
+      pullOff: 0.72,
+      hammerOnWithoutSource: 0.62
+    }
+  },
+  slide: {
+    minTransitionWindowSeconds: 0.09,
+    maxTransitionWindowSeconds: 0.22,
+    transitionWindowShare: 0.55,
+    minStepDurationSeconds: 0.05,
+    maxStepDurationShare: 0.5,
+    stepDurationOverlapFactor: 1.3,
+    targetVelocityScale: 0.95,
+    intermediateVelocityScale: 0.65,
+    minimumIntermediateVelocity: 0.18
+  }
+} as const;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,67 +114,67 @@ export class MidiService implements OnDestroy {
   private async ensureInitialized(): Promise<void> {
     await this.audioService.ensureStarted();
 
-    await this.audioService.ensureSamplerInitialized('guitar', {
+    await this.audioService.ensureSamplerInitialized(SAMPLER_KEYS.guitar, {
       urls: {
-          // Octave 2
-          'E2': '/samples/notes/guitar_E2.mp3',
-          'F2': '/samples/notes/guitar_F2.mp3',
-          'F#2': '/samples/notes/guitar_Fs2.mp3',
-          'G2': '/samples/notes/guitar_G2.mp3',
-          'G#2': '/samples/notes/guitar_Gs2.mp3',
-          'A2': '/samples/notes/guitar_A2.mp3',
-          'A#2': '/samples/notes/guitar_As2.mp3',
-          'B2': '/samples/notes/guitar_B2.mp3',
+        // Octave 2
+        'E2': '/samples/notes/guitar_E2.mp3',
+        'F2': '/samples/notes/guitar_F2.mp3',
+        'F#2': '/samples/notes/guitar_Fs2.mp3',
+        'G2': '/samples/notes/guitar_G2.mp3',
+        'G#2': '/samples/notes/guitar_Gs2.mp3',
+        'A2': '/samples/notes/guitar_A2.mp3',
+        'A#2': '/samples/notes/guitar_As2.mp3',
+        'B2': '/samples/notes/guitar_B2.mp3',
 
-          // Octave 3
-          'C3': '/samples/notes/guitar_C3.mp3',
-          'C#3': '/samples/notes/guitar_Cs3.mp3',
-          'D3': '/samples/notes/guitar_D3.mp3',
-          'D#3': '/samples/notes/guitar_Ds3.mp3',
-          'E3': '/samples/notes/guitar_E3.mp3',
-          'F3': '/samples/notes/guitar_F3.mp3',
-          'F#3': '/samples/notes/guitar_Fs3.mp3',
-          'G3': '/samples/notes/guitar_G3.mp3',
-          'G#3': '/samples/notes/guitar_Gs3.mp3',
-          'A3': '/samples/notes/guitar_A3.mp3',
-          'A#3': '/samples/notes/guitar_As3.mp3',
-          'B3': '/samples/notes/guitar_B3.mp3',
+        // Octave 3
+        'C3': '/samples/notes/guitar_C3.mp3',
+        'C#3': '/samples/notes/guitar_Cs3.mp3',
+        'D3': '/samples/notes/guitar_D3.mp3',
+        'D#3': '/samples/notes/guitar_Ds3.mp3',
+        'E3': '/samples/notes/guitar_E3.mp3',
+        'F3': '/samples/notes/guitar_F3.mp3',
+        'F#3': '/samples/notes/guitar_Fs3.mp3',
+        'G3': '/samples/notes/guitar_G3.mp3',
+        'G#3': '/samples/notes/guitar_Gs3.mp3',
+        'A3': '/samples/notes/guitar_A3.mp3',
+        'A#3': '/samples/notes/guitar_As3.mp3',
+        'B3': '/samples/notes/guitar_B3.mp3',
 
-          // Octave 4
-          'C4': '/samples/notes/guitar_C4.mp3',
-          'C#4': '/samples/notes/guitar_Cs4.mp3',
-          'D4': '/samples/notes/guitar_D4.mp3',
-          'D#4': '/samples/notes/guitar_Ds4.mp3',
-          'E4': '/samples/notes/guitar_E4.mp3',
-          'F4': '/samples/notes/guitar_F4.mp3',
-          'F#4': '/samples/notes/guitar_Fs4.mp3',
-          'G4': '/samples/notes/guitar_G4.mp3',
-          'G#4': '/samples/notes/guitar_Gs4.mp3',
-          'A4': '/samples/notes/guitar_A4.mp3',
-          'A#4': '/samples/notes/guitar_As4.mp3',
-          'B4': '/samples/notes/guitar_B4.mp3',
+        // Octave 4
+        'C4': '/samples/notes/guitar_C4.mp3',
+        'C#4': '/samples/notes/guitar_Cs4.mp3',
+        'D4': '/samples/notes/guitar_D4.mp3',
+        'D#4': '/samples/notes/guitar_Ds4.mp3',
+        'E4': '/samples/notes/guitar_E4.mp3',
+        'F4': '/samples/notes/guitar_F4.mp3',
+        'F#4': '/samples/notes/guitar_Fs4.mp3',
+        'G4': '/samples/notes/guitar_G4.mp3',
+        'G#4': '/samples/notes/guitar_Gs4.mp3',
+        'A4': '/samples/notes/guitar_A4.mp3',
+        'A#4': '/samples/notes/guitar_As4.mp3',
+        'B4': '/samples/notes/guitar_B4.mp3',
 
-          // Octave 5
-          'D5': '/samples/notes/guitar_D5.mp3',
-          'D#5': '/samples/notes/guitar_Ds5.mp3',
-          'E5': '/samples/notes/guitar_E5.mp3',
-          'G5': '/samples/notes/guitar_G5.mp3',
-          'G#5': '/samples/notes/guitar_Gs5.mp3'
+        // Octave 5
+        'D5': '/samples/notes/guitar_D5.mp3',
+        'D#5': '/samples/notes/guitar_Ds5.mp3',
+        'E5': '/samples/notes/guitar_E5.mp3',
+        'G5': '/samples/notes/guitar_G5.mp3',
+        'G#5': '/samples/notes/guitar_Gs5.mp3'
       },
-      release: 3,
-      attack: 0.005,
-      volume: 0
+      release: MIDI_PLAYBACK_CONFIG.samplers.guitar.releaseSeconds,
+      attack: MIDI_PLAYBACK_CONFIG.samplers.guitar.attackSeconds,
+      volume: MIDI_PLAYBACK_CONFIG.samplers.guitar.volumeDb
     });
 
-    await this.audioService.ensureSamplerInitialized('percussion', {
+    await this.audioService.ensureSamplerInitialized(SAMPLER_KEYS.percussion, {
       urls: {
         // Guitar percussion techniques mapped to notes
         'C3': '/samples/percussion/guitar_body_knock.mp3', // Body knocking
         'C#3': '/samples/percussion/guitar_string_slap.mp3' // String slapping
       },
-      release: 0.5,
-      attack: 0.001,
-      volume: 1
+      release: MIDI_PLAYBACK_CONFIG.samplers.percussion.releaseSeconds,
+      attack: MIDI_PLAYBACK_CONFIG.samplers.percussion.attackSeconds,
+      volume: MIDI_PLAYBACK_CONFIG.samplers.percussion.volumeDb
     });
   }
 
@@ -89,9 +188,9 @@ export class MidiService implements OnDestroy {
   /**
    * Applies technique-specific modifications to playback
    */
-  private getPlaybackOptions(technique: MidiTechnique, velocity: number) {
+  private getPlaybackOptions(technique: MidiTechnique, velocity: number): PlaybackOptions {
     const baseOptions = {
-      velocity: velocity,
+      velocity,
       duration: undefined
     };
 
@@ -99,28 +198,31 @@ export class MidiService implements OnDestroy {
       case 'muted':
         return {
           ...baseOptions,
-          duration: 0.3, // Still short but less abrupt
-          velocity: velocity * 0.6
+          duration: MIDI_PLAYBACK_CONFIG.techniques.muted.durationSeconds,
+          velocity: velocity * MIDI_PLAYBACK_CONFIG.techniques.muted.velocityScale
         };
 
       case 'palm-muted':
         return {
           ...baseOptions,
-          duration: 0.8, // Longer than muted but shorter than open
-          velocity: velocity * 0.7
+          duration: MIDI_PLAYBACK_CONFIG.techniques.palmMuted.durationSeconds,
+          velocity: velocity * MIDI_PLAYBACK_CONFIG.techniques.palmMuted.velocityScale
         };
 
       case 'percussive':
         return {
           ...baseOptions,
-          duration: 0.015, // Very short for percussive effect
-          velocity: velocity * 0.8
+          duration: MIDI_PLAYBACK_CONFIG.techniques.percussive.durationSeconds,
+          velocity: velocity * MIDI_PLAYBACK_CONFIG.techniques.percussive.velocityScale
         };
 
       case 'accented':
         return {
           ...baseOptions,
-          velocity: Math.min(1.0, velocity * 1.6)
+          velocity: Math.min(
+            MIDI_PLAYBACK_CONFIG.dynamics.maxVelocity,
+            velocity * MIDI_PLAYBACK_CONFIG.techniques.accented.velocityScale
+          )
         };
 
       default: // normal
@@ -144,25 +246,31 @@ export class MidiService implements OnDestroy {
 
     // Calculate total duration and wait
     const totalDuration = Math.max(...instructions.map(i => i.time + i.playbackDuration));
-    await new Promise(resolve => setTimeout(resolve, (totalDuration + 0.5) * 1000));
+    await new Promise(resolve => setTimeout(
+      resolve,
+      (totalDuration + MIDI_PLAYBACK_CONFIG.scheduling.sequenceTailBufferSeconds) * MILLISECONDS_PER_SECOND
+    ));
   }
 
   async ensureReady(): Promise<void> {
     await this.ensureInitialized();
   }
 
-  triggerInstruction(instruction: MidiInstruction, scheduleTime: number = this.audioService.now() + 0.001): void {
-    const guitarSampler = this.audioService.getSampler('guitar');
+  triggerInstruction(
+    instruction: MidiInstruction,
+    scheduleTime: number = this.audioService.now() + MIDI_PLAYBACK_CONFIG.scheduling.triggerLeadTimeSeconds
+  ): void {
+    const guitarSampler = this.audioService.getSampler(SAMPLER_KEYS.guitar);
     if (!guitarSampler) throw new Error('Guitar sampler not initialized');
 
-    const percussionSampler = this.audioService.getSampler('percussion');
+    const percussionSampler = this.audioService.getSampler(SAMPLER_KEYS.percussion);
     if (!percussionSampler) throw new Error('Percussion sampler not initialized');
 
     if (instruction.percussion) {
       const percussionNote = this.getPercussionNote(instruction.percussion.technique);
       percussionSampler.triggerAttackRelease(
         percussionNote,
-        0.5,
+        MIDI_PLAYBACK_CONFIG.samplers.percussion.instructionHitDurationSeconds,
         scheduleTime,
         instruction.velocity
       );
@@ -202,12 +310,7 @@ export class MidiService implements OnDestroy {
    * Map percussion technique to the note name in the percussion sampler
    */
   private getPercussionNote(technique: 'body-knock' | 'string-slap'): string {
-    switch (technique) {
-      case 'body-knock':
-        return 'C3';
-      case 'string-slap':
-        return 'C#3';
-    }
+    return PERCUSSION_NOTES[technique];
   }
 
   /**
@@ -216,9 +319,9 @@ export class MidiService implements OnDestroy {
   private playSequentialNotes(
     instruction: MidiInstruction,
     startTime: number,
-    options: any
+    options: PlaybackOptions
   ): void {
-    const sampler = this.audioService.getSampler('guitar');
+    const sampler = this.audioService.getSampler(SAMPLER_KEYS.guitar);
     if (!sampler || !instruction.notes) return;
 
     const notes = instruction.notes;
@@ -249,25 +352,34 @@ export class MidiService implements OnDestroy {
   }
 
   private getSequentialNoteSpacing(actionDuration: number, noteCount: number): number {
-    const tightStrumSpacing = 0.025;
+    const {
+      tightSpacingSeconds,
+      shortActionThresholdSeconds,
+      defaultSpacingSeconds,
+      maxSpreadSeconds
+    } = MIDI_PLAYBACK_CONFIG.sequentialStrum;
 
-    if (noteCount <= 1 || actionDuration <= 0.14) {
-      return tightStrumSpacing;
+    if (noteCount <= 1 || actionDuration <= shortActionThresholdSeconds) {
+      return tightSpacingSeconds;
     }
 
-    const normalStrumSpacing = 0.04;
-    const maxTotalSpread = 0.22;
-    return Math.max(tightStrumSpacing, Math.min(normalStrumSpacing, maxTotalSpread / (noteCount - 1)));
+    return Math.max(
+      tightSpacingSeconds,
+      Math.min(defaultSpacingSeconds, maxSpreadSeconds / (noteCount - 1))
+    );
   }
 
   private playLegatoTechnique(
     instruction: MidiInstruction,
     startTime: number,
-    options: { velocity: number; duration?: number }
+    options: PlaybackOptions
   ): void {
-    const sampler = this.audioService.getSampler('guitar');
+    const sampler = this.audioService.getSampler(SAMPLER_KEYS.guitar);
     if (!sampler || !instruction.legato) return;
-    const totalDuration = Math.max(0.12, instruction.playbackDuration);
+    const totalDuration = Math.max(
+      MIDI_PLAYBACK_CONFIG.legato.minimumTotalDurationSeconds,
+      instruction.playbackDuration
+    );
 
     if (instruction.technique === 'slide') {
       this.playSlideTechnique(sampler, instruction, startTime, options, totalDuration);
@@ -276,19 +388,19 @@ export class MidiService implements OnDestroy {
 
     const targetNoteName = this.noteToToneName(instruction.legato.target.note);
 
-    let targetVelocityScale = 0.78;
+    let targetVelocityScale: number = MIDI_PLAYBACK_CONFIG.legato.targetVelocityScale.default;
 
     if (instruction.technique === 'pull-off') {
-      targetVelocityScale = 0.72;
+      targetVelocityScale = MIDI_PLAYBACK_CONFIG.legato.targetVelocityScale.pullOff;
     } else if (instruction.technique === 'hammer-on' && !instruction.legato.source) {
-      targetVelocityScale = 0.62;
+      targetVelocityScale = MIDI_PLAYBACK_CONFIG.legato.targetVelocityScale.hammerOnWithoutSource;
     }
 
     sampler.triggerAttackRelease(
       targetNoteName,
-      Math.max(0.08, totalDuration),
+      Math.max(MIDI_PLAYBACK_CONFIG.legato.minimumAudibleDurationSeconds, totalDuration),
       startTime,
-      Math.max(0.2, options.velocity * targetVelocityScale)
+      Math.max(MIDI_PLAYBACK_CONFIG.legato.minimumTargetVelocity, options.velocity * targetVelocityScale)
     );
   }
 
@@ -296,7 +408,7 @@ export class MidiService implements OnDestroy {
     sampler: { triggerAttackRelease: (note: string, duration: number, time: number, velocity: number) => void },
     instruction: MidiInstruction,
     startTime: number,
-    options: { velocity: number; duration?: number },
+    options: PlaybackOptions,
     totalDuration: number
   ): void {
     if (!instruction.legato) return;
@@ -333,15 +445,40 @@ export class MidiService implements OnDestroy {
       notes.push(transpose(instruction.legato.source.note, step * direction));
     }
 
-    const transitionWindow = Math.min(0.22, Math.max(0.09, totalDuration * 0.55));
+    const transitionWindow = Math.min(
+      MIDI_PLAYBACK_CONFIG.slide.maxTransitionWindowSeconds,
+      Math.max(
+        MIDI_PLAYBACK_CONFIG.slide.minTransitionWindowSeconds,
+        totalDuration * MIDI_PLAYBACK_CONFIG.slide.transitionWindowShare
+      )
+    );
     const stepSpacing = notes.length > 1 ? transitionWindow / (notes.length - 1) : transitionWindow;
-    const perStepDuration = Math.max(0.05, Math.min(totalDuration * 0.5, stepSpacing * 1.3));
+    const perStepDuration = Math.max(
+      MIDI_PLAYBACK_CONFIG.slide.minStepDurationSeconds,
+      Math.min(
+        totalDuration * MIDI_PLAYBACK_CONFIG.slide.maxStepDurationShare,
+        stepSpacing * MIDI_PLAYBACK_CONFIG.slide.stepDurationOverlapFactor
+      )
+    );
 
     for (let index = 0; index < notes.length; index++) {
       const noteTime = startTime + (index * stepSpacing);
       const isTarget = index === notes.length - 1;
-      const noteDuration = isTarget ? Math.max(0.08, totalDuration - (index * stepSpacing)) : perStepDuration;
-      const noteVelocity = isTarget ? Math.min(1, options.velocity * 0.95) : Math.max(0.18, options.velocity * 0.65);
+      const noteDuration = isTarget
+        ? Math.max(
+          MIDI_PLAYBACK_CONFIG.legato.minimumAudibleDurationSeconds,
+          totalDuration - (index * stepSpacing)
+        )
+        : perStepDuration;
+      const noteVelocity = isTarget
+        ? Math.min(
+          MIDI_PLAYBACK_CONFIG.dynamics.maxVelocity,
+          options.velocity * MIDI_PLAYBACK_CONFIG.slide.targetVelocityScale
+        )
+        : Math.max(
+          MIDI_PLAYBACK_CONFIG.slide.minimumIntermediateVelocity,
+          options.velocity * MIDI_PLAYBACK_CONFIG.slide.intermediateVelocityScale
+        );
 
       sampler.triggerAttackRelease(
         this.noteToToneName(notes[index]),
@@ -358,17 +495,17 @@ export class MidiService implements OnDestroy {
   async playPercussionTechnique(technique: string): Promise<void> {
     await this.ensureInitialized();
 
-    const percussionSampler = this.audioService.getSampler('percussion');
+    const percussionSampler = this.audioService.getSampler(SAMPLER_KEYS.percussion);
     if (!percussionSampler) throw new Error('Percussion sampler not initialized');
 
-    const techniqueMapping: { [key: string]: string } = {
-      'body_knock': 'C3',
-      'string_slap': 'C#3'
-    };
-
-    const note = techniqueMapping[technique];
+    const normalizedTechnique =
+      PERCUSSION_TECHNIQUE_ALIASES[technique as keyof typeof PERCUSSION_TECHNIQUE_ALIASES];
+    const note = normalizedTechnique ? PERCUSSION_NOTES[normalizedTechnique] : undefined;
     if (note) {
-      percussionSampler.triggerAttackRelease(note, '8n');
+      percussionSampler.triggerAttackRelease(
+        note,
+        MIDI_PLAYBACK_CONFIG.samplers.percussion.manualHitDuration
+      );
     } else {
       console.warn(`Unknown percussion technique: ${technique}`);
     }
@@ -378,8 +515,8 @@ export class MidiService implements OnDestroy {
    * Clean up resources
    */
   dispose(): void {
-    this.audioService.disposeSampler('guitar');
-    this.audioService.disposeSampler('percussion');
+    this.audioService.disposeSampler(SAMPLER_KEYS.guitar);
+    this.audioService.disposeSampler(SAMPLER_KEYS.percussion);
   }
 
   ngOnDestroy(): void {

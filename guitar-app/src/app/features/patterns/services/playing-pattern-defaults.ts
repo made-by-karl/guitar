@@ -10,21 +10,19 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
   // use id: 'default-<short-name-slug>'
   return [
     {
-      id: 'default-basic-pop-backbeat',
-      name: 'Basic Pop Backbeat',
-      description: 'Steady acoustic pop groove for open-chord verses and choruses that need a clear backbeat without getting busy.',
+      id: 'default-steady-downstrokes-4-4',
+      name: 'Steady Downstrokes (4/4)',
+      description: 'Plain quarter-note downstrokes for learning chord changes, leading a group, or keeping a verse simple.',
       category: 'Campfire',
-      suggestedGenre: 'Acoustic Pop',
-      exampleSong: 'Zombie',
+      suggestedGenre: 'Campfire Basics',
+      exampleSong: "Knockin' on Heaven's Door",
       measures: [{
         timeSignature: '4/4',
         actions: grid(16, [
           [0, strum('D', range('bass', 'top'), ['accent'])],
           [4, strum('D', range('bass', 'top'))],
-          [6, strum('U', range('top', 'middle'))],
           [8, strum('D', range('bass', 'top'), ['accent'])],
-          [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'))]
+          [12, strum('D', range('bass', 'top'))]
         ])
       }],
       createdAt: now,
@@ -32,31 +30,9 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-indie-push-groove',
-      name: 'Indie Push Groove',
-      description: 'Syncopated acoustic groove with a lifted upstroke feel for indie folk-pop choruses and driving singalongs.',
-      category: 'Campfire',
-      suggestedGenre: 'Indie Folk-Pop',
-      exampleSong: 'Ho Hey',
-      measures: [{
-        timeSignature: '4/4',
-        actions: grid(16, [
-          [0, strum('D', range('bass', 'top'))],
-          [4, strum('D', range('second-from-bass', 'second-from-top'), ['mute'])],
-          [7, strum('U', range('top', 'middle'), ['accent'])],
-          [10, strum('U', range('top', 'middle'))],
-          [12, strum('D', range('bass', 'top'), ['accent'])],
-          [14, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-folk-strum',
+      id: 'default-folk-strum-d-d-u-u-d-u',
       name: 'Folk Strum (D-D-U-U-D-U)',
-      description: 'Classic campfire strum for singer-songwriter, folk, and familiar acoustic covers with an easy singalong pulse.',
+      description: 'The familiar campfire strum for mid-tempo singalongs and open-chord standards.',
       category: 'Campfire',
       suggestedGenre: 'Folk Singalong',
       exampleSong: 'Leaving on a Jet Plane',
@@ -77,21 +53,21 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-acoustic-pop-mute-groove',
-      name: 'Acoustic Pop Mute Groove',
-      description: 'Modern muted acoustic groove with light percussion accents for rhythmic pop arrangements around the campfire.',
+      id: 'default-roll-strum-d-du-udu',
+      name: 'Roll Strum (D-DU-UDU)',
+      description: 'A tighter rolling strum that adds motion without sounding too busy under the vocal.',
       category: 'Campfire',
-      suggestedGenre: 'Modern Acoustic Pop',
-      exampleSong: 'Riptide',
+      suggestedGenre: 'Acoustic Pop',
+      exampleSong: 'Wonderwall',
       measures: [{
         timeSignature: '4/4',
         actions: grid(16, [
-          [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, strum('D', range('second-from-bass', 'second-from-top'), ['mute'])],
-          [8, percussive('body-knock')],
+          [0, strum('D', range('bass', 'top'))],
+          [4, strum('D', range('bass', 'top'))],
+          [6, strum('U', range('top', 'middle'))],
           [10, strum('U', range('top', 'middle'))],
           [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'), ['mute'])]
+          [14, strum('U', range('top', 'middle'))]
         ])
       }],
       createdAt: now,
@@ -99,11 +75,35 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-country-boom-chick',
-      name: 'Country Boom-Chick',
-      description: 'Alternating bass-and-brush country pattern that keeps open chords moving in roots, Americana, and campfire standards.',
+      id: 'default-country-roads-strum-d-dud-du',
+      name: 'Country Roads Strum (D-DUD-DU)',
+      description: 'A relaxed country-folk groove with a held second beat and a pickup into the next bar.',
       category: 'Campfire',
-      suggestedGenre: 'Country Roots',
+      suggestedGenre: 'Country / Folk Singalong',
+      exampleSong: 'Take Me Home, Country Roads',
+      measures: [{
+        timeSignature: '4/4',
+        actions: onEighthSlots(16, [
+          strum('D', range('bass', 'top')),
+          null,
+          strum('D', range('bass', 'top')),
+          strum('U', range('top', 'middle')),
+          strum('D', range('bass', 'top')),
+          null,
+          strum('D', range('bass', 'top')),
+          strum('U', range('top', 'middle'))
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-boom-chick-bass-brush',
+      name: 'Boom-Chick Bass + Brush',
+      description: 'Alternating bass notes with short brushes for songs that need a clear pulse and a little low-end movement.',
+      category: 'Campfire',
+      suggestedGenre: 'Country / Americana',
       exampleSong: 'Folsom Prison Blues',
       measures: [{
         timeSignature: '4/4',
@@ -123,168 +123,9 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-waltz-3-4',
-      name: 'Waltz 3/4',
-      description: 'Beat-one bass with lighter upper-string brushes for waltzes, hymns, and slower campfire songs in three.',
-      category: 'Campfire',
-      suggestedGenre: 'Waltz / Folk Hymn',
-      exampleSong: 'Amazing Grace',
-      measures: [{
-        timeSignature: '3/4',
-        actions: grid(12, [
-          [0, relativePick('bass')],
-          [4, strum('D', range('middle', 'top'), ['accent'])],
-          [8, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-6-8-ballad',
-      name: '6/8 Ballad',
-      description: 'Rolling compound-time strum for emotional acoustic ballads that need motion without losing warmth.',
-      category: 'Campfire',
-      suggestedGenre: 'Acoustic Ballad',
-      exampleSong: 'Nothing Else Matters',
-      measures: [{
-        timeSignature: '6/8',
-        actions: grid(12, [
-          [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, strum('D', range('middle', 'top'))],
-          [6, strum('U', range('top', 'second-from-top'))],
-          [8, strum('D', range('bass', 'top'))],
-          [10, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-shuffle-drive-12-8',
-      name: 'Shuffle Drive 12/8',
-      description: 'Swung acoustic shuffle for roots-rock and bluesy campfire jams with a strong downbeat and lifted answer.',
-      category: 'Campfire',
-      suggestedGenre: 'Roots-Rock Shuffle',
-      exampleSong: 'Proud Mary',
-      measures: [{
-        timeSignature: '12/8',
-        actions: grid(24, [
-          [0, strum('D', range('bass', 'middle'), ['palm-mute'])],
-          [4, strum('D', range('bass', 'middle'), ['palm-mute'])],
-          [6, strum('U', range('top', 'middle'))],
-          [8, strum('D', range('bass', 'second-from-top'), ['accent'])],
-          [12, strum('D', range('bass', 'middle'), ['palm-mute'])],
-          [16, strum('D', range('bass', 'middle'), ['palm-mute'])],
-          [18, strum('U', range('top', 'middle'))],
-          [20, strum('D', range('bass', 'second-from-top'), ['accent'])],
-          [22, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-ballad-fingerpicking',
-      name: 'Ballad Fingerpicking',
-      description: 'Gentle relative-string fingerpicking for slower songs where the vocal needs space and the guitar still feels active.',
-      category: 'Fingerstyle',
-      suggestedGenre: 'Acoustic Ballad Fingerstyle',
-      exampleSong: 'Hallelujah',
-      measures: [{
-        timeSignature: '4/4',
-        actions: onEighthSlots(16, [
-          relativePick('bass'),
-          relativePick('middle'),
-          relativePick('second-from-top'),
-          relativePick('middle'),
-          relativePick('second-from-bass'),
-          relativePick('second-from-top'),
-          relativePick('top'),
-          relativePick('second-from-top')
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-travis-picking',
-      name: 'Travis Picking',
-      description: 'Alternating-bass fingerstyle pattern for solo-friendly campfire playing with a built-in moving pulse.',
-      category: 'Fingerstyle',
-      suggestedGenre: 'Classic Fingerstyle',
-      exampleSong: 'Dust in the Wind',
-      measures: [{
-        timeSignature: '4/4',
-        actions: onEighthSlots(16, [
-          relativePick('bass'),
-          relativePick('second-from-top'),
-          relativePick('second-from-bass'),
-          relativePick('top'),
-          relativePick('bass'),
-          relativePick('middle'),
-          relativePick('second-from-bass'),
-          relativePick('second-from-top')
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-simple-arpeggio',
-      name: 'Simple Arpeggio',
-      description: 'Straight broken-chord pattern for intros, verses, and quieter sections where full strumming feels too dense.',
-      category: 'Fingerstyle',
-      suggestedGenre: 'Acoustic Arpeggio',
-      exampleSong: 'House of the Rising Sun',
-      measures: [{
-        timeSignature: '4/4',
-        actions: onEighthSlots(16, [
-          relativePick('bass'),
-          relativePick('middle'),
-          relativePick('second-from-top'),
-          relativePick('top'),
-          relativePick('second-from-bass'),
-          relativePick('middle'),
-          relativePick('second-from-top'),
-          relativePick('top')
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-percussive-campfire-groove',
-      name: 'Percussive Campfire Groove',
-      description: 'Expressive acoustic groove with body hits and slaps between strums for players who want a busking-style texture.',
-      category: 'Campfire',
-      suggestedGenre: 'Percussive Acoustic Pop',
-      exampleSong: 'Hey, Soul Sister',
-      measures: [{
-        timeSignature: '4/4',
-        actions: grid(16, [
-          [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, percussive('body-knock')],
-          [6, strum('U', range('top', 'middle'))],
-          [8, strum('D', range('bass', 'top'))],
-          [12, percussive('string-slap')],
-          [14, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
       id: 'default-soft-ballad-brush',
       name: 'Soft Ballad Brush',
-      description: 'Soft brush pattern for quiet verses and reflective songs where the strum should sit behind the vocal.',
+      description: 'Light brushes with extra space for quiet verses, reflective ballads, and slower vocal-led sections.',
       category: 'Campfire',
       suggestedGenre: 'Singer-Songwriter Ballad',
       exampleSong: 'Let It Be',
@@ -326,29 +167,6 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-campfire-push-chorus',
-      name: 'Campfire Push Chorus',
-      description: 'Louder chorus strum with accents and lifted upstrokes for the moment a singalong needs to open up.',
-      category: 'Campfire',
-      suggestedGenre: 'Anthemic Campfire Pop',
-      exampleSong: 'Sweet Caroline',
-      measures: [{
-        timeSignature: '4/4',
-        actions: grid(16, [
-          [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, strum('D', range('bass', 'top'))],
-          [6, strum('U', range('top', 'middle'))],
-          [8, strum('D', range('bass', 'top'), ['accent'])],
-          [10, strum('U', range('top', 'middle'))],
-          [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'))]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
       id: 'default-two-beat-country-train-beat',
       name: 'Two-Beat Country / Train Beat',
       description: 'Simpler two-beat country pulse that works well under mid-tempo singalongs and easy walking grooves.',
@@ -373,68 +191,21 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-easy-relative-arpeggio',
-      name: 'Easy Relative Arpeggio',
-      description: 'Accessible relative-string arpeggio that keeps the harmony clear without requiring full Travis-style independence.',
-      category: 'Fingerstyle',
-      suggestedGenre: 'Acoustic Pop Arpeggio',
-      exampleSong: 'Stand by Me',
-      measures: [{
-        timeSignature: '4/4',
-        actions: onEighthSlots(16, [
-          relativePick('bass'),
-          relativePick('middle'),
-          relativePick('second-from-top'),
-          relativePick('middle'),
-          relativePick('second-from-bass'),
-          relativePick('middle'),
-          relativePick('top'),
-          relativePick('second-from-top')
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-6-8-fingerpicked-ballad',
-      name: '6/8 Fingerpicked Ballad',
-      description: 'Flowing compound-time fingerpicking pattern for dramatic ballads and quieter acoustic interludes.',
-      category: 'Fingerstyle',
-      suggestedGenre: '6/8 Fingerstyle Ballad',
-      exampleSong: 'Nothing Else Matters',
-      measures: [{
-        timeSignature: '6/8',
-        actions: grid(12, [
-          [0, relativePick('bass')],
-          [2, relativePick('middle')],
-          [4, relativePick('second-from-top')],
-          [6, relativePick('second-from-bass')],
-          [8, relativePick('middle')],
-          [10, relativePick('top')]
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-    {
-      id: 'default-muted-funk-folk-groove',
-      name: 'Muted Funk-Folk Groove',
-      description: 'Tight muted acoustic groove for modern folk-pop songs that need motion without heavy percussion.',
+      id: 'default-campfire-backbeat-tap',
+      name: 'Campfire Backbeat Tap',
+      description: 'A simple singalong strum with light body taps on the backbeat for adding pulse without turning busy.',
       category: 'Campfire',
-      suggestedGenre: 'Rhythmic Folk-Pop',
-      exampleSong: 'Castle on the Hill',
+      suggestedGenre: 'Campfire Singalong',
+      exampleSong: 'Stand by Me',
       measures: [{
         timeSignature: '4/4',
         actions: grid(16, [
           [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, strum('D', range('second-from-bass', 'second-from-top'), ['mute'])],
+          [4, percussive('body-knock')],
           [6, strum('U', range('top', 'middle'))],
-          [8, strum('D', range('second-from-bass', 'second-from-top'), ['mute'])],
-          [10, strum('U', range('top', 'middle'))],
-          [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'), ['mute'])]
+          [8, strum('D', range('bass', 'top'))],
+          [12, percussive('body-knock')],
+          [14, strum('U', range('top', 'middle'))]
         ])
       }],
       createdAt: now,
@@ -442,40 +213,6 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
-      id: 'default-relative-campfire-bass-walk',
-      name: 'Relative Campfire Bass Walk',
-      description: 'Bass-moving acoustic pattern that adds travel between chord changes while keeping the top strings light and singable.',
-      category: 'Campfire',
-      suggestedGenre: 'Country-Folk Walk-Up',
-      exampleSong: 'Ring of Fire',
-      measures: [{
-        timeSignature: '4/4',
-        actions: onEighthSlots(16, [
-          relativePick('bass'),
-          strum('D', range('middle', 'top')),
-          [
-            relativeBasePick('second-from-bass'),
-            {
-              technique: 'hammer-on',
-              legatoMode: 'relative',
-              legato: {
-                string: 'second-from-bass',
-                target: { anchor: 'grip-note', fretOffset: 0 }
-              }
-            }
-          ],
-          strum('U', range('top', 'second-from-top')),
-          relativePick('second-from-bass'),
-          strum('D', range('middle', 'top'), ['accent']),
-          relativePick('bass'),
-          strum('U', range('top', 'middle'))
-        ])
-      }],
-      createdAt: now,
-      updatedAt: now,
-      isCustom: false
-    },
-        {
       id: 'default-hammer-on-campfire-drive',
       name: 'Hammer-On Campfire Drive',
       description: 'Upbeat hammer-on groove with quick down/up brush fills for lifting a campfire song into a more driving chorus feel.',
@@ -519,6 +256,139 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
             strum('D', range('middle', 'top')),
             strum('U', range('top', 'middle'))
           ]
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-waltz-bass-brush-3-4',
+      name: 'Waltz Bass + Brush (3/4)',
+      description: 'Bass on beat one with light upper-string brushes for songs in three that still need a steady singalong feel.',
+      category: 'Campfire',
+      suggestedGenre: 'Waltz / Folk Hymn',
+      exampleSong: 'Amazing Grace',
+      measures: [{
+        timeSignature: '3/4',
+        actions: grid(12, [
+          [0, relativePick('bass')],
+          [4, strum('D', range('middle', 'top'), ['accent'])],
+          [8, strum('U', range('top', 'middle'))]
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-ballad-strum-6-8',
+      name: '6/8 Ballad Strum',
+      description: 'A flowing compound-time strum for slow 6/8 songs where the guitar should keep moving under the vocal.',
+      category: 'Campfire',
+      suggestedGenre: 'Acoustic Ballad',
+      exampleSong: 'Nothing Else Matters',
+      measures: [{
+        timeSignature: '6/8',
+        actions: grid(12, [
+          [0, strum('D', range('bass', 'top'), ['accent'])],
+          [4, strum('D', range('middle', 'top'))],
+          [6, strum('U', range('top', 'second-from-top'))],
+          [8, strum('D', range('bass', 'top'))],
+          [10, strum('U', range('top', 'middle'))]
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-chorus-lift-strum',
+      name: 'Chorus Lift Strum',
+      description: 'A brighter, more open strum for choruses or any section that needs more lift than the basic verse groove.',
+      category: 'Campfire',
+      suggestedGenre: 'Anthemic Singalong',
+      exampleSong: 'Sweet Caroline',
+      measures: [{
+        timeSignature: '4/4',
+        actions: grid(16, [
+          [0, strum('D', range('bass', 'top'), ['accent'])],
+          [4, strum('D', range('bass', 'top'))],
+          [6, strum('U', range('top', 'middle'))],
+          [8, strum('D', range('bass', 'top'), ['accent'])],
+          [10, strum('U', range('top', 'middle'))],
+          [12, strum('D', range('bass', 'top'))],
+          [14, strum('U', range('top', 'middle'), ['accent'])]
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-bass-treble-arpeggio',
+      name: 'Bass-Treble Arpeggio',
+      description: 'A simple bass-to-treble broken-chord pattern for quiet verses, intros, and first fingerstyle practice.',
+      category: 'Fingerstyle',
+      suggestedGenre: 'Acoustic Arpeggio',
+      exampleSong: 'House of the Rising Sun',
+      measures: [{
+        timeSignature: '4/4',
+        actions: onEighthSlots(16, [
+          relativePick('bass'),
+          relativePick('middle'),
+          relativePick('second-from-top'),
+          relativePick('top'),
+          relativePick('second-from-bass'),
+          relativePick('middle'),
+          relativePick('second-from-top'),
+          relativePick('top')
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-travis-alternating-bass',
+      name: 'Travis Alternating Bass',
+      description: 'Alternating bass with single treble notes for the classic steady-thumb feel that still supports singing.',
+      category: 'Fingerstyle',
+      suggestedGenre: 'Classic Fingerstyle',
+      exampleSong: 'Dust in the Wind',
+      measures: [{
+        timeSignature: '4/4',
+        actions: onEighthSlots(16, [
+          relativePick('bass'),
+          relativePick('second-from-top'),
+          relativePick('second-from-bass'),
+          relativePick('top'),
+          relativePick('bass'),
+          relativePick('middle'),
+          relativePick('second-from-bass'),
+          relativePick('second-from-top')
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-bass-pinch-6-8',
+      name: '6/8 Bass + Pinch',
+      description: 'Bass-led 6/8 fingerstyle with treble pinches that keeps compound-time ballads full but easy to follow.',
+      category: 'Fingerstyle',
+      suggestedGenre: 'Fingerstyle Ballad',
+      exampleSong: 'Hallelujah',
+      measures: [{
+        timeSignature: '6/8',
+        actions: grid(12, [
+          [0, relativePinch(['bass', 'second-from-top', 'top'])],
+          [2, relativePick('middle')],
+          [4, relativePick('second-from-top')],
+          [6, relativePinch(['second-from-bass', 'second-from-top', 'top'])],
+          [8, relativePick('middle')],
+          [10, relativePick('second-from-top')]
         ])
       }],
       createdAt: now,
@@ -576,6 +446,19 @@ function relativeBasePick(string: RelativeString, modifiers: PlayingAction['modi
     technique: 'pick',
     pickMode: 'relative',
     pick: [{ string, anchor: 'base-note' }],
+    modifiers
+  };
+}
+
+function relativePinch(strings: RelativeString[], modifiers: PlayingAction['modifiers'] = []): PlayingAction {
+  return {
+    technique: 'pick',
+    pickMode: 'relative',
+    pick: strings.map(string => ({
+      string,
+      anchor: 'grip-note' as const,
+      fretOffset: 0
+    })),
     modifiers
   };
 }

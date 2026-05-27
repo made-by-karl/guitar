@@ -3,7 +3,7 @@ import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/p
 import { isRelativeStrumRange, PlayingAction, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
 
 describe('PlayingPatternsService', () => {
-  it('seeds a broader starter library when the pattern table is empty', async () => {
+  it('seeds a curated campfire-first starter library when the pattern table is empty', async () => {
     const bulkAdd = jest.fn().mockResolvedValue(undefined);
     const db = {
       playingPatterns: {
@@ -18,37 +18,73 @@ describe('PlayingPatternsService', () => {
     expect(bulkAdd).toHaveBeenCalledTimes(1);
 
     const defaults = bulkAdd.mock.calls[0][0];
-    expect(defaults).toHaveLength(21);
+    expect(defaults).toHaveLength(16);
     expect(defaults.every((pattern: { isCustom: boolean }) => pattern.isCustom === false)).toBe(true);
     expect(defaults.map((pattern: { name: string }) => pattern.name)).toEqual(expect.arrayContaining([
+      'Steady Downstrokes (4/4)',
       'Folk Strum (D-D-U-U-D-U)',
-      'Country Boom-Chick',
-      '6/8 Ballad',
-      'Shuffle Drive 12/8',
-      'Percussive Campfire Groove',
+      'Roll Strum (D-DU-UDU)',
+      'Country Roads Strum (D-DUD-DU)',
+      'Boom-Chick Bass + Brush',
+      'Soft Ballad Brush',
       'Bass + Brush Hybrid',
-      'Muted Funk-Folk Groove',
-      'Relative Campfire Bass Walk',
-      'Hammer-On Campfire Drive'
+      'Two-Beat Country / Train Beat',
+      'Campfire Backbeat Tap',
+      'Hammer-On Campfire Drive',
+      'Waltz Bass + Brush (3/4)',
+      '6/8 Ballad Strum',
+      'Chorus Lift Strum',
+      'Bass-Treble Arpeggio',
+      'Travis Alternating Bass',
+      '6/8 Bass + Pinch'
     ]));
     expect(defaults.map((pattern: { name: string }) => pattern.name)).not.toEqual(expect.arrayContaining([
-      'Rock Power Chords',
-      'Reggae Offbeat Skank',
-      'Bossa Nova'
+      'Bass + Treble Pinch',
+      'Alternating Bass + Pinch',
+      'Shuffle Drive 12/8',
+      'Muted Funk-Folk Groove',
+      'Relative Campfire Bass Walk'
     ]));
-    expect(defaults.some((pattern: { suggestedGenre: string; exampleSong: string }) =>
-      pattern.suggestedGenre.length > 0 && pattern.exampleSong.length > 0
-    )).toBe(true);
+    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Campfire')).toHaveLength(13);
+    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Fingerstyle')).toHaveLength(3);
     expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
       pattern.measures.some(measure =>
         measure.actions.some(action => action?.pickMode === 'relative' || (action?.strum?.strings && typeof action.strum.strings === 'object' && 'from' in action.strum.strings))
       )
     )).toBe(true);
+    expect(defaults.some((pattern: { category: string; measures: Array<{ actions: Array<any> }> }) =>
+      pattern.category === 'Fingerstyle' && pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'pick' && action.pick?.length > 1)
+      )
+    )).toBe(true);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action =>
+          action?.technique === 'pull-off'
+          || action?.technique === 'slide'
+        )
+      )
+    )).toBe(false);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'percussive')
+      )
+    )).toBe(true);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'hammer-on')
+      )
+    )).toBe(true);
     const defaultIds = defaults.map((pattern: { id: string }) => pattern.id);
-    expect(new Set(defaultIds).size).toBe(21);
+    expect(new Set(defaultIds).size).toBe(16);
     expect(defaultIds).toEqual(expect.arrayContaining([
-      'default-relative-campfire-bass-walk',
-      'default-hammer-on-campfire-drive'
+      'default-chorus-lift-strum',
+      'default-country-roads-strum-d-dud-du',
+      'default-bass-brush-hybrid',
+      'default-two-beat-country-train-beat',
+      'default-campfire-backbeat-tap',
+      'default-hammer-on-campfire-drive',
+      'default-bass-pinch-6-8'
     ]));
     expect(defaultIds.every((id: string) => /^default-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))).toBe(true);
     expect(defaultIds.every((id: string) => !/^default-\d+$/.test(id))).toBe(true);

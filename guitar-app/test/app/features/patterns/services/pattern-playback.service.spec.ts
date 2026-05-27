@@ -62,7 +62,7 @@ describe('PatternPlaybackService', () => {
       status: 'playing',
       patternId: 'pattern-1',
       currentMeasureIndex: 0,
-      totalMeasures: 1
+      totalMeasures: 2
     });
 
     await service.togglePatternPreview(pattern);
@@ -93,6 +93,99 @@ describe('PatternPlaybackService', () => {
     expect(service.getSnapshot()).toEqual({ status: 'idle' });
   });
 
+  it('previews one-measure patterns twice with E then A grips', async () => {
+    jest.useFakeTimers();
+    const midiService = {
+      ensureReady: jest.fn().mockResolvedValue(undefined),
+      triggerInstruction: jest.fn(),
+      playSequence: jest.fn().mockResolvedValue(undefined)
+    };
+    const service = new PatternPlaybackService(
+      new PlaybackService(midiService as any),
+      new PlayingPatternPlaybackPlannerService()
+    );
+
+    await service.togglePatternPreview(createPattern(), undefined, undefined, 120);
+
+    expect(service.getSnapshot()).toMatchObject({
+      status: 'playing',
+      patternId: 'pattern-1',
+      totalMeasures: 2
+    });
+
+    jest.runAllTimers();
+
+    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+      notes: expect.arrayContaining([
+        expect.objectContaining({ note: expect.objectContaining({ semitone: 'G#', octave: 3 }) })
+      ])
+    }));
+    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+      notes: expect.arrayContaining([
+        expect.objectContaining({ note: expect.objectContaining({ semitone: 'C#', octave: 4 }) })
+      ])
+    }));
+  });
+
+  it('previews two-measure patterns twice', async () => {
+    jest.useFakeTimers();
+    const midiService = {
+      ensureReady: jest.fn().mockResolvedValue(undefined),
+      triggerInstruction: jest.fn(),
+      playSequence: jest.fn().mockResolvedValue(undefined)
+    };
+    const service = new PatternPlaybackService(
+      new PlaybackService(midiService as any),
+      new PlayingPatternPlaybackPlannerService()
+    );
+    const pattern = createPattern();
+    pattern.measures = [pattern.measures[0], pattern.measures[0]];
+
+    await service.togglePatternPreview(pattern, undefined, undefined, 120);
+
+    expect(service.getSnapshot()).toMatchObject({
+      status: 'playing',
+      patternId: 'pattern-1',
+      totalMeasures: 4
+    });
+  });
+
+  it('previews patterns longer than two measures twice with E then A grips', async () => {
+    jest.useFakeTimers();
+    const midiService = {
+      ensureReady: jest.fn().mockResolvedValue(undefined),
+      triggerInstruction: jest.fn(),
+      playSequence: jest.fn().mockResolvedValue(undefined)
+    };
+    const service = new PatternPlaybackService(
+      new PlaybackService(midiService as any),
+      new PlayingPatternPlaybackPlannerService()
+    );
+    const pattern = createPattern();
+    pattern.measures = [pattern.measures[0], pattern.measures[0], pattern.measures[0]];
+
+    await service.togglePatternPreview(pattern, undefined, undefined, 120);
+
+    expect(service.getSnapshot()).toMatchObject({
+      status: 'playing',
+      patternId: 'pattern-1',
+      totalMeasures: 6
+    });
+
+    jest.runAllTimers();
+
+    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+      notes: expect.arrayContaining([
+        expect.objectContaining({ note: expect.objectContaining({ semitone: 'G#', octave: 3 }) })
+      ])
+    }));
+    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+      notes: expect.arrayContaining([
+        expect.objectContaining({ note: expect.objectContaining({ semitone: 'C#', octave: 4 }) })
+      ])
+    }));
+  });
+
   it('keeps the preview active until the last strum tail has elapsed', async () => {
     jest.useFakeTimers();
     const midiService = {
@@ -104,19 +197,19 @@ describe('PatternPlaybackService', () => {
       new PlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
-    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Percussive Campfire Groove');
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Chorus Lift Strum');
 
     expect(pattern).toBeDefined();
 
     await service.togglePatternPreview(pattern!, undefined, undefined, 120);
 
-    jest.advanceTimersByTime(2100);
+    jest.advanceTimersByTime(4100);
     expect(service.getSnapshot()).toMatchObject({
       status: 'playing',
       patternId: pattern!.id
     });
 
-    jest.advanceTimersByTime(1800);
+    jest.advanceTimersByTime(2000);
     expect(service.getSnapshot()).toEqual({ status: 'idle' });
   });
 

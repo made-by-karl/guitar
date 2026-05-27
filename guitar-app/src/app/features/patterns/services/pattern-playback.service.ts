@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
-import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import { note, Note } from '@/app/core/music/semitones';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import {
@@ -37,9 +36,8 @@ export class PatternPlaybackService {
     note('E', 4)
   ];
 
-  private readonly defaultGrip: Grip = {
-    strings: ['o', [{ fret: 2 }], [{ fret: 2 }], [{ fret: 1 }], 'o', 'o']
-  };
+  private readonly gripIdForE = 'o|2|2|1|o|o';
+  private readonly gripIdForA = 'x|o|2|2|2|o';
 
   constructor(
     private playback: PlaybackService,
@@ -69,8 +67,8 @@ export class PatternPlaybackService {
   async togglePatternPreview(
     pattern: PlayingPattern,
     tuning?: Note[],
-    grip?: Grip,
-    tempo: number = 70
+    grips?: string[],
+    tempo: number = 80
   ): Promise<void> {
     const snapshot = this.getSnapshot();
     if (snapshot.status === 'playing' && snapshot.patternId === pattern.id) {
@@ -78,16 +76,13 @@ export class PatternPlaybackService {
       return;
     }
 
-    const measures = pattern.measures.map<PlayingPatternPlaybackMeasure>((measure, measureIndex) => ({
-      measure,
-      actionGrips: (pattern.actionGrips ?? []).filter(gripValue => gripValue.measureIndex === measureIndex)
-    }));
+    grips = grips ?? [ this.gripIdForE, this.gripIdForA ];
+    const measures = grips.flatMap((grip) => this.createPlaybackMeasures(pattern, grip));
 
     const preview = this.planner.buildPlaybackPlan(
       measures,
       tuning ?? this.defaultTuning,
-      tempo,
-      grip ?? this.defaultGrip
+      tempo
     );
 
     if (preview.instructions.length === 0) {
@@ -110,5 +105,21 @@ export class PatternPlaybackService {
 
   stopPatternPreview(): void {
     this.session.stop();
+  }
+
+  private createPlaybackMeasures(pattern: PlayingPattern, defaultGripId: string): PlayingPatternPlaybackMeasure[] {
+    return pattern.measures.map<PlayingPatternPlaybackMeasure>((measure, measureIndex) => {
+      // Inserts the default grip as actionGrip, if the pattern does not contain a grip
+      let actionGrips = (pattern.actionGrips ?? []).filter(v => v.measureIndex === measureIndex);
+      const addDefaultGrip = !(actionGrips.length > 0 && actionGrips[0].actionIndex === 0);
+      if (addDefaultGrip) {
+        actionGrips = [{ measureIndex, actionIndex: 0, gripId: defaultGripId, name: defaultGripId }, ...actionGrips];
+      }
+
+      return ({
+        measure,
+        actionGrips
+      });
+    });
   }
 }

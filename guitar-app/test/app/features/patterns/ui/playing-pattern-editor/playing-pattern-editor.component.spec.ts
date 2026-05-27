@@ -140,6 +140,22 @@ describe('PlayingPatternEditorComponent', () => {
     });
   });
 
+  it('keeps grouped pick notes editable inside one pick action', () => {
+    component.addAction(0, 0, 'pick');
+    component.addPickingNote(0, 0);
+    component.updatePickNoteRelativeString(0, 0, 1, 'top');
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'pick',
+      pickMode: 'relative',
+      pick: [
+        { string: 'bass', anchor: 'grip-note', fretOffset: 0 },
+        { string: 'top', anchor: 'grip-note', fretOffset: 0 }
+      ],
+      modifiers: []
+    });
+  });
+
   it('switches a strum action to relative range mode with defaults', () => {
     component.addAction(0, 0, 'strum-down');
     component.updateStrumStringsMode(0, 0, 'range');

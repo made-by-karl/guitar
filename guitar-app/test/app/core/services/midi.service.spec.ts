@@ -134,8 +134,8 @@ describe('MidiService', () => {
     });
 
     expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'E2', 0.5, 0.001, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'A2', 0.5, 0.041, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'B3', 0.5, 0.161, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'A2', 0.5, 0.031, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'B3', 0.5, 0.121, 0.7);
   });
 
   it('uses the same normal strum spacing for quarter-like action durations', () => {
@@ -158,8 +158,8 @@ describe('MidiService', () => {
     });
 
     expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'E2', 0.5, 0.001, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'A2', 0.5, 0.041, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'B3', 0.5, 0.161, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'A2', 0.5, 0.031, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'B3', 0.5, 0.121, 0.7);
   });
 
   it('keeps reversed strum order while widening longer strums', () => {
@@ -182,7 +182,7 @@ describe('MidiService', () => {
     });
 
     expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'B3', 0.5, 0.001, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'G3', 0.5, 0.041, 0.7);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'E2', 0.5, 0.161, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'G3', 0.5, 0.031, 0.7);
+    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(5, 'E2', 0.5, 0.121, 0.7);
   });
 });
