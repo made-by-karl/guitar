@@ -10,17 +10,13 @@ import { UpdateService } from '@/app/core/services/update.service';
     <div class="container app-page">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
-          <h2 class="mb-1"><i class="bi bi-info-circle me-2"></i>About</h2>
-          <p class="text-muted mb-0">Project details, release information, and update status.</p>
+          <h2 class="mb-1"><i class="bi bi-info-circle me-2"></i>About Guitar Companion</h2>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
           <dl class="row mb-4">
-            <dt class="col-sm-4 text-muted">Application</dt>
-            <dd class="col-sm-8">Guitar Companion</dd>
-
             <dt class="col-sm-4 text-muted">Hosted at</dt>
             <dd class="col-sm-8">
               <a href="https://guitar.made-by-karl.de" target="_blank" rel="noreferrer">
@@ -43,6 +39,13 @@ import { UpdateService } from '@/app/core/services/update.service';
 
             <dt class="col-sm-4 text-muted">Update status</dt>
             <dd class="col-sm-8">{{ statusText() }}</dd>
+
+            <dt class="col-sm-4 text-muted">Thanks to</dt>
+            <dd class="col-sm-8">
+              <a href="https://philharmonia.co.uk/resources/sound-samples/" target="_blank" rel="noreferrer">
+                Philharmonia Orchestra Sound Samples
+              </a>
+            </dd>
           </dl>
 
           <div class="d-flex flex-wrap align-items-center gap-2">

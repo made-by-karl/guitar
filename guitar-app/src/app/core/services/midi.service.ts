@@ -116,50 +116,15 @@ export class MidiService implements OnDestroy {
 
     await this.audioService.ensureSamplerInitialized(SAMPLER_KEYS.guitar, {
       urls: {
-        // Octave 2
+        // Guitar open strings plus high E. Tone.Sampler pitch-shifts these anchors
+        // to cover the full playable range used by MIDI playback.
         'E2': '/samples/notes/guitar_E2.mp3',
-        'F2': '/samples/notes/guitar_F2.mp3',
-        'F#2': '/samples/notes/guitar_Fs2.mp3',
-        'G2': '/samples/notes/guitar_G2.mp3',
-        'G#2': '/samples/notes/guitar_Gs2.mp3',
         'A2': '/samples/notes/guitar_A2.mp3',
-        'A#2': '/samples/notes/guitar_As2.mp3',
-        'B2': '/samples/notes/guitar_B2.mp3',
-
-        // Octave 3
-        'C3': '/samples/notes/guitar_C3.mp3',
-        'C#3': '/samples/notes/guitar_Cs3.mp3',
         'D3': '/samples/notes/guitar_D3.mp3',
-        'D#3': '/samples/notes/guitar_Ds3.mp3',
-        'E3': '/samples/notes/guitar_E3.mp3',
-        'F3': '/samples/notes/guitar_F3.mp3',
-        'F#3': '/samples/notes/guitar_Fs3.mp3',
         'G3': '/samples/notes/guitar_G3.mp3',
-        'G#3': '/samples/notes/guitar_Gs3.mp3',
-        'A3': '/samples/notes/guitar_A3.mp3',
-        'A#3': '/samples/notes/guitar_As3.mp3',
         'B3': '/samples/notes/guitar_B3.mp3',
-
-        // Octave 4
-        'C4': '/samples/notes/guitar_C4.mp3',
-        'C#4': '/samples/notes/guitar_Cs4.mp3',
-        'D4': '/samples/notes/guitar_D4.mp3',
-        'D#4': '/samples/notes/guitar_Ds4.mp3',
         'E4': '/samples/notes/guitar_E4.mp3',
-        'F4': '/samples/notes/guitar_F4.mp3',
-        'F#4': '/samples/notes/guitar_Fs4.mp3',
-        'G4': '/samples/notes/guitar_G4.mp3',
-        'G#4': '/samples/notes/guitar_Gs4.mp3',
-        'A4': '/samples/notes/guitar_A4.mp3',
-        'A#4': '/samples/notes/guitar_As4.mp3',
-        'B4': '/samples/notes/guitar_B4.mp3',
-
-        // Octave 5
-        'D5': '/samples/notes/guitar_D5.mp3',
-        'D#5': '/samples/notes/guitar_Ds5.mp3',
-        'E5': '/samples/notes/guitar_E5.mp3',
-        'G5': '/samples/notes/guitar_G5.mp3',
-        'G#5': '/samples/notes/guitar_Gs5.mp3'
+        'E5': '/samples/notes/guitar_E5.mp3'
       },
       release: MIDI_PLAYBACK_CONFIG.samplers.guitar.releaseSeconds,
       attack: MIDI_PLAYBACK_CONFIG.samplers.guitar.attackSeconds,

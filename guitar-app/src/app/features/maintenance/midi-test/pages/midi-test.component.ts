@@ -13,7 +13,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
     <div class="container app-page">
       <h2>🎸 Guitar MIDI Test</h2>
       <p class="text-muted">Test different guitar playing techniques and sounds</p>
-      
+
       <div class="row">
         <div class="col-md-6">
           <div class="card">
@@ -33,7 +33,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
             </div>
           </div>
         </div>
-        
+
         <div class="col-md-6">
           <div class="card">
             <div class="card-header">
@@ -59,7 +59,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
           </div>
         </div>
       </div>
-      
+
       <div class="row mt-4">
         <div class="col-12">
           <div class="card">
@@ -90,7 +90,50 @@ import { NotificationService } from '@/app/core/services/notification.service';
           </div>
         </div>
       </div>
-      
+
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5>Single Note Test</h5>
+            </div>
+            <div class="card-body">
+              <div class="note-test-controls">
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  (click)="selectPreviousNote()"
+                  [disabled]="selectedNoteIndex === 0">
+                  Previous
+                </button>
+
+                <select
+                  class="form-select note-select"
+                  aria-label="Select note"
+                  [value]="selectedNote"
+                  (change)="selectNote($event)">
+                  @for (note of noteTestNotes; track note) {
+                    <option [value]="note">{{ note }}</option>
+                  }
+                </select>
+
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  (click)="selectNextNote()"
+                  [disabled]="selectedNoteIndex === noteTestNotes.length - 1">
+                  Next
+                </button>
+
+                <button class="btn btn-primary" type="button" (click)="playSelectedNote()">
+                  Play
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-4">
         <div class="col-12">
           <div class="card">
@@ -109,7 +152,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
           </div>
         </div>
       </div>
-      
+
     </div>
   `,
   styles: [`
@@ -119,11 +162,23 @@ import { NotificationService } from '@/app/core/services/notification.service';
     .card {
       height: 100%;
     }
+    .note-test-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .note-select {
+      width: auto;
+      min-width: 8rem;
+    }
   `]
 })
 export class MidiTestComponent {
   // Standard guitar tuning (open strings)
   private openStrings = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+  noteTestNotes = this.buildChromaticNotes('E2', 'E5');
+  selectedNoteIndex = 0;
 
   constructor(
     private playbackService: PlaybackService,
@@ -166,6 +221,36 @@ export class MidiTestComponent {
     }
   }
 
+  get selectedNote(): string {
+    return this.noteTestNotes[this.selectedNoteIndex];
+  }
+
+  selectNote(event: Event): void {
+    const selectedValue = (event.target as HTMLSelectElement).value;
+    const noteIndex = this.noteTestNotes.indexOf(selectedValue);
+    if (noteIndex >= 0) {
+      this.selectedNoteIndex = noteIndex;
+    }
+  }
+
+  selectPreviousNote(): void {
+    this.selectedNoteIndex = Math.max(0, this.selectedNoteIndex - 1);
+  }
+
+  selectNextNote(): void {
+    this.selectedNoteIndex = Math.min(this.noteTestNotes.length - 1, this.selectedNoteIndex + 1);
+  }
+
+  async playSelectedNote(): Promise<void> {
+    try {
+      this.notificationService.info(`Playing note: ${this.selectedNote}`);
+      await this.playbackService.playChordFromNotes([this.selectedNote], 2.0, 0.7, 'normal');
+    } catch (error) {
+      this.notificationService.error(`Could not play ${this.selectedNote}.`);
+      console.error(`Error playing note ${this.selectedNote}:`, error);
+    }
+  }
+
   async playPercussion(technique: string) {
     try {
       this.notificationService.info(`Playing ${this.getPercussionLabel(technique)}`);
@@ -189,5 +274,29 @@ export class MidiTestComponent {
       default:
         return technique;
     }
+  }
+
+  private buildChromaticNotes(startNote: string, endNote: string): string[] {
+    const semitones = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const start = this.getNoteNumber(startNote, semitones);
+    const end = this.getNoteNumber(endNote, semitones);
+    const notes: string[] = [];
+
+    for (let noteNumber = start; noteNumber <= end; noteNumber++) {
+      const semitone = semitones[noteNumber % semitones.length];
+      const octave = Math.floor(noteNumber / semitones.length) - 1;
+      notes.push(`${semitone}${octave}`);
+    }
+
+    return notes;
+  }
+
+  private getNoteNumber(noteName: string, semitones: string[]): number {
+    const match = noteName.match(/^([A-G]#?)(\d)$/);
+    if (!match) {
+      throw new Error(`Invalid note name: ${noteName}`);
+    }
+
+    return (Number(match[2]) + 1) * semitones.length + semitones.indexOf(match[1]);
   }
 }

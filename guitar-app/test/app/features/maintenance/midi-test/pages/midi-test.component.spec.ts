@@ -44,6 +44,35 @@ describe('MidiTestComponent', () => {
     expect(mockPlaybackService.playChordFromNotes).toHaveBeenCalledWith(['E4', 'G#4', 'B4'], 2.0, 0.7, 'normal');
   });
 
+  it('steps through chromatic note test notes from E2', () => {
+    expect(component.selectedNote).toBe('E2');
+
+    component.selectNextNote();
+    expect(component.selectedNote).toBe('F2');
+
+    component.selectNextNote();
+    expect(component.selectedNote).toBe('F#2');
+
+    component.selectPreviousNote();
+    expect(component.selectedNote).toBe('F2');
+  });
+
+  it('plays the selected note test note', async () => {
+    component.selectNextNote();
+    component.selectNextNote();
+
+    await component.playSelectedNote();
+
+    expect(mockNotificationService.info).toHaveBeenCalledWith('Playing note: F#2');
+    expect(mockPlaybackService.playChordFromNotes).toHaveBeenCalledWith(['F#2'], 2.0, 0.7, 'normal');
+  });
+
+  it('selects a note from the note test dropdown event', () => {
+    component.selectNote({ target: { value: 'C3' } } as unknown as Event);
+
+    expect(component.selectedNote).toBe('C3');
+  });
+
   it('shows an error notification when percussion playback fails', async () => {
     mockMidiService.playPercussionTechnique.mockRejectedValueOnce(new Error('missing sample'));
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
