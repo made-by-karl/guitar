@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { PlaybackService } from '@/app/core/services/playback.service';
-import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { PlaybackService, PlaybackStatus } from '@/app/core/services/playback.service';
 import { note, Note } from '@/app/core/music/semitones';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import {

@@ -12,6 +12,7 @@ describe('MetronomeComponent', () => {
   let component: MetronomeComponent;
   let stateSubject: BehaviorSubject<MetronomeState>;
   let mockMetronomeService: jest.Mocked<MetronomeService>;
+  let audioNow: jest.Mock;
 
   beforeEach(async () => {
     stateSubject = new BehaviorSubject<MetronomeState>({
@@ -36,12 +37,13 @@ describe('MetronomeComponent', () => {
         });
       })
     } as any;
+    audioNow = jest.fn(() => 0);
 
     await TestBed.configureTestingModule({
       imports: [MetronomeComponent],
       providers: [
         { provide: MetronomeService, useValue: mockMetronomeService },
-        { provide: AudioService, useValue: { now: jest.fn(() => 0) } }
+        { provide: AudioService, useValue: { now: audioNow } }
       ]
     }).compileComponents();
 
@@ -140,5 +142,23 @@ describe('MetronomeComponent', () => {
     button.click();
 
     expect(mockMetronomeService.stop).toHaveBeenCalled();
+  });
+
+  it('expands the active beat when the active index changes', () => {
+    audioNow.mockReturnValue(10);
+    stateSubject.next({
+      ...stateSubject.getValue(),
+      running: true,
+      activeIndex: 1,
+      tickDurationSeconds: 0.5
+    });
+    fixture.detectChanges();
+
+    (component as any).updateScales();
+    fixture.detectChanges();
+
+    expect(component.scales[1]).toBeCloseTo(1.6);
+    const activeBeat = (fixture.nativeElement as HTMLElement).querySelectorAll('.beat')[1] as HTMLElement;
+    expect(activeBeat.style.transform).toBe('scale(1.6)');
   });
 });

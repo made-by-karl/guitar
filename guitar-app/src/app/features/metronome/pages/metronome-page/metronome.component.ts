@@ -46,10 +46,14 @@ export class MetronomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subscription = this.metronomeService.state$.subscribe(state => {
+      const activeBeatChanged = state.activeIndex !== this.activeIndex;
+
       this.running = state.running;
       this.labels = state.labels;
       this.activeIndex = state.activeIndex;
-      this.tickAudioTime = state.tickAudioTime;
+      this.tickAudioTime = activeBeatChanged && state.activeIndex >= 0
+        ? this.audioService.now()
+        : this.tickAudioTime;
       this.tickDurationSeconds = state.tickDurationSeconds;
 
       if (!this.scales || this.scales.length !== this.labels.length) {

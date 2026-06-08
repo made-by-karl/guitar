@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { PlaybackPlan, PlaybackService } from '@/app/core/services/playback.service';
-import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { PlaybackPlan, PlaybackService, PlaybackStatus } from '@/app/core/services/playback.service';
 import { Note, transpose } from '@/app/core/music/semitones';
 import {
   ResolvedSongPartMeasure,

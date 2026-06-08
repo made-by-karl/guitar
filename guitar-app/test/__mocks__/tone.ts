@@ -27,6 +27,18 @@ export const now = jest.fn().mockReturnValue(0);
 
 export const loaded = jest.fn().mockResolvedValue(undefined);
 
+export const Offline = jest.fn(async (callback: (...args: any[]) => void | Promise<void>) => {
+  await callback({});
+  return {
+    get: () => ({
+      numberOfChannels: 1,
+      sampleRate: 44100,
+      length: 128,
+      getChannelData: () => new Float32Array(128)
+    })
+  };
+});
+
 export const Transport = {
   bpm: { value: 120 },
   timeSignature: [4, 4],

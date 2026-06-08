@@ -1,7 +1,9 @@
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
-import { PlaybackService } from '@/app/core/services/playback.service';
+import { PlaybackPlan, PlaybackService } from '@/app/core/services/playback.service';
 import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
+import { BehaviorSubject } from 'rxjs';
+import { HtmlAudioProgress } from '@/app/core/services/html-audio-playback.service';
 
 describe('SongPartPlaybackService', () => {
   const eGripId = 'o|2|2|1|o|o';
@@ -43,17 +45,46 @@ describe('SongPartPlaybackService', () => {
     }]
   };
 
-  afterEach(() => {
-    jest.useRealTimers();
+  const createPlayback = () => {
+    const progress = new BehaviorSubject<HtmlAudioProgress>({
+      channel: 'finite:song-part-playback',
+      currentTime: 0,
+      duration: 1,
+      ended: false
+    });
+    const renderedAudioService = {
+      renderInstructions: jest.fn().mockResolvedValue({
+        url: 'blob:song-part-playback',
+        blob: new Blob(['wav'], { type: 'audio/wav' }),
+        durationSeconds: 1
+      })
+    };
+    const htmlAudioPlaybackService = {
+      play: jest.fn().mockResolvedValue(undefined),
+      pause: jest.fn(),
+      resume: jest.fn().mockResolvedValue(undefined),
+      stop: jest.fn(),
+      seek: jest.fn(),
+      progress$: jest.fn(() => progress.asObservable())
+    };
+
+    return {
+      playback: new PlaybackService(renderedAudioService as any, htmlAudioPlaybackService as any),
+      renderedAudioService,
+      htmlAudioPlaybackService,
+      progress
+    };
+  };
+
+  const renderedPlan = (renderedAudioService: { renderInstructions: jest.Mock }): PlaybackPlan => ({
+    instructions: renderedAudioService.renderInstructions.mock.calls[0][0],
+    totalDuration: renderedAudioService.renderInstructions.mock.calls[0][1] - 0.1,
+    segmentStartTimes: [],
+    totalSegments: 0
   });
 
   it('toggles a measure preview on and off', async () => {
-    jest.useFakeTimers();
-    const midiService = {
-      ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
-      playSequence: jest.fn().mockResolvedValue(undefined)
-    };
+    const { playback, htmlAudioPlaybackService } = createPlayback();
     const songSheetsService = {
       resolvePartMeasures: jest.fn(() => [{
         itemId: 'item-1',
@@ -77,7 +108,7 @@ describe('SongPartPlaybackService', () => {
       }])
     };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midiService as any),
+      playback,
       songSheetsService as any,
       new PlayingPatternPlaybackPlannerService()
     );
@@ -94,6 +125,7 @@ describe('SongPartPlaybackService', () => {
 
     await service.toggleMeasurePreview(sheet, part, 'item-1', 0);
 
+    expect(htmlAudioPlaybackService.stop).toHaveBeenCalledWith('finite:song-part-playback');
     expect(service.getSnapshot()).toEqual({
       type: 'none',
       status: 'idle'
@@ -101,12 +133,7 @@ describe('SongPartPlaybackService', () => {
   });
 
   it('prefers part action grips over pattern defaults', async () => {
-    jest.useFakeTimers();
-    const midiService = {
-      ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
-      playSequence: jest.fn().mockResolvedValue(undefined)
-    };
+    const { playback, renderedAudioService } = createPlayback();
     const songSheetsService = {
       resolvePartMeasures: jest.fn(() => [{
         itemId: 'item-1',
@@ -130,18 +157,19 @@ describe('SongPartPlaybackService', () => {
       }])
     };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midiService as any),
+      playback,
       songSheetsService as any,
       new PlayingPatternPlaybackPlannerService()
     );
 
     await service.playSongPart(sheet, part);
-    jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
-      notes: expect.arrayContaining([
-        expect.objectContaining({ note: expect.objectContaining({ semitone: 'E', octave: 2 }) })
-      ])
-    }));
+    expect(renderedPlan(renderedAudioService).instructions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        notes: expect.arrayContaining([
+          expect.objectContaining({ note: expect.objectContaining({ semitone: 'E', octave: 2 }) })
+        ])
+      })
+    ]));
   });
 });

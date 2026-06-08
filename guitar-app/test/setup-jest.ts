@@ -27,3 +27,59 @@ Object.defineProperty(document.body.style, 'transform', {
     };
   }
 });
+
+Object.defineProperty(URL, 'createObjectURL', {
+  value: jest.fn(() => 'blob:mock-audio-url'),
+  writable: true,
+  configurable: true
+});
+
+Object.defineProperty(URL, 'revokeObjectURL', {
+  value: jest.fn(),
+  writable: true,
+  configurable: true
+});
+
+class MockAudio {
+  currentTime = 0;
+  duration = 10;
+  ended = false;
+  loop = false;
+  paused = true;
+  preload = '';
+  src = '';
+  volume = 1;
+  private readonly listeners = new Map<string, Array<() => void>>();
+
+  play = jest.fn(async () => {
+    this.paused = false;
+  });
+
+  pause = jest.fn(() => {
+    this.paused = true;
+  });
+
+  load = jest.fn();
+
+  addEventListener = jest.fn((event: string, listener: () => void) => {
+    const listeners = this.listeners.get(event) ?? [];
+    listeners.push(listener);
+    this.listeners.set(event, listeners);
+  });
+
+  removeAttribute = jest.fn((name: string) => {
+    if (name === 'src') {
+      this.src = '';
+    }
+  });
+}
+
+Object.defineProperty(window, 'Audio', {
+  value: MockAudio,
+  writable: true
+});
+
+Object.defineProperty(global, 'Audio', {
+  value: MockAudio,
+  writable: true
+});

@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { MidiService } from '@/app/core/services/midi.service';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/midi.model';
 import { noteNameToNote } from '@/app/core/music/semitones';
-import { FinitePlaybackScheduler, PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { RenderedAudioService } from '@/app/core/services/rendered-audio.service';
+import { HtmlAudioPlaybackService, HtmlAudioProgress } from '@/app/core/services/html-audio-playback.service';
+
+export type PlaybackStatus = 'idle' | 'playing' | 'paused';
 
 /**
  * Describes a finite playback run as timed instructions plus segment boundaries.
@@ -50,12 +52,6 @@ export interface PlaybackSession {
 }
 
 class FinitePlaybackSession implements PlaybackSession {
-  private readonly scheduler = new FinitePlaybackScheduler({
-    total: 0,
-    scheduleFrom: (cursor, onCursor, onComplete) => this.schedulePlan(cursor, onCursor, onComplete),
-    onStop: () => this.handleStop()
-  });
-
   private readonly stateSubject = new BehaviorSubject<PlaybackSessionState>({
     sessionId: '',
     scope: '',
@@ -69,12 +65,13 @@ class FinitePlaybackSession implements PlaybackSession {
   readonly state$ = this.stateSubject.asObservable();
 
   private plan: PlaybackPlan | null = null;
-  private isStartingPlayback = false;
+  private mediaProgressSubscription: Subscription | null = null;
 
   constructor(
     private readonly sessionId: string,
     private readonly scope: string,
-    private readonly midiService: MidiService,
+    private readonly renderedAudioService: RenderedAudioService,
+    private readonly htmlAudioPlaybackService: HtmlAudioPlaybackService,
     private readonly beforePlay: (session: FinitePlaybackSession) => void,
     private readonly onDestroySession: (sessionId: string) => void
   ) {
@@ -82,28 +79,6 @@ class FinitePlaybackSession implements PlaybackSession {
       ...this.stateSubject.getValue(),
       sessionId: this.sessionId,
       scope: this.scope
-    });
-
-    this.scheduler.state$.subscribe((state) => {
-      // Starting playback updates the scheduler total before the first play event,
-      // which would otherwise look like a spurious "idle" transition to consumers.
-      if (this.isStartingPlayback && state.status === 'idle' && this.plan) {
-        return;
-      }
-
-      if (state.status === 'playing') {
-        this.isStartingPlayback = false;
-      }
-
-      this.stateSubject.next({
-        sessionId: this.sessionId,
-        scope: this.scope,
-        status: state.status,
-        cursor: state.cursor ?? 0,
-        total: state.total ?? 0,
-        canPause: state.canPause,
-        canSeek: state.canSeek
-      });
     });
   }
 
@@ -117,16 +92,50 @@ class FinitePlaybackSession implements PlaybackSession {
       return;
     }
 
-    await this.midiService.ensureReady();
     this.beforePlay(this);
     this.plan = plan;
-    this.isStartingPlayback = true;
-    this.scheduler.updateTotal(plan.totalSegments);
-    this.scheduler.play(startCursor);
+    this.unsubscribeMediaProgress();
+
+    try {
+      const startTime = plan.segmentStartTimes[this.clampCursor(startCursor, plan)] ?? 0;
+      const rendered = await this.renderedAudioService.renderInstructions(
+        plan.instructions,
+        plan.totalDuration + 0.1
+      );
+      await this.htmlAudioPlaybackService.play(this.mediaChannel, rendered.url, { startTime });
+      this.mediaProgressSubscription = this.htmlAudioPlaybackService.progress$(this.mediaChannel)
+        .subscribe(progress => this.handleMediaProgress(progress));
+      this.stateSubject.next({
+        sessionId: this.sessionId,
+        scope: this.scope,
+        status: 'playing',
+        cursor: this.resolveCursor(startTime, plan),
+        total: plan.totalSegments,
+        canPause: true,
+        canSeek: true
+      });
+    } catch (error) {
+      console.error('Rendered playback failed:', error);
+      this.unsubscribeMediaProgress();
+      this.plan = null;
+      this.stateSubject.next({
+        ...this.getSnapshot(),
+        status: 'idle',
+        cursor: 0,
+        total: plan.totalSegments
+      });
+      throw error;
+    }
   }
 
   pause(): void {
-    this.scheduler.pause();
+    if (this.getSnapshot().status === 'playing') {
+      this.htmlAudioPlaybackService.pause(this.mediaChannel);
+      this.stateSubject.next({
+        ...this.getSnapshot(),
+        status: 'paused'
+      });
+    }
   }
 
   resume(): void {
@@ -134,13 +143,24 @@ class FinitePlaybackSession implements PlaybackSession {
       return;
     }
 
-    this.scheduler.resume();
+    if (this.getSnapshot().status === 'paused') {
+      void this.htmlAudioPlaybackService.resume(this.mediaChannel);
+      this.stateSubject.next({
+        ...this.getSnapshot(),
+        status: 'playing'
+      });
+    }
   }
 
   stop(): void {
-    this.isStartingPlayback = false;
     this.plan = null;
-    this.scheduler.stop();
+    this.unsubscribeMediaProgress();
+    this.htmlAudioPlaybackService.stop(this.mediaChannel);
+    this.stateSubject.next({
+      ...this.getSnapshot(),
+      status: 'idle',
+      cursor: 0
+    });
   }
 
   seek(cursor: number): void {
@@ -148,13 +168,19 @@ class FinitePlaybackSession implements PlaybackSession {
       return;
     }
 
-    this.scheduler.seek(cursor);
+    const nextCursor = this.clampCursor(cursor, this.plan);
+    const nextTime = this.plan.segmentStartTimes[nextCursor] ?? 0;
+    this.htmlAudioPlaybackService.seek(this.mediaChannel, nextTime);
+    this.stateSubject.next({
+      ...this.getSnapshot(),
+      cursor: nextCursor
+    });
   }
 
   destroy(): void {
-    this.isStartingPlayback = false;
     this.plan = null;
-    this.scheduler.destroy();
+    this.unsubscribeMediaProgress();
+    this.htmlAudioPlaybackService.stop(this.mediaChannel);
     this.stateSubject.complete();
     this.onDestroySession(this.sessionId);
   }
@@ -168,58 +194,54 @@ class FinitePlaybackSession implements PlaybackSession {
     return this.scope === scope;
   }
 
-  private schedulePlan(
-    startCursor: number,
-    onCursor: (cursor: number) => void,
-    onComplete: () => void
-  ): () => void {
-    const plan = this.plan;
-    if (!plan) {
-      onComplete();
-      return () => {};
-    }
-
-    const startTime = plan.segmentStartTimes[startCursor] ?? 0;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
-    onCursor(startCursor);
-
-    for (let segmentIndex = startCursor; segmentIndex < plan.totalSegments; segmentIndex++) {
-      const delay = Math.max(0, (plan.segmentStartTimes[segmentIndex] - startTime) * 1000);
-      timeoutIds.push(setTimeout(() => {
-        onCursor(segmentIndex);
-      }, delay));
-    }
-
-    for (const instruction of plan.instructions) {
-      if (instruction.time < startTime) {
-        continue;
-      }
-
-      const delay = Math.max(0, (instruction.time - startTime) * 1000);
-      timeoutIds.push(setTimeout(() => {
-        this.midiService.triggerInstruction({
-          ...instruction,
-          time: instruction.time - startTime
-        });
-      }, delay));
-    }
-
-    timeoutIds.push(setTimeout(() => {
-      this.isStartingPlayback = false;
-      this.plan = null;
-      onComplete();
-    }, Math.max(0, (plan.totalDuration - startTime + 0.1) * 1000)));
-
-    return () => {
-      for (const id of timeoutIds) {
-        clearTimeout(id);
-      }
-    };
+  private get mediaChannel(): string {
+    return `finite:${this.sessionId}`;
   }
 
-  private handleStop(): void {
-    this.isStartingPlayback = false;
-    this.plan = null;
+  private handleMediaProgress(progress: HtmlAudioProgress): void {
+    const plan = this.plan;
+    const snapshot = this.getSnapshot();
+    if (!plan || snapshot.status === 'idle') {
+      return;
+    }
+
+    if (progress.ended || progress.currentTime >= plan.totalDuration) {
+      this.unsubscribeMediaProgress();
+      this.plan = null;
+      this.htmlAudioPlaybackService.stop(this.mediaChannel);
+      this.stateSubject.next({
+        ...snapshot,
+        status: 'idle',
+        cursor: 0
+      });
+      return;
+    }
+
+    this.stateSubject.next({
+      ...snapshot,
+      cursor: this.resolveCursor(progress.currentTime, plan)
+    });
+  }
+
+  private resolveCursor(currentTime: number, plan: PlaybackPlan): number {
+    let cursor = 0;
+    for (let index = 0; index < plan.segmentStartTimes.length; index++) {
+      if (plan.segmentStartTimes[index] <= currentTime) {
+        cursor = index;
+      } else {
+        break;
+      }
+    }
+    return this.clampCursor(cursor, plan);
+  }
+
+  private clampCursor(cursor: number, plan: PlaybackPlan): number {
+    return Math.max(0, Math.min(plan.totalSegments - 1, Math.round(cursor)));
+  }
+
+  private unsubscribeMediaProgress(): void {
+    this.mediaProgressSubscription?.unsubscribe();
+    this.mediaProgressSubscription = null;
   }
 }
 
@@ -232,7 +254,10 @@ class FinitePlaybackSession implements PlaybackSession {
 export class PlaybackService {
   private readonly finiteSessions = new Map<string, FinitePlaybackSession>();
 
-  constructor(private midiService: MidiService) { }
+  constructor(
+    private renderedAudioService: RenderedAudioService,
+    private htmlAudioPlaybackService: HtmlAudioPlaybackService
+  ) { }
 
   /**
    * Returns a stable finite playback session for the given identifier.
@@ -246,7 +271,8 @@ export class PlaybackService {
     const session = new FinitePlaybackSession(
       sessionId,
       scope,
-      this.midiService,
+      this.renderedAudioService,
+      this.htmlAudioPlaybackService,
       (nextSession) => this.stopOtherFiniteSessionsInScope(nextSession),
       (destroyedSessionId) => this.finiteSessions.delete(destroyedSessionId)
     );
@@ -278,7 +304,13 @@ export class PlaybackService {
       playNotes: 'parallel'
     };
 
-    await this.midiService.playSequence([instruction]);
+    try {
+      const rendered = await this.renderedAudioService.renderInstructions([instruction], duration);
+      await this.htmlAudioPlaybackService.play('chord-preview', rendered.url);
+    } catch (error) {
+      console.error('Rendered chord playback failed:', error);
+      throw error;
+    }
   }
 
   private stopOtherFiniteSessionsInScope(nextSession: FinitePlaybackSession): void {

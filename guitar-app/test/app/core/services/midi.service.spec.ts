@@ -1,30 +1,31 @@
-import { MidiService } from '@/app/core/services/midi.service';
 import { note } from '@/app/core/music/semitones';
+import { MidiInstruction } from '@/app/core/services/midi.model';
+import { scheduleMidiInstruction } from '@/app/core/services/midi-renderer';
 
-describe('MidiService', () => {
+describe('midi-renderer', () => {
   const createSampler = () => ({
     triggerAttackRelease: jest.fn()
   });
 
-  const createService = () => {
+  const createRenderer = () => {
     const guitarSampler = createSampler();
     const percussionSampler = createSampler();
-    const audioService = {
-      getSampler: jest.fn((key: string) => key === 'guitar' ? guitarSampler : percussionSampler),
-      now: jest.fn(() => 0)
-    };
 
     return {
-      service: new MidiService(audioService as any),
+      render: (instruction: MidiInstruction) => scheduleMidiInstruction(
+        { guitar: guitarSampler, percussion: percussionSampler },
+        instruction,
+        0.001
+      ),
       guitarSampler,
       percussionSampler
     };
   };
 
   it('renders hammer-ons as target-only legato gestures', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.6,
       actionDuration: 0.125,
@@ -45,9 +46,9 @@ describe('MidiService', () => {
   });
 
   it('plays orphan hammer-ons with a quieter target attack', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.125,
       actionDuration: 0.125,
@@ -68,9 +69,9 @@ describe('MidiService', () => {
   });
 
   it('renders slides with a longer transition before the target note', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.8,
       actionDuration: 0.125,
@@ -93,9 +94,9 @@ describe('MidiService', () => {
   });
 
   it('keeps sequential strums tight for sixteenth-like durations', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.8,
       actionDuration: 0.125,
@@ -115,9 +116,9 @@ describe('MidiService', () => {
   });
 
   it('uses normal sequential strum spacing for eighth-like action durations', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.25,
@@ -139,9 +140,9 @@ describe('MidiService', () => {
   });
 
   it('uses the same normal strum spacing for quarter-like action durations', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.5,
@@ -163,9 +164,9 @@ describe('MidiService', () => {
   });
 
   it('keeps reversed strum order while widening longer strums', () => {
-    const { service, guitarSampler } = createService();
+    const { render, guitarSampler } = createRenderer();
 
-    service.triggerInstruction({
+    render({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.25,
