@@ -26,7 +26,6 @@ import {
   StrumRange,
   getLegatoMode,
   getBeatsFromTimeSignature,
-  getPickMode,
   getSixteenthPerBeatFromTimeSignature,
   isRelativeStrumRange
 } from '@/app/features/patterns/services/playing-patterns.model';
@@ -71,7 +70,8 @@ interface CopiedMeasure {
   styleUrl: './playing-pattern-editor.component.scss'
 })
 export class PlayingPatternEditorComponent implements OnDestroy {
-  readonly relativeStrings: RelativeString[] = ['bass', 'second-from-bass', 'middle', 'second-from-top', 'top'];
+  readonly maxPickNotes = 6;
+  readonly relativeStrings: RelativeString[] = ['bass', 'second-from-bass', 'lower-middle', 'upper-middle', 'second-from-top', 'top'];
   readonly strumStringOptions = [
     { value: 'all', label: 'All' },
     { value: 'bass', label: 'Bass' },
@@ -279,8 +279,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       case 'pick':
         newAction = {
           technique: 'pick',
-          pickMode: 'relative',
-          pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }],
+          pick: [this.getDefaultPickNote('relative')],
           modifiers: []
         };
         break;
@@ -338,14 +337,12 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
       // Remove pick array and percussive if switching from pick/percussive to strum
       delete updatedAction.pick;
-      delete updatedAction.pickMode;
       delete updatedAction.legatoMode;
       delete updatedAction.percussive;
     } else if (action.technique === 'pick') {
       // Ensure pick array exists
       if (!updatedAction.pick) {
-        updatedAction.pickMode = 'relative';
-        updatedAction.pick = [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }];
+        updatedAction.pick = [this.getDefaultPickNote('relative')];
       }
 
       // Remove strum pattern and percussive if switching from strum/percussive to pick
@@ -362,7 +359,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       // Remove strum and pick for percussive
       delete updatedAction.strum;
       delete updatedAction.pick;
-      delete updatedAction.pickMode;
       delete updatedAction.legato;
       delete updatedAction.legatoMode;
     } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
@@ -373,13 +369,11 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
       delete updatedAction.strum;
       delete updatedAction.pick;
-      delete updatedAction.pickMode;
       delete updatedAction.percussive;
     } else {
       // Remove strum, pick, and percussive for other techniques
       delete updatedAction.strum;
       delete updatedAction.pick;
-      delete updatedAction.pickMode;
       delete updatedAction.percussive;
       delete updatedAction.legato;
       delete updatedAction.legatoMode;
@@ -454,9 +448,13 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const action = pattern.measures[measureIndex].actions[originalIndex];
     if (action && action.technique === 'pick') {
       const currentPick = action.pick || [];
+      if (currentPick.length >= this.maxPickNotes) {
+        return;
+      }
+
       const updatedAction: PlayingAction = {
         ...action,
-        pick: [...currentPick, this.getDefaultPickNote(this.getPickModeForAction(action))]
+        pick: [...currentPick, this.getDefaultPickNote('relative')]
       };
       
       const measure = pattern.measures[measureIndex];
@@ -761,9 +759,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   getRelativeStringLabel(string: RelativeString): string {
     switch (string) {
-      case 'bass': return 'Bass Note';
+      case 'bass': return 'Bass';
       case 'second-from-bass': return '2nd from Bass';
-      case 'middle': return 'Middle';
+      case 'lower-middle': return 'Lower Middle';
+      case 'upper-middle': return 'Upper Middle';
       case 'second-from-top': return '2nd from Top';
       case 'top': return 'Top Note';
     }
@@ -803,16 +802,16 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return strings.to;
   }
 
-  getPickModeForAction(action: PlayingAction): PickMode {
-    return getPickMode(action);
-  }
-
   getLegatoModeForAction(action: PlayingAction): LegatoMode {
     return getLegatoMode(action);
   }
 
   isRelativePickNote(note: PickingNote): note is GripRelativePickingNote | BaseRelativePickingNote {
-    return typeof note.string === 'string';
+    return note.mode === 'relative';
+  }
+
+  getPickNoteMode(note: PickingNote): PickMode {
+    return note.mode;
   }
 
   isRelativeLegato(legato: LegatoNote): legato is RelativeLegatoNote {
@@ -851,14 +850,15 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     return this.isRelativeLegato(legato) && 'fretOffset' in legato.target ? legato.target.fretOffset : 0;
   }
 
-  setPickMode(measureIndex: number, originalIndex: number, pickMode: PickMode): void {
+  setPickNoteMode(measureIndex: number, originalIndex: number, noteIndex: number, pickMode: PickMode): void {
     this.updateAction(measureIndex, originalIndex, action => {
-      if (!action || action.technique !== 'pick') return action;
+      if (!action || action.technique !== 'pick' || !action.pick || !action.pick[noteIndex]) return action;
 
+      const updatedPick = [...action.pick];
+      updatedPick[noteIndex] = this.getDefaultPickNote(pickMode);
       return {
         ...action,
-        pickMode,
-        pick: [this.getDefaultPickNote(pickMode)]
+        pick: updatedPick
       };
     });
   }
@@ -1110,8 +1110,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
   private getDefaultPickNote(pickMode: PickMode): PickingNote {
     return pickMode === 'relative'
-      ? { string: 'bass', anchor: 'grip-note', fretOffset: 0 }
-      : { string: 0, fret: 0 };
+      ? { mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 }
+      : { mode: 'explicit', string: 0, fret: 0 };
   }
 
   private getDefaultRelativeStrumRange(): RelativeStrumRange {
@@ -1145,12 +1145,14 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   ): GripRelativePickingNote | BaseRelativePickingNote {
     if (anchor === 'base-note') {
       return {
+        mode: 'relative',
         string: note.string,
         anchor: 'base-note'
       };
     }
 
     return {
+      mode: 'relative',
       string: note.string,
       anchor: 'grip-note',
       fretOffset: 'fretOffset' in note ? note.fretOffset : 0

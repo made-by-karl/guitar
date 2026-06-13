@@ -23,7 +23,7 @@ describe('PlayingActionsComponent', () => {
       fixture.componentRef.setInput('measures', [createMeasure([
         {
           technique: 'pick',
-          pick: [{ string: 1, fret: sourceFret }]
+          pick: [{ mode: 'explicit', string: 1, fret: sourceFret }]
         },
         {
           technique,
@@ -79,7 +79,7 @@ describe('PlayingActionsComponent', () => {
       legato: { string: 1, toFret: 4 }
     };
     actions[2] = { technique: 'strum', strum: { direction: 'U', strings: 'treble' } };
-    actions[4] = { technique: 'pick', pick: [{ string: 5, fret: 0 }] };
+    actions[4] = { technique: 'pick', pick: [{ mode: 'explicit', string: 5, fret: 0 }] };
     fixture.componentRef.setInput('measures', [createMeasure(actions)]);
     fixture.detectChanges();
 
@@ -253,8 +253,7 @@ describe('PlayingActionsComponent', () => {
     fixture.componentRef.setInput('measures', [createMeasure([
       {
         technique: 'pick',
-        pickMode: 'relative',
-        pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
+        pick: [{ mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
       }
     ])]);
     fixture.detectChanges();
@@ -273,9 +272,9 @@ describe('PlayingActionsComponent', () => {
       {
         technique: 'pick',
         pick: [
-          { string: 2, fret: 3 },
-          { string: 3, fret: 2 },
-          { string: 4, fret: 0 }
+          { mode: 'explicit', string: 2, fret: 3 },
+          { mode: 'explicit', string: 3, fret: 2 },
+          { mode: 'explicit', string: 4, fret: 0 }
         ]
       }
     ])]);
@@ -295,11 +294,10 @@ describe('PlayingActionsComponent', () => {
     fixture.componentRef.setInput('measures', [createMeasure([
       {
         technique: 'pick',
-        pickMode: 'relative',
         pick: [
-          { string: 'bass', anchor: 'grip-note', fretOffset: 0 },
-          { string: 'second-from-top', anchor: 'grip-note', fretOffset: 0 },
-          { string: 'top', anchor: 'grip-note', fretOffset: 0 }
+          { mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 },
+          { mode: 'relative', string: 'second-from-top', anchor: 'grip-note', fretOffset: 0 },
+          { mode: 'relative', string: 'top', anchor: 'grip-note', fretOffset: 0 }
         ]
       }
     ])]);
@@ -318,6 +316,35 @@ describe('PlayingActionsComponent', () => {
     expect(marks.map(mark => mark.label)).toEqual(['3', '3', '3']);
   });
 
+  it('renders mixed relative and explicit pick labels in one action', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PlayingActionsComponent]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    fixture.componentRef.setInput('measures', [createMeasure([
+      {
+        technique: 'pick',
+        pick: [
+          { mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 2 },
+          { mode: 'explicit', string: 5, fret: 0 }
+        ]
+      }
+    ])]);
+    fixture.componentRef.setInput('notationContexts', [{
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'g1', name: 'G' }],
+      gripById: {
+        g1: {
+          strings: [[{ fret: 3 }], 'x', 'x', 'x', 'x', 'o']
+        }
+      }
+    }]);
+    fixture.detectChanges();
+
+    const marks = fixture.componentInstance.getPickMarks(0, fixture.componentInstance.measures()[0].actions[0]!);
+    expect(marks.map(mark => mark.label)).toEqual(['5', '0']);
+  });
+
   it('renders resolved fret numbers for relative pick when grip context exists', async () => {
     await TestBed.configureTestingModule({
       imports: [PlayingActionsComponent]
@@ -327,8 +354,7 @@ describe('PlayingActionsComponent', () => {
     fixture.componentRef.setInput('measures', [createMeasure([
       {
         technique: 'pick',
-        pickMode: 'relative',
-        pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 2 }]
+        pick: [{ mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 2 }]
       }
     ])]);
     fixture.componentRef.setInput('notationContexts', [{

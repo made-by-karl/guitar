@@ -49,7 +49,10 @@ describe('PlayingPatternsService', () => {
     expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Fingerstyle')).toHaveLength(3);
     expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
       pattern.measures.some(measure =>
-        measure.actions.some(action => action?.pickMode === 'relative' || (action?.strum?.strings && typeof action.strum.strings === 'object' && 'from' in action.strum.strings))
+        measure.actions.some(action =>
+          action?.pick?.some((note: { mode?: string }) => note.mode === 'relative')
+          || (action?.strum?.strings && typeof action.strum.strings === 'object' && 'from' in action.strum.strings)
+        )
       )
     )).toBe(true);
     expect(defaults.some((pattern: { category: string; measures: Array<{ actions: Array<any> }> }) =>
@@ -191,9 +194,10 @@ describe('PlayingPatternsService', () => {
     const relativeStringOrder: Record<RelativeString, number> = {
       bass: 0,
       'second-from-bass': 1,
-      middle: 2,
-      'second-from-top': 3,
-      top: 4
+      'lower-middle': 2,
+      'upper-middle': 3,
+      'second-from-top': 4,
+      top: 5
     };
     const invalidUpstrokes: string[] = [];
 

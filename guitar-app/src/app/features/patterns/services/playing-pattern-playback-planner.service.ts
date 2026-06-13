@@ -6,7 +6,6 @@ import { parseGrip, Grip } from '@/app/features/grips/services/grips/grip.model'
 import {
   BaseRelativePickingNote,
   ExplicitLegatoNote,
-  ExplicitPickingNote,
   GripRelativePickingNote,
   Measure,
   PlayingAction,
@@ -17,10 +16,10 @@ import {
   StrumRange,
   RelativeString,
   getLegatoMode,
-  getPickMode,
   getStringsForStrum,
   isRelativeStrumRange,
   isBaseRelativeLegatoEndpoint,
+  isRelativePickingNote,
   isBaseRelativePickingNote
 } from '@/app/features/patterns/services/playing-patterns.model';
 
@@ -325,18 +324,16 @@ export class PlayingPatternPlaybackPlannerService {
         stringState.set(stringIndex, { fret, note });
       }
     } else if (action.technique === 'pick' && action.pick) {
-      const pickMode = getPickMode(action);
-
       for (const pickNote of action.pick) {
-        const stringIndex = pickMode === 'relative'
-          ? this.resolveRelativeStringIndex(grip, (pickNote as GripRelativePickingNote | BaseRelativePickingNote).string)
-          : (pickNote as ExplicitPickingNote).string;
+        const stringIndex = isRelativePickingNote(pickNote)
+          ? this.resolveRelativeStringIndex(grip, pickNote.string)
+          : pickNote.string;
 
         affectedStrings.push(stringIndex);
 
-        const fret = pickMode === 'relative'
-          ? this.resolveRelativePickFret(grip, stringIndex, pickNote as GripRelativePickingNote | BaseRelativePickingNote)
-          : (pickNote as ExplicitPickingNote).fret;
+        const fret = isRelativePickingNote(pickNote)
+          ? this.resolveRelativePickFret(grip, stringIndex, pickNote)
+          : pickNote.fret;
 
         if (fret < 0) {
           stringState.delete(stringIndex);
@@ -481,8 +478,10 @@ export class PlayingPatternPlaybackPlannerService {
         return playableStrings[0];
       case 'second-from-bass':
         return playableStrings[Math.min(1, playableStrings.length - 1)];
-      case 'middle':
+      case 'lower-middle':
         return playableStrings[Math.floor((playableStrings.length - 1) / 2)];
+      case 'upper-middle':
+        return playableStrings[Math.ceil((playableStrings.length - 1) / 2)];
       case 'second-from-top':
         return playableStrings[Math.max(0, playableStrings.length - 2)];
       case 'top':

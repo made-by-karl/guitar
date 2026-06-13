@@ -5,7 +5,6 @@ import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
   BaseRelativePickingNote,
   ExplicitLegatoNote,
-  ExplicitPickingNote,
   GripRelativePickingNote,
   Measure,
   PlayingAction,
@@ -14,7 +13,6 @@ import {
   RelativeString,
   getBeatsFromTimeSignature,
   getLegatoMode,
-  getPickMode,
   getStringsForStrum,
   isRelativeLegatoNote,
   isRelativePickingNote,
@@ -438,13 +436,12 @@ export class PlayingActionsComponent {
       return [];
     }
 
-    const mode = getPickMode(action);
     const grip = this.resolvedGripTimeline().get(actionIndex);
     const marks: SlotPickMark[] = [];
     const baseX = this.getActionX(actionIndex);
 
     action.pick.forEach(note => {
-      if (mode === 'relative' && isRelativePickingNote(note)) {
+      if (isRelativePickingNote(note)) {
         const stringIndex = resolveRelativeStringIndex(grip, note.string);
         const y = this.stringY(stringIndex);
 
@@ -458,11 +455,10 @@ export class PlayingActionsComponent {
         return;
       }
 
-      const explicit = note as ExplicitPickingNote;
       marks.push({
         x: baseX,
-        y: this.stringY(explicit.string),
-        label: explicit.fret < 0 ? 'x' : `${explicit.fret}`
+        y: this.stringY(note.string),
+        label: note.fret < 0 ? 'x' : `${note.fret}`
       });
     });
 
@@ -820,11 +816,10 @@ export class PlayingActionsComponent {
     }
 
     if (action.technique === 'pick' && action.pick) {
-      const mode = getPickMode(action);
       const grip = this.resolvedGripTimeline().get(actionIndex);
 
       for (const note of action.pick) {
-        if (mode === 'relative' && isRelativePickingNote(note)) {
+        if (isRelativePickingNote(note)) {
           const stringIndex = resolveRelativeStringIndex(grip, note.string);
           const fret = resolveRelativePickFret(grip, stringIndex, note as GripRelativePickingNote | BaseRelativePickingNote);
           const label = grip ? `${fret}` : this.getRelativeStringShortLabel(note.string, note as GripRelativePickingNote | BaseRelativePickingNote);
@@ -832,13 +827,12 @@ export class PlayingActionsComponent {
           continue;
         }
 
-        const explicit = note as ExplicitPickingNote;
-        if (explicit.fret < 0) {
-          stringState.delete(explicit.string);
+        if (note.fret < 0) {
+          stringState.delete(note.string);
           continue;
         }
 
-        stringState.set(explicit.string, { fret: explicit.fret, label: `${explicit.fret}` });
+        stringState.set(note.string, { fret: note.fret, label: `${note.fret}` });
       }
       return;
     }

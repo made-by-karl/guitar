@@ -4,17 +4,19 @@ export type PlayingTechnique = 'strum' | 'pick' | 'hammer-on' | 'pull-off' | 'sl
 export type PickMode = 'explicit' | 'relative';
 export type LegatoMode = 'explicit' | 'relative';
 export type RelativeNoteAnchor = 'base-note' | 'grip-note';
-export type RelativeString = 'bass' | 'second-from-bass' | 'middle' | 'second-from-top' | 'top';
+export type RelativeString = 'bass' | 'second-from-bass' | 'lower-middle' | 'upper-middle' | 'second-from-top' | 'top';
 
 // Style modifiers that can be applied to strum and pick techniques
 export type PlayingModifier = 'mute' | 'palm-mute' | 'accent';
 
 export interface ExplicitPickingNote {
+  mode: 'explicit';
   string: number; // 0-5 (low E to high E)
   fret: number;   // 0 = open, -1 = muted
 }
 
 export interface RelativePickingNote {
+  mode: 'relative';
   string: RelativeString;
   anchor: RelativeNoteAnchor;
 }
@@ -107,7 +109,6 @@ export interface PlayingAction {
   strum?: StrumPattern;
   
   // For picking patterns
-  pickMode?: PickMode;
   pick?: PickingNote[]; // array of notes to pick
 
   // For hammer-ons, pull-offs, and slides
@@ -169,10 +170,6 @@ export function getSixteenthPerBeatFromTimeSignature(ts: TimeSignature): number 
   return getTimeSignatureParts(ts).bottom === 4 ? 4 : 2;
 }
 
-export function getPickMode(action: PlayingAction): PickMode {
-  return action.pickMode ?? 'explicit';
-}
-
 export function getLegatoMode(action: PlayingAction): LegatoMode {
   return action.legatoMode ?? 'explicit';
 }
@@ -182,7 +179,7 @@ export function getRelativeNoteAnchor(note: RelativePickingNote | RelativeLegato
 }
 
 export function isRelativePickingNote(note: PickingNote): note is GripRelativePickingNote | BaseRelativePickingNote {
-  return typeof note.string === 'string';
+  return note.mode === 'relative';
 }
 
 export function isGripRelativePickingNote(note: PickingNote): note is GripRelativePickingNote {

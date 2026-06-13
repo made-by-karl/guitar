@@ -27,7 +27,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 1, fret: 2 }]
+          pick: [{ mode: 'explicit', string: 1, fret: 2 }]
         }, {
           technique: 'hammer-on',
           legato: { string: 1, toFret: 4 }
@@ -59,7 +59,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 2, fret: 4 }]
+          pick: [{ mode: 'explicit', string: 2, fret: 4 }]
         }, {
           technique: 'pull-off',
           legato: { string: 2, toFret: 2 }
@@ -87,13 +87,13 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 1, fret: 2 }]
+          pick: [{ mode: 'explicit', string: 1, fret: 2 }]
         }, {
           technique: 'hammer-on',
           legato: { string: 1, toFret: 4 }
         }, {
           technique: 'pick',
-          pick: [{ string: 5, fret: 0 }]
+          pick: [{ mode: 'explicit', string: 5, fret: 0 }]
         }, null]
       }
     }], tuning, 120, grip as any);
@@ -113,13 +113,13 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 2, fret: 4 }]
+          pick: [{ mode: 'explicit', string: 2, fret: 4 }]
         }, {
           technique: 'pull-off',
           legato: { string: 2, toFret: 2 }
         }, {
           technique: 'pick',
-          pick: [{ string: 2, fret: 0 }]
+          pick: [{ mode: 'explicit', string: 2, fret: 0 }]
         }, null]
       }
     }], tuning, 120, grip as any);
@@ -139,7 +139,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 0, fret: 3 }]
+          pick: [{ mode: 'explicit', string: 0, fret: 3 }]
         }, {
           technique: 'slide',
           legato: { string: 0, toFret: 5 }
@@ -165,8 +165,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pickMode: 'relative',
-          pick: [{ string: 'second-from-bass', fretOffset: 0, anchor: 'grip-note' }]
+          pick: [{ mode: 'relative', string: 'second-from-bass', fretOffset: 0, anchor: 'grip-note' }]
         }, null, null, null]
       }
     }], tuning, 120, grip as any);
@@ -174,6 +173,30 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     expect(plan.instructions[0]).toMatchObject({
       notes: [
         { note: { semitone: 'B', octave: 2 } }
+      ]
+    });
+  });
+
+  it('resolves mixed relative and explicit pick notes in one action', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [
+            { mode: 'relative', string: 'second-from-bass', fretOffset: 0, anchor: 'grip-note' },
+            { mode: 'explicit', string: 5, fret: 0 }
+          ]
+        }, null, null, null]
+      }
+    }], tuning, 120, grip as any);
+
+    expect(plan.instructions[0]).toMatchObject({
+      notes: [
+        { note: { semitone: 'B', octave: 2 } },
+        { note: { semitone: 'E', octave: 4 } }
       ]
     });
   });
@@ -186,8 +209,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pickMode: 'relative',
-          pick: [{ string: 'second-from-bass', anchor: 'base-note' }]
+          pick: [{ mode: 'relative', string: 'second-from-bass', anchor: 'base-note' }]
         }, {
           technique: 'hammer-on',
           legatoMode: 'relative',
@@ -243,7 +265,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 1, fret: 2 }]
+          pick: [{ mode: 'explicit', string: 1, fret: 2 }]
         }, {
           technique: 'hammer-on',
           legato: { string: 1, toFret: 4 }
@@ -321,7 +343,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pick: [{ string: 1, fret: 4 }]
+          pick: [{ mode: 'explicit', string: 1, fret: 4 }]
         }, {
           technique: 'hammer-on',
           legato: { string: 1, toFret: 2 }
@@ -348,8 +370,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         timeSignature: '4/4',
         actions: [{
           technique: 'pick',
-          pickMode: 'relative',
-          pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
+          pick: [{ mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 }]
         }, null, null, null]
       }
     }], tuning, 120, barreGrip as any);
@@ -357,6 +378,91 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     expect(plan.instructions[0]).toMatchObject({
       notes: [
         { note: { semitone: 'D', octave: 3 } }
+      ]
+    });
+  });
+
+  it('resolves lower and upper middle separately for six playable strings', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const sixStringGrip = {
+      strings: ['o', 'o', 'o', 'o', 'o', 'o']
+    };
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [
+            { mode: 'relative', string: 'lower-middle', anchor: 'grip-note', fretOffset: 0 },
+            { mode: 'relative', string: 'upper-middle', anchor: 'grip-note', fretOffset: 0 }
+          ]
+        }, null, null, null]
+      }
+    }], tuning, 120, sixStringGrip as any);
+
+    expect(plan.instructions[0]).toMatchObject({
+      notes: [
+        { note: { semitone: 'D', octave: 3 } },
+        { note: { semitone: 'G', octave: 3 } }
+      ]
+    });
+  });
+
+  it('resolves both middle strings to the center for five playable strings', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const fiveStringGrip = {
+      strings: ['x', 'o', 'o', 'o', 'o', 'o']
+    };
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [
+            { mode: 'relative', string: 'lower-middle', anchor: 'grip-note', fretOffset: 0 },
+            { mode: 'relative', string: 'upper-middle', anchor: 'grip-note', fretOffset: 0 }
+          ]
+        }, null, null, null]
+      }
+    }], tuning, 120, fiveStringGrip as any);
+
+    expect(plan.instructions[0]).toMatchObject({
+      notes: [
+        { note: { semitone: 'G', octave: 3 } },
+        { note: { semitone: 'G', octave: 3 } }
+      ]
+    });
+  });
+
+  it('resolves four-string middles to the inner strings that overlap second-relative choices', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const fourStringGrip = {
+      strings: ['x', 'x', 'o', 'o', 'o', 'o']
+    };
+
+    const plan = service.buildPlaybackPlan([{
+      measure: {
+        timeSignature: '4/4',
+        actions: [{
+          technique: 'pick',
+          pick: [
+            { mode: 'relative', string: 'second-from-bass', anchor: 'grip-note', fretOffset: 0 },
+            { mode: 'relative', string: 'lower-middle', anchor: 'grip-note', fretOffset: 0 },
+            { mode: 'relative', string: 'upper-middle', anchor: 'grip-note', fretOffset: 0 },
+            { mode: 'relative', string: 'second-from-top', anchor: 'grip-note', fretOffset: 0 }
+          ]
+        }, null, null, null]
+      }
+    }], tuning, 120, fourStringGrip as any);
+
+    expect(plan.instructions[0]).toMatchObject({
+      notes: [
+        { note: { semitone: 'G', octave: 3 } },
+        { note: { semitone: 'G', octave: 3 } },
+        { note: { semitone: 'B', octave: 3 } },
+        { note: { semitone: 'B', octave: 3 } }
       ]
     });
   });

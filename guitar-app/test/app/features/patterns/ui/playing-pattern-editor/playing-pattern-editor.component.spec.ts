@@ -128,14 +128,13 @@ describe('PlayingPatternEditorComponent', () => {
     });
   });
 
-  it('switches pick actions between relative and explicit modes', () => {
+  it('switches one pick note between relative and explicit modes', () => {
     component.addAction(0, 0, 'pick');
-    component.setPickMode(0, 0, 'explicit');
+    component.setPickNoteMode(0, 0, 0, 'explicit');
 
     expect(component.pattern().measures[0].actions[0]).toEqual({
       technique: 'pick',
-      pickMode: 'explicit',
-      pick: [{ string: 0, fret: 0 }],
+      pick: [{ mode: 'explicit', string: 0, fret: 0 }],
       modifiers: []
     });
   });
@@ -147,13 +146,59 @@ describe('PlayingPatternEditorComponent', () => {
 
     expect(component.pattern().measures[0].actions[0]).toEqual({
       technique: 'pick',
-      pickMode: 'relative',
       pick: [
-        { string: 'bass', anchor: 'grip-note', fretOffset: 0 },
-        { string: 'top', anchor: 'grip-note', fretOffset: 0 }
+        { mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 },
+        { mode: 'relative', string: 'top', anchor: 'grip-note', fretOffset: 0 }
       ],
       modifiers: []
     });
+  });
+
+  it('supports mixed relative and explicit notes in one pick action', () => {
+    component.addAction(0, 0, 'pick');
+    component.addPickingNote(0, 0);
+    component.setPickNoteMode(0, 0, 1, 'explicit');
+    component.updatePickNoteString(0, 0, 1, 4);
+    component.updatePickNoteFret(0, 0, 1, 7);
+
+    expect(component.pattern().measures[0].actions[0]).toEqual({
+      technique: 'pick',
+      pick: [
+        { mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 },
+        { mode: 'explicit', string: 4, fret: 7 }
+      ],
+      modifiers: []
+    });
+  });
+
+  it('limits pick actions to six notes', () => {
+    component.addAction(0, 0, 'pick');
+
+    for (let i = 0; i < 6; i += 1) {
+      component.addPickingNote(0, 0);
+    }
+
+    const action = component.pattern().measures[0].actions[0];
+    expect(action?.technique).toBe('pick');
+    expect(action?.pick).toHaveLength(6);
+  });
+
+  it('renders per-note pick labels for relative and explicit rows', () => {
+    component.addAction(0, 0, 'pick');
+    component.addPickingNote(0, 0);
+    component.setPickNoteMode(0, 0, 1, 'explicit');
+    fixture.detectChanges();
+
+    const pickNoteText = Array.from(fixture.nativeElement.querySelectorAll('.pick-note'))
+      .map((row: Element) => row.textContent ?? '');
+
+    expect(pickNoteText[0]).toContain('Mode');
+    expect(pickNoteText[0]).toContain('String');
+    expect(pickNoteText[0]).toContain('Fret');
+    expect(pickNoteText[0]).toContain('Offset');
+    expect(pickNoteText[1]).toContain('Mode');
+    expect(pickNoteText[1]).toContain('String');
+    expect(pickNoteText[1]).toContain('Fret');
   });
 
   it('switches a strum action to relative range mode with defaults', () => {
@@ -193,8 +238,7 @@ describe('PlayingPatternEditorComponent', () => {
 
     expect(component.pattern().measures[0].actions[0]).toEqual({
       technique: 'pick',
-      pickMode: 'relative',
-      pick: [{ string: 'bass', anchor: 'base-note' }],
+      pick: [{ mode: 'relative', string: 'bass', anchor: 'base-note' }],
       modifiers: []
     });
   });
@@ -346,7 +390,7 @@ function createMultiMeasurePattern(): PlayingPattern {
       {
         timeSignature: '3/4',
         actions: [
-          { technique: 'pick', pickMode: 'relative', pick: [{ string: 'bass', anchor: 'grip-note', fretOffset: 0 }], modifiers: [] },
+          { technique: 'pick', pick: [{ mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 }], modifiers: [] },
           null,
           null
         ]

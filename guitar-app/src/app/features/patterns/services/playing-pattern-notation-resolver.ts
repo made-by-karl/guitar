@@ -28,8 +28,10 @@ export function resolveRelativeStringIndex(grip: Grip | undefined, relativeStrin
       return playableStrings[0];
     case 'second-from-bass':
       return playableStrings[Math.min(1, playableStrings.length - 1)];
-    case 'middle':
+    case 'lower-middle':
       return playableStrings[Math.floor((playableStrings.length - 1) / 2)];
+    case 'upper-middle':
+      return playableStrings[Math.ceil((playableStrings.length - 1) / 2)];
     case 'second-from-top':
       return playableStrings[Math.max(0, playableStrings.length - 2)];
     case 'top':

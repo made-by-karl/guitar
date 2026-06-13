@@ -42,10 +42,10 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
           strum('D', range('bass', 'top')),
           null,
           strum('D', range('bass', 'top')),
-          strum('U', range('top', 'middle')),
-          strum('U', range('top', 'middle')),
+          strum('U', range('top', 'lower-middle')),
+          strum('U', range('top', 'lower-middle')),
           strum('D', range('bass', 'top')),
-          strum('U', range('top', 'middle'))
+          strum('U', range('top', 'lower-middle'))
         ])
       }],
       createdAt: now,
@@ -64,10 +64,10 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         actions: grid(16, [
           [0, strum('D', range('bass', 'top'))],
           [4, strum('D', range('bass', 'top'))],
-          [6, strum('U', range('top', 'middle'))],
-          [10, strum('U', range('top', 'middle'))],
+          [6, strum('U', range('top', 'lower-middle'))],
+          [10, strum('U', range('top', 'lower-middle'))],
           [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'))]
+          [14, strum('U', range('top', 'lower-middle'))]
         ])
       }],
       createdAt: now,
@@ -87,11 +87,11 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
           strum('D', range('bass', 'top')),
           null,
           strum('D', range('bass', 'top')),
-          strum('U', range('top', 'middle')),
+          strum('U', range('top', 'lower-middle')),
           strum('D', range('bass', 'top')),
           null,
           strum('D', range('bass', 'top')),
-          strum('U', range('top', 'middle'))
+          strum('U', range('top', 'lower-middle'))
         ])
       }],
       createdAt: now,
@@ -109,13 +109,13 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '4/4',
         actions: onEighthSlots(16, [
           relativePick('bass'),
-          strum('D', range('middle', 'top'), ['accent']),
+          strum('D', range('lower-middle', 'top'), ['accent']),
           relativePick('second-from-bass'),
-          strum('D', range('middle', 'top')),
+          strum('D', range('lower-middle', 'top')),
           relativePick('bass'),
-          strum('D', range('middle', 'top'), ['accent']),
+          strum('D', range('lower-middle', 'top'), ['accent']),
           relativePick('second-from-bass'),
-          strum('U', range('top', 'middle'))
+          strum('U', range('top', 'lower-middle'))
         ])
       }],
       createdAt: now,
@@ -133,9 +133,9 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '4/4',
         actions: grid(16, [
           [0, strum('D', range('second-from-bass', 'top'), ['accent'])],
-          [6, strum('U', range('top', 'middle'))],
+          [6, strum('U', range('top', 'lower-middle'))],
           [8, strum('D', range('second-from-bass', 'top'))],
-          [14, strum('U', range('top', 'middle'))]
+          [14, strum('U', range('top', 'lower-middle'))]
         ])
       }],
       createdAt: now,
@@ -153,11 +153,11 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '4/4',
         actions: onEighthSlots(16, [
           relativePick('bass'),
-          strum('D', range('middle', 'top')),
+          strum('D', range('lower-middle', 'top')),
           relativePick('second-from-bass'),
-          strum('U', range('top', 'middle')),
+          strum('U', range('top', 'lower-middle')),
           relativePick('bass'),
-          strum('D', range('middle', 'top'), ['accent']),
+          strum('D', range('lower-middle', 'top'), ['accent']),
           relativePick('second-from-bass'),
           strum('U', range('top', 'second-from-top'))
         ])
@@ -177,13 +177,13 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '4/4',
         actions: onEighthSlots(16, [
           relativePick('bass'),
-          strum('D', range('middle', 'top'), ['accent']),
+          strum('D', range('lower-middle', 'top'), ['accent']),
           null,
-          strum('U', range('top', 'middle')),
+          strum('U', range('top', 'lower-middle')),
           relativePick('second-from-bass'),
-          strum('D', range('middle', 'top'), ['accent']),
+          strum('D', range('lower-middle', 'top'), ['accent']),
           null,
-          strum('U', range('top', 'middle'))
+          strum('U', range('top', 'lower-middle'))
         ])
       }],
       createdAt: now,
@@ -202,10 +202,10 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         actions: grid(16, [
           [0, strum('D', range('bass', 'top'), ['accent'])],
           [4, percussive('body-knock')],
-          [6, strum('U', range('top', 'middle'))],
+          [6, strum('U', range('top', 'lower-middle'))],
           [8, strum('D', range('bass', 'top'))],
           [12, percussive('body-knock')],
-          [14, strum('U', range('top', 'middle'))]
+          [14, strum('U', range('top', 'lower-middle'))]
         ])
       }],
       createdAt: now,
@@ -236,8 +236,8 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
             }
           ],
           [
-            strum('D', range('middle', 'top')),
-            strum('U', range('top', 'middle'))
+            strum('D', range('lower-middle', 'top')),
+            strum('U', range('top', 'lower-middle'))
           ],
           relativePick('bass'),
           strum('D', range('second-from-bass', 'top')),
@@ -253,8 +253,8 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
             }
           ],
           [
-            strum('D', range('middle', 'top')),
-            strum('U', range('top', 'middle'))
+            strum('D', range('lower-middle', 'top')),
+            strum('U', range('top', 'lower-middle'))
           ]
         ])
       }],
@@ -273,8 +273,8 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '3/4',
         actions: grid(12, [
           [0, relativePick('bass')],
-          [4, strum('D', range('middle', 'top'), ['accent'])],
-          [8, strum('U', range('top', 'middle'))]
+          [4, strum('D', range('lower-middle', 'top'), ['accent'])],
+          [8, strum('U', range('top', 'lower-middle'))]
         ])
       }],
       createdAt: now,
@@ -292,10 +292,10 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '6/8',
         actions: grid(12, [
           [0, strum('D', range('bass', 'top'), ['accent'])],
-          [4, strum('D', range('middle', 'top'))],
+          [4, strum('D', range('lower-middle', 'top'))],
           [6, strum('U', range('top', 'second-from-top'))],
           [8, strum('D', range('bass', 'top'))],
-          [10, strum('U', range('top', 'middle'))]
+          [10, strum('U', range('top', 'lower-middle'))]
         ])
       }],
       createdAt: now,
@@ -314,11 +314,11 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         actions: grid(16, [
           [0, strum('D', range('bass', 'top'), ['accent'])],
           [4, strum('D', range('bass', 'top'))],
-          [6, strum('U', range('top', 'middle'))],
+          [6, strum('U', range('top', 'lower-middle'))],
           [8, strum('D', range('bass', 'top'), ['accent'])],
-          [10, strum('U', range('top', 'middle'))],
+          [10, strum('U', range('top', 'lower-middle'))],
           [12, strum('D', range('bass', 'top'))],
-          [14, strum('U', range('top', 'middle'), ['accent'])]
+          [14, strum('U', range('top', 'lower-middle'), ['accent'])]
         ])
       }],
       createdAt: now,
@@ -336,11 +336,11 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '4/4',
         actions: onEighthSlots(16, [
           relativePick('bass'),
-          relativePick('middle'),
+          relativePick('lower-middle'),
           relativePick('second-from-top'),
           relativePick('top'),
           relativePick('second-from-bass'),
-          relativePick('middle'),
+          relativePick('lower-middle'),
           relativePick('second-from-top'),
           relativePick('top')
         ])
@@ -364,7 +364,7 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
           relativePick('second-from-bass'),
           relativePick('top'),
           relativePick('bass'),
-          relativePick('middle'),
+          relativePick('lower-middle'),
           relativePick('second-from-bass'),
           relativePick('second-from-top')
         ])
@@ -384,10 +384,10 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
         timeSignature: '6/8',
         actions: grid(12, [
           [0, relativePinch(['bass', 'second-from-top', 'top'])],
-          [2, relativePick('middle')],
+          [2, relativePick('lower-middle')],
           [4, relativePick('second-from-top')],
           [6, relativePinch(['second-from-bass', 'second-from-top', 'top'])],
-          [8, relativePick('middle')],
+          [8, relativePick('lower-middle')],
           [10, relativePick('second-from-top')]
         ])
       }],
@@ -435,8 +435,7 @@ function strum(direction: StrumDirection, strings: StrumRange, modifiers: Playin
 function relativePick(string: RelativeString, fretOffset: number = 0, modifiers: PlayingAction['modifiers'] = []): PlayingAction {
   return {
     technique: 'pick',
-    pickMode: 'relative',
-    pick: [{ string, anchor: 'grip-note', fretOffset }],
+    pick: [{ mode: 'relative', string, anchor: 'grip-note', fretOffset }],
     modifiers
   };
 }
@@ -444,8 +443,7 @@ function relativePick(string: RelativeString, fretOffset: number = 0, modifiers:
 function relativeBasePick(string: RelativeString, modifiers: PlayingAction['modifiers'] = []): PlayingAction {
   return {
     technique: 'pick',
-    pickMode: 'relative',
-    pick: [{ string, anchor: 'base-note' }],
+    pick: [{ mode: 'relative', string, anchor: 'base-note' }],
     modifiers
   };
 }
@@ -453,8 +451,8 @@ function relativeBasePick(string: RelativeString, modifiers: PlayingAction['modi
 function relativePinch(strings: RelativeString[], modifiers: PlayingAction['modifiers'] = []): PlayingAction {
   return {
     technique: 'pick',
-    pickMode: 'relative',
     pick: strings.map(string => ({
+      mode: 'relative' as const,
       string,
       anchor: 'grip-note' as const,
       fretOffset: 0
