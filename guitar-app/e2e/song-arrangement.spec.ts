@@ -72,8 +72,11 @@ for (const width of [390, 768, 1280]) {
     await notes.getByRole('button', { name: 'Close notes', exact: true }).click();
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Evening words changed');
+    await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(editor).toBeVisible();
+    await expect(editor.locator('.part-save-status')).toHaveText('All changes saved');
+    await expect(editor.getByRole('button', { name: 'Save changes', exact: true })).toBeDisabled();
     await expect.poll(async () => (await readSheet(page)).arrangement?.[2].lyrics).toBe('Evening words changed');
     expect((await readSheet(page)).arrangement?.[0].lyrics).toBe('Morning words');
     await page.screenshot({ path: testInfo.outputPath(`arrangement-lyrics-${width}.png`), fullPage: true });

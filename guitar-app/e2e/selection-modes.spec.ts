@@ -75,7 +75,9 @@ for (const width of [390, 1280]) {
     await page.screenshot({ path: testInfo.outputPath(`single-grip-${width}.png`), fullPage: true });
     await picker.getByRole('button', { name: 'Apply Grip', exact: true }).click();
     await expect(measure.locator('.action-grip-button').first()).toContainText('D');
-    await measure.getByRole('button', { name: /Save Measure$/ }).click();
+    await measure.getByRole('button', { name: /Apply to part$/ }).click();
+    await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
+    expect((await storedSheet(page)).parts[0].measures).toHaveLength(0);
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect.poll(async () => (await storedSheet(page)).parts[0].measures[0].measure.actionGrips?.length).toBe(1);
     const single = await storedSheet(page);

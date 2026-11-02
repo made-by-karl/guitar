@@ -128,7 +128,7 @@ test('uses song tuning and capo in the custom grip preview', async ({ page }) =>
   await page.getByLabel('Capodaster (Fret)', { exact: true }).fill('2');
   await page.getByLabel('String 6 note', { exact: true }).selectOption('D');
   await page.getByLabel('String 6 octave', { exact: true }).selectOption('2');
-  await page.getByRole('button', { name: 'Save Settings', exact: true }).click();
+  await expect(page.locator('app-song-tuning-editor').getByRole('status')).toHaveText('All changes saved automatically.');
   await page.getByRole('tab', { name: 'Grips', exact: true }).click();
   await page.getByRole('button', { name: /Add Grip$/ }).click();
   await page.getByRole('button', { name: /Custom Grip Build/ }).click();

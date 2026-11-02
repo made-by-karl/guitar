@@ -43,7 +43,8 @@ for (const width of [1280, 390]) {
     await expect(sheet.getByLabel('Capodaster (Fret)', { exact: true })).toHaveValue('2');
     await expect(sheet.getByLabel('String 6 note', { exact: true })).toHaveValue('D');
     await expect(sheet.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(0);
-    await sheet.getByRole('button', { name: 'Save Settings', exact: true }).click();
+    await expect(sheet.getByRole('button', { name: 'Save Settings', exact: true })).toHaveCount(0);
+    await expect(sheet.getByRole('status')).toHaveText('All changes saved automatically.');
     // Wait for the browser transaction to finish before navigating away.
     await expect.poll(() => page.evaluate(async () => {
       const database = await new Promise<IDBDatabase>(resolve => {
@@ -68,6 +69,7 @@ for (const width of [1280, 390]) {
     await tabs.getByRole('tab', { name: 'Links', exact: true }).click();
     await sheet.getByRole('button', { name: /Add Link$/ }).click();
     const linkEditor = page.locator('app-song-sheet-link-editor-modal');
+    await linkEditor.getByLabel('URL', { exact: true }).click();
     await linkEditor.getByLabel('URL', { exact: true }).fill('https://example.com/lesson');
     await linkEditor.getByLabel('Description', { exact: true }).fill('Practice lesson');
     await linkEditor.getByRole('button', { name: 'Save Link', exact: true }).click();

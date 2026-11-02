@@ -5,7 +5,7 @@
       <div class="card h-100">
         <div class="card-body">
           <label class="form-label fw-semibold" for="sheetTempo">Tempo (BPM)</label>
-          <app-bpm-selector controlId="sheetTempo" [ngModel]="tempo()" (ngModelChange)="tempo.set($event)" />
+          <app-bpm-selector controlId="sheetTempo" [ngModel]="tempo()" (ngModelChange)="tempo.set($event); changed.emit()" />
         </div>
       </div>
     </div>
@@ -14,7 +14,7 @@
       <div class="card h-100">
         <div class="card-body">
           <label class="form-label fw-semibold" for="sheetCapodaster">Capodaster (Fret)</label>
-          <input id="sheetCapodaster" type="number" class="form-control" [ngModel]="capodaster()" (ngModelChange)="capodaster.set($event)" min="0" max="12" />
+          <input id="sheetCapodaster" type="number" class="form-control" [ngModel]="capodaster()" (ngModelChange)="capodaster.set($event); changed.emit()" min="0" max="12" />
         </div>
       </div>
     </div>
@@ -28,12 +28,12 @@
               <div class="col-6 col-md-2">
                 <label class="form-label small">String {{ 6 - i }}</label>
                 <div class="input-group input-group-sm">
-                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' note'" [(ngModel)]="tuningNote.semitone">
+                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' note'" [ngModel]="tuningNote.semitone" (ngModelChange)="tuningNote.semitone = $event; changed.emit()">
                     @for (semitone of semitones(); track semitone) {
                       <option [value]="semitone">{{ semitone }}</option>
                     }
                   </select>
-                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' octave'" [ngModel]="tuningNote.octave" (ngModelChange)="tuningNote.octave = +$event">
+                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' octave'" [ngModel]="tuningNote.octave" (ngModelChange)="tuningNote.octave = +$event; changed.emit()">
                     @for (octave of octaves(); track octave) {
                       <option [value]="octave">{{ octave }}</option>
                     }
@@ -46,7 +46,18 @@
       </div>
     </div>
   </div>
-  <div class="tuning-editor-actions">
-    <button class="btn btn-success" type="button" (click)="save.emit()">Save Settings</button>
+  <div class="tuning-save-status" role="status" [class.text-danger]="saveState() === 'error' || saveState() === 'invalid'">
+    @switch (saveState()) {
+      @case ('saved') { <span>All changes saved automatically.</span> }
+      @case ('saving') { <span>Saving…</span> }
+      @case ('invalid') { <span>Not saved. Enter a positive tempo and a whole capo fret from 0 to 12.</span> }
+      @case ('error') {
+        <span>Could not save your settings. Your changes are still here.</span>
+        <button class="btn btn-outline-primary btn-sm" type="button" (click)="changed.emit()">Retry save</button>
+      }
+    }
+    @if (saveState() === 'error' || saveState() === 'invalid') {
+      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="discard.emit()">Discard changes</button>
+    }
   </div>
 </section>

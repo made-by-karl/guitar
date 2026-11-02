@@ -153,7 +153,7 @@ for (const width of [1280, 390]) {
     await expect(toolbar).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`song-part-no-selection-${width}.png`), fullPage: true });
 
-    await editor.getByRole('button', { name: 'Save Part' }).click();
+    await editor.getByRole('button', { name: 'Save and close' }).click();
     await expect(editor).toHaveCount(0);
     await page.reload();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();

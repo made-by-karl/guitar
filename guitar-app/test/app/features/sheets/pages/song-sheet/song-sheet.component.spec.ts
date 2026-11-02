@@ -47,7 +47,9 @@ class StubSongTuningEditorComponent {
   @Input() tempo = 0;
   @Output() capodasterChange = new EventEmitter<number>();
   @Output() tempoChange = new EventEmitter<number>();
-  @Output() save = new EventEmitter<void>();
+  @Input() saveState = 'saved';
+  @Output() changed = new EventEmitter<void>();
+  @Output() discard = new EventEmitter<void>();
 }
 
 describe('SongSheetComponent', () => {
@@ -173,9 +175,10 @@ describe('SongSheetComponent', () => {
 
     const selectors = ['app-song-arrangement', 'app-song-sheet-parts-tab', 'app-song-sheet-grips-tab', 'app-song-sheet-patterns-tab',
       'app-song-tuning-editor', '.sheet-links'];
+    const select = jest.spyOn(fixture.componentInstance, 'selectTab');
     for (const [index, tab] of tabs.entries()) {
       tab.click();
-      await fixture.whenStable();
+      await select.mock.results.at(-1)!.value;
       fixture.detectChanges();
       const panel = element.querySelector('[role="tabpanel"]');
       expect(panel?.id).toBe(tab.getAttribute('aria-controls'));
@@ -189,7 +192,7 @@ describe('SongSheetComponent', () => {
     }
   });
 
-  it('keeps tuning changes as a draft across tabs until saved', async () => {
+  it('automatically saves tuning changes before switching tabs', async () => {
     const originalSheet: SongSheetWithData = {
       ...sheet, tuning: [{ semitone: 'E', octave: 2 }], capodaster: 1, tempo: 90
     };
@@ -201,12 +204,16 @@ describe('SongSheetComponent', () => {
     component.tempTuning[0].semitone = 'D';
     component.tempCapodaster = 3;
     component.tempTempo = 110;
+    const save = component.saveTuning();
+    expect(component.tuningSaveState()).toBe('saving');
     await component.selectTab('parts');
     await component.selectTab('tuning');
+    await save;
     expect(component.tempTuning[0].semitone).toBe('D');
-    expect(component.sheet?.tuning[0].semitone).toBe('E');
-    expect(component.sheet?.capodaster).toBe(1);
-    expect(update).not.toHaveBeenCalled();
+    expect(component.sheet?.tuning[0].semitone).toBe('D');
+    expect(component.sheet?.capodaster).toBe(3);
+    expect(component.tuningSaveState()).toBe('saved');
+    expect(update).toHaveBeenCalledTimes(1);
 
   });
 
@@ -230,6 +237,67 @@ describe('SongSheetComponent', () => {
     expect(component.sheet?.tuning[0].semitone).toBe('D');
   });
 
+  it('serializes rapid settings changes and keeps the most recent settings', async () => {
+    const { fixture, update } = await createComponent();
+    const component = fixture.componentInstance;
+    let finishFirst!: () => void;
+    update.mockImplementationOnce(() => new Promise<void>(resolve => { finishFirst = resolve; }));
+    component.tempTempo = 110;
+    const first = component.saveTuning();
+    component.tempTempo = 120;
+    const second = component.saveTuning();
+    await Promise.resolve();
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(component.tuningSaveState()).toBe('saving');
+    finishFirst();
+    await Promise.all([first, second]);
+    expect(update.mock.calls.map(([saved]) => saved.tempo)).toEqual([110, 120]);
+    expect(component.sheet?.tempo).toBe(120);
+    expect(component.tuningSaveState()).toBe('saved');
+  });
+
+  it('preserves failed settings edits, prevents navigation and supports retry', async () => {
+    const { fixture, update } = await createComponent();
+    const component = fixture.componentInstance;
+    await component.selectTab('tuning');
+    update.mockRejectedValueOnce(new Error('Storage failed'));
+    component.tempTempo = 115;
+    await component.saveTuning();
+    expect(component.tuningSaveState()).toBe('error');
+    expect(component.tempTempo).toBe(115);
+    await component.selectTab('parts');
+    expect(component.activeTab).toBe('tuning');
+    await component.saveTuning();
+    expect(component.tuningSaveState()).toBe('saved');
+    expect(component.sheet?.tempo).toBe(115);
+    expect(await component.canDeactivate()).toBe(true);
+  });
+
+  it('does not store invalid settings or report them as saved', async () => {
+    const { fixture, update } = await createComponent();
+    const component = fixture.componentInstance;
+    component.tempCapodaster = -1;
+    await component.saveTuning();
+    expect(component.tuningSaveState()).toBe('invalid');
+    expect(update).not.toHaveBeenCalled();
+    expect(await component.canDeactivate()).toBe(false);
+    component.tempCapodaster = 2;
+    await component.saveTuning();
+    expect(component.tuningSaveState()).toBe('saved');
+  });
+
+  it('can discard invalid settings and leave with the last saved values', async () => {
+    const { fixture } = await createComponent();
+    const component = fixture.componentInstance;
+    component.tempCapodaster = -1;
+    await component.saveTuning();
+    expect(await component.canDeactivate()).toBe(false);
+    await component.discardTuningChanges();
+    expect(component.tempCapodaster).toBe(component.sheet?.capodaster);
+    expect(component.tuningSaveState()).toBe('saved');
+    expect(await component.canDeactivate()).toBe(true);
+  });
+
   it.each([
     { start: 0, key: 'ArrowRight', end: 1 },
     { start: 0, key: 'ArrowLeft', end: 5 },
@@ -239,12 +307,12 @@ describe('SongSheetComponent', () => {
     const { fixture } = await createComponent();
     const element: HTMLElement = fixture.nativeElement;
     const tabs = element.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-    tabs[start].click();
-    await fixture.whenStable();
+    await fixture.componentInstance.selectTab(fixture.componentInstance.tabs[start].id);
     fixture.detectChanges();
     tabs[start].focus();
+    const keydown = jest.spyOn(fixture.componentInstance, 'onTabKeydown');
     tabs[start].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    await fixture.whenStable();
+    await keydown.mock.results[0].value;
     fixture.detectChanges();
     expect(document.activeElement).toBe(tabs[end]);
     expect(tabs[end].getAttribute('aria-selected')).toBe('true');

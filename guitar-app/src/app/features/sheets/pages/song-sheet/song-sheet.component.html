@@ -18,7 +18,7 @@
       }
       @if (renaming) {
       <button class="btn btn-success btn-sm" (click)="saveRename()">
-        <i class="bi bi-check-lg"></i> Save
+        <i class="bi bi-check-lg"></i> Save name
       </button>
       <button class="btn btn-outline-secondary btn-sm" (click)="cancelRename()">
         <i class="bi bi-x-lg"></i> Cancel
@@ -69,7 +69,9 @@
           [octaves]="octaves"
           [(capodaster)]="tempCapodaster"
           [(tempo)]="tempTempo"
-          (save)="saveTuning()" />
+          [saveState]="tuningSaveState()"
+          (discard)="discardTuningChanges()"
+          (changed)="saveTuning()" />
       }
       @case ('links') {
         <section class="sheet-links">

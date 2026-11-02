@@ -69,6 +69,7 @@ export class SongPartEditorComponent implements
   readonly activeTab = signal<SongPartEditorTab>('music');
   readonly musicUnlocked = signal(false);
   readonly saving = signal(false);
+  readonly saveError = signal('');
   readonly tempLyrics;
   private savedPart = '';
   private savedLyrics = '';
@@ -105,7 +106,8 @@ export class SongPartEditorComponent implements
     getSongArrangement(this.sheet()).filter(occurrence => occurrence.partId === this.tempPart().id).length > 1);
 
   hasUnsavedChanges(): boolean {
-    return JSON.stringify(this.tempPart()) !== this.savedPart || this.tempLyrics() !== this.savedLyrics;
+    return (!this.data.occurrence && this.editingPartIndex === null)
+      || JSON.stringify(this.tempPart()) !== this.savedPart || this.tempLyrics() !== this.savedLyrics;
   }
 
   async canLeave(): Promise<boolean> {
@@ -115,7 +117,7 @@ export class SongPartEditorComponent implements
       { value: 'discard', text: 'Discard changes' },
       { value: 'stay', text: 'Keep editing' }
     ] });
-    if (choice === 'save') { await this.save(); return true; }
+    if (choice === 'save') return await this.save();
     return choice === 'discard';
   }
 
@@ -477,8 +479,8 @@ export class SongPartEditorComponent implements
     this.modalRef.close(undefined);
   }
 
-  async save(): Promise<void> {
-    if (this.saving()) return;
+  async save(): Promise<boolean> {
+    if (this.saving()) return false;
     const part = this.tempPart();
     const cleanPart = cloneSongPart({
       ...part,
@@ -486,6 +488,7 @@ export class SongPartEditorComponent implements
       notes: part.notes.trim()
     });
     this.saving.set(true);
+    this.saveError.set('');
     try {
       if (this.data.occurrence) {
         await this.songSheetService.saveOccurrence(this.sheet().id, this.data.occurrence.id, this.tempLyrics(), this.musicLocked() ? undefined : cleanPart);
@@ -500,6 +503,10 @@ export class SongPartEditorComponent implements
       this.musicUnlocked.set(false);
       this.rememberSavedState();
       this.modalRef.close(true);
+      return true;
+    } catch {
+      this.saveError.set('Could not save. Your changes are still here. Try again.');
+      return false;
     } finally {
       this.saving.set(false);
     }

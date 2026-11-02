@@ -456,6 +456,73 @@ describe('SongPartEditorComponent', () => {
       expect.objectContaining({ section: 'Bridge', notes: 'Play softly' }));
   });
 
+  it('shows unsaved, saving and saved states while keeping the embedded editor open', async () => {
+    await configureComponent();
+    TestBed.inject(MODAL_DATA).embedded = true;
+    const fixture = TestBed.createComponent(SongPartEditorComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    const status = () => element.querySelector('.part-save-status')!.textContent!.trim();
+    const saveButton = () => Array.from(element.querySelectorAll<HTMLButtonElement>('.modal-footer button'))
+      .find(button => button.textContent!.includes('Save changes'))!;
+    expect(status()).toBe('All changes saved');
+    expect(saveButton().disabled).toBe(true);
+    component.updateLyrics('New words');
+    fixture.detectChanges();
+    expect(status()).toBe('Unsaved changes');
+    expect(saveButton().disabled).toBe(false);
+
+    let finishSave!: () => void;
+    jest.mocked(TestBed.inject(SongSheetsService).saveOccurrence).mockImplementationOnce(() => new Promise<void>(resolve => { finishSave = resolve; }));
+    const saving = component.save();
+    fixture.detectChanges();
+    expect(status()).toBe('Saving…');
+    finishSave();
+    expect(await saving).toBe(true);
+    fixture.detectChanges();
+    expect(status()).toBe('All changes saved');
+    expect(saveButton().disabled).toBe(true);
+    expect(component.hasUnsavedChanges()).toBe(false);
+    expect(element.querySelector('#partSectionName')).not.toBeNull();
+  });
+
+  it('keeps failed saves unsaved and does not allow Save and continue to leave', async () => {
+    await configureComponent();
+    const fixture = TestBed.createComponent(SongPartEditorComponent);
+    const component = fixture.componentInstance;
+    component.updateLyrics('Keep these edits');
+    jest.mocked(TestBed.inject(ModalService).show).mockReturnValueOnce({ afterClosed: async () => 'save' } as never);
+    jest.mocked(TestBed.inject(SongSheetsService).saveOccurrence).mockRejectedValueOnce(new Error('Storage failed'));
+    expect(await component.canLeave()).toBe(false);
+    fixture.detectChanges();
+    expect(component.tempLyrics()).toBe('Keep these edits');
+    expect(component.hasUnsavedChanges()).toBe(true);
+    expect(component.saving()).toBe(false);
+    expect(fixture.nativeElement.querySelector('.part-save-status').textContent).toContain('Could not save');
+    expect(TestBed.inject(MODAL_REF).close).not.toHaveBeenCalled();
+    expect(await component.save()).toBe(true);
+    expect(component.saveError()).toBe('');
+    expect(component.hasUnsavedChanges()).toBe(false);
+  });
+
+  it('offers Save and close for a new part even before making an edit', async () => {
+    await configureComponent();
+    const data = TestBed.inject(MODAL_DATA);
+    data.occurrence = undefined;
+    data.editingPartIndex = null;
+    const fixture = TestBed.createComponent(SongPartEditorComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.hasUnsavedChanges()).toBe(true);
+    const element: HTMLElement = fixture.nativeElement;
+    const saveButton = Array.from(element.querySelectorAll<HTMLButtonElement>('.modal-footer button'))
+      .find(button => button.textContent!.includes('Save and close'))!;
+    expect(saveButton.disabled).toBe(false);
+    expect(await fixture.componentInstance.save()).toBe(true);
+    expect(TestBed.inject(SongSheetsService).addPart).toHaveBeenCalled();
+    expect(TestBed.inject(MODAL_REF).close).toHaveBeenCalledWith(true);
+  });
+
   it.each([
     { start: 0, key: 'ArrowRight', end: 1 },
     { start: 0, key: 'ArrowLeft', end: 1 },

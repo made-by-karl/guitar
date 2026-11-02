@@ -9,6 +9,11 @@
   overflow: hidden !important;
 }
 
+.part-save-status {
+  flex: 1 1 10rem;
+  color: var(--bs-secondary-color);
+  font-size: .875rem;
+}
 
 .part-editor-modal.is-embedded {
   height: auto !important;
@@ -349,6 +354,10 @@
 }
 
 @media (max-width: 767px) {
+  .part-save-status {
+    flex-basis: 100%;
+  }
+
   .part-editor-modal .modal-body {
     padding: 0.5rem;
   }

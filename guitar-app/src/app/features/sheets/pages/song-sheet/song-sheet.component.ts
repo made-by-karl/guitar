@@ -1,4 +1,4 @@
-import { Component, OnDestroy, ViewChild } from '@angular/core';
+import { Component, HostListener, OnDestroy, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -11,7 +11,7 @@ import { ModalService } from '@/app/core/services/modal.service';
 import { SongPartsTabComponent } from './song-parts-tab/song-parts-tab.component';
 import { SongGripsTabComponent } from './song-grips-tab/song-grips-tab.component';
 import { SongPatternsTabComponent } from './song-patterns-tab/song-patterns-tab.component';
-import { SongTuningEditorComponent } from './song-tuning-editor/song-tuning-editor.component';
+import { SongTuningEditorComponent, TuningSaveState } from './song-tuning-editor/song-tuning-editor.component';
 import { SongSheetLinkEditorModalComponent } from './song-sheet-link-editor-modal.component';
 import { SongArrangementComponent } from './song-arrangement/song-arrangement.component';
 
@@ -49,6 +49,9 @@ export class SongSheetComponent implements OnDestroy {
   tempCapodaster = 0;
   tempTempo = 80;
   activeTab: SongSheetTab = 'song';
+  readonly tuningSaveState = signal<TuningSaveState>('saved');
+  private tuningSaveTask = Promise.resolve();
+  private tuningRevision = 0;
   @ViewChild(SongArrangementComponent) private arrangement?: SongArrangementComponent;
 
   readonly semitones: Semitone[] = [...SEMITONES];
@@ -106,19 +109,34 @@ export class SongSheetComponent implements OnDestroy {
     this.tempName = '';
   }
 
-  async saveTuning(): Promise<void> {
+  saveTuning(): Promise<void> {
     if (!this.sheet) {
-      return;
+      return Promise.resolve();
     }
 
-    const updatedSheet = {
-      ...this.sheet,
+    const revision = ++this.tuningRevision;
+    if (!Number.isInteger(this.tempTempo) || this.tempTempo <= 0
+      || !Number.isInteger(this.tempCapodaster) || this.tempCapodaster < 0 || this.tempCapodaster > 12) {
+      this.tuningSaveState.set('invalid');
+      return this.tuningSaveTask;
+    }
+    const sheetId = this.sheet.id;
+    const settings = {
       tuning: this.tempTuning.map(note => ({ ...note })),
       capodaster: this.tempCapodaster,
       tempo: this.tempTempo
     };
-    await this.songSheetService.update(updatedSheet);
-    this.sheet = updatedSheet;
+    this.tuningSaveState.set('saving');
+    this.tuningSaveTask = this.tuningSaveTask.then(async () => {
+      if (!this.sheet || this.sheet.id !== sheetId) return;
+      const updatedSheet = { ...this.sheet, ...settings };
+      await this.songSheetService.update(updatedSheet);
+      this.sheet = updatedSheet;
+      if (revision === this.tuningRevision) this.tuningSaveState.set('saved');
+    }).catch(() => {
+      if (revision === this.tuningRevision) this.tuningSaveState.set('error');
+    });
+    return this.tuningSaveTask;
   }
 
   async selectTab(tab: SongSheetTab): Promise<void> {
@@ -126,8 +144,28 @@ export class SongSheetComponent implements OnDestroy {
     this.activeTab = tab;
   }
 
+  async discardTuningChanges(): Promise<void> {
+    await this.tuningSaveTask;
+    this.resetTuningDraft();
+    this.tuningSaveState.set('saved');
+  }
+
   async canDeactivate(): Promise<boolean> {
+    let pending: Promise<void>;
+    do {
+      pending = this.tuningSaveTask;
+      await pending;
+    } while (pending !== this.tuningSaveTask);
+    if (this.tuningSaveState() === 'error' || this.tuningSaveState() === 'invalid') return false;
     return await this.arrangement?.confirmNavigation() ?? true;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.tuningSaveState() !== 'saved') {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }
 
   async onTabKeydown(event: KeyboardEvent, tabIndex: number): Promise<void> {

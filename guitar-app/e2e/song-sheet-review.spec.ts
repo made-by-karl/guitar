@@ -194,9 +194,9 @@ for (const width of [390, 768, 1280]) {
     await measure.getByLabel('Slide scope', { exact: true }).selectOption('grip');
     await measure.getByLabel('Fret shift', { exact: true }).fill('-1');
     await measure.getByRole('button', { name: 'Play measure', exact: true }).click();
-    await measure.getByRole('button', { name: /Save Measure$/ }).click();
+    await measure.getByRole('button', { name: /Apply to part$/ }).click();
     await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: /Play$/ })).toBeEnabled();
-    await page.getByRole('button', { name: /Save Part$/ }).click();
+    await page.getByRole('button', { name: /Save and close$/ }).click();
     await silent.getByRole('button', { name: /Edit$/ }).click();
     await expect(page.locator('.part-editor-title-row').getByRole('button', { name: /Play$/ })).toBeDisabled();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
@@ -326,7 +326,7 @@ test('edits and plays a part with legato diagnostics without signal errors', asy
   await editor.getByRole('tab', { name: 'Music', exact: true }).click();
   await editor.locator('.measure-row').click();
   await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
-  await page.locator('app-song-part-measure-editor-modal').getByRole('button', { name: /Save Measure$/ }).click();
+  await page.locator('app-song-part-measure-editor-modal').getByRole('button', { name: /Apply to part$/ }).click();
   await expect(page.locator('app-song-part-measure-editor-modal')).toHaveCount(0);
   await expect(play).toBeEnabled();
   expect(diagnostics).toEqual([]);

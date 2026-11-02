@@ -262,9 +262,20 @@
   </div>
 
   <div class="modal-footer">
+    <div class="part-save-status" role="status" [class.text-danger]="saveError()">
+      @if (saving()) {
+        Saving…
+      } @else if (saveError()) {
+        {{ saveError() }}
+      } @else if (hasUnsavedChanges()) {
+        Unsaved changes
+      } @else {
+        All changes saved
+      }
+    </div>
     <button class="btn btn-outline-secondary" type="button" (click)="cancel()">{{ data.embedded ? 'Back to song' : 'Cancel' }}</button>
-    <button class="btn btn-success" type="button" (click)="save()" [disabled]="saving()">
-      <i aria-hidden="true" class="bi bi-check-lg"></i> {{ data.embedded ? 'Save changes' : 'Save Part' }}
+    <button class="btn btn-success" type="button" (click)="save()" [disabled]="saving() || !hasUnsavedChanges()" [title]="data.embedded ? 'Save your changes and keep editing' : 'Save your changes and close this dialog'">
+      <i aria-hidden="true" class="bi bi-check-lg"></i> {{ saving() ? 'Saving…' : (data.embedded ? 'Save changes' : 'Save and close') }}
     </button>
   </div>
 </div>

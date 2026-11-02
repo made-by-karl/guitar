@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
 import { Note, Semitone } from '@/app/core/music/semitones';
 
+export type TuningSaveState = 'saved' | 'saving' | 'invalid' | 'error';
+
 @Component({
   selector: 'app-song-tuning-editor',
   standalone: true,
@@ -17,5 +19,7 @@ export class SongTuningEditorComponent {
   readonly capodaster = model.required<number>();
   readonly tempo = model.required<number>();
 
-  readonly save = output<void>();
+  readonly saveState = input<TuningSaveState>('saved');
+  readonly changed = output<void>();
+  readonly discard = output<void>();
 }
