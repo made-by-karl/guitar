@@ -1,8 +1,5 @@
 .sheet-section {
-  padding: 1.25rem;
-  border: 1px solid #e3d8c5;
-  border-radius: 0 0 1rem 1rem;
-  background: #fffdfa;
+  padding: 0;
 }
 
 .section-header {
@@ -44,23 +41,11 @@
 }
 
 .part-measure-list {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.part-measure-detail {
   min-width: 0;
-  padding-top: 0.85rem;
-  border-top: 1px solid #e5dccf;
 }
 
-.part-measure-detail:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.measure-notes,
-.measure-lyrics {
+.part-notes,
+.part-lyrics {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   color: #3c3327;
@@ -68,17 +53,12 @@
   line-height: 1.35;
 }
 
-.measure-notes {
-  margin-bottom: 0.5rem;
+.part-notes {
   font-weight: 600;
 }
 
 .measure-actions {
   min-width: 0;
-}
-
-.measure-lyrics {
-  margin-top: 0.5rem;
 }
 
 @media (max-width: 767px) {

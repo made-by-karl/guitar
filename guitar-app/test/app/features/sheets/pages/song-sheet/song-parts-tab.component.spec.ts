@@ -21,13 +21,17 @@ describe('SongPartsTabComponent', () => {
     const duplicatePart = jest.fn().mockResolvedValue({
       id: 'part-2',
       section: 'Intro (Copy)',
-      items: []
+      lyrics: '',
+      notes: '',
+      measures: []
     });
     const notificationService = {
       success: jest.fn()
     };
     const songPartPlaybackService = {
       getSnapshot: jest.fn(() => ({ type: 'none', status: 'idle' })),
+      canPlaySongPart: jest.fn(() => true),
+      canPlayMeasure: jest.fn(() => true),
       state$: of({ type: 'none', status: 'idle' }),
       playSongPart: jest.fn(),
       pauseSongPart: jest.fn(),
@@ -39,7 +43,7 @@ describe('SongPartsTabComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SongPartsTabComponent],
       providers: [
-        { provide: SongSheetsService, useValue: { duplicatePart, resolvePartItem: jest.fn(() => []), resolvePartMeasures: jest.fn(() => []) } },
+        { provide: SongSheetsService, useValue: { duplicatePart, resolvePartMeasures: jest.fn(() => []) } },
         { provide: SongPartPlaybackService, useValue: songPartPlaybackService },
         { provide: DialogService, useValue: { confirm: jest.fn() } },
         { provide: ModalService, useValue: { show: jest.fn() } },
@@ -57,7 +61,7 @@ describe('SongPartsTabComponent', () => {
       links: [],
       grips: [],
       patterns: [],
-      parts: [{ id: 'part-1', section: 'Intro', items: [] }],
+      parts: [{ id: 'part-1', section: 'Intro', lyrics: '', notes: '', measures: [] }],
       created: 0,
       updated: 0
     } satisfies SongSheetWithData);
@@ -71,35 +75,29 @@ describe('SongPartsTabComponent', () => {
     expect(emitSpy).toHaveBeenCalled();
   });
 
-  it('renders notes, actions with effective grip labels, and lyrics for part measures', async () => {
+  it('renders part notes, actions with effective grip labels, and part lyrics', async () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     actions[4] = { technique: 'strum', strum: { direction: 'U', strings: 'treble' } };
     const measure = createMeasure(actions);
     const resolvedMeasure: ResolvedSongPartMeasure = {
-      itemId: 'item-1',
-      itemIndex: 0,
-      patternId: 'pattern-1',
-      patternName: 'Country Boom-Chick',
+      measureId: 'measure-1',
       measureIndex: 0,
-      absoluteMeasureIndex: 0,
-      measure,
-      lyrics: 'Walk down slow',
-      notes: 'Let the bass ring',
-      patternActionGrips: [
-        { measureIndex: 0, actionIndex: 0, gripId: 'grip-c', name: 'C' },
-        { measureIndex: 0, actionIndex: 4, gripId: 'grip-em', name: 'Em' }
-      ],
-      actionGrips: [
-        { measureIndex: 0, actionIndex: 0, gripId: 'grip-g', name: 'G' }
-      ]
+      measure: {
+        ...measure,
+        actionGrips: [
+          { measureIndex: 0, actionIndex: 0, gripId: 'grip-g', name: 'G' },
+          { measureIndex: 0, actionIndex: 4, gripId: 'grip-em', name: 'Em' }
+        ]
+      }
     };
     const songSheetsService = {
-      resolvePartItem: jest.fn(() => [resolvedMeasure]),
       resolvePartMeasures: jest.fn(() => [resolvedMeasure])
     };
     const songPartPlaybackService = {
       getSnapshot: jest.fn(() => ({ type: 'none', status: 'idle' })),
+      canPlaySongPart: jest.fn(() => true),
+      canPlayMeasure: jest.fn(() => true),
       state$: of({ type: 'none', status: 'idle' }),
       playSongPart: jest.fn(),
       pauseSongPart: jest.fn(),
@@ -143,11 +141,14 @@ describe('SongPartsTabComponent', () => {
       parts: [{
         id: 'part-1',
         section: 'Intro',
-        items: [{
-          id: 'item-1',
-          patternId: 'pattern-1',
-          measureTexts: [],
-          actionGrips: []
+        lyrics: 'Walk down slow',
+        notes: 'Let the bass ring',
+        measures: [{
+          id: 'measure-1',
+          measure: {
+            ...measure,
+            actionGrips: []
+          }
         }]
       }],
       created: 0,
@@ -158,19 +159,30 @@ describe('SongPartsTabComponent', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Let the bass ring');
     expect(text).toContain('Walk down slow');
+    expect(text).toContain('1 measure(s)');
+    expect(text).not.toContain('Country Boom-Chick');
 
     const gripLabels = Array.from(fixture.nativeElement.querySelectorAll('.action-grip-label'))
       .map((node: any) => node.textContent.trim());
     expect(gripLabels).toEqual(['G', 'Em']);
+    songSheetsService.resolvePartMeasures.mockReturnValue([
+      resolvedMeasure,
+      { measureId: 'measure-2', measureIndex: 1, measure: { ...measure, actionGrips: [] } }
+    ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('app-playing-actions')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('.measure-divider')).toHaveLength(1);
+
   });
 
-  it('renders a warning for a missing part pattern', async () => {
+  it('renders empty measure parts without pattern warnings', async () => {
     const songSheetsService = {
-      resolvePartItem: jest.fn(() => []),
       resolvePartMeasures: jest.fn(() => [])
     };
     const songPartPlaybackService = {
       getSnapshot: jest.fn(() => ({ type: 'none', status: 'idle' })),
+      canPlaySongPart: jest.fn(() => true),
+      canPlayMeasure: jest.fn(() => true),
       state$: of({ type: 'none', status: 'idle' }),
       playSongPart: jest.fn(),
       pauseSongPart: jest.fn(),
@@ -203,18 +215,16 @@ describe('SongPartsTabComponent', () => {
       parts: [{
         id: 'part-1',
         section: 'Intro',
-        items: [{
-          id: 'item-1',
-          patternId: 'missing-pattern',
-          measureTexts: [],
-          actionGrips: []
-        }]
+        lyrics: '',
+        notes: '',
+        measures: []
       }],
       created: 0,
       updated: 0
     } satisfies SongSheetWithData);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('This item points to a missing pattern.');
+    expect(fixture.nativeElement.textContent).toContain('0 measure(s)');
+    expect(fixture.nativeElement.textContent).not.toContain('missing pattern');
   });
 });

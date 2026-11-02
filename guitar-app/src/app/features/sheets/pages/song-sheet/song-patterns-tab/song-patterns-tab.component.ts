@@ -152,6 +152,7 @@ export class SongPatternsTabComponent implements OnDestroy {
 
   private async importPatternsFromLibrary(): Promise<SongSheetPattern[]> {
     const modalRef = this.modalService.show(PatternLibrarySelectorModalComponent, {
+      data: { selectionMode: 'multiple' },
       width: '95vw',
       height: '90vh',
       maxHeight: '90vh',
@@ -192,6 +193,10 @@ export class SongPatternsTabComponent implements OnDestroy {
 
     if (modalRef.componentInstance) {
       modalRef.componentInstance.pattern = cloneSongSheetPattern(pattern);
+      modalRef.componentInstance.savedGrips = this.sheet().grips;
+      modalRef.componentInstance.tuning = this.sheet().tuning;
+      modalRef.componentInstance.capodaster = this.sheet().capodaster;
+      modalRef.componentInstance.tempo = this.sheet().tempo;
     }
 
     const result = await modalRef.afterClosed();

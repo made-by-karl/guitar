@@ -48,6 +48,8 @@ npm run build-prod
 - `npm run build` and `npm run build-prod` generate `src/version.ts` through `../scripts/generate-version.js`.
 - The app is an SPA; deployment rewrites are documented in `deployment/DEPLOYMENT.md`.
 - There is no obvious lint task in the repo today; verification is mainly tests and builds.
+- For UX/browser inspection, prefer the Docker Playwright setup in `compose.playwright.yml` instead of local browser installs. The Compose services run as `${UID:-1000}:${GID:-1000}` so bind-mounted Angular cache files stay owned by the host user. Start the app with `docker compose -f compose.playwright.yml up -d app`, wait for it to become healthy, then run focused Playwright checks with `docker compose -f compose.playwright.yml run --rm e2e bash -lc "npm ci && npx playwright test <spec> --project=chromium"`. Stop it afterward with `docker compose -f compose.playwright.yml down`.
+- If local `npm start` fails around `.angular/cache/.../vite/deps` permissions, check for stale cache files from older Docker runs and remove or chown only the generated `.angular/cache` directory.
 
 ## Chord Modifier Notes
 

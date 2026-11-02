@@ -6,12 +6,14 @@ Client-side persistence is handled with Dexie/IndexedDB in `guitar-app/src/app/c
 
 ## Tables
 
-Current schema version is `3` with two tables:
+Current schema version is `9` with two tables:
 
 - `songSheets`: keyed by `id`, indexed by `created` and `updated`
 - `playingPatterns`: keyed by `id`, indexed by `category` and `isCustom`
 
-Version 2 also clears `playingPatterns` during upgrade so defaults can be rebuilt cleanly.
+Version 2 clears `playingPatterns` during upgrade so defaults can be rebuilt cleanly. Versions 2–4 retain their previously released upgrade behavior.
+
+Version 9 combines the song-sheet changes developed on this branch into one upgrade. It copies legacy part pattern items into measures, folds grip and text overlays into their current locations, creates reusable-part occurrences with independent lyrics, and repairs explicit legato string indices in both song sheets and library patterns. Versions 5–8 were development-only steps and are no longer registered separately. The conversion helpers tolerate those intermediate shapes and preserve existing occurrence and measure identities. Databases already at version 9 open without rerunning the upgrade.
 
 ## Ownership Model
 
@@ -24,7 +26,7 @@ Version 2 also clears `playingPatterns` during upgrade so defaults can be rebuil
 - external links with optional descriptions
 - sheet-local grip references
 - sheet-local pattern copies
-- part structure and per-measure overlays
+- reusable musical parts and ordered occurrences with their own lyrics
 
 Important implication: patterns embedded in a sheet are snapshots stored on the sheet itself, not live references back to the global pattern library.
 
@@ -42,9 +44,8 @@ Important implication: patterns embedded in a sheet are snapshots stored on the 
 
 - `cleanSheetForStorage()` strips data back to storage-safe plain objects.
 - `clonePattern()`, `clonePart()`, and related helpers deep-copy nested arrays/objects.
-- `normalizePartItem()` aligns `measureTexts` to the current pattern measure count.
-- `normalizePartItem()` also drops `actionGrips` that point outside the pattern's valid action range.
-- `resolvePartItem()` and `resolvePartMeasures()` combine stored sheet data with sheet-local pattern definitions into playback/editor-friendly structures.
+- `resolvePartMeasures()` resolves the copied measures stored directly on each part.
+- Legacy arrangements are normalized on read; new writes store lyrics on occurrences.
 
 Avoid storing parsed/runtime-only objects such as `Grip` instances in IndexedDB. Recompute them from ids when needed.
 

@@ -1,7 +1,8 @@
 import { Component, Inject, ViewChild, OnInit } from '@angular/core';
+import { Note } from '@/app/core/music/semitones';
 import { CommonModule } from '@angular/common';
 import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playing-pattern-editor/playing-pattern-editor.component';
-import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPattern, PlayingPatternGripReference } from '@/app/features/patterns/services/playing-patterns.model';
 import {MODAL_REF, ModalComponent, ModalRef} from '@/app/core/services/modal.service';
 
 @Component({
@@ -15,6 +16,10 @@ export class PlayingPatternEditorModalComponent implements ModalComponent<Playin
   @ViewChild('editor', { static: false }) editor!: PlayingPatternEditorComponent;
 
   pattern?: PlayingPattern;
+  savedGrips: PlayingPatternGripReference[] = [];
+  tuning?: Note[];
+  capodaster = 0;
+  tempo = 80;
   mode: 'create' | 'edit' | 'clone' = 'edit';
 
   get title(): string {

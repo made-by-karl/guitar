@@ -3,6 +3,36 @@ import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/p
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
 describe('PlayingPatternPlaybackPlannerService', () => {
+  it('slides sounding fretted strings together while leaving open strings unchanged', () => {
+    const planner = new PlayingPatternPlaybackPlannerService();
+    const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
+      { technique: 'pick', pick: [
+        { mode: 'explicit', string: 0, fret: 0 },
+        { mode: 'explicit', string: 1, fret: 3 },
+        { mode: 'explicit', string: 2, fret: 2 }
+      ] },
+      { technique: 'slide', slide: { fretOffset: 2 } },
+      { technique: 'slide', slide: { fretOffset: -1 } }
+    ] } }], [
+      { semitone: 'E', octave: 2 }, { semitone: 'A', octave: 2 }, { semitone: 'D', octave: 3 }
+    ], 120);
+    const slides = plan.instructions.filter(instruction => instruction.technique === 'slide').sort((a, b) => a.time - b.time);
+    expect(slides[0].legatos?.map(legato => legato.string)).toEqual([1, 2]);
+    expect(slides[0].legatos?.map(legato => legato.target.note.semitone)).toEqual(['D', 'F#']);
+    expect(slides[1].legatos?.map(legato => legato.source?.note.semitone)).toEqual(['D', 'F#']);
+    expect(slides[1].legatos?.map(legato => legato.target.note.semitone)).toEqual(['C#', 'F']);
+  });
+
+  it('does not invent notes for an orphan group slide or shift only part of an invalid shape', () => {
+    const planner = new PlayingPatternPlaybackPlannerService();
+    const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
+      { technique: 'slide', slide: { fretOffset: 2 } },
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 1 }, { mode: 'explicit', string: 1, fret: 5 }] },
+      { technique: 'slide', slide: { fretOffset: -2 } }
+    ] } }], [{ semitone: 'E', octave: 2 }, { semitone: 'A', octave: 2 }], 120);
+    expect(plan.instructions.filter(instruction => instruction.technique === 'slide')).toHaveLength(0);
+  });
+
   const tuning = [
     note('E', 2),
     note('A', 2),
@@ -18,6 +48,54 @@ describe('PlayingPatternPlaybackPlannerService', () => {
   const barreGrip = {
     strings: ['x', [{ fret: 5, isPartOfBarre: true }], [{ fret: 7 }], [{ fret: 7 }], [{ fret: 7 }], [{ fret: 5, isPartOfBarre: true }]]
   };
+
+  it('replays preceding measures for single and group slide sources without scheduling earlier notes or diagnostics', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const plan = service.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
+      { technique: 'slide', legato: { string: 3, toFret: 4 } },
+      { technique: 'slide', slide: { fretOffset: 1 } }
+    ] } }], tuning, 120, undefined, [{
+      measure: { timeSignature: '4/4', actions: [
+        { technique: 'slide', legato: { string: 0, toFret: 1 } },
+        { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+        { technique: 'slide', legato: { string: 5, toFret: 4 } }
+      ] },
+      actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'x|x|o|2|3|2', name: 'D' }]
+    }, {
+      measure: { timeSignature: '4/4', actions: [null] },
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'o|2|2|1|o|o', name: 'E' }]
+    }]);
+    expect(plan.diagnostics).toEqual([]);
+    expect(plan.instructions).toHaveLength(2);
+    expect(plan.instructions.map(instruction => instruction.time)).toEqual([0, 0.125]);
+    expect(plan.segmentStartTimes).toEqual([0]);
+    expect(plan.totalSegments).toBe(1);
+    expect(plan.instructions[0].legato).toMatchObject({
+      string: 3, source: { note: note('A', 3) }, target: { note: note('B', 3) }
+    });
+    expect(plan.instructions[1].legatos).toEqual([
+      { string: 3, source: { note: note('B', 3) }, target: { note: note('C', 4) } },
+      { string: 4, source: { note: note('D', 4) }, target: { note: note('D#', 4) } },
+      { string: 5, source: { note: note('G#', 4) }, target: { note: note('A', 4) } }
+    ]);
+  });
+
+  it('preserves string muting in earlier measures instead of inventing a slide source from the grip', () => {
+    const service = new PlayingPatternPlaybackPlannerService();
+    const plan = service.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
+      { technique: 'slide', legato: { string: 3, toFret: 4 } },
+      { technique: 'slide', slide: { fretOffset: 1 } }
+    ] } }], tuning, 120, undefined, [{
+      measure: { timeSignature: '4/4', actions: [
+        { technique: 'strum', strum: { direction: 'D', strings: 'all' } },
+        { technique: 'pick', pick: [{ mode: 'explicit', string: 3, fret: -1 }] }
+      ] },
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'x|x|o|2|3|2', name: 'D' }]
+    }]);
+    expect(plan.diagnostics).toEqual(['slide skipped: no previous note is sounding on string 4']);
+    expect(plan.instructions).toHaveLength(1);
+    expect(plan.instructions[0].legatos?.map(legato => legato.string)).toEqual([4, 5]);
+  });
 
   it('resolves hammer-on source from a previous picked note on the same string', () => {
     const service = new PlayingPatternPlaybackPlannerService();
@@ -330,11 +408,15 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     }], tuning, 120, grip as any);
 
     expect(plan.instructions).toHaveLength(0);
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(plan.diagnostics).toEqual([
+      'pull-off skipped: no previous note is sounding on string 2',
+      'slide skipped: no previous note is sounding on string 3'
+    ]);
     warnSpy.mockRestore();
   });
 
-  it('warns but still plays hammer-ons with non-ascending target frets', () => {
+  it('collects a diagnostic and still plans hammer-ons with non-ascending target frets', () => {
     const service = new PlayingPatternPlaybackPlannerService();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -358,7 +440,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
         target: { note: { semitone: 'B', octave: 2 } }
       }
     });
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('hammer-on warning'));
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(plan.diagnostics).toEqual([expect.stringContaining('hammer-on warning')]);
     warnSpy.mockRestore();
   });
 

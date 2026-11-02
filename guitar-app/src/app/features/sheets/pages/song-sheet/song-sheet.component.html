@@ -1,6 +1,6 @@
 @if (sheet) {
 <div class="container app-page song-sheet-page">
-  <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between align-items-lg-center mb-4">
+  <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between align-items-lg-center mb-3">
     <div class="sheet-title-row">
       <label class="visually-hidden" for="songSheetName">Song sheet name</label>
       <input
@@ -18,127 +18,104 @@
       }
       @if (renaming) {
       <button class="btn btn-success btn-sm" (click)="saveRename()">
-        <i class="bi bi-check-lg"></i> Save
+        <i class="bi bi-check-lg"></i> Save name
       </button>
       <button class="btn btn-outline-secondary btn-sm" (click)="cancelRename()">
         <i class="bi bi-x-lg"></i> Cancel
       </button>
       }
     </div>
-
-    <div class="sheet-toolbar"></div>
   </div>
 
-  <div class="sheet-meta mb-4">
-    <div class="meta-pill">
-      <span class="meta-label">Tuning</span>
-      <span class="badge bg-secondary">{{ getTuningDisplay() }}</span>
-    </div>
-    <div class="meta-pill">
-      <span class="meta-label">Capo</span>
-      <span class="badge bg-info">{{ sheet.capodaster === 0 ? 'None' : 'Fret ' + sheet.capodaster }}</span>
-    </div>
-    <div class="meta-pill">
-      <span class="meta-label">Tempo</span>
-      <span class="badge bg-warning text-dark">{{ sheet.tempo }} BPM</span>
-    </div>
-    <button class="btn btn-outline-secondary btn-sm meta-settings-button" type="button" (click)="showTuning()" aria-label="Edit tuning and tempo">
-      <i class="bi bi-gear"></i>
-    </button>
+  <div class="sheet-tab-list" role="tablist" aria-label="Song sheet sections">
+    @for (tab of tabs; track tab.id; let tabIndex = $index) {
+      <button
+        class="sheet-tab"
+        type="button"
+        role="tab"
+        [id]="'sheet-tab-' + tab.id"
+        [attr.aria-label]="tab.label"
+        [title]="tab.label"
+        [attr.aria-controls]="'sheet-panel-' + tab.id"
+        [attr.aria-selected]="activeTab === tab.id"
+        [tabIndex]="activeTab === tab.id ? 0 : -1"
+        [class.is-active]="activeTab === tab.id"
+        (click)="selectTab(tab.id)"
+        (keydown)="onTabKeydown($event, tabIndex)">
+        <i class="bi" [ngClass]="tab.icon" aria-hidden="true"></i>
+        <span class="sheet-tab-label">{{ tab.label }}</span>
+      </button>
+    }
   </div>
 
-  <section class="sheet-links card shadow-sm mb-4">
-    <div class="card-body">
-      <div class="sheet-links-header">
-        <div>
-          <h2 class="sheet-links-title">Links</h2>
-          <p class="sheet-links-subtitle mb-0">Open tutorials, tabs, or reference pages outside the app.</p>
-        </div>
-        <button class="btn btn-outline-primary btn-sm links-add-button" type="button" (click)="startAddingLink()">
-          <i class="bi bi-plus-lg"></i> Add Link
-        </button>
-      </div>
-
-      @if (sheet.links.length === 0) {
-      <p class="text-muted mb-0">No external links yet.</p>
-      } @else {
-      <div class="sheet-links-list">
-        @for (link of sheet.links; track link.id) {
-        <article class="sheet-link-item">
-          <div class="sheet-link-copy">
-            <a
-              class="sheet-link-anchor"
-              [href]="link.url"
-              [attr.title]="link.url"
-              target="_blank"
-              rel="noopener noreferrer">
-              {{ getLinkText(link) }}
-            </a>
-          </div>
-          <div class="sheet-link-actions">
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="startEditingLink(link)">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeLink(link.id)">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </article>
-        }
-      </div>
+  <div class="sheet-tab-content" role="tabpanel" [id]="'sheet-panel-' + activeTab" [attr.aria-labelledby]="'sheet-tab-' + activeTab" tabindex="0">
+    @switch (activeTab) {
+      @case ('song') {
+        <app-song-arrangement [sheet]="sheet" (changed)="refreshData()" />
       }
-    </div>
-  </section>
+      @case ('parts') {
+        <app-song-sheet-parts-tab [sheet]="sheet" (changed)="refreshData()" />
+      }
+      @case ('grips') {
+        <app-song-sheet-grips-tab [sheet]="sheet" (changed)="refreshData()" />
+      }
+      @case ('patterns') {
+        <app-song-sheet-patterns-tab [sheet]="sheet" (changed)="refreshData()" />
+      }
+      @case ('tuning') {
+        <app-song-tuning-editor
+          [tuning]="tempTuning"
+          [semitones]="semitones"
+          [octaves]="octaves"
+          [(capodaster)]="tempCapodaster"
+          [(tempo)]="tempTempo"
+          [saveState]="tuningSaveState()"
+          (discard)="discardTuningChanges()"
+          (changed)="saveTuning()" />
+      }
+      @case ('links') {
+        <section class="sheet-links">
+          <div class="sheet-links-header">
+            <div>
+              <h2 class="sheet-links-title">Links</h2>
+              <p class="sheet-links-subtitle mb-0">Open tutorials, tabs, or reference pages outside the app.</p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm links-add-button" type="button" (click)="startAddingLink()">
+              <i class="bi bi-plus-lg"></i> Add Link
+            </button>
+          </div>
 
-  <div class="sheet-tabs mb-4">
-    <div class="sheet-tab-panel">
-      <div class="sheet-tab-list" role="tablist" aria-label="Song sheet sections">
-        <button
-          class="sheet-tab"
-          type="button"
-          role="tab"
-          [class.is-active]="activeTab === 'parts'"
-          [attr.aria-selected]="activeTab === 'parts'"
-          (click)="selectTab('parts')">
-          Song Parts
-        </button>
-        <button
-          class="sheet-tab"
-          type="button"
-          role="tab"
-          [class.is-active]="activeTab === 'grips'"
-          [attr.aria-selected]="activeTab === 'grips'"
-          (click)="selectTab('grips')">
-          Grips
-        </button>
-        <button
-          class="sheet-tab"
-          type="button"
-          role="tab"
-          [class.is-active]="activeTab === 'patterns'"
-          [attr.aria-selected]="activeTab === 'patterns'"
-          (click)="selectTab('patterns')">
-          Patterns
-        </button>
-      </div>
-    </div>
+          @if (sheet.links.length === 0) {
+          <p class="text-muted mb-0">No external links yet.</p>
+          } @else {
+          <div class="sheet-links-list">
+            @for (link of sheet.links; track link.id) {
+            <article class="sheet-link-item">
+              <div class="sheet-link-copy">
+                <a
+                  class="sheet-link-anchor"
+                  [href]="link.url"
+                  [attr.title]="link.url"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  {{ getLinkText(link) }}
+                </a>
+              </div>
+              <div class="sheet-link-actions">
+                <button class="btn btn-outline-secondary btn-sm" type="button" (click)="startEditingLink(link)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" type="button" (click)="removeLink(link.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </article>
+            }
+          </div>
+          }
+        </section>
 
-    @if (activeTab === 'parts') {
-    <app-song-sheet-parts-tab
-      [sheet]="sheet"
-      (changed)="refreshData()" />
-    }
-
-    @if (activeTab === 'grips') {
-    <app-song-sheet-grips-tab
-      [sheet]="sheet"
-      (changed)="refreshData()" />
-    }
-
-    @if (activeTab === 'patterns') {
-    <app-song-sheet-patterns-tab
-      [sheet]="sheet"
-      (changed)="refreshData()" />
+      }
     }
   </div>
 </div>
@@ -147,13 +124,3 @@
   <div class="alert alert-danger">Song Sheet not found.</div>
 </div>
 }
-<ng-template #tuningEditorModal [typedCtx]="tuningEditorTemplateType" let-modalRef="modalRef">
-  <app-song-tuning-editor
-    [tuning]="tempTuning"
-    [semitones]="semitones"
-    [octaves]="octaves"
-    [(capodaster)]="tempCapodaster"
-    [(tempo)]="tempTempo"
-    (cancel)="cancelTuning(modalRef)"
-    (save)="saveTuning(modalRef)" />
-</ng-template>

@@ -30,7 +30,7 @@
 
       @for (slotAction of segment.actions; track slotAction.actionIndex) {
       @if (slotAction.action; as currentAction) {
-        @if (currentAction.technique === 'strum' && currentAction.strum) {
+        @if (currentAction.technique === 'strum' && currentAction.strum && getStrumStringIndices(slotAction.actionIndex, currentAction).length > 0) {
           <line
             [attr.x1]="getActionX(slotAction.actionIndex)"
             [attr.y1]="getStrumStemTop(slotAction.actionIndex, currentAction)"
@@ -46,7 +46,14 @@
           }
         }
 
-        @if ((currentAction.technique === 'hammer-on' || currentAction.technique === 'pull-off' || currentAction.technique === 'slide') && currentAction.legato) {
+        @if (currentAction.technique === 'slide') {
+          @for (mark of getSlideMarks(slotAction.actionIndex, currentAction); track $index) {
+            <line [attr.x1]="mark.startX" [attr.y1]="mark.startY" [attr.x2]="mark.x - 6" [attr.y2]="mark.endY" class="legato-line slide-line" />
+            <text [attr.x]="mark.x" [attr.y]="mark.y + 1" class="pick-label">{{ mark.label }}</text>
+          }
+        }
+
+        @if ((currentAction.technique === 'hammer-on' || currentAction.technique === 'pull-off') && currentAction.legato) {
           @if (hasLegatoLine(slotAction.actionIndex, currentAction)) {
           <line [attr.x1]="getLegatoStartX(slotAction.actionIndex)" [attr.y1]="getLegatoStringY(slotAction.actionIndex, currentAction)" [attr.x2]="getLegatoTargetX(slotAction.actionIndex)" [attr.y2]="getLegatoStringY(slotAction.actionIndex, currentAction)" class="legato-line" />
           }

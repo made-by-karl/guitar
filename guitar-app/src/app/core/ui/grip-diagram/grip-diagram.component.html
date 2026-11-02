@@ -1,1 +1,8 @@
-<div [innerHTML]="svg"></div>
+@if (fretRangeError) {
+  <div class="diagram-error">
+    <div class="diagram-error-backdrop" [innerHTML]="svg" aria-hidden="true"></div>
+    <div class="diagram-error-message" role="alert">{{ fretRangeError }}</div>
+  </div>
+} @else {
+  <div [innerHTML]="svg"></div>
+}

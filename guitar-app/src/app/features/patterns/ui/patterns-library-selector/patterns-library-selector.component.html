@@ -4,14 +4,14 @@
     <input [(ngModel)]="search" class="form-control me-2" placeholder="Search patterns..." />
     <button class="btn btn-outline-secondary" (click)="search = ''"><i class="bi bi-x"></i></button>
   </div>
-  <div class="row">
+  <div class="row" [attr.role]="selectionMode === 'single' ? 'radiogroup' : 'group'" aria-label="Choose patterns">
     @for (pattern of filteredPatterns; track pattern.id) {
     <div class="col-md-4 mb-4">
       <div
         class="card h-100 pattern-item"
         [class.pattern-item-selected]="isSelected(pattern)"
-        role="checkbox"
-        tabindex="0"
+        [attr.role]="selectionMode === 'single' ? 'radio' : 'checkbox'"
+        [tabIndex]="cardTabIndex(pattern, $index)"
         [attr.aria-checked]="isSelected(pattern)"
         [attr.aria-label]="'Select pattern ' + pattern.name"
         (click)="onPatternCardClick(pattern)"
@@ -20,18 +20,9 @@
         <div class="card-body">
           <div class="pattern-header">
             <div class="selection-indicator" aria-hidden="true">
-              <i class="bi" [class.bi-circle]="!isSelected(pattern)" [class.bi-check-circle-fill]="isSelected(pattern)"></i>
+              <i class="bi" [ngClass]="selectionMode === 'single' ? (isSelected(pattern) ? 'bi-record-circle-fill' : 'bi-circle') : (isSelected(pattern) ? 'bi-check-square-fill' : 'bi-square')"></i>
             </div>
-            <div class="visually-hidden">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                [id]="'pattern-selector-' + $index"
-                [checked]="isSelected(pattern)"
-                (change)="toggleSelection(pattern, $any($event.target).checked)"
-                (click)="$event.stopPropagation()"
-              >
-            </div>
+
           </div>
           <h5 class="card-title">{{ pattern.name }}</h5>
           <div class="mb-2">

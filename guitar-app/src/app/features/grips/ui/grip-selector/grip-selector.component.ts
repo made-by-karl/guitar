@@ -1,4 +1,5 @@
-import {Component, computed, EventEmitter, model, OnInit, Output} from '@angular/core';
+import {Component, computed, EventEmitter, Input, model, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import { SelectionMode } from '@/app/core/ui/selection-mode';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import type {DissonanceProfile, GripGeneratorOptions} from '@/app/features/grips/services/grips/grip-generator.service';
@@ -28,10 +29,11 @@ export interface GripSelectorResult {
   templateUrl: './grip-selector.component.html',
   styleUrls: ['./grip-selector.component.scss']
 })
-export class GripSelectorComponent implements OnInit {
+export class GripSelectorComponent implements OnInit, OnChanges {
   readonly dissonanceProfileInputId = 'grip-selector-dissonance-profile';
 
   @Output() selectedGripsChange = new EventEmitter<GripSelectorResult>();
+  @Input() selectionMode: SelectionMode = 'multiple';
 
   chord = model.required<Chord | null>();
   chordWithNotes = computed(() => {
@@ -77,6 +79,18 @@ export class GripSelectorComponent implements OnInit {
 
   ngOnInit() {
     this.regenerateGrips();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['selectionMode'] && this.selectionMode === 'single' && this.selectedGripKeys.size > 1) {
+      this.selectedGripKeys = new Set([...this.selectedGripKeys].slice(-1));
+      this.emitSelectedGrips();
+    }
+  }
+
+  cardTabIndex(grip: TunedGrip, index: number): number {
+    return this.selectionMode === 'multiple' || this.isSelected(grip) ||
+      (index === 0 && !this.grips.some(item => this.isSelected(item))) ? 0 : -1;
   }
 
   async openSettingsModal() {
@@ -137,6 +151,7 @@ export class GripSelectorComponent implements OnInit {
     const gripKey = this.getGripKey(grip);
 
     if (isSelected) {
+      if (this.selectionMode === 'single') this.selectedGripKeys.clear();
       this.selectedGripKeys.add(gripKey);
     } else {
       this.selectedGripKeys.delete(gripKey);
@@ -146,10 +161,23 @@ export class GripSelectorComponent implements OnInit {
   }
 
   onGripCardClick(grip: TunedGrip) {
-    this.toggleSelection(grip, !this.isSelected(grip));
+    this.toggleSelection(grip, this.selectionMode === 'single' || !this.isSelected(grip));
   }
 
   onGripCardKeydown(event: KeyboardEvent, grip: TunedGrip) {
+    if (event.target !== event.currentTarget) return;
+    if (this.selectionMode === 'single' && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const index = this.grips.findIndex(item => this.getGripKey(item) === this.getGripKey(grip));
+      const next = (index + direction + this.grips.length) % this.grips.length;
+      if (!this.grips[next]) return;
+      this.toggleSelection(this.grips[next], true);
+      if (event.currentTarget instanceof HTMLElement) {
+        event.currentTarget.closest('[role="radiogroup"]')?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
+      }
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.onGripCardClick(grip);

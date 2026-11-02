@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PlaybackPlan } from '@/app/core/services/playback.service';
-import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/midi.model';
+import { MidiInstruction, MidiNote, MidiTechnique, MidiLegato } from '@/app/core/services/midi.model';
+import { resolveSlideTargets } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
 import { Note, transpose } from '@/app/core/music/semitones';
 import { parseGrip, Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
@@ -39,15 +40,21 @@ export interface PlayingPatternPlaybackMeasure {
   actionGrips?: PlayingPatternActionGrip[];
 }
 
+export interface PlayingPatternPlaybackPlan extends PlaybackPlan {
+  diagnostics: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class PlayingPatternPlaybackPlannerService {
+  /** Pure planning: callers report diagnostics when playback is requested. */
   buildPlaybackPlan(
     measures: PlayingPatternPlaybackMeasure[],
     tuning: Note[],
     tempo: number,
-    initialGrip?: Grip
-  ): PlaybackPlan {
-    const gripMap = this.createGripMap(measures);
+    initialGrip?: Grip,
+    precedingMeasures: PlayingPatternPlaybackMeasure[] = []
+  ): PlayingPatternPlaybackPlan {
+    const gripMap = this.createGripMap([...precedingMeasures, ...measures]);
     const flatEvents: FlatPlaybackEvent[] = [];
     const segmentStartTimes: number[] = [];
     const quarterNoteDuration = 60 / tempo;
@@ -55,17 +62,27 @@ export class PlayingPatternPlaybackPlannerService {
 
     let currentTime = 0;
     let currentGrip = initialGrip;
+    const initialStringState = new Map<number, SoundingStringState>();
+
+    // Earlier actions establish grip and sounding frets, but are never scheduled
+    // or reported as diagnostics for this preview.
+    for (const measureConfig of precedingMeasures) {
+      for (let actionIndex = 0; actionIndex < measureConfig.measure.actions.length; actionIndex++) {
+        currentGrip = this.resolveGripForAction(measureConfig, actionIndex, gripMap, currentGrip);
+        const action = measureConfig.measure.actions[actionIndex];
+        if (action) this.buildEventInstructionData(action, currentGrip, tuning, initialStringState, []);
+      }
+    }
 
     for (const measureConfig of measures) {
       segmentStartTimes.push(currentTime);
 
       for (let actionIndex = 0; actionIndex < measureConfig.measure.actions.length; actionIndex++) {
+        currentGrip = this.resolveGripForAction(measureConfig, actionIndex, gripMap, currentGrip);
         const action = measureConfig.measure.actions[actionIndex];
         if (!action) {
           continue;
         }
-
-        currentGrip = this.resolveGripForAction(measureConfig, actionIndex, gripMap, currentGrip);
         flatEvents.push({
           time: currentTime + (actionIndex * actionDuration),
           action,
@@ -76,35 +93,16 @@ export class PlayingPatternPlaybackPlannerService {
       currentTime += measureConfig.measure.actions.length * actionDuration;
     }
 
-    const instructions = this.buildInstructionsFromFlatEvents(flatEvents, tuning, actionDuration);
+    const diagnostics: string[] = [];
+    const instructions = this.buildInstructionsFromFlatEvents(flatEvents, tuning, actionDuration, diagnostics, initialStringState);
 
     return {
       instructions,
+      diagnostics,
       segmentStartTimes,
       totalDuration: this.resolveTotalDuration(currentTime, instructions),
       totalSegments: measures.length
     };
-  }
-
-  resolveGripBeforeMeasure(
-    measures: PlayingPatternPlaybackMeasure[],
-    targetMeasureIndex: number
-  ): Grip | undefined {
-    const gripMap = this.createGripMap(measures);
-    let currentGrip: Grip | undefined;
-
-    for (let measureIndex = 0; measureIndex < targetMeasureIndex; measureIndex++) {
-      const measureConfig = measures[measureIndex];
-      if (!measureConfig) {
-        break;
-      }
-
-      for (let actionIndex = 0; actionIndex < measureConfig.measure.actions.length; actionIndex++) {
-        currentGrip = this.resolveGripForAction(measureConfig, actionIndex, gripMap, currentGrip);
-      }
-    }
-
-    return currentGrip;
   }
 
   private createGripMap(measures: PlayingPatternPlaybackMeasure[]): Map<string, Grip> {
@@ -138,9 +136,11 @@ export class PlayingPatternPlaybackPlannerService {
   private buildInstructionsFromFlatEvents(
     flatEvents: FlatPlaybackEvent[],
     tuning: Note[],
-    actionDuration: number
+    actionDuration: number,
+    diagnostics: string[],
+    initialStringState: Map<number, SoundingStringState>
   ): MidiInstruction[] {
-    const eventDataByIndex = this.resolveEventInstructionData(flatEvents, tuning);
+    const eventDataByIndex = this.resolveEventInstructionData(flatEvents, tuning, diagnostics, initialStringState);
     const instructions: MidiInstruction[] = [];
     const nextStringPlayTime = new Map<number, number>();
     let nextStringSlapTime: number | null = null;
@@ -191,6 +191,7 @@ export class PlayingPatternPlaybackPlannerService {
         actionDuration,
         notes: eventData.notes,
         legato: eventData.legato,
+        legatos: eventData.legatos,
         velocity: eventData.velocity,
         technique: eventData.technique,
         playNotes: eventData.playNotes
@@ -206,11 +207,13 @@ export class PlayingPatternPlaybackPlannerService {
 
   private resolveEventInstructionData(
     flatEvents: FlatPlaybackEvent[],
-    tuning: Note[]
+    tuning: Note[],
+    diagnostics: string[],
+    initialStringState: Map<number, SoundingStringState>
   ): Array<ReturnType<PlayingPatternPlaybackPlannerService['buildEventInstructionData']>> {
-    const stringState = new Map<number, SoundingStringState>();
+    const stringState = new Map(initialStringState);
 
-    return flatEvents.map(event => this.buildEventInstructionData(event.action, event.grip, tuning, stringState));
+    return flatEvents.map(event => this.buildEventInstructionData(event.action, event.grip, tuning, stringState, diagnostics));
   }
 
   private resolveTotalDuration(measureDuration: number, instructions: MidiInstruction[]): number {
@@ -237,13 +240,15 @@ export class PlayingPatternPlaybackPlannerService {
     action: PlayingAction,
     grip: Grip | undefined,
     tuning: Note[],
-    stringState: Map<number, SoundingStringState>
+    stringState: Map<number, SoundingStringState>,
+    diagnostics: string[]
   ): {
     notes: MidiNote[];
     affectedStrings: number[];
     technique: MidiTechnique;
     velocity: number;
     playNotes: 'parallel' | 'sequential' | 'reversed';
+    legatos?: MidiLegato[];
     legato?: {
       source?: MidiNote;
       target: MidiNote;
@@ -290,6 +295,7 @@ export class PlayingPatternPlaybackPlannerService {
     const notes: MidiNote[] = [];
     const affectedStrings: number[] = [];
     let playNotes: 'parallel' | 'sequential' | 'reversed' = 'parallel';
+    let legatos: MidiLegato[] | undefined;
     let legato: {
       source?: MidiNote;
       target: MidiNote;
@@ -347,6 +353,17 @@ export class PlayingPatternPlaybackPlannerService {
         notes.push(note);
         stringState.set(stringIndex, { fret, note });
       }
+    } else if (action.technique === 'slide' && action.slide) {
+      const targets = resolveSlideTargets(action.slide, stringState);
+      if (targets.length === 0) return undefined;
+      legatos = targets.map(target => {
+        const source = stringState.get(target.string)!;
+        const note = { note: this.getStringNote(tuning, target.string, target.toFret) };
+        notes.push(note);
+        affectedStrings.push(target.string);
+        stringState.set(target.string, { fret: target.toFret, note });
+        return { string: target.string, source: source.note, target: note };
+      });
     } else if ((action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') && action.legato) {
       const legatoMode = getLegatoMode(action);
       const resolvedLegato = legatoMode === 'relative'
@@ -359,12 +376,12 @@ export class PlayingPatternPlaybackPlannerService {
       const sourceState = stringState.get(resolvedLegato.string);
 
       if (!sourceState && action.technique !== 'hammer-on') {
-        console.warn(`${action.technique} skipped: no previous note is sounding on string ${resolvedLegato.string + 1}`);
+        diagnostics.push(`${action.technique} skipped: no previous note is sounding on string ${resolvedLegato.string + 1}`);
         return undefined;
       }
 
       if (sourceState) {
-        this.warnForLegatoDirection(action, resolvedLegato.string, sourceState.fret, resolvedLegato.toFret);
+        this.collectLegatoDiagnostics(action, resolvedLegato.string, sourceState.fret, resolvedLegato.toFret, diagnostics);
       }
 
       affectedStrings.push(resolvedLegato.string);
@@ -386,7 +403,8 @@ export class PlayingPatternPlaybackPlannerService {
       technique,
       velocity,
       playNotes,
-      legato
+      legato,
+      legatos
     };
   }
 
@@ -407,22 +425,23 @@ export class PlayingPatternPlaybackPlannerService {
     };
   }
 
-  private warnForLegatoDirection(
+  private collectLegatoDiagnostics(
     action: PlayingAction,
     stringIndex: number,
     sourceFret: number,
-    targetFret: number
+    targetFret: number,
+    diagnostics: string[]
   ): void {
     if (action.technique === 'hammer-on' && targetFret <= sourceFret) {
-      console.warn(`hammer-on warning: target fret ${targetFret} is not higher than source fret ${sourceFret} on string ${stringIndex + 1}`);
+      diagnostics.push(`hammer-on warning: target fret ${targetFret} is not higher than source fret ${sourceFret} on string ${stringIndex + 1}`);
     }
 
     if (action.technique === 'pull-off' && targetFret >= sourceFret) {
-      console.warn(`pull-off warning: target fret ${targetFret} is not lower than source fret ${sourceFret} on string ${stringIndex + 1}`);
+      diagnostics.push(`pull-off warning: target fret ${targetFret} is not lower than source fret ${sourceFret} on string ${stringIndex + 1}`);
     }
 
     if (action.technique === 'slide' && targetFret === sourceFret) {
-      console.warn(`slide warning: source and target are both fret ${targetFret} on string ${stringIndex + 1}`);
+      diagnostics.push(`slide warning: source and target are both fret ${targetFret} on string ${stringIndex + 1}`);
     }
   }
 

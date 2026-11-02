@@ -1,45 +1,63 @@
-<div class="modal-content-wrapper tuning-editor-modal">
-  <div class="modal-header">
-    <h5 class="modal-title">Tuning, Capo & Tempo</h5>
-    <button type="button" class="btn-close" (click)="cancel.emit()"></button>
-  </div>
-  <div class="modal-body">
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label class="form-label">Capodaster (Fret)</label>
-        <input type="number" class="form-control" [ngModel]="capodaster()" (ngModelChange)="capodaster.set($event)" min="0" max="12" />
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Tempo (BPM)</label>
-        <app-bpm-selector [ngModel]="tempo()" (ngModelChange)="tempo.set($event)" />
+<section class="tuning-editor" aria-labelledby="tuning-editor-title">
+  <h5 id="tuning-editor-title" class="mb-3">Tempo & Tuning</h5>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <label class="form-label fw-semibold" for="sheetTempo">Tempo (BPM)</label>
+          <app-bpm-selector controlId="sheetTempo" [ngModel]="tempo()" (ngModelChange)="tempo.set($event); changed.emit()" />
+        </div>
       </div>
     </div>
 
-    <div class="mb-3">
-      <label class="form-label">Guitar Tuning (Low to High)</label>
-      <div class="row g-2">
-        @for (tuningNote of tuning(); track i; let i = $index) {
-        <div class="col-6 col-md-2">
-          <label class="form-label small">String {{ 6 - i }}</label>
-          <div class="input-group input-group-sm">
-            <select class="form-select" [(ngModel)]="tuningNote.semitone">
-              @for (semitone of semitones(); track semitone) {
-              <option [value]="semitone">{{ semitone }}</option>
-              }
-            </select>
-            <select class="form-select" [(ngModel)]="tuningNote.octave">
-              @for (octave of octaves(); track octave) {
-              <option [value]="octave">{{ octave }}</option>
-              }
-            </select>
+    <div class="col-12 col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <label class="form-label fw-semibold" for="sheetCapodaster">Capodaster (Fret)</label>
+          <input id="sheetCapodaster" type="number" class="form-control" [ngModel]="capodaster()" (ngModelChange)="capodaster.set($event); changed.emit()" min="0" max="12" />
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title mb-3">Guitar Tuning (Low to High)</h6>
+          <div class="row g-2">
+            @for (tuningNote of tuning(); track i; let i = $index) {
+              <div class="col-6 col-md-2">
+                <label class="form-label small">String {{ 6 - i }}</label>
+                <div class="input-group input-group-sm">
+                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' note'" [ngModel]="tuningNote.semitone" (ngModelChange)="tuningNote.semitone = $event; changed.emit()">
+                    @for (semitone of semitones(); track semitone) {
+                      <option [value]="semitone">{{ semitone }}</option>
+                    }
+                  </select>
+                  <select class="form-select" [attr.aria-label]="'String ' + (6 - i) + ' octave'" [ngModel]="tuningNote.octave" (ngModelChange)="tuningNote.octave = +$event; changed.emit()">
+                    @for (octave of octaves(); track octave) {
+                      <option [value]="octave">{{ octave }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            }
           </div>
         </div>
-        }
       </div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-outline-secondary" type="button" (click)="cancel.emit()">Cancel</button>
-    <button class="btn btn-success" type="button" (click)="save.emit()">Save Settings</button>
+  <div class="tuning-save-status" role="status" [class.text-danger]="saveState() === 'error' || saveState() === 'invalid'">
+    @switch (saveState()) {
+      @case ('saved') { <span>All changes saved automatically.</span> }
+      @case ('saving') { <span>Saving…</span> }
+      @case ('invalid') { <span>Not saved. Enter a positive tempo and a whole capo fret from 0 to 12.</span> }
+      @case ('error') {
+        <span>Could not save your settings. Your changes are still here.</span>
+        <button class="btn btn-outline-primary btn-sm" type="button" (click)="changed.emit()">Retry save</button>
+      }
+    }
+    @if (saveState() === 'error' || saveState() === 'invalid') {
+      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="discard.emit()">Discard changes</button>
+    }
   </div>
-</div>
+</section>

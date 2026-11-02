@@ -3,9 +3,9 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ModalService } from '@/app/core/services/modal.service';
 import { NotificationService } from '@/app/core/services/notification.service';
-import { PlayingPatternActionGrip } from '@/app/features/patterns/services/playing-patterns.model';
+import { Measure, PlayingPatternActionGrip } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
-import { ResolvedSongPartMeasure, SongPart, SongPartPatternItem, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
+import { ResolvedSongPartMeasure, SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { SongPartPlaybackService, SongSheetPlaybackState } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { Subscription } from 'rxjs';
@@ -20,6 +20,7 @@ import {
   isPartPlaybackPaused
 } from '../song-sheet.helpers';
 import { SongPartEditorComponent } from '../song-part-editor/song-part-editor.component';
+import { getSongArrangement } from '@/app/features/sheets/services/song-arrangement';
 
 @Component({
   selector: 'app-song-sheet-parts-tab',
@@ -37,9 +38,6 @@ export class SongPartsTabComponent implements OnDestroy {
   private readonly modalService = inject(ModalService);
   private readonly notificationService = inject(NotificationService);
   private readonly songPartPlayback = inject(SongPartPlaybackService);
-  private readonly patternNames = computed(() => (
-    new Map(this.sheet().patterns.map(pattern => [pattern.id, pattern.name || 'Untitled Pattern']))
-  ));
   playbackState = { type: 'none', status: 'idle' } as SongSheetPlaybackState;
   private readonly playbackStateSubscription: Subscription;
 
@@ -69,8 +67,10 @@ export class SongPartsTabComponent implements OnDestroy {
   }
 
   async removePart(partIndex: number): Promise<void> {
+    const part = this.sheet().parts[partIndex];
+    const count = getSongArrangement(this.sheet()).filter(occurrence => occurrence.partId === part?.id).length;
     const confirmed = await this.dialogService.confirm(
-      'Are you sure you want to remove this song part?',
+      `Remove this musical part?${count ? ` Its ${count} ${count === 1 ? 'occurrence' : 'occurrences'} and lyrics will also be removed from the song.` : ''}`,
       'Remove Song Part',
       'Remove',
       'Cancel',
@@ -93,6 +93,14 @@ export class SongPartsTabComponent implements OnDestroy {
     moveItemInArray(this.sheet().parts, event.previousIndex, event.currentIndex);
     await this.songSheetService.movePart(this.sheet().id, event.previousIndex, event.currentIndex);
     this.changed.emit();
+  }
+
+  private readonly playablePartIds = computed(() => new Set(
+    this.sheet().parts.filter(part => this.songPartPlayback.canPlaySongPart(this.sheet(), part)).map(part => part.id)
+  ));
+
+  canPlayPart(part: SongPart): boolean {
+    return this.playablePartIds().has(part.id);
   }
 
   async playPart(part: SongPart): Promise<void> {
@@ -119,16 +127,16 @@ export class SongPartsTabComponent implements OnDestroy {
     this.songPartPlayback.seekSongPartMeasure(1);
   }
 
-  getPatternName(patternId: string): string {
-    return this.patternNames().get(patternId) || 'Unknown Pattern';
+  getPartMeasures(part: SongPart): ResolvedSongPartMeasure[] {
+    return this.songSheetService.resolvePartMeasures(this.sheet(), part);
   }
 
-  hasPattern(patternId: string): boolean {
-    return this.patternNames().has(patternId);
+  getNotationMeasures(measures: ResolvedSongPartMeasure[]): Measure[] {
+    return measures.map(measure => measure.measure);
   }
 
-  getPartItemMeasures(item: SongPartPatternItem): ResolvedSongPartMeasure[] {
-    return this.songSheetService.resolvePartItem(this.sheet(), item);
+  getNotationContexts(measures: ResolvedSongPartMeasure[]): PlayingActionsNotationContext[] {
+    return measures.map(measure => this.getMeasureNotationContext(measure));
   }
 
   getMeasureNotationContext(measure: ResolvedSongPartMeasure): PlayingActionsNotationContext {
@@ -139,12 +147,12 @@ export class SongPartsTabComponent implements OnDestroy {
     };
   }
 
-  hasMeasureNotes(measure: ResolvedSongPartMeasure): boolean {
-    return measure.notes.trim().length > 0;
+  hasPartNotes(part: SongPart): boolean {
+    return part.notes.trim().length > 0;
   }
 
-  hasMeasureLyrics(measure: ResolvedSongPartMeasure): boolean {
-    return measure.lyrics.trim().length > 0;
+  hasPartLyrics(part: SongPart): boolean {
+    return (part.lyrics ?? '').trim().length > 0;
   }
 
   isPartPlaybackActive(part: SongPart): boolean {
@@ -169,17 +177,9 @@ export class SongPartsTabComponent implements OnDestroy {
   }
 
   private getEffectiveActionGrips(measure: ResolvedSongPartMeasure): PlayingPatternActionGrip[] {
-    const actionGripsByIndex = new Map<number, PlayingPatternActionGrip>();
-
-    for (const actionGrip of measure.patternActionGrips) {
-      actionGripsByIndex.set(actionGrip.actionIndex, { ...actionGrip });
-    }
-
-    for (const actionGrip of measure.actionGrips) {
-      actionGripsByIndex.set(actionGrip.actionIndex, { ...actionGrip });
-    }
-
-    return [...actionGripsByIndex.values()].sort((left, right) => left.actionIndex - right.actionIndex);
+    return (measure.measure.actionGrips ?? [])
+      .map(actionGrip => ({ ...actionGrip }))
+      .sort((left, right) => left.actionIndex - right.actionIndex);
   }
 
   private async openPartEditor(partIndex: number | null): Promise<void> {

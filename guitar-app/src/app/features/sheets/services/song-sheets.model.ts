@@ -23,25 +23,26 @@ export interface SongSheetLink {
   description: string;
 }
 
-export interface SongPartMeasureText {
-  measureIndex: number;
-  lyrics: string;
-  notes: string;
-}
-
 export type SongPartActionGrip = PlayingPatternActionGrip;
 
-export interface SongPartPatternItem {
+export interface SongPartMeasure {
   id: string;
-  patternId: string;
-  measureTexts: SongPartMeasureText[];
-  actionGrips: SongPartActionGrip[];
+  measure: Measure;
 }
 
 export interface SongPart {
   id: string;
   section: string;
-  items: SongPartPatternItem[];
+  /** Legacy lyrics are migrated to an occurrence when a sheet is loaded. */
+  lyrics?: string;
+  notes: string;
+  measures: SongPartMeasure[];
+}
+
+export interface SongPartOccurrence {
+  id: string;
+  partId: string;
+  lyrics: string;
 }
 
 export interface SongSheet {
@@ -54,6 +55,8 @@ export interface SongSheet {
   grips: SongSheetGrip[];
   patterns: SongSheetPattern[];
   parts: SongPart[];
+  /** Absent only on legacy sheets; an empty array is an intentionally empty song. */
+  arrangement?: SongPartOccurrence[];
   created: number;
   updated: number;
 }
@@ -63,15 +66,7 @@ export interface SongSheetWithData extends Omit<SongSheet, 'grips'> {
 }
 
 export interface ResolvedSongPartMeasure {
-  itemId: string;
-  itemIndex: number;
-  patternId: string;
-  patternName: string;
+  measureId: string;
   measureIndex: number;
-  absoluteMeasureIndex: number;
   measure: Measure;
-  lyrics: string;
-  notes: string;
-  patternActionGrips: PlayingPatternActionGrip[];
-  actionGrips: SongPartActionGrip[];
 }

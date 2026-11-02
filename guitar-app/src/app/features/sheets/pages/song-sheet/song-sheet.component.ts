@@ -1,4 +1,4 @@
-import { Component, OnDestroy, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, HostListener, OnDestroy, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,21 +7,15 @@ import { SongSheetLink, SongSheetWithData } from '@/app/features/sheets/services
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { Note, SEMITONES, Semitone } from '@/app/core/music/semitones';
-import { TypedContextDirective } from '@/app/core/ui/directives/typed-context.directive';
-import { ModalRef, ModalService } from '@/app/core/services/modal.service';
+import { ModalService } from '@/app/core/services/modal.service';
 import { SongPartsTabComponent } from './song-parts-tab/song-parts-tab.component';
 import { SongGripsTabComponent } from './song-grips-tab/song-grips-tab.component';
 import { SongPatternsTabComponent } from './song-patterns-tab/song-patterns-tab.component';
-import { SongTuningEditorComponent } from './song-tuning-editor/song-tuning-editor.component';
+import { SongTuningEditorComponent, TuningSaveState } from './song-tuning-editor/song-tuning-editor.component';
 import { SongSheetLinkEditorModalComponent } from './song-sheet-link-editor-modal.component';
+import { SongArrangementComponent } from './song-arrangement/song-arrangement.component';
 
-type SongSheetTab = 'parts' | 'grips' | 'patterns';
-
-interface TuningEditorModalTemplateContext {
-  $implicit: null;
-  data: null;
-  modalRef: ModalRef<void>;
-}
+type SongSheetTab = 'song' | 'parts' | 'grips' | 'patterns' | 'tuning' | 'links';
 
 @Component({
   selector: 'app-song-sheet',
@@ -29,8 +23,8 @@ interface TuningEditorModalTemplateContext {
   imports: [
     CommonModule,
     FormsModule,
-    TypedContextDirective,
     SongPartsTabComponent,
+    SongArrangementComponent,
     SongGripsTabComponent,
     SongPatternsTabComponent,
     SongTuningEditorComponent
@@ -39,7 +33,14 @@ interface TuningEditorModalTemplateContext {
   styleUrls: ['./song-sheet.component.scss']
 })
 export class SongSheetComponent implements OnDestroy {
-  @ViewChild('tuningEditorModal') tuningEditorModalTemplate!: TemplateRef<TuningEditorModalTemplateContext>;
+  readonly tabs: ReadonlyArray<{ id: SongSheetTab; label: string; icon: string }> = [
+    { id: 'song', label: 'Song', icon: 'bi-music-note-list' },
+    { id: 'parts', label: 'Parts', icon: 'bi-list-ol' },
+    { id: 'grips', label: 'Grips', icon: 'bi-grid-3x3-gap' },
+    { id: 'patterns', label: 'Patterns', icon: 'bi-arrow-down-up' },
+    { id: 'tuning', label: 'Tempo & Tuning', icon: 'bi-sliders' },
+    { id: 'links', label: 'Links', icon: 'bi-link-45deg' }
+  ];
 
   sheet: SongSheetWithData | undefined;
   renaming = false;
@@ -47,19 +48,21 @@ export class SongSheetComponent implements OnDestroy {
   tempTuning: Note[] = [];
   tempCapodaster = 0;
   tempTempo = 80;
-  activeTab: SongSheetTab = 'parts';
+  activeTab: SongSheetTab = 'song';
+  readonly tuningSaveState = signal<TuningSaveState>('saved');
+  private tuningSaveTask = Promise.resolve();
+  private tuningRevision = 0;
+  @ViewChild(SongArrangementComponent) private arrangement?: SongArrangementComponent;
 
   readonly semitones: Semitone[] = [...SEMITONES];
   readonly octaves = [1, 2, 3, 4, 5, 6];
-  readonly tuningEditorTemplateType = {} as TuningEditorModalTemplateContext;
 
   constructor(
     private readonly songSheetService: SongSheetsService,
     private readonly songPartPlayback: SongPartPlaybackService,
     private readonly patternPlayback: PatternPlaybackService,
     private readonly route: ActivatedRoute,
-    private readonly modalService: ModalService,
-    private readonly viewContainerRef: ViewContainerRef
+    private readonly modalService: ModalService
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -71,6 +74,7 @@ export class SongSheetComponent implements OnDestroy {
     this.patternPlayback.stopPatternPreview();
     this.songPartPlayback.stopMeasurePreview();
     this.songPartPlayback.stopSongPart();
+    this.songPartPlayback.stopSong();
   }
 
   async refreshData(): Promise<void> {
@@ -105,35 +109,81 @@ export class SongSheetComponent implements OnDestroy {
     this.tempName = '';
   }
 
-  async showTuning(): Promise<void> {
+  saveTuning(): Promise<void> {
     if (!this.sheet) {
-      return;
+      return Promise.resolve();
     }
 
-    this.tempTuning = [...this.sheet.tuning];
-    this.tempCapodaster = this.sheet.capodaster;
-    this.tempTempo = this.sheet.tempo;
-    await this.openTuningEditorDialog();
-  }
-
-  async saveTuning(modalRef?: ModalRef<void>): Promise<void> {
-    if (!this.sheet) {
-      return;
+    const revision = ++this.tuningRevision;
+    if (!Number.isInteger(this.tempTempo) || this.tempTempo <= 0
+      || !Number.isInteger(this.tempCapodaster) || this.tempCapodaster < 0 || this.tempCapodaster > 12) {
+      this.tuningSaveState.set('invalid');
+      return this.tuningSaveTask;
     }
-
-    this.sheet.tuning = [...this.tempTuning];
-    this.sheet.capodaster = this.tempCapodaster;
-    this.sheet.tempo = this.tempTempo;
-    await this.songSheetService.update(this.sheet);
-    modalRef?.close();
+    const sheetId = this.sheet.id;
+    const settings = {
+      tuning: this.tempTuning.map(note => ({ ...note })),
+      capodaster: this.tempCapodaster,
+      tempo: this.tempTempo
+    };
+    this.tuningSaveState.set('saving');
+    this.tuningSaveTask = this.tuningSaveTask.then(async () => {
+      if (!this.sheet || this.sheet.id !== sheetId) return;
+      const updatedSheet = { ...this.sheet, ...settings };
+      await this.songSheetService.update(updatedSheet);
+      this.sheet = updatedSheet;
+      if (revision === this.tuningRevision) this.tuningSaveState.set('saved');
+    }).catch(() => {
+      if (revision === this.tuningRevision) this.tuningSaveState.set('error');
+    });
+    return this.tuningSaveTask;
   }
 
-  cancelTuning(modalRef?: ModalRef<void>): void {
-    modalRef?.close();
-  }
-
-  selectTab(tab: SongSheetTab): void {
+  async selectTab(tab: SongSheetTab): Promise<void> {
+    if (tab !== this.activeTab && !await this.canDeactivate()) return;
     this.activeTab = tab;
+  }
+
+  async discardTuningChanges(): Promise<void> {
+    await this.tuningSaveTask;
+    this.resetTuningDraft();
+    this.tuningSaveState.set('saved');
+  }
+
+  async canDeactivate(): Promise<boolean> {
+    let pending: Promise<void>;
+    do {
+      pending = this.tuningSaveTask;
+      await pending;
+    } while (pending !== this.tuningSaveTask);
+    if (this.tuningSaveState() === 'error' || this.tuningSaveState() === 'invalid') return false;
+    return await this.arrangement?.confirmNavigation() ?? true;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.tuningSaveState() !== 'saved') {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  async onTabKeydown(event: KeyboardEvent, tabIndex: number): Promise<void> {
+    let nextIndex: number;
+    switch (event.key) {
+      case 'ArrowRight': nextIndex = (tabIndex + 1) % this.tabs.length; break;
+      case 'ArrowLeft': nextIndex = (tabIndex + this.tabs.length - 1) % this.tabs.length; break;
+      case 'Home': nextIndex = 0; break;
+      case 'End': nextIndex = this.tabs.length - 1; break;
+      default: return;
+    }
+
+    event.preventDefault();
+    const target = event.currentTarget;
+    await this.selectTab(this.tabs[nextIndex].id);
+    if (this.activeTab === this.tabs[nextIndex].id && target instanceof HTMLElement) {
+      target.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+    }
   }
 
   async startAddingLink(): Promise<void> {
@@ -173,35 +223,19 @@ export class SongSheetComponent implements OnDestroy {
     return description.length > 0 ? description : this.getLinkDisplayLabel(link.url);
   }
 
-  getTuningDisplay(): string {
-    if (!this.sheet) {
-      return '';
-    }
-
-    return this.sheet.tuning.map(note => `${note.semitone}${note.octave}`).join(' | ');
-  }
-
   private async loadSheet(id: string): Promise<void> {
     this.sheet = await this.songSheetService.getByIdWithData(id);
+    this.resetTuningDraft();
   }
 
-  private async openTuningEditorDialog(): Promise<void> {
-    if (!this.tuningEditorModalTemplate) {
+  private resetTuningDraft(): void {
+    if (!this.sheet) {
       return;
     }
 
-    const modalRef = this.modalService.showTemplate<void, null>(
-      this.tuningEditorModalTemplate,
-      this.viewContainerRef,
-      {
-        data: null,
-        width: '720px',
-        maxWidth: '95vw',
-        closeOnBackdropClick: false
-      }
-    );
-
-    await modalRef.afterClosed();
+    this.tempTuning = this.sheet.tuning.map(note => ({ ...note }));
+    this.tempCapodaster = this.sheet.capodaster;
+    this.tempTempo = this.sheet.tempo;
   }
 
   private async openLinkEditorDialog(link?: SongSheetLink): Promise<void> {

@@ -57,3 +57,25 @@ export const getContext = jest.fn().mockReturnValue(context);
 export const setContext = jest.fn();
 
 export const getTransport = jest.fn().mockReturnValue(Transport);
+
+export const __bufferSources: ToneBufferSource[] = [];
+
+export class ToneAudioBuffer {
+  duration = 4;
+  dispose = jest.fn();
+  static fromUrl = jest.fn(async (_url: string) => new ToneAudioBuffer());
+}
+
+export class ToneBufferSource {
+  playbackRate = {
+    setValueAtTime: jest.fn().mockReturnThis(),
+    exponentialRampToValueAtTime: jest.fn().mockReturnThis()
+  };
+  start = jest.fn().mockReturnThis();
+  stop = jest.fn().mockReturnThis();
+  dispose = jest.fn();
+  toDestination = jest.fn().mockReturnThis();
+  constructor(public options: { playbackRate: number; onended: () => void }) {
+    __bufferSources.push(this);
+  }
+}

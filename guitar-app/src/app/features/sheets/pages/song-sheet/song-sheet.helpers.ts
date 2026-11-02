@@ -1,23 +1,18 @@
+import { cloneMeasure } from '@/app/features/patterns/services/playing-pattern-clone';
+export { cloneMeasure } from '@/app/features/patterns/services/playing-pattern-clone';
 import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
-import { SongSheetPlaybackState } from '@/app/features/sheets/services/song-part-playback.service';
-import {
-  SongPart,
-  SongPartPatternItem,
-  SongSheetPattern,
-  SongSheetWithData
-} from '@/app/features/sheets/services/song-sheets.model';
+import type { SongSheetPlaybackState } from '@/app/features/sheets/services/song-part-playback.service';
+import { SongPart, SongPartMeasure, SongSheetPattern, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 
 export function createSongSheetEntityId(prefix: string): string {
   return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-export function cloneSongPartItem(item: SongPartPatternItem): SongPartPatternItem {
+export function cloneSongPartMeasure(measure: SongPartMeasure): SongPartMeasure {
   return {
-    id: item.id,
-    patternId: item.patternId,
-    measureTexts: item.measureTexts.map(text => ({ ...text })),
-    actionGrips: item.actionGrips.map(grip => ({ ...grip }))
+    id: measure.id,
+    measure: cloneMeasure(measure.measure)
   };
 }
 
@@ -25,7 +20,9 @@ export function cloneSongPart(part: SongPart): SongPart {
   return {
     id: part.id,
     section: part.section,
-    items: part.items.map(item => cloneSongPartItem(item))
+    lyrics: part.lyrics,
+    notes: part.notes,
+    measures: part.measures.map(measure => cloneSongPartMeasure(measure))
   };
 }
 
@@ -33,7 +30,9 @@ export function createEmptySongPart(): SongPart {
   return {
     id: createSongSheetEntityId('sp'),
     section: '',
-    items: []
+    lyrics: '',
+    notes: '',
+    measures: []
   };
 }
 
@@ -41,16 +40,7 @@ export function cloneSongSheetPattern<T extends PlayingPattern>(pattern: T): T {
   return {
     ...pattern,
     actionGrips: (pattern.actionGrips ?? []).map(grip => ({ ...grip })),
-    measures: pattern.measures.map(measure => ({
-      ...measure,
-      actions: measure.actions.map(action => action ? {
-        ...action,
-        modifiers: action.modifiers ? [...action.modifiers] : undefined,
-        strum: action.strum ? { ...action.strum } : undefined,
-        pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
-        percussive: action.percussive ? { ...action.percussive } : undefined
-      } : null)
-    }))
+    measures: pattern.measures.map(measure => cloneMeasure(measure))
   };
 }
 
@@ -65,7 +55,8 @@ export function createEmptySongSheetPattern(): SongSheetPattern {
     exampleSong: '',
     measures: [{
       timeSignature: '4/4',
-      actions: Array(16).fill(null)
+      actions: Array(16).fill(null),
+      actionGrips: []
     }],
     actionGrips: [],
     createdAt: now,

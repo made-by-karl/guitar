@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
-import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
-import { PickingNote, PlayingAction, PlayingPattern, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
+import { migrateSongArrangement } from '@/app/features/sheets/services/song-arrangement';
+import { SongPartActionGrip, SongPartMeasure, SongSheet } from '@/app/features/sheets/services/song-sheets.model';
+import { Measure, PickingNote, PlayingAction, PlayingPattern, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
 
 /**
  * Database service for managing IndexedDB storage using Dexie.js
@@ -46,7 +47,207 @@ export class DatabaseService extends Dexie {
         patterns.forEach(pattern => migratePlayingPatternPickNotes(pattern));
       });
     });
+
+    this.version(9).stores({
+      songSheets: 'id, created, updated',
+      playingPatterns: 'id, category, isCustom'
+    }).upgrade(async tx => {
+      await tx.table('playingPatterns').toCollection().modify(pattern => {
+        (pattern as PlayingPattern).measures?.forEach(migrateMeasureLegatoStringIndices);
+      });
+      await tx.table('songSheets').toCollection().modify(sheet => {
+        migrateSongSheetToCurrentFormat(sheet as RawSongSheetWithLegacyParts);
+      });
+    });
   }
+}
+
+interface LegacySongPartMeasureText {
+  measureIndex: number;
+  lyrics: string;
+  notes: string;
+}
+
+interface LegacySongPartPatternItem {
+  id: string;
+  patternId: string;
+  measureTexts?: LegacySongPartMeasureText[];
+  actionGrips?: SongPartActionGrip[];
+}
+
+interface LegacySongPart {
+  id: string;
+  section: string;
+  lyrics?: string;
+  notes?: string;
+  items?: LegacySongPartPatternItem[];
+  measures?: SongPartMeasure[];
+}
+
+interface RawSongSheetWithLegacyParts extends Omit<SongSheet, 'parts'> {
+  parts?: LegacySongPart[];
+}
+
+export function migrateSongSheetPartsToMeasures(sheet: RawSongSheetWithLegacyParts): void {
+  if (!Array.isArray(sheet.parts)) {
+    return;
+  }
+
+  sheet.parts = sheet.parts.map(part => {
+    if (Array.isArray(part.measures) && !Array.isArray(part.items)) {
+      return part;
+    }
+
+    const measures = (part.items ?? []).flatMap(item => migrateLegacyPartItemToMeasures(sheet, item));
+    const measureTexts = (part.items ?? []).flatMap(item => item.measureTexts ?? []);
+    const migratedPart: LegacySongPart = {
+      id: part.id,
+      section: part.section,
+      lyrics: part.lyrics ?? combineMeasureText(measureTexts, 'lyrics'),
+      notes: part.notes ?? combineMeasureText(measureTexts, 'notes'),
+      measures
+    };
+
+    return migratedPart;
+  });
+
+  migrateSongPartMeasureActionGripsToMeasures(sheet);
+  migrateSongPartMeasureTextToParts(sheet);
+}
+
+function migrateLegacyPartItemToMeasures(sheet: RawSongSheetWithLegacyParts, item: LegacySongPartPatternItem): SongPartMeasure[] {
+  const pattern = sheet.patterns?.find(existing => existing.id === item.patternId);
+  if (!pattern) {
+    return [];
+  }
+
+  return pattern.measures.map((measure, measureIndex) => ({
+    id: createMigrationId('spm'),
+    measure: {
+      ...cloneMeasureForMigration(measure),
+      actionGrips: mergeLegacyActionGrips(
+        pattern.actionGrips ?? [],
+        item.actionGrips ?? [],
+        measureIndex
+      )
+    }
+  }));
+}
+
+export function migrateSongPartMeasureTextToParts(sheet: RawSongSheetWithLegacyParts): void {
+  if (!Array.isArray(sheet.parts)) {
+    return;
+  }
+
+  sheet.parts.forEach(part => {
+    const measures = part.measures ?? [];
+    part.lyrics = part.lyrics ?? combineMeasureTextFromMeasures(measures, 'lyrics');
+    part.notes = part.notes ?? combineMeasureTextFromMeasures(measures, 'notes');
+
+    measures.forEach(partMeasure => {
+      const legacyMeasure = partMeasure as SongPartMeasure & { lyrics?: string; notes?: string };
+      delete legacyMeasure.lyrics;
+      delete legacyMeasure.notes;
+    });
+  });
+}
+
+export function migrateSongPartMeasureActionGripsToMeasures(sheet: RawSongSheetWithLegacyParts): void {
+  if (!Array.isArray(sheet.parts)) {
+    return;
+  }
+
+  sheet.parts.forEach(part => {
+    part.measures?.forEach(partMeasure => {
+      const legacyMeasure = partMeasure as SongPartMeasure & { actionGrips?: SongPartActionGrip[] };
+      const measureActionGrips = partMeasure.measure.actionGrips ?? [];
+      const legacyActionGrips = legacyMeasure.actionGrips ?? [];
+      const merged = mergeMeasureActionGrips(measureActionGrips, legacyActionGrips);
+
+      partMeasure.measure.actionGrips = merged;
+      delete legacyMeasure.actionGrips;
+    });
+  });
+}
+
+function mergeMeasureActionGrips(
+  measureGrips: SongPartActionGrip[],
+  legacyGrips: SongPartActionGrip[]
+): SongPartActionGrip[] {
+  const merged = new Map<number, SongPartActionGrip>();
+
+  for (const grip of measureGrips) {
+    merged.set(grip.actionIndex, { ...grip, measureIndex: 0 });
+  }
+
+  for (const grip of legacyGrips) {
+    merged.set(grip.actionIndex, { ...grip, measureIndex: 0 });
+  }
+
+  return [...merged.values()].sort((left, right) => left.actionIndex - right.actionIndex);
+}
+
+function combineMeasureTextFromMeasures(
+  measures: SongPartMeasure[],
+  field: 'lyrics' | 'notes'
+): string {
+  return measures
+    .map(measure => (measure as SongPartMeasure & { lyrics?: string; notes?: string })[field]?.trim() ?? '')
+    .filter(value => value.length > 0)
+    .join('\n');
+}
+
+function combineMeasureText(
+  measureTexts: LegacySongPartMeasureText[],
+  field: 'lyrics' | 'notes'
+): string {
+  return [...measureTexts]
+    .sort((left, right) => left.measureIndex - right.measureIndex)
+    .map(text => text[field]?.trim() ?? '')
+    .filter(value => value.length > 0)
+    .join('\n');
+}
+
+function mergeLegacyActionGrips(
+  patternGrips: SongPartActionGrip[],
+  itemGrips: SongPartActionGrip[],
+  measureIndex: number
+): SongPartActionGrip[] {
+  const merged = new Map<number, SongPartActionGrip>();
+
+  for (const grip of patternGrips.filter(existing => existing.measureIndex === measureIndex)) {
+    merged.set(grip.actionIndex, { ...grip, measureIndex: 0 });
+  }
+
+  for (const grip of itemGrips.filter(existing => existing.measureIndex === measureIndex)) {
+    merged.set(grip.actionIndex, { ...grip, measureIndex: 0 });
+  }
+
+  return [...merged.values()].sort((left, right) => left.actionIndex - right.actionIndex);
+}
+
+function cloneMeasureForMigration(measure: Measure): Measure {
+  return {
+    ...measure,
+    actionGrips: (measure.actionGrips ?? []).map(grip => ({ ...grip })),
+    actions: measure.actions.map(action => {
+      if (!action) {
+        return null;
+      }
+
+      return {
+        ...action,
+        modifiers: action.modifiers ? [...action.modifiers] : undefined,
+        strum: action.strum ? { ...action.strum } : undefined,
+        pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
+        percussive: action.percussive ? { ...action.percussive } : undefined
+      };
+    })
+  };
+}
+
+function createMigrationId(prefix: string): string {
+  return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 }
 
 export function migratePlayingPatternPickNotes(pattern: PlayingPattern): void {
@@ -130,4 +331,33 @@ function isRelativeString(value: unknown): value is RelativeString {
     || value === 'upper-middle'
     || value === 'second-from-top'
     || value === 'top';
+}
+
+/** Repair numeric option values persisted as text by the explicit legato selector. */
+export function migrateMeasureLegatoStringIndices(measure: Measure): void {
+  measure.actions?.forEach(action => {
+    const legato = action?.legato;
+    if (!legato || 'target' in legato) return;
+
+    const stringIndex: unknown = legato.string;
+    if (typeof stringIndex === 'string' && /^[0-5]$/.test(stringIndex)) {
+      legato.string = Number(stringIndex);
+    }
+  });
+}
+
+export function migrateSongSheetLegatoStringIndices(sheet: SongSheet): void {
+  sheet.patterns?.forEach(pattern => pattern.measures?.forEach(migrateMeasureLegatoStringIndices));
+  sheet.parts?.forEach(part => part.measures?.forEach(partMeasure => {
+    migrateMeasureLegatoStringIndices(partMeasure.measure);
+  }));
+}
+
+/** Upgrade any pre-arrangement song shape directly to the current storage format. */
+export function migrateSongSheetToCurrentFormat(sheet: RawSongSheetWithLegacyParts): void {
+  migrateSongSheetPartsToMeasures(sheet);
+  const currentSheet = sheet as SongSheet;
+  currentSheet.parts ??= [];
+  migrateSongArrangement(currentSheet);
+  migrateSongSheetLegatoStringIndices(currentSheet);
 }

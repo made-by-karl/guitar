@@ -5,34 +5,50 @@
   </div>
 
   <div class="modal-body">
+    <section class="card shadow-sm border-0 preview-card" aria-label="Grip preview">
+      <div class="card-body">
+        <div class="preview-diagram">
+          <app-grip-diagram [grip]="previewGrip"></app-grip-diagram>
+        </div>
+        <div class="preview-details">
+          <div class="preview-notes" role="group" aria-label="String notes">
+            @for (note of previewNotes; track $index) {
+              <span class="note">{{ note ?? 'x' }}@if (!$last) {,}</span>
+            }
+          </div>
+          <button class="btn btn-primary btn-sm" type="button" [disabled]="!canPlay" (click)="playGrip()">
+            <i class="bi bi-play-fill" aria-hidden="true"></i> Play Grip
+          </button>
+        </div>
+      </div>
+    </section>
+
     <div class="editor-stack">
       <section class="card shadow-sm border-0">
         <div class="card-body">
           <label class="form-label fw-semibold" for="customGripName">Grip Name</label>
-          <input
-            id="customGripName"
-            name="customGripName"
-            type="text"
-            class="form-control form-control-lg"
-            [(ngModel)]="name"
-            placeholder="Example: Verse Walk-Up"
-            maxlength="60" />
-          <div class="form-text">Give the grip a reusable name.</div>
-        </div>
-      </section>
-
-      <section class="card shadow-sm border-0 preview-card">
-        <div class="card-body">
-          <div class="preview-header">
-            <div>
-              <div class="small text-uppercase text-muted">Preview</div>
-              <h6 class="mb-0">{{ name.trim() || 'Unnamed Grip' }}</h6>
-            </div>
-            <span class="badge text-bg-light">{{ stringStates.length }} strings</span>
+          <div class="input-group">
+            <input
+              id="customGripName"
+              name="customGripName"
+              type="text"
+              class="form-control form-control-lg"
+              [(ngModel)]="name"
+              [disabled]="nameLinked"
+              placeholder="Example: Verse Walk-Up"
+              maxlength="60" />
+            <button
+              class="btn btn-outline-secondary"
+              type="button"
+              [class.active]="nameLinked"
+              [attr.aria-pressed]="nameLinked"
+              aria-label="Link grip name to frets"
+              [title]="nameLinked ? 'Unlink to edit the name' : 'Link name to string frets'"
+              (click)="toggleNameLink()">
+              <i class="bi bi-link-45deg" aria-hidden="true"></i>
+            </button>
           </div>
-          <div class="preview-diagram">
-            <app-grip-diagram [grip]="previewGrip"></app-grip-diagram>
-          </div>
+          <div class="form-text">{{ nameLinked ? 'Name follows the string frets. Unlink to edit.' : 'Give the grip a reusable name.' }}</div>
         </div>
       </section>
 
@@ -49,7 +65,7 @@
                   </div>
                 </div>
 
-                <div class="string-control-grid">
+                <div class="string-control-grid" [class.has-fret]="requiresFret(state.mode)">
                   <div>
                     <label class="form-label small" [attr.for]="'customGripMode' + $index">Press Type</label>
                     <select
@@ -64,19 +80,20 @@
                     </select>
                   </div>
 
-                  <div>
-                    <label class="form-label small" [attr.for]="'customGripFret' + $index">Fret</label>
-                    <input
-                      [id]="'customGripFret' + $index"
-                      [name]="'customGripFret' + $index"
-                      class="form-control"
-                      type="number"
-                      min="1"
-                      step="1"
-                      [disabled]="!requiresFret(state.mode)"
-                      [ngModel]="state.fret"
-                      (ngModelChange)="updateFret(state, $event)" />
-                  </div>
+                  @if (requiresFret(state.mode)) {
+                    <div>
+                      <label class="form-label small" [attr.for]="'customGripFret' + $index">Fret</label>
+                      <input
+                        [id]="'customGripFret' + $index"
+                        [name]="'customGripFret' + $index"
+                        class="form-control"
+                        type="number"
+                        min="1"
+                        step="1"
+                        [ngModel]="state.fret"
+                        (ngModelChange)="updateFret(state, $event)" />
+                    </div>
+                  }
                 </div>
               </div>
             </article>
