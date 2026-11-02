@@ -30,14 +30,23 @@ npm start
 npm test
 npm run build
 npm run build-prod
+bash ../scripts/verify.sh
 ```
 
 ## Project Layout
 
 - `guitar-app/` main Angular application
 - `docs/` architecture and subsystem documentation
+- `ai/` agent workflows, review roles, product guidance, and implementation constraints
+- `.agents/skills/` repo-local Codex skills
 - `deployment/` SPA hosting and deployment notes
 - `scripts/` repository helper scripts
+
+## Agentic Development
+
+Start with [`AGENTS.md`](./AGENTS.md). The [`workflow guide`](./docs/agentic-workflow.md)
+describes the `specify`, `implement`, `component`, `verify`, `code-review`, and `ux-review`
+skills, project-specific guidance, and Docker browser checks.
 
 ## License
 

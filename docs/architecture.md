@@ -13,7 +13,8 @@ The application is a single Angular 19 standalone app rooted in `guitar-app/`. I
 
 ## Feature Map
 
-- `features/sheets`: song sheet library and editor; the main landing area
+- `features/home`: landing page linking the practice workflows and update status
+- `features/sheets`: song sheet library and editor
 - `features/patterns`: reusable playing-pattern library and editor
 - `features/grips`: chord and grip browsing/editing flows
 - `features/metronome`: metronome UI and playback
@@ -36,12 +37,25 @@ The application is a single Angular 19 standalone app rooted in `guitar-app/`. I
 - Templates use modern Angular control flow syntax such as `@if` and `@for`.
 - Business logic is usually kept in services rather than route components.
 - Shared persistence and audio concerns are centralized in `core/services`.
+- Zone-based change detection is configured through `provideZoneChangeDetection`; existing services and components also use signals and observables.
+- Playback uses the shared Tone.js runtime; the tuner owns a separate browser microphone pipeline.
+- Song sheets own embedded pattern snapshots, reusable parts, and ordered occurrences with their own lyrics. The global pattern library is a separate aggregate.
+- Shared dialogs use the CDK-backed `ModalService` / `DialogService` and `ModalContainerComponent`.
 
 ## Testing Layout
 
 - Tests live under `guitar-app/test/` and mirror app paths by feature or core area.
 - Jest is configured in `guitar-app/test/jest.config.js`.
 - Shared browser mocks are installed from `guitar-app/test/setup-jest.ts`.
+- Playwright specs live under `guitar-app/e2e/`, configured in `guitar-app/playwright.config.ts` and run through `compose.playwright.yml`.
+
+## Agent Context
+
+- `AGENTS.md` indexes project commands, conventions, and agent entry points.
+- `ai/product.md` describes product intent; `ai/constraints.md` records implementation boundaries.
+- `ai/definition-of-done.md` owns engineering acceptance; `scripts/verify.sh` runs its unit/build gate.
+- `ai/workflows/` and `ai/roles/` hold reusable procedures. `.agents/skills/` provides thin Codex entry points.
+- See `docs/agentic-workflow.md` for usage and `docs/design-guidelines.md` for UI review inputs.
 
 ## Related Docs
 
