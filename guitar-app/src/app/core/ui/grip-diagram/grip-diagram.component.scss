@@ -1,0 +1,31 @@
+.diagram-error {
+  position: relative;
+  width: 140px;
+  max-width: 100%;
+  height: var(--grip-diagram-height, 210px);
+  color: var(--bs-danger-text-emphasis, #842029);
+}
+
+.diagram-error-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bs-danger, #dc3545);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.diagram-error-message {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  text-align: center;
+  text-shadow: 0 0 4px var(--bs-body-bg, #fff);
+}

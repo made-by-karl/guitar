@@ -12,23 +12,38 @@ export class GripDiagramComponent implements OnChanges {
   @Input() grip!: Grip | undefined;
 
   public svg: SafeHtml = '';
+  public fretRangeError: string | null = null;
+  private readonly fretCount = 5;
 
   constructor(private sanitizer: DomSanitizer) {
 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    changes['grip']?.currentValue && this.updateSvg(changes['grip']?.currentValue);
+    if (changes['grip']) {
+      this.updateSvg(this.grip);
+    }
   }
 
-  updateSvg(grip: Grip): void {
-    this.svg = this.sanitizer.bypassSecurityTrustHtml(this.createSvg());
+  updateSvg(grip: Grip | undefined): void {
+    this.fretRangeError = null;
+    this.svg = '';
+    if (!grip) return;
+
+    const { min, max } = this.getFretRange(grip);
+    if (max - min >= this.fretCount) {
+      this.fretRangeError = `Frets ${min}–${max} exceed the ${this.fretCount}-fret diagram.`;
+      this.svg = this.sanitizer.bypassSecurityTrustHtml(this.createSvg({ strings: [] }, 'currentColor'));
+      return;
+    }
+
+    this.svg = this.sanitizer.bypassSecurityTrustHtml(this.createSvg(grip));
   }
 
-  createSvg(): string {
-    if (!this.grip) return '';
+  createSvg(grip: Grip | undefined = this.grip, color = 'black'): string {
+    if (!grip) return '';
     const stringCount = 6;
-    const fretCount = 5;
+    const fretCount = this.fretCount;
     const fretHeight = 30;
     const stringSpacing = 20;
     const radius = 6;
@@ -37,17 +52,7 @@ export class GripDiagramComponent implements OnChanges {
     const width = stringSpacing * (stringCount - 1) + 40;
     const height = fretHeight * fretCount + 60;
 
-    const minFret = Math.min(
-      ...this.grip.strings
-        .map((s: any) => {
-          if (Array.isArray(s)) {
-            return Math.min(...s.map((f: any) => f.fret));
-          }
-
-          return 9001;
-        })
-    );
-    const startFret = (minFret === 9001) ? 1 : (minFret > 1) ? minFret : 1;
+    const startFret = this.getFretRange(grip).min;
 
     const lines: string[] = [];
     const dots: string[] = [];
@@ -55,14 +60,14 @@ export class GripDiagramComponent implements OnChanges {
     // Strings
     for (let i = 0; i < stringCount; i++) {
       const x = 20 + i * stringSpacing;
-      lines.push(`<line x1="${x}" y1="40" x2="${x}" y2="${40 + fretCount * fretHeight}" stroke="black"/>`);
+      lines.push(`<line x1="${x}" y1="40" x2="${x}" y2="${40 + fretCount * fretHeight}" stroke="${color}"/>`);
     }
 
     // Frets
     for (let i = 0; i <= fretCount; i++) {
       const y = 40 + i * fretHeight;
       const thickness = (startFret === 1 && i === 0) ? ' stroke-width="5"' : '';
-      lines.push(`<line x1="20" y1="${y}" x2="${20 + stringSpacing * (stringCount - 1)}" y2="${y}" stroke="black"${thickness}/>`);
+      lines.push(`<line x1="20" y1="${y}" x2="${20 + stringSpacing * (stringCount - 1)}" y2="${y}" stroke="${color}"${thickness}/>`);
     }
 
     // Fret label if needed
@@ -72,7 +77,7 @@ export class GripDiagramComponent implements OnChanges {
 
     // Draw grip
     const barres: Map<number, number[]> = new Map();
-    this.grip.strings.forEach((string: any, i: number) => {
+    grip.strings.forEach((string, i) => {
       const x = 20 + i * stringSpacing;
       if (string === 'x') {
         dots.push(`<text x="${x - 4}" y="25" font-size="14">x</text>`);
@@ -107,12 +112,20 @@ export class GripDiagramComponent implements OnChanges {
     });
 
     return `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="height: var(--grip-diagram-height, ${height}px); width: auto;">
         ${lines.join('\n')}
         ${dots.join('\n')}
         ${label}
       </svg>
     `;
+  }
+
+  private getFretRange(grip: Grip): { min: number; max: number } {
+    const frets = grip.strings.flatMap(string => Array.isArray(string) ? string.map(entry => entry.fret) : []);
+    return {
+      min: frets.length > 0 ? Math.max(1, Math.min(...frets)) : 1,
+      max: Math.max(1, ...frets)
+    };
   }
 
   private groupContiguousStrings(strings: number[]): number[][] {

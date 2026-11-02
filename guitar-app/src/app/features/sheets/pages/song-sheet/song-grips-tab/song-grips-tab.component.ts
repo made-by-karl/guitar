@@ -118,7 +118,9 @@ export class SongGripsTabComponent {
       data: {
         title: 'Create Custom Grip',
         submitLabel: 'Save Grip',
-        initialName: name
+        initialName: name,
+        tuning: this.sheet().tuning,
+        capodaster: this.sheet().capodaster
       },
       width: '95vw',
       maxWidth: '720px',

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Note } from '@/app/core/music/semitones';
+import { Note, transpose } from '@/app/core/music/semitones';
+import { PlaybackService } from '@/app/core/services/playback.service';
 import {
   MODAL_DATA,
   MODAL_REF,
@@ -11,6 +12,8 @@ import {
 } from '@/app/core/services/modal.service';
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
 import { Grip, GripString } from '@/app/features/grips/services/grips/grip.model';
+import { GripService } from '@/app/features/grips/services/grips/grip.service';
+import { FretboardService } from '@/app/features/grips/services/fretboard.service';
 
 type CustomGripStringMode = 'muted' | 'open' | 'single' | 'barre';
 
@@ -51,14 +54,21 @@ export class CustomGripEditorModalComponent
   ];
 
   readonly stringStates: CustomGripStringState[];
-  name: string;
+  private readonly tuning: Note[];
+  private customName: string;
+  nameLinked = false;
 
   constructor(
     @Inject(MODAL_REF) public modalRef: ModalRef<CustomGripEditorResult>,
-    @Inject(MODAL_DATA) public data: CustomGripEditorModalData
+    @Inject(MODAL_DATA) public data: CustomGripEditorModalData,
+    private readonly gripService: GripService,
+    private readonly playback: PlaybackService,
+    fretboardService: FretboardService
   ) {
-    this.name = data.initialName ?? '';
+    this.customName = data.initialName ?? '';
     this.stringStates = this.createInitialStates(data.initialGrip);
+    this.tuning = (data.tuning ?? fretboardService.getGuitarFretboardConfig().tuning)
+      .map(note => transpose(note, data.capodaster ?? 0));
   }
 
   get title(): string {
@@ -69,16 +79,52 @@ export class CustomGripEditorModalComponent
     return this.data.submitLabel ?? 'Save Grip';
   }
 
+  get name(): string {
+    if (!this.nameLinked) {
+      return this.customName;
+    }
+
+    return this.stringStates.map(state => {
+      if (state.mode === 'muted') return 'x';
+      if (state.mode === 'open') return '0';
+      return this.normalizeFret(state.fret).toString();
+    }).join('');
+  }
+
+  set name(value: string) {
+    this.customName = value;
+  }
+
   get previewGrip(): Grip {
     return {
       strings: this.buildGripStrings()
     };
   }
 
-  get canSave(): boolean {
-    return this.name.trim().length > 0 &&
-      this.stringStates.some(state => state.mode !== 'muted') &&
+  get previewNotes(): (string | null)[] {
+    return this.gripService.toTunedGrip(this.previewGrip, this.tuning).notes;
+  }
+
+  get canPlay(): boolean {
+    return this.stringStates.some(state => state.mode !== 'muted') &&
       this.stringStates.every(state => !this.requiresFret(state.mode) || Number.isInteger(state.fret) && state.fret > 0);
+  }
+
+  get canSave(): boolean {
+    return this.name.trim().length > 0 && this.canPlay;
+  }
+
+  async playGrip(): Promise<void> {
+    if (!this.canPlay) {
+      return;
+    }
+
+    try {
+      const notes = this.previewNotes.filter((note): note is string => note !== null);
+      await this.playback.playChordFromNotes(notes);
+    } catch (error) {
+      console.error('Error playing grip:', error);
+    }
   }
 
   updateMode(state: CustomGripStringState, mode: CustomGripStringMode): void {
@@ -90,6 +136,13 @@ export class CustomGripEditorModalComponent
 
   updateFret(state: CustomGripStringState, fret: number): void {
     state.fret = this.normalizeFret(fret);
+  }
+
+  toggleNameLink(): void {
+    if (this.nameLinked) {
+      this.customName = this.name;
+    }
+    this.nameLinked = !this.nameLinked;
   }
 
   save(): void {
