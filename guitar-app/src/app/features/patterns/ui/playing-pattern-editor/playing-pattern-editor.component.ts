@@ -121,7 +121,9 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const pattern = this.pattern()
     if (!pattern) return;
 
-    await this.patternPlayback.togglePatternPreview(pattern);
+    await this.patternPlayback.togglePatternPreview(
+      pattern, this.tuning()?.map(note => transpose(note, this.capodaster())), undefined, this.tempo()
+    );
   }
 
   isPatternPlaybackActive(): boolean {
@@ -1520,7 +1522,9 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       data: {
         title: 'Create Custom Grip',
         submitLabel: 'Use Grip',
-        initialName: name
+        initialName: name,
+        tuning: this.tuning(),
+        capodaster: this.capodaster()
       },
       width: '95vw',
       maxWidth: '720px',

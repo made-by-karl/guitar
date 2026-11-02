@@ -89,6 +89,21 @@ describe('PlayingActionsComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.legato-line')).toHaveLength(4);
   });
 
+  it('resolves standalone D grips and limits strums and relative bass picks to playable strings', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const strum: PlayingAction = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
+    const pick: PlayingAction = { technique: 'pick', pick: [{ mode: 'relative', string: 'bass', anchor: 'grip-note', fretOffset: 0 }] };
+    fixture.componentRef.setInput('measures', [createMeasure([strum, pick])]);
+    fixture.componentRef.setInput('notationContexts', [{ actionGrips: [{ actionIndex: 0, gripId: 'x|x|o|2|3|2', name: 'D', measureIndex: 0 }] }]);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    expect(component.getStrumStringIndices(0, strum)).toEqual([2, 3, 4, 5]);
+    expect(component.getPickMarks(1, pick)[0]).toMatchObject({ y: component.stringY(2), label: '0' });
+    fixture.componentRef.setInput('notationContexts', [{ actionGrips: [{ actionIndex: 0, gripId: 'x|x|x|x|x|x', name: 'Muted', measureIndex: 0 }] }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.strum-stem')).toBeNull();
+  });
 
   it.each(['hammer-on', 'pull-off'] as const)(
     'draws %s legato actions as a backward connection to the previous action',

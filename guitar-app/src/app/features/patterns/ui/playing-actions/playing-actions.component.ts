@@ -786,7 +786,8 @@ export class PlayingActionsComponent {
       return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings);
     }
 
-    return getStringsForStrum(action.strum.strings);
+    const grip = this.resolvedGripTimeline().get(actionIndex);
+    return getStringsForStrum(action.strum.strings).filter(index => !grip || (grip.strings[index] !== undefined && grip.strings[index] !== 'x'));
   }
 
   private spreadPickMarksOnSameString(marks: SlotPickMark[], baseX: number): SlotPickMark[] {

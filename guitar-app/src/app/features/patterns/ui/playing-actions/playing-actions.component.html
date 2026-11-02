@@ -30,7 +30,7 @@
 
       @for (slotAction of segment.actions; track slotAction.actionIndex) {
       @if (slotAction.action; as currentAction) {
-        @if (currentAction.technique === 'strum' && currentAction.strum) {
+        @if (currentAction.technique === 'strum' && currentAction.strum && getStrumStringIndices(slotAction.actionIndex, currentAction).length > 0) {
           <line
             [attr.x1]="getActionX(slotAction.actionIndex)"
             [attr.y1]="getStrumStemTop(slotAction.actionIndex, currentAction)"

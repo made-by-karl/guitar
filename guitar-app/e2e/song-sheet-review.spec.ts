@@ -207,6 +207,61 @@ for (const width of [390, 768, 1280]) {
   });
 }
 
+test('passes song tuning and saved grips through the pattern editor', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await page.goto('/sheets');
+  await page.getByPlaceholder('New Song Sheet Name').fill('Pattern context');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Pattern context', exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>(resolve => {
+      const request = indexedDB.open('GuitarAppDatabase');
+      request.onsuccess = () => resolve(request.result);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction('songSheets', 'readwrite');
+      const store = transaction.objectStore('songSheets');
+      const request: IDBRequest<SongSheet[]> = store.getAll();
+      request.onsuccess = () => {
+        const sheet = request.result[0];
+        sheet.tuning[0] = { semitone: 'D', octave: 2 };
+        sheet.capodaster = 2;
+        sheet.tempo = 112;
+        sheet.grips = [{ gripId: 'x|x|o|2|3|2', name: 'Song D' }];
+        store.put(sheet);
+      };
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  });
+  await page.getByRole('link', { name: 'Pattern context', exact: true }).click();
+  await page.getByRole('tab', { name: 'Patterns', exact: true }).click();
+  await page.getByRole('button', { name: /Add Pattern$/ }).click();
+  await page.getByRole('button', { name: 'Create first pattern', exact: true }).click();
+  const editor = page.locator('app-playing-pattern-editor');
+  await editor.getByLabel('Name', { exact: true }).fill('Song pattern');
+  await editor.getByLabel('Subdivision', { exact: true }).check();
+  await expect(editor.locator('.action-position-label').first()).toHaveText('1');
+  await expect(editor.locator('.action-position-label').nth(1)).toHaveText('1e');
+  await expect(editor.locator('.action-position-label').nth(2)).toHaveText('1&');
+  await expect(editor.locator('.action-position-label').nth(3)).toHaveText('1a');
+  await editor.locator('.action-grip-button').first().click();
+  await page.getByRole('button', { name: 'Song D', exact: true }).click();
+  await expect(editor.locator('.action-grip-button').first()).toContainText('Song D');
+  await editor.locator('.action-grip-button').nth(1).click();
+  await page.getByRole('button', { name: /Custom Grip Build/ }).click();
+  const custom = page.locator('app-custom-grip-editor-modal');
+  await custom.locator('.string-card').first().getByLabel('Press Type').selectOption({ label: 'Open' });
+  await custom.locator('.string-card').last().getByLabel('Press Type').selectOption({ label: 'Open' });
+  await expect(custom.getByRole('group', { name: 'String notes' }).locator('.note'))
+    .toHaveText(['E2,', 'x,', 'x,', 'x,', 'x,', 'F#4']);
+  await custom.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.locator('app-playing-pattern-editor-modal').getByRole('button', { name: /Save Pattern$/ }).click();
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator('app-song-sheet-patterns-tab')).toContainText('Song pattern');
+});
+
 test('edits and plays a part with legato diagnostics without signal errors', async ({ page }) => {
   await page.addInitScript(() => {
     const target = window as Window & { playbackStates: AudioContextState[] };

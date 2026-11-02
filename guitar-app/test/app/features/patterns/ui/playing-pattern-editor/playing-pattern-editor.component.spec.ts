@@ -77,9 +77,18 @@ describe('PlayingPatternEditorComponent', () => {
   it('delegates preview playback to the pattern playback service', async () => {
     await component.playPattern();
 
-    expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(component.pattern());
+    expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(component.pattern(), undefined, undefined, 80);
   });
 
+  it('previews using the song tuning, capo, and tempo', async () => {
+    fixture.componentRef.setInput('tuning', [{ semitone: 'D', octave: 2 }]);
+    fixture.componentRef.setInput('capodaster', 2);
+    fixture.componentRef.setInput('tempo', 112);
+    await component.playPattern();
+    expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(
+      component.pattern(), [{ semitone: 'E', octave: 2 }], undefined, 112
+    );
+  });
 
   it('assigns a song-library grip without opening a chord or custom editor', async () => {
     const grip = { gripId: 'x|x|o|2|3|2', name: 'Verse D' };
