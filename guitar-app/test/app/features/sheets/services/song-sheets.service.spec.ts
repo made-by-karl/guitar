@@ -88,6 +88,21 @@ describe('SongSheetsService', () => {
     expect(getStoredSheet()!.parts).toHaveLength(1);
   });
 
+  it('inserts occurrences at the beginning, between sections, and at the end', async () => {
+    const { service, getStoredSheet } = createService(createSheet());
+    const first = await service.addOccurrence('sheet-1');
+    const last = await service.addOccurrence('sheet-1');
+    const beginning = await service.addOccurrence('sheet-1', first.partId, null);
+    const middle = await service.addOccurrence('sheet-1', last.partId, first.id);
+    const end = await service.addOccurrence('sheet-1', first.partId, last.id);
+
+    expect(getStoredSheet()!.arrangement?.map(item => item.id)).toEqual([
+      beginning.id, first.id, middle.id, last.id, end.id
+    ]);
+    expect(getStoredSheet()!.parts).toHaveLength(2);
+    expect(getStoredSheet()!.arrangement?.every(item => item.lyrics === '')).toBe(true);
+  });
+
   it('makes one occurrence independent without losing lyrics or changing the source', async () => {
     const { service, getStoredSheet } = createService(createSheet());
     const first = await service.addOccurrence('sheet-1');

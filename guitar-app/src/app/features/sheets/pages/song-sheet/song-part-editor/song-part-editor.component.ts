@@ -627,6 +627,7 @@ export class SongPartEditorComponent implements
 
   private async importPatternsFromLibrary(): Promise<SongSheetPattern[]> {
     const modalRef = this.modalService.show(PatternLibrarySelectorModalComponent, {
+      data: { selectionMode: 'single' },
       width: '95vw',
       height: '90vh',
       maxHeight: '90vh',

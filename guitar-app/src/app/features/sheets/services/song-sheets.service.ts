@@ -283,7 +283,8 @@ export class SongSheetsService {
     await this.update(sheet);
   }
 
-  async addOccurrence(sheetId: string, partId?: string, afterOccurrenceId?: string): Promise<SongPartOccurrence> {
+  /** A null boundary prepends; an omitted boundary appends. */
+  async addOccurrence(sheetId: string, partId?: string, afterOccurrenceId?: string | null): Promise<SongPartOccurrence> {
     const sheet = await this.getById(sheetId);
     if (!sheet) throw new Error('Song sheet not found');
     let part = sheet.parts.find(item => item.id === partId);
@@ -295,7 +296,8 @@ export class SongSheetsService {
     const occurrence = { id: this.createId('occ'), partId: part.id, lyrics: '' };
     const arrangement = [...getSongArrangement(sheet)];
     const afterIndex = arrangement.findIndex(item => item.id === afterOccurrenceId);
-    arrangement.splice(afterIndex < 0 ? arrangement.length : afterIndex + 1, 0, occurrence);
+    const insertIndex = afterOccurrenceId === null ? 0 : afterIndex < 0 ? arrangement.length : afterIndex + 1;
+    arrangement.splice(insertIndex, 0, occurrence);
     sheet.arrangement = arrangement;
     await this.update(sheet);
     return occurrence;

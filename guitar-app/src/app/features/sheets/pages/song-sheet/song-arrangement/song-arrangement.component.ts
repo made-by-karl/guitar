@@ -27,7 +27,7 @@ export class SongArrangementComponent implements OnDestroy {
   readonly occurrences = computed(() => getSongArrangement(this.currentSheet()));
   readonly selectedId = signal<string | undefined>(undefined);
   readonly editorInjector = signal<Injector | undefined>(undefined);
-  readonly menuId = signal<string | undefined>(undefined);
+  readonly isDragging = signal(false);
   readonly busy = signal(false);
   readonly editorComponent = SongPartEditorComponent;
   @ViewChild(NgComponentOutlet) private outlet?: NgComponentOutlet;
@@ -40,13 +40,20 @@ export class SongArrangementComponent implements OnDestroy {
   readonly playback = inject(SongPartPlaybackService);
   readonly playbackState = toSignal(this.playback.state$, { initialValue: this.playback.getSnapshot() });
   readonly canPlay = computed(() => this.playback.canPlaySong(this.currentSheet()));
+  private readonly playableOccurrenceIds = computed(() => new Set(this.occurrences().filter(occurrence => {
+    const part = this.part(occurrence);
+    return part && this.playback.canPlaySongPart(this.currentSheet(), part, occurrence.id);
+  }).map(occurrence => occurrence.id)));
   private refreshTask = Promise.resolve();
 
   constructor() {
     effect(() => this.storedSheet.set(this.sheet()));
   }
 
-  ngOnDestroy(): void { this.playback.stopSong(); }
+  ngOnDestroy(): void {
+    this.playback.stopSong();
+    this.playback.stopSongPart();
+  }
 
   @HostListener('window:beforeunload', ['$event'])
   beforeUnload(event: BeforeUnloadEvent): void {
@@ -88,7 +95,6 @@ export class SongArrangementComponent implements OnDestroy {
     const occurrence = this.occurrences().find(item => item.id === id);
     const part = occurrence && this.part(occurrence);
     if (!occurrence || !part) return;
-    this.menuId.set(undefined);
     const data: SongPartEditorModalData = {
       sheet: this.currentSheet(), part: cloneSongPart(part),
       editingPartIndex: this.currentSheet().parts.findIndex(item => item.id === part.id),
@@ -115,19 +121,19 @@ export class SongArrangementComponent implements OnDestroy {
 
   async startWriting(): Promise<void> { await this.addOccurrence(); }
 
-  async chooseSection(): Promise<void> {
+  async chooseSection(afterId?: string | null): Promise<void> {
     if (!await this.confirmNavigation()) return;
     const ref = this.modal.show(SongSheetChoiceModalComponent, {
       data: { title: 'Add to the song', choices: [
-        { value: 'new', text: 'Write new music' },
+        { value: 'new', text: 'New part' },
         ...this.currentSheet().parts.map(part => ({ value: part.id, text: `Use ${part.section || 'Untitled part'} · ${part.measures.length} measures` }))
       ] }, width: '460px', maxWidth: '95vw', closeOnBackdropClick: true
     });
     const choice = await ref.afterClosed();
-    if (choice) await this.addOccurrence(choice === 'new' ? undefined : choice);
+    if (choice) await this.addOccurrence(choice === 'new' ? undefined : choice, afterId);
   }
 
-  private async addOccurrence(partId?: string, afterId?: string): Promise<void> {
+  private async addOccurrence(partId?: string, afterId?: string | null): Promise<void> {
     if (!await this.confirmNavigation()) return;
     this.busy.set(true);
     try {
@@ -140,9 +146,8 @@ export class SongArrangementComponent implements OnDestroy {
     } finally { this.busy.set(false); }
   }
 
-  async repeat(occurrence: SongPartOccurrence): Promise<void> { await this.addOccurrence(occurrence.partId, occurrence.id); }
-
   async move(from: number, to: number): Promise<void> {
+    if (from === to) return;
     if (!await this.confirmNavigation()) return;
     try {
       await this.service.moveOccurrence(this.currentSheet().id, from, to);
@@ -150,7 +155,6 @@ export class SongArrangementComponent implements OnDestroy {
       const selected = this.selectedId();
       if (selected) await this.selectOccurrence(selected);
     } catch { this.notifications.error('Could not move this section. Please try again.'); }
-    this.menuId.set(undefined);
   }
 
   async drop(event: CdkDragDrop<SongPartOccurrence[]>): Promise<void> { await this.move(event.previousIndex, event.currentIndex); }
@@ -161,12 +165,33 @@ export class SongArrangementComponent implements OnDestroy {
     if (this.selectedId() !== occurrence.id && !await this.confirmNavigation()) return;
     try {
       await this.service.removeOccurrence(this.currentSheet().id, occurrence.id);
+      if (this.isOccurrencePlaybackActive(occurrence)) this.playback.stopSongPart();
       if (this.selectedId() === occurrence.id) { this.editorInjector.set(undefined); this.selectedId.set(undefined); }
       await this.refresh();
       const selected = this.selectedId();
       if (selected) await this.selectOccurrence(selected);
     } catch { this.notifications.error('Could not remove this occurrence. Please try again.'); }
-    this.menuId.set(undefined);
+  }
+
+  canPlayOccurrence(occurrence: SongPartOccurrence): boolean {
+    return this.playableOccurrenceIds().has(occurrence.id);
+  }
+
+  isOccurrencePlaybackActive(occurrence: SongPartOccurrence): boolean {
+    const state = this.playbackState();
+    return state.type === 'part' && state.occurrenceId === occurrence.id;
+  }
+
+  async toggleOccurrence(occurrence: SongPartOccurrence): Promise<void> {
+    if (this.isOccurrencePlaybackActive(occurrence)) {
+      if (this.playbackState().status === 'paused') this.playback.resumeSongPart();
+      else this.playback.pauseSongPart();
+      return;
+    }
+    if (!await this.confirmNavigation()) return;
+    const current = this.occurrences().find(item => item.id === occurrence.id);
+    const part = current && this.part(current);
+    if (part) await this.playback.playSongPart(this.currentSheet(), part, occurrence.id);
   }
 
   async toggleSong(): Promise<void> {

@@ -30,6 +30,12 @@ The song player highlights the currently playing occurrence and supports pause, 
 
 The sheet uses the music-note-list icon for Song, the navigation's up/down arrows for Patterns, and the overview's grid icon for Grips.
 
+## Picker selection
+
+Grip and pattern selectors, including their modal data, accept `selectionMode: 'single' | 'multiple'` (default: `multiple`). Assigning a grip to an action, including in the pattern editor, uses single selection. Adding a library pattern to a part also uses single selection; all measures of that one pattern are inserted. Importing grips or patterns into the sheet libraries uses multiple selection and applies every selected item.
+
+Single selection uses radio cards: choosing another item replaces the previous choice, and arrow keys move the selection. Multiple selection uses independent checkboxes. Both modal result types keep their existing arrays; a single-select dialog only enables Apply when exactly one item is selected.
+
 ## Verification
 
 Jest covers migration/idempotency, per-part numbering, reference reuse, independent lyrics, independent copies, edit guards, and occurrence playback history. Chromium coverage includes a real upgrade from database version 7, the full arrangement workflow at 390/768/1280px, and starting an empty song with a pattern-library import. Existing sheet, grip, pattern and measure editor browser regressions remain covered.

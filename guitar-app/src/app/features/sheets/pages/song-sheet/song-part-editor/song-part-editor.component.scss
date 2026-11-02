@@ -9,10 +9,13 @@
   overflow: hidden !important;
 }
 
+
 .part-editor-modal.is-embedded {
   height: auto !important;
   max-height: none !important;
   box-shadow: none;
+  // Keep clipping from becoming a scroll container for the sticky measure toolbar.
+  overflow: clip !important;
   .modal-body { overflow: visible !important; }
 }
 

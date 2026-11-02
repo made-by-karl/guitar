@@ -1480,7 +1480,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       return this.openCustomGripEditor(name);
     }
 
-    const data: GripSelectorModalData = {};
+    const data: GripSelectorModalData = { selectionMode: 'single' };
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',

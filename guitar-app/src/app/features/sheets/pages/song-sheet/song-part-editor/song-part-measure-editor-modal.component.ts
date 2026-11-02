@@ -194,7 +194,7 @@ export class SongPartMeasureEditorModalComponent implements
   }
 
   private async openGripSelector(): Promise<SongSheetGrip | undefined> {
-    const data: GripSelectorModalData = {};
+    const data: GripSelectorModalData = { selectionMode: 'single' };
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',

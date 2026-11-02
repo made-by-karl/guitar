@@ -66,7 +66,7 @@
 
               <div class="chord-display">
                 <div class="grip-list-wrapper">
-                  <div class="grip-list">
+                  <div class="grip-list" [attr.role]="selectionMode === 'single' ? 'radiogroup' : 'group'" aria-label="Choose grips">
                     @if (isGeneratingGrips) {
                       <div class="d-flex align-items-center mb-3">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
@@ -81,8 +81,8 @@
                     <div
                       class="grip-item"
                       [class.grip-item-selected]="isSelected(grip)"
-                      role="checkbox"
-                      tabindex="0"
+                      [attr.role]="selectionMode === 'single' ? 'radio' : 'checkbox'"
+                      [tabIndex]="cardTabIndex(grip, $index)"
                       [attr.aria-checked]="isSelected(grip)"
                       [attr.aria-label]="'Select grip ' + ($index + 1)"
                       (click)="onGripCardClick(grip)"
@@ -90,18 +90,9 @@
                     >
                       <div class="grip-header">
                         <div class="selection-indicator" aria-hidden="true">
-                          <i class="bi" [class.bi-circle]="!isSelected(grip)" [class.bi-check-circle-fill]="isSelected(grip)"></i>
+                          <i class="bi" [ngClass]="selectionMode === 'single' ? (isSelected(grip) ? 'bi-record-circle-fill' : 'bi-circle') : (isSelected(grip) ? 'bi-check-square-fill' : 'bi-square')"></i>
                         </div>
-                        <div class="visually-hidden">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            [id]="'grip-selector-' + $index"
-                            [checked]="isSelected(grip)"
-                            (change)="toggleSelection(grip, $any($event.target).checked)"
-                            (click)="$event.stopPropagation()"
-                          >
-                        </div>
+
                       </div>
                       <div class="grip-card-content">
                         <div class="grip-diagram-panel">

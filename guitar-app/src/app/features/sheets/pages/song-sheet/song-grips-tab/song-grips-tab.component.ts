@@ -89,7 +89,7 @@ export class SongGripsTabComponent {
   }
 
   private async openGripSelector(): Promise<boolean> {
-    const data: GripSelectorModalData = {};
+    const data: GripSelectorModalData = { selectionMode: 'multiple' };
     const modalRef = this.modalService.show(GripSelectorModalComponent, {
       data,
       width: '95vw',

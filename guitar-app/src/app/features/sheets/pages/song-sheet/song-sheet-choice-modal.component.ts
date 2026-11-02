@@ -16,6 +16,7 @@ export interface SongSheetChoiceModalData {
   selector: 'app-song-sheet-choice-modal',
   standalone: true,
   imports: [CommonModule],
+  styleUrl: './song-sheet-choice-modal.component.scss',
   template: `
     <div class="modal-content-wrapper">
       <div class="modal-body p-3">

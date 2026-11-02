@@ -1,4 +1,5 @@
-import {Component, EventEmitter, OnDestroy, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges} from '@angular/core';
+import { SelectionMode } from '@/app/core/ui/selection-mode';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {PlayingPatternsService} from '@/app/features/patterns/services/playing-patterns.service';
@@ -19,8 +20,9 @@ export interface PatternSelectorResult {
   templateUrl: './patterns-library-selector.component.html',
   styleUrls: ['./patterns-library-selector.component.scss']
 })
-export class PatternsLibrarySelectorComponent implements OnDestroy {
+export class PatternsLibrarySelectorComponent implements OnDestroy, OnChanges {
   @Output() selectedPatternsChange = new EventEmitter<PatternSelectorResult>();
+  @Input() selectionMode: SelectionMode = 'multiple';
 
   patterns: PlayingPattern[] = [];
   search = '';
@@ -42,6 +44,18 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.playbackStateSubscription.unsubscribe();
     this.patternPlayback.stopPatternPreview();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['selectionMode'] && this.selectionMode === 'single' && this.selectedPatternIds.size > 1) {
+      this.selectedPatternIds = new Set([...this.selectedPatternIds].slice(-1));
+      this.emitSelectedPatterns();
+    }
+  }
+
+  cardTabIndex(pattern: PlayingPattern, index: number): number {
+    return this.selectionMode === 'multiple' || this.isSelected(pattern) ||
+      (index === 0 && !this.filteredPatterns.some(item => this.isSelected(item))) ? 0 : -1;
   }
 
   async load() {
@@ -98,6 +112,7 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
     const patternKey = this.getPatternKey(pattern);
 
     if (isSelected) {
+      if (this.selectionMode === 'single') this.selectedPatternIds.clear();
       this.selectedPatternIds.add(patternKey);
     } else {
       this.selectedPatternIds.delete(patternKey);
@@ -107,10 +122,24 @@ export class PatternsLibrarySelectorComponent implements OnDestroy {
   }
 
   onPatternCardClick(pattern: PlayingPattern) {
-    this.toggleSelection(pattern, !this.isSelected(pattern));
+    this.toggleSelection(pattern, this.selectionMode === 'single' || !this.isSelected(pattern));
   }
 
   onPatternCardKeydown(event: KeyboardEvent, pattern: PlayingPattern) {
+    if (event.target !== event.currentTarget) return;
+    if (this.selectionMode === 'single' && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+      const patterns = this.filteredPatterns;
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const index = patterns.findIndex(item => item.id === pattern.id);
+      const next = (index + direction + patterns.length) % patterns.length;
+      if (!patterns[next]) return;
+      this.toggleSelection(patterns[next], true);
+      if (event.currentTarget instanceof HTMLElement) {
+        event.currentTarget.closest('[role="radiogroup"]')?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
+      }
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.onPatternCardClick(pattern);
