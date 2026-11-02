@@ -121,11 +121,26 @@ export class PlayingMeasureEditorComponent {
     this.updateAction(originalIndex, () => newAction);
   }
 
+  setSlideScope(originalIndex: number, scope: 'single' | 'grip'): void {
+    this.updateAction(originalIndex, action => {
+      if (action?.technique !== 'slide') return action;
+      if (scope === 'grip') return { ...action, slide: { fretOffset: 2 }, legato: undefined, legatoMode: undefined };
+      return { ...action, slide: undefined, legatoMode: 'relative', legato: this.getDefaultLegato('slide', 'relative') };
+    });
+  }
+
+  updateSlideOffset(originalIndex: number, offset: number): void {
+    if (!Number.isInteger(offset) || offset === 0 || Math.abs(offset) > 24) return;
+    this.updateAction(originalIndex, action => action?.technique === 'slide' && action.slide
+      ? { ...action, slide: { fretOffset: offset } } : action);
+  }
+
   onActionTechniqueChange(originalIndex: number): void {
     const action = this.measure().actions[originalIndex];
     if (!action) return;
 
     let updatedAction: PlayingAction = { ...action };
+    if (action.technique !== 'slide') delete updatedAction.slide;
 
     if (action.technique === 'strum') {
       updatedAction.strum ??= { direction: 'D', strings: 'all' };
@@ -146,7 +161,7 @@ export class PlayingMeasureEditorComponent {
       delete updatedAction.legato;
       delete updatedAction.legatoMode;
     } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
-      if (!updatedAction.legato) {
+      if (!updatedAction.legato && !updatedAction.slide) {
         updatedAction.legatoMode = 'relative';
         updatedAction.legato = this.getDefaultLegato(action.technique, 'relative');
       }

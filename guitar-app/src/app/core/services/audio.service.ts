@@ -1,11 +1,27 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import * as Tone from 'tone';
+import { Note, getNoteMidi, note } from '@/app/core/music/semitones';
+
+export interface PitchSlideVoice {
+  source: Note;
+  target: Note;
+  string: number;
+  startTime: number;
+  duration: number;
+  glideDuration: number;
+  velocity: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioService implements OnDestroy {
+  private readonly slideAnchors = [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4), note('E', 5)];
+  private readonly slideBuffers = new Map<number, Tone.ToneAudioBuffer>();
+  private readonly slideSources = new Set<Tone.ToneBufferSource>();
+  private slideInitPromise: Promise<void> | null = null;
+  private disposed = false;
   private context: Tone.BaseContext | null = null;
   private startPromise: Promise<void> | null = null;
   private handlersInstalled = false;
@@ -21,6 +37,11 @@ export class AudioService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.disposed = true;
+    for (const source of this.slideSources) source.dispose();
+    this.slideSources.clear();
+    for (const buffer of this.slideBuffers.values()) buffer.dispose();
+    this.slideBuffers.clear();
     this.disposeAllSamplers();
     this.resumedSubject.complete();
   }
@@ -165,6 +186,49 @@ export class AudioService implements OnDestroy {
     } finally {
       this.samplerInitPromises.delete(key);
     }
+  }
+
+  async ensureSlideBuffersInitialized(): Promise<void> {
+    await this.ensureStarted();
+    if (this.slideBuffers.size === this.slideAnchors.length) return;
+    if (!this.slideInitPromise) {
+      this.slideInitPromise = Promise.all(this.slideAnchors.map(async (anchor, string) => {
+        if (this.slideBuffers.has(string)) return;
+        const buffer = await Tone.ToneAudioBuffer.fromUrl(`/samples/notes/guitar_${anchor.semitone}${anchor.octave}.mp3`);
+        if (this.disposed) buffer.dispose();
+        else this.slideBuffers.set(string, buffer);
+      })).then(() => undefined);
+    }
+    try {
+      await this.slideInitPromise;
+    } finally {
+      this.slideInitPromise = null;
+    }
+  }
+
+  /** One independent sample voice with a continuous, semitone-linear pitch glide. */
+  playPitchSlide(voice: PitchSlideVoice): void {
+    const highestPitch = Math.max(getNoteMidi(voice.source), getNoteMidi(voice.target));
+    const anchorIndex = this.slideAnchors.reduce((closest, anchor, index) =>
+      Math.abs(getNoteMidi(anchor) - highestPitch) < Math.abs(getNoteMidi(this.slideAnchors[closest]) - highestPitch) ? index : closest, 0);
+    const buffer = this.slideBuffers.get(anchorIndex);
+    const anchor = this.slideAnchors[anchorIndex];
+    if (!buffer) return;
+    const startRate = 2 ** ((getNoteMidi(voice.source) - getNoteMidi(anchor)) / 12);
+    const targetRate = 2 ** ((getNoteMidi(voice.target) - getNoteMidi(anchor)) / 12);
+    const source = new Tone.ToneBufferSource({
+      url: buffer, playbackRate: startRate, fadeIn: 0.01, fadeOut: 0.04,
+      onended: () => {
+        this.slideSources.delete(source);
+        source.dispose();
+      }
+    }).toDestination();
+    this.slideSources.add(source);
+    source.playbackRate.setValueAtTime(startRate, voice.startTime);
+    source.playbackRate.exponentialRampToValueAtTime(targetRate, voice.startTime + voice.glideDuration);
+    // Skip the recorded pluck transient; the preceding action already sounded it.
+    source.start(voice.startTime, Math.min(0.03, buffer.duration / 10), undefined, Math.min(1, voice.velocity));
+    source.stop(voice.startTime + voice.duration);
   }
 
   disposeSampler(key: string): void {

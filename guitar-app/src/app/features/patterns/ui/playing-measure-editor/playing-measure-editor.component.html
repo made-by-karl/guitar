@@ -283,6 +283,23 @@
                     </div>
                   }
 
+                  @if (actionData.action.technique === 'slide') {
+                    <label class="form-label small" [attr.for]="'slideScope_' + actionData.originalIndex">Slide scope</label>
+                    <select class="form-select form-select-sm mb-2" [id]="'slideScope_' + actionData.originalIndex"
+                      [ngModel]="actionData.action.slide ? 'grip' : 'single'"
+                      (ngModelChange)="setSlideScope(actionData.originalIndex, $event)">
+                      <option value="single">Single string</option>
+                      <option value="grip">Fretted strings together</option>
+                    </select>
+                    @if (actionData.action.slide; as slide) {
+                      <label class="form-label small" [attr.for]="'slideOffset_' + actionData.originalIndex">Fret shift</label>
+                      <input class="form-control form-control-sm" type="number" min="-24" max="24" step="1"
+                        [id]="'slideOffset_' + actionData.originalIndex" [ngModel]="slide.fretOffset"
+                        (ngModelChange)="updateSlideOffset(actionData.originalIndex, $event)" />
+                      <div class="form-text">Moves sounding fretted strings together. Open strings stay unchanged.</div>
+                    }
+                  }
+
                   @if ((actionData.action.technique === 'hammer-on' || actionData.action.technique === 'pull-off' || actionData.action.technique === 'slide') && actionData.action.legato) {
                     <div class="pick-section">
                       <label class="form-label small" [attr.for]="'legatoMode_' + actionData.originalIndex">Mode</label>
@@ -343,7 +360,7 @@
                               (ngModelChange)="updateLegatoString(actionData.originalIndex, $event)"
                               [name]="'legatoString_' + actionData.originalIndex">
                               @for (stringIdx of [0,1,2,3,4,5]; track stringIdx) {
-                                <option [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                                <option [ngValue]="stringIdx">{{ getStringName(stringIdx) }}</option>
                               }
                             </select>
                             <input

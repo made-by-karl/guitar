@@ -20,6 +20,8 @@ They solve different problems and should usually be changed independently.
 - Deduplicates sampler initialization by key
 - Exposes the Tone transport and current time helpers
 
+For slides, `AudioService` also caches decoded guitar samples and owns the lifetime of independent `ToneBufferSource` voices. Each voice ramps its playback rate exponentially between the source and target pitches, which produces a continuous movement in semitones. Voices fade in after the recorded pluck transient, fade out at the planned note end, and dispose themselves after playback. `MidiService.ensureReady()` prepares these buffers before scheduling playback.
+
 ### Instrument rendering
 
 `MidiService` builds on `AudioService` and is responsible for:
@@ -29,11 +31,14 @@ They solve different problems and should usually be changed independently.
 - translating `MidiInstruction` objects into sampler calls
 - handling technique-specific playback such as muted notes, accents, sequential strums, slides, hammer-ons, pull-offs, and percussion hits
 
+Single-string legato instructions use `legato`; simultaneous slide voices use `legatos`. A pattern action with `slide.fretOffset` shifts all sounding fretted strings together. The playback planner and notation share target resolution, preserve open strings, and reject a group shift that would move part of the shape below fret 1. Existing single-string slide actions keep their original representation.
+
 ### Scheduling and higher-level playback
 
 - `PlaybackService` provides reusable playback primitives and finite playback sessions.
 - `FinitePlaybackScheduler` controls play/pause/resume/seek for bounded playback plans.
 - `PlayingPatternPlaybackPlannerService` turns pattern measures plus grip context into timed `MidiInstruction` sequences.
+- Planning returns diagnostic messages as data. Playback availability can therefore be computed without logging or signal writes; the pattern and song-part playback services report diagnostics when playback is requested.
 - `SongPartPlaybackService` resolves song-sheet parts into playback plans and drives arranged part or single-measure preview playback.
 - Metronome playback is implemented in `features/metronome/services/`.
 

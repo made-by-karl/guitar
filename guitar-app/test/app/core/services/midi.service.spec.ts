@@ -11,13 +11,15 @@ describe('MidiService', () => {
     const percussionSampler = createSampler();
     const audioService = {
       getSampler: jest.fn((key: string) => key === 'guitar' ? guitarSampler : percussionSampler),
-      now: jest.fn(() => 0)
+      now: jest.fn(() => 0),
+      playPitchSlide: jest.fn()
     };
 
     return {
       service: new MidiService(audioService as any),
       guitarSampler,
-      percussionSampler
+      percussionSampler,
+      audioService
     };
   };
 
@@ -67,8 +69,8 @@ describe('MidiService', () => {
     expect(guitarSampler.triggerAttackRelease.mock.calls[0][3]).toBeCloseTo(0.465);
   });
 
-  it('renders slides with a longer transition before the target note', () => {
-    const { service, guitarSampler } = createService();
+  it('renders slides as one continuous pitch voice', () => {
+    const { service, guitarSampler, audioService } = createService();
 
     service.triggerInstruction({
       time: 0,
@@ -87,9 +89,27 @@ describe('MidiService', () => {
       }
     });
 
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenCalledTimes(2);
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(1, 'G#3', expect.any(Number), 0.001, expect.any(Number));
-    expect(guitarSampler.triggerAttackRelease).toHaveBeenNthCalledWith(2, 'A3', expect.any(Number), expect.any(Number), expect.any(Number));
+    expect(guitarSampler.triggerAttackRelease).not.toHaveBeenCalled();
+    expect(audioService.playPitchSlide).toHaveBeenCalledTimes(1);
+    expect(audioService.playPitchSlide).toHaveBeenCalledWith(expect.objectContaining({
+      source: note('G', 3), target: note('A', 3), string: 3, startTime: 0.001, duration: 0.8, glideDuration: 0.22
+    }));
+  });
+
+  it('renders each voice of a simultaneous multi-string slide', () => {
+    const { service, guitarSampler, audioService } = createService();
+    service.triggerInstruction({
+      time: 0, playbackDuration: 0.8, actionDuration: 0.125, velocity: 0.7, technique: 'slide',
+      notes: [{ note: note('F#', 2) }, { note: note('B', 2) }],
+      legatos: [
+        { string: 0, source: { note: note('E', 2) }, target: { note: note('F#', 2) } },
+        { string: 1, source: { note: note('A', 2) }, target: { note: note('B', 2) } }
+      ]
+    });
+    expect(guitarSampler.triggerAttackRelease).not.toHaveBeenCalled();
+    expect(audioService.playPitchSlide).toHaveBeenCalledTimes(2);
+    expect(audioService.playPitchSlide).toHaveBeenCalledWith(expect.objectContaining({ string: 0, target: note('F#', 2), startTime: 0.001 }));
+    expect(audioService.playPitchSlide).toHaveBeenCalledWith(expect.objectContaining({ string: 1, target: note('B', 2), startTime: 0.001 }));
   });
 
   it('keeps sequential strums tight for sixteenth-like durations', () => {

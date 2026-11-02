@@ -27,6 +27,32 @@ describe('PlayingMeasureEditorComponent', () => {
     expect(labels.slice(0, 4)).toEqual(timeSignature === '4/4' ? ['1', '1e', '1&', '1a'] : ['1', '1&', '2', '2&']);
   });
 
+  it('switches between single-string slides and a shared fret shift', () => {
+    component.addAction(0, 'slide');
+    component.setSlideScope(0, 'grip');
+    component.updateSlideOffset(0, -2);
+    expect(component.measure().actions[0]?.slide).toEqual({ fretOffset: -2 });
+    expect(component.measure().actions[0]?.legato).toBeUndefined();
+    component.setSlideScope(0, 'single');
+    expect(component.measure().actions[0]?.slide).toBeUndefined();
+    expect(component.measure().actions[0]?.legato).toBeDefined();
+  });
+
+  it.each(['slide', 'hammer-on', 'pull-off'] as const)('keeps the selected %s string numeric for playback', async technique => {
+    component.addAction(0, technique);
+    component.setLegatoMode(0, 'explicit');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const select = fixture.nativeElement.querySelector('.pick-note select') as HTMLSelectElement;
+    select.selectedIndex = 2;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.measure().actions[0]?.legato).toMatchObject({ string: 2 });
+  });
+
   it('creates and edits pick actions inside one measure', () => {
     component.addAction(0, 'pick');
     component.addPickingNote(0);

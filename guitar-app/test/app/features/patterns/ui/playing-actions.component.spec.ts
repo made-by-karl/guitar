@@ -10,8 +10,87 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+  it.each([false, true])('keeps a beat-four slide beside its fret number instead of connecting back to beat two (group: %s)', async group => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const actions: (PlayingAction | null)[] = Array(16).fill(null);
+    actions[4] = { technique: 'pick', pick: [{ mode: 'explicit', string: 3, fret: 2 }] };
+    actions[12] = group
+      ? { technique: 'slide', slide: { fretOffset: 2 } }
+      : { technique: 'slide', legato: { string: 3, toFret: 4 } };
+    fixture.componentRef.setInput('measures', [createMeasure(actions)]);
+    fixture.detectChanges();
 
-  it.each(['hammer-on', 'pull-off', 'slide'] as const)(
+    const component = fixture.componentInstance;
+    const lines: SVGLineElement[] = Array.from(fixture.nativeElement.querySelectorAll('.legato-line, .slide-sustain-line'));
+    expect(lines).toHaveLength(1);
+    for (const line of lines) {
+      expect(Number(line.getAttribute('x1'))).toBeGreaterThanOrEqual(component.getLegatoTargetX(12) - component.slotSpacing);
+      expect(Number(line.getAttribute('x2'))).toBeLessThanOrEqual(component.getActionSlotRight(12));
+    }
+    expect(fixture.nativeElement.querySelectorAll('.pick-label')[1].textContent).toBe('4');
+  });
+
+  it('replays earlier measures for slides without rendering their notes, and reacts to edits', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const single: PlayingAction = { technique: 'slide', legato: { string: 5, toFret: 4 } };
+    const group: PlayingAction = { technique: 'slide', slide: { fretOffset: 1 } };
+    const history = [{
+      measure: createMeasure([{ technique: 'strum', strum: { direction: 'D', strings: 'all' } }, single]),
+      context: { actionGrips: [{ actionIndex: 0, gripId: 'x|x|o|2|3|2', name: 'D', measureIndex: 0 }] }
+    }];
+    fixture.componentRef.setInput('notationHistory', history);
+    fixture.componentRef.setInput('measures', [createMeasure([group])]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.getSlideMarks(0, group).map(mark => mark.label)).toEqual(['3', '4', '5']);
+    expect(fixture.nativeElement.querySelectorAll('.slide-line')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('.strum-stem, .action-grip-label')).toHaveLength(0);
+
+    fixture.componentRef.setInput('notationHistory', [{ ...history[0], measure: createMeasure([
+      ...history[0].measure.actions,
+      { technique: 'percussive', percussive: { technique: 'string-slap' } }
+    ]) }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.slide-line')).toHaveLength(0);
+  });
+
+  it.each([2, -1])('draws single and grouped slides diagonally in the direction of fret offset %s', async offset => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const single: PlayingAction = { technique: 'slide', legato: { string: 5, toFret: 3 + offset } };
+    const group: PlayingAction = { technique: 'slide', slide: { fretOffset: offset } };
+    fixture.componentRef.setInput('measures', [createMeasure([
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 4, fret: 3 }, { mode: 'explicit', string: 5, fret: 3 }] },
+      single, group
+    ])]);
+    fixture.detectChanges();
+    for (const mark of [...fixture.componentInstance.getSlideMarks(1, single), ...fixture.componentInstance.getSlideMarks(2, group)]) {
+      expect(Math.sign(mark.startY - mark.endY)).toBe(Math.sign(offset));
+      expect(mark.startX).toBeLessThan(mark.x - 6);
+      expect(Math.abs(mark.startY - mark.y)).toBeLessThan(3);
+      expect(Math.abs(mark.endY - mark.y)).toBeLessThan(3);
+    }
+    expect(fixture.nativeElement.querySelectorAll('.slide-line')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('.technique-mark')).toHaveLength(0);
+  });
+
+  it('draws a slide target on every sounding fretted string and carries the targets into the next slide', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const slide: PlayingAction = { technique: 'slide', slide: { fretOffset: 2 } };
+    fixture.componentRef.setInput('measures', [createMeasure([
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 0 }, { mode: 'explicit', string: 1, fret: 3 }, { mode: 'explicit', string: 2, fret: 2 }] },
+      slide, slide
+    ])]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.getSlideMarks(1, slide).map(mark => mark.label)).toEqual(['5', '4']);
+    expect(fixture.componentInstance.getSlideMarks(2, slide).map(mark => mark.label)).toEqual(['7', '6']);
+    expect(fixture.nativeElement.querySelectorAll('.legato-line')).toHaveLength(4);
+  });
+
+
+  it.each(['hammer-on', 'pull-off'] as const)(
     'draws %s legato actions as a backward connection to the previous action',
     async technique => {
       await TestBed.configureTestingModule({
@@ -94,9 +173,9 @@ describe('PlayingActionsComponent', () => {
     expect(segments[0].actions.map(action => action.actionIndex)).toEqual([0, 1, 2]);
     expect(segments.map(segment => segment.width)).toEqual([
       fixture.componentInstance.slotSpacing * 4,
-      fixture.componentInstance.slotSpacing * 2,
-      fixture.componentInstance.slotSpacing * 2,
-      fixture.componentInstance.slotSpacing * 2
+      fixture.componentInstance.slotSpacing * 4,
+      fixture.componentInstance.slotSpacing * 4,
+      fixture.componentInstance.slotSpacing * 4
     ]);
     expect(fixture.nativeElement.querySelectorAll('svg').length).toBe(4);
     expect(fixture.nativeElement.querySelectorAll('.strum-stem').length).toBe(2);
@@ -150,10 +229,10 @@ describe('PlayingActionsComponent', () => {
     const markerText = rhythmMarkers.map(marker => (marker.textContent || '').trim());
     expect(markerText).toEqual(['1', '&', '2', '&', '3', '&', '4', '&']);
     expect(rhythmMarkers[0].getAttribute('x')).toBe(`${fixture.componentInstance.slotSpacing / 2}`);
-    expect(rhythmMarkers[1].getAttribute('x')).toBe(`${(fixture.componentInstance.slotSpacing * 2) + (fixture.componentInstance.slotSpacing / 2)}`);
+    expect(rhythmMarkers[1].getAttribute('x')).toBe(`${fixture.componentInstance.slotSpacing * 1.5}`);
   });
 
-  it('keeps empty beats compact even when another beat contains legato', async () => {
+  it('gives empty and legato beats the same compact spacing on an eighth grid', async () => {
     await TestBed.configureTestingModule({
       imports: [PlayingActionsComponent]
     }).compileComponents();
@@ -169,13 +248,36 @@ describe('PlayingActionsComponent', () => {
 
     const segments = fixture.componentInstance.getRenderableSegments();
     expect(segments.map(segment => segment.width)).toEqual([
-      fixture.componentInstance.slotSpacing * 4,
+      fixture.componentInstance.slotSpacing * 2,
       fixture.componentInstance.slotSpacing * 2,
       fixture.componentInstance.slotSpacing * 2,
       fixture.componentInstance.slotSpacing * 2
     ]);
     expect(fixture.componentInstance.getActionSlotCenterX(4)).toBe(fixture.componentInstance.slotSpacing / 2);
     expect(fixture.componentInstance.getActionSlotCenterX(6)).toBe((fixture.componentInstance.slotSpacing * 1.5));
+  });
+
+  it.each([false, true])('keeps the same beat spacing across measures with different subdivisions and slides (sixteenth note: %s)', async sixteenth => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const sparse: (PlayingAction | null)[] = Array(8).fill(null);
+    sparse[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
+    const dense: (PlayingAction | null)[] = Array(16).fill(null);
+    dense[sixteenth ? 1 : 2] = { technique: 'pick', pick: [{ mode: 'explicit', string: 3, fret: 2 }] };
+    const slides: (PlayingAction | null)[] = Array(16).fill(null);
+    slides[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
+    slides[12] = { technique: 'slide', slide: { fretOffset: 1 } };
+    fixture.componentRef.setInput('measures', [createMeasure(sparse), createMeasure(dense), createMeasure(slides)]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    const beatWidth = component.slotSpacing * (sixteenth ? 4 : 2);
+    const segments = component.getRenderableSegments();
+    expect(segments).toHaveLength(12);
+    for (const segment of segments) expect(segment.width).toBe(beatWidth);
+    expect(component.getActionSlotCenterX(1) - component.getActionSlotCenterX(0)).toBe(beatWidth / 2);
+    expect(component.getActionSlotCenterX(10) - component.getActionSlotCenterX(8)).toBe(beatWidth / 2);
+    expect(segments.at(-1)).toMatchObject({ actionIndex: 36, span: 4, width: beatWidth });
   });
 
   it('extends beat-sized SVG segments when an action overlaps the beat boundary', async () => {

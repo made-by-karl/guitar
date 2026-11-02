@@ -19,6 +19,7 @@ import {
   isRelativeStrumRange
 } from '@/app/features/patterns/services/playing-patterns.model';
 import {
+  resolveSlideTargets,
   resolveNotationGrip,
   resolveRelativeLegatoEndpointFret,
   resolveRelativePickFret,
@@ -42,6 +43,12 @@ interface SlotPickMark {
   x: number;
   y: number;
   label: string;
+}
+
+interface SlideMark extends SlotPickMark {
+  startX: number;
+  startY: number;
+  endY: number;
 }
 
 interface ModifierMark {
@@ -98,8 +105,6 @@ interface ResolvedLegatoRender {
   styleUrl: './playing-actions.component.scss'
 })
 export class PlayingActionsComponent {
-  readonly notationHistory = input<PlayingActionsNotationHistoryEntry[]>([]);
-
   readonly strings = [0, 1, 2, 3, 4, 5];
   readonly slotTop = 12;
   readonly gripLabelTopBand = 15;
@@ -112,6 +117,32 @@ export class PlayingActionsComponent {
   showActionIndex = input<boolean>(false);
   measureWidth = input<string>('100%');
   notationContexts = input<PlayingActionsNotationContext[] | undefined>(undefined);
+  // Replay earlier measures for note/grip state without drawing them.
+  notationHistory = input<PlayingActionsNotationHistoryEntry[]>([]);
+
+  private readonly historySlotCount = computed(() =>
+    this.notationHistory().reduce((count, entry) => count + entry.measure.actions.length, 0));
+  private readonly notationTimeline = computed<PlayingActionsNotationHistoryEntry[]>(() => [
+    ...this.notationHistory(),
+    ...this.measures().map((measure, index) => ({ measure, context: this.getNotationContextForMeasure(index) }))
+  ]);
+
+  private readonly notationSlotsPerBeat = computed(() => {
+    let slotsPerBeat = 1;
+    for (let measureIndex = 0; measureIndex < this.measures().length; measureIndex++) {
+      const measure = this.measures()[measureIndex];
+      const context = this.getNotationContextForMeasure(measureIndex);
+      const beats = getBeatsFromTimeSignature(context?.timeSignature ?? measure.timeSignature);
+      const rawSlotsPerBeat = measure.actions.length / beats;
+      if (rawSlotsPerBeat < 1) continue;
+
+      const fitsEighthGrid = rawSlotsPerBeat >= 4 && rawSlotsPerBeat % 2 === 0
+        && measure.actions.every((action, index) => !action || index % 2 === 0)
+        && (context?.actionGrips ?? []).every(grip => grip.actionIndex % 2 === 0);
+      slotsPerBeat = Math.max(slotsPerBeat, fitsEighthGrid ? rawSlotsPerBeat / 2 : rawSlotsPerBeat);
+    }
+    return slotsPerBeat;
+  });
 
   readonly renderableActionSegments = computed<RenderableActionSegment[]>(() => {
     const actions = this.getTimelineActions();
@@ -131,14 +162,14 @@ export class PlayingActionsComponent {
       const rawSlotsPerBeat = this.getRawSlotsPerBeat(actionIndex);
       const endIndex = this.getSegmentEndIndex(actions, actionIndex, minimumSegmentSpan);
       const span = endIndex - actionIndex;
-      const compression = this.getSegmentCompression(actions, actionIndex, endIndex, rawSlotsPerBeat);
+      const compression = rawSlotsPerBeat >= 1 ? rawSlotsPerBeat / this.notationSlotsPerBeat() : 1;
 
       segments.push({
         actionIndex,
         actions: this.getSegmentActions(actions, actionIndex, endIndex),
         span,
         compression,
-        width: this.slotSpacing * Math.ceil(span / compression)
+        width: this.slotSpacing * span / compression
       });
       actionIndex = endIndex;
     }
@@ -148,12 +179,10 @@ export class PlayingActionsComponent {
 
   readonly resolvedGripTimeline = computed(() => {
     const timeline = new Map<number, Grip | undefined>();
-    let currentGrip = this.getNotationContextForMeasure(0)?.initialGrip;
-    let measureStartIndex = 0;
+    let currentGrip = this.notationTimeline()[0]?.context?.initialGrip;
+    let measureStartIndex = -this.historySlotCount();
 
-    for (let measureIndex = 0; measureIndex < this.measures().length; measureIndex++) {
-      const measure = this.measures()[measureIndex];
-      const context = this.getNotationContextForMeasure(measureIndex);
+    for (const { measure, context } of this.notationTimeline()) {
       const actionGrips = context?.actionGrips ?? [];
       const gripById = context?.gripById ?? {};
 
@@ -161,7 +190,7 @@ export class PlayingActionsComponent {
         const globalActionIndex = measureStartIndex + actionIndex;
         const actionGrip = actionGrips.find(grip => grip.actionIndex === actionIndex);
         if (actionGrip?.gripId) {
-          currentGrip = gripById[actionGrip.gripId] ?? currentGrip;
+          currentGrip = resolveNotationGrip(actionGrip.gripId, gripById) ?? currentGrip;
         }
 
         timeline.set(globalActionIndex, currentGrip);
@@ -176,12 +205,13 @@ export class PlayingActionsComponent {
   readonly resolvedStringStateTimeline = computed(() => {
     const timeline = new Map<number, Map<number, NotationStringState>>();
     const stringState = new Map<number, NotationStringState>();
-    const actions = this.getTimelineActions();
+    const actions = this.notationTimeline().flatMap(entry => entry.measure.actions);
 
-    for (let actionIndex = 0; actionIndex < actions.length; actionIndex++) {
+    for (let index = 0; index < actions.length; index++) {
+      const actionIndex = index - this.historySlotCount();
       timeline.set(actionIndex, new Map(stringState));
 
-      const action = actions[actionIndex];
+      const action = actions[index];
       if (action) {
         this.applyActionToStringState(actionIndex, action, stringState);
       }
@@ -473,6 +503,30 @@ export class PlayingActionsComponent {
     return this.spreadPickMarksOnSameString(marks, baseX);
   }
 
+  getSlideMarks(actionIndex: number, action: PlayingAction): SlideMark[] {
+    const state = this.resolvedStringStateTimeline().get(actionIndex) ?? new Map<number, NotationStringState>();
+    const target = this.resolveLegatoTarget(actionIndex, action);
+    const targets = action.slide
+      ? resolveSlideTargets(action.slide, state).map(note => ({ ...note, label: `${note.toFret}` }))
+      : target ? [{
+        string: target.string,
+        fromFret: state.get(target.string)?.fret,
+        toFret: target.targetFret,
+        label: target.targetLabel
+      }] : [];
+    return targets.map(note => {
+      const x = this.getLegatoTargetX(actionIndex);
+      const y = this.stringY(note.string);
+      const direction = note.toFret < (note.fromFret ?? note.toFret) ? -1 : 1;
+      const startX = Math.max(1, x - 14);
+      return {
+        x, y, label: note.label, startX,
+        startY: y + direction * 2.5,
+        endY: y - direction * 2.5
+      };
+    });
+  }
+
   getLegatoStringY(actionIndex: number, action: PlayingAction): number {
     const resolved = this.resolveLegato(actionIndex, action);
     return resolved ? this.stringY(resolved.string) : this.stringY(2);
@@ -622,7 +676,7 @@ export class PlayingActionsComponent {
         continue;
       }
 
-      if (!this.isLegatoAction(action)) {
+      if (!this.isLegatoAction(action) || action.technique === 'slide') {
         return endIndex;
       }
 
@@ -651,42 +705,8 @@ export class PlayingActionsComponent {
     return !!this.resolveLegato(actionIndex, action)?.sourceLabel;
   }
 
-  private getSegmentCompression(
-    actions: (PlayingAction | null)[],
-    startIndex: number,
-    endIndex: number,
-    rawSlotsPerBeat: number
-  ): number {
-    if (rawSlotsPerBeat < 4 || rawSlotsPerBeat % 2 !== 0) {
-      return 1;
-    }
-
-    for (let actionIndex = startIndex; actionIndex < endIndex; actionIndex++) {
-      const action = actions[actionIndex];
-      if (!action) {
-        continue;
-      }
-
-      const localActionIndex = this.getMeasureInfoForAction(actionIndex)?.localActionIndex ?? actionIndex;
-      const isOffEighthGrid = localActionIndex % 2 !== 0;
-      if (isOffEighthGrid || this.isLegatoAction(action)) {
-        return 1;
-      }
-    }
-
-    for (let actionIndex = startIndex; actionIndex < endIndex; actionIndex++) {
-      const localActionIndex = this.getMeasureInfoForAction(actionIndex)?.localActionIndex ?? actionIndex;
-      const isOffEighthGrid = localActionIndex % 2 !== 0;
-      if (isOffEighthGrid && this.getActionGripForGlobalAction(actionIndex)) {
-        return 1;
-      }
-    }
-
-    return 2;
-  }
-
   private isLegatoAction(action: PlayingAction): boolean {
-    return !!action.legato && (
+    return !!(action.legato || action.slide) && (
       action.technique === 'hammer-on'
       || action.technique === 'pull-off'
       || action.technique === 'slide'
@@ -766,7 +786,6 @@ export class PlayingActionsComponent {
       return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings);
     }
 
-    const grip = this.resolvedGripTimeline().get(actionIndex);
     return getStringsForStrum(action.strum.strings);
   }
 
@@ -848,6 +867,13 @@ export class PlayingActionsComponent {
 
     if (action.technique === 'percussive' && action.percussive?.technique === 'string-slap') {
       stringState.clear();
+      return;
+    }
+
+    if (action.technique === 'slide' && action.slide) {
+      for (const target of resolveSlideTargets(action.slide, stringState)) {
+        stringState.set(target.string, { fret: target.toFret, label: `${target.toFret}` });
+      }
       return;
     }
 

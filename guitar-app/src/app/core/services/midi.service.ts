@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { MidiInstruction, MidiTechnique } from '@/app/core/services/midi.model';
-import { getIntervalSemitones, Note, transpose } from '@/app/core/music/semitones';
+import { Note } from '@/app/core/music/semitones';
 import { AudioService } from '@/app/core/services/audio.service';
 
 type PlaybackOptions = {
@@ -92,13 +92,7 @@ const MIDI_PLAYBACK_CONFIG = {
   slide: {
     minTransitionWindowSeconds: 0.09,
     maxTransitionWindowSeconds: 0.22,
-    transitionWindowShare: 0.55,
-    minStepDurationSeconds: 0.05,
-    maxStepDurationShare: 0.5,
-    stepDurationOverlapFactor: 1.3,
-    targetVelocityScale: 0.95,
-    intermediateVelocityScale: 0.65,
-    minimumIntermediateVelocity: 0.18
+    transitionWindowShare: 0.55
   }
 } as const;
 
@@ -113,6 +107,7 @@ export class MidiService implements OnDestroy {
    */
   private async ensureInitialized(): Promise<void> {
     await this.audioService.ensureStarted();
+    await this.audioService.ensureSlideBuffersInitialized();
 
     await this.audioService.ensureSamplerInitialized(SAMPLER_KEYS.guitar, {
       urls: {
@@ -248,6 +243,13 @@ export class MidiService implements OnDestroy {
 
     const options = this.getPlaybackOptions(instruction.technique, instruction.velocity);
     const playMode = instruction.playNotes || 'parallel';
+
+    if (instruction.legatos?.length) {
+      for (const legato of instruction.legatos) {
+        this.playLegatoTechnique({ ...instruction, legato }, scheduleTime, options);
+      }
+      return;
+    }
 
     if (instruction.legato) {
       this.playLegatoTechnique(instruction, scheduleTime, options);
@@ -388,70 +390,20 @@ export class MidiService implements OnDestroy {
       return;
     }
 
-    const interval = getIntervalSemitones(
-      instruction.legato.source.note,
-      instruction.legato.target.note
-    );
-    const direction = Math.sign(interval);
-    const distance = Math.abs(interval);
-
-    if (direction === 0 || distance === 0) {
-      sampler.triggerAttackRelease(
-        this.noteToToneName(instruction.legato.target.note),
-        totalDuration,
-        startTime,
-        options.velocity
-      );
-      return;
-    }
-
-    const notes: Note[] = [];
-    for (let step = 1; step <= distance; step++) {
-      notes.push(transpose(instruction.legato.source.note, step * direction));
-    }
-
-    const transitionWindow = Math.min(
+    const glideDuration = Math.min(
+      totalDuration * 0.8,
       MIDI_PLAYBACK_CONFIG.slide.maxTransitionWindowSeconds,
-      Math.max(
-        MIDI_PLAYBACK_CONFIG.slide.minTransitionWindowSeconds,
-        totalDuration * MIDI_PLAYBACK_CONFIG.slide.transitionWindowShare
-      )
+      Math.max(MIDI_PLAYBACK_CONFIG.slide.minTransitionWindowSeconds, totalDuration * MIDI_PLAYBACK_CONFIG.slide.transitionWindowShare)
     );
-    const stepSpacing = notes.length > 1 ? transitionWindow / (notes.length - 1) : transitionWindow;
-    const perStepDuration = Math.max(
-      MIDI_PLAYBACK_CONFIG.slide.minStepDurationSeconds,
-      Math.min(
-        totalDuration * MIDI_PLAYBACK_CONFIG.slide.maxStepDurationShare,
-        stepSpacing * MIDI_PLAYBACK_CONFIG.slide.stepDurationOverlapFactor
-      )
-    );
-
-    for (let index = 0; index < notes.length; index++) {
-      const noteTime = startTime + (index * stepSpacing);
-      const isTarget = index === notes.length - 1;
-      const noteDuration = isTarget
-        ? Math.max(
-          MIDI_PLAYBACK_CONFIG.legato.minimumAudibleDurationSeconds,
-          totalDuration - (index * stepSpacing)
-        )
-        : perStepDuration;
-      const noteVelocity = isTarget
-        ? Math.min(
-          MIDI_PLAYBACK_CONFIG.dynamics.maxVelocity,
-          options.velocity * MIDI_PLAYBACK_CONFIG.slide.targetVelocityScale
-        )
-        : Math.max(
-          MIDI_PLAYBACK_CONFIG.slide.minimumIntermediateVelocity,
-          options.velocity * MIDI_PLAYBACK_CONFIG.slide.intermediateVelocityScale
-        );
-
-      sampler.triggerAttackRelease(
-        this.noteToToneName(notes[index]),
-        noteDuration,
-        noteTime,
-        noteVelocity
-      );
-    }
+    this.audioService.playPitchSlide({
+      source: instruction.legato.source.note,
+      target: instruction.legato.target.note,
+      string: instruction.legato.string,
+      startTime,
+      duration: totalDuration,
+      glideDuration,
+      velocity: options.velocity
+    });
   }
 
   /**
