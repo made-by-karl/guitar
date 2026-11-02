@@ -15,7 +15,9 @@
   <div class="modal-body">
     @if (pattern) {
       <app-playing-pattern-editor #editor
-        [pattern]="pattern">
+        [pattern]="pattern"
+        [savedGrips]="savedGrips"
+>
       </app-playing-pattern-editor>
     }
   </div>

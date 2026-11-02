@@ -1,0 +1,25 @@
+:host { display: block; min-width: 0; }
+.arrangement-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; h2 { font-size: 1.3rem; margin: 0; } p { font-size: .85rem; } }
+.arrangement-layout { display: grid; grid-template-columns: minmax(15rem, .8fr) minmax(0, 1.2fr); align-items: start; gap: 1rem; }
+.song-outline { min-width: 0; }
+.occurrence-list { border: 1px solid #d8cdb8; border-radius: .5rem; background: #fff; }
+.occurrence-row { display: flex; align-items: center; position: relative; gap: .25rem; border-bottom: 1px solid #e7ded0; &:last-child { border-bottom: 0; } &.is-selected { background: #fff2e2; box-shadow: inset 3px 0 var(--bs-primary); } &.is-playing { border-left: 3px solid #268477; } }
+.occurrence-drag { padding-left: .45rem; color: #998c7b; cursor: grab; }
+.occurrence-select { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: .8rem .35rem; color: inherit; &:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: -2px; } }
+.occurrence-title { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; strong { overflow-wrap: anywhere; } }
+.occurrence-number { display: inline-flex; align-items: center; justify-content: center; min-width: 1.5rem; height: 1.5rem; border: 1px solid #d8cdb8; border-radius: 50%; font-size: .75rem; font-weight: normal; flex-shrink: 0; }
+.occurrence-summary, .occurrence-lyric { display: block; font-size: .75rem; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .25rem; }
+.occurrence-options { align-self: center; position: relative; flex-shrink: 0; }
+.occurrence-menu { position: absolute; right: .25rem; top: 100%; width: 11rem; z-index: 5; background: #fff; border: 1px solid #d8cdb8; border-radius: .4rem; padding: .25rem; box-shadow: 0 .3rem 1rem #0002; button { display: block; border: 0; text-align: left; background: #fff; width: 100%; padding: .5rem; &:hover:not(:disabled) { background: #fff2e2; } &:disabled { opacity: .4; } } }
+.add-song-section { width: 100%; text-align: left; margin-top: .75rem; border-style: dashed; padding: .65rem; }
+.occurrence-editor { min-width: 0; border: 1px solid #d8cdb8; border-radius: .5rem; overflow: hidden; }
+.occurrence-editor-placeholder, .song-empty-state { padding: 2.5rem 1.5rem; text-align: center; border: 1px dashed #d8cdb8; border-radius: .5rem; color: var(--bs-secondary-color); }
+.song-empty-state { h3 { font-size: 1.3rem; color: var(--bs-body-color); } p { max-width: 28rem; margin: .75rem auto 1.25rem; } }
+.cdk-drag-preview { background: white; box-shadow: 0 .4rem 1rem #0002; }
+.cdk-drag-placeholder { opacity: .3; }
+@media (max-width: 700px) {
+  .arrangement-layout { grid-template-columns: minmax(0, 1fr); }
+  .occurrence-editor-placeholder { display: none; }
+  .has-editor { .arrangement-header, .song-outline { display: none; } }
+  .occurrence-editor { border: 0; }
+}

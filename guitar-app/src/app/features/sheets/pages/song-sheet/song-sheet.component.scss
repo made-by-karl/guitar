@@ -15,55 +15,6 @@
     width: 100%;
   }
 
-  .sheet-toolbar {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .sheet-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    padding: 1rem;
-    align-items: center;
-    border-radius: 1rem;
-    background: linear-gradient(135deg, #faf6ef, #f1ede6);
-    border: 1px solid #e3d8c5;
-  }
-
-  .meta-settings-button {
-    margin-left: auto;
-    align-self: stretch;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.5rem;
-  }
-
-  .meta-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 999px;
-  }
-
-  .meta-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b6255;
-  }
-
-  .sheet-links {
-    border: 1px solid #e3d8c5;
-    border-radius: 1rem;
-    background: linear-gradient(180deg, #fffdfa 0%, #f9f5ed 100%);
-  }
-
   .sheet-links-header {
     display: flex;
     justify-content: space-between;
@@ -123,70 +74,54 @@
     flex-wrap: wrap;
   }
 
-  .sheet-tabs {
-    display: grid;
-    gap: 0;
-  }
-
-  .sheet-tab-panel {
+  .sheet-tab-list {
+    container-type: inline-size;
+    container-name: sheet-tabs;
     position: sticky;
     top: 0;
     z-index: 20;
-    background: #fff;
-  }
-
-  .sheet-tab-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0 0 0 0.5rem;
-    margin-bottom: -1px;
-    background: rgba(241, 237, 230, 0.94);
-    backdrop-filter: blur(10px);
-    border: 1px solid #e3d8c5;
-    border-bottom: none;
-    border-top-left-radius: 1rem;
-    border-top-right-radius: 1rem;
-
-    &::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -8px;
-      height: 8px;
-      background: #fffdfa;
-    }
+    width: 100%;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: white;
   }
 
   .sheet-tab {
-    border: 1px solid #d8cab3;
-    border-bottom: none;
-    background: linear-gradient(180deg, #e7dfcf 0%, #ddd2bc 100%);
-    color: #5a4d3a;
-    border-top-left-radius: 0.9rem;
-    border-top-right-radius: 0.9rem;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    padding: 0.8rem 1rem 0.75rem;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.625rem 0.5rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--bs-secondary);
+    font-size: 0.875rem;
     font-weight: 600;
-    line-height: 1;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+    white-space: nowrap;
 
     &:hover {
-      background: linear-gradient(180deg, #ede5d7 0%, #e2d6c2 100%);
-      border-color: #cfbea0;
+      background: var(--bs-light);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--bs-primary);
+      outline-offset: -2px;
     }
 
     &.is-active {
-      background: #fffdfa;
-      border-color: #e3d8c5;
-      color: #3f3426;
-      box-shadow: none;
-      position: relative;
-      z-index: 1;
+      border-bottom-color: var(--bs-primary);
+      color: var(--bs-primary);
     }
   }
+
+  .sheet-tab-content {
+    padding-top: 1rem;
+  }
+
 }
 
 .cdk-drag-preview {
@@ -213,21 +148,15 @@
       flex-basis: auto;
     }
 
-    .sheet-tab {
-      flex: 0 0 auto;
-    }
-
-    .sheet-toolbar {
-      width: 100%;
-
-      .btn {
-        flex: 1;
-      }
-    }
-
     .sheet-links-header,
     .sheet-link-item {
       flex-direction: column;
     }
+  }
+}
+
+@container sheet-tabs (max-width: 36rem) {
+  .sheet-tab-label {
+    display: none;
   }
 }

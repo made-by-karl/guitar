@@ -1,4 +1,4 @@
-import { Grip } from '@/app/features/grips/services/grips/grip.model';
+import { Grip, parseGrip } from '@/app/features/grips/services/grips/grip.model';
 import {
   BaseRelativePickingNote,
   GripRelativePickingNote,
@@ -100,4 +100,26 @@ export function resolveRelativeStrumRange(grip: Grip | undefined, range: Relativ
   const end = Math.max(from, to);
 
   return getPlayableStringIndices(grip).filter(index => index >= start && index <= end);
+}
+
+/** Resolve serialized pattern grips even when they are not in the song library. */
+export function resolveNotationGrip(gripId: string, gripById: Record<string, Grip | undefined> = {}): Grip | undefined {
+  if (gripById[gripId]) return gripById[gripId];
+  try {
+    const grip = parseGrip(gripId);
+    return grip.strings.length === 6 ? grip : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function resolveSlideTargets(
+  slide: { fretOffset: number },
+  soundingStrings: Iterable<[number, { fret: number }]>
+): { string: number; fromFret: number; toFret: number }[] {
+  if (!Number.isInteger(slide.fretOffset) || slide.fretOffset === 0) return [];
+  const targets = Array.from(soundingStrings)
+    .filter(([, state]) => state.fret > 0)
+    .map(([string, state]) => ({ string, fromFret: state.fret, toFret: state.fret + slide.fretOffset }));
+  return targets.some(target => target.toFret < 1) ? [] : targets;
 }

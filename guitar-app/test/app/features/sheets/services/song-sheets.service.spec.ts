@@ -1,5 +1,5 @@
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { SongPartPatternItem, SongSheet } from '@/app/features/sheets/services/song-sheets.model';
+import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 
 describe('SongSheetsService', () => {
   function createService(initialSheet?: SongSheet) {
@@ -69,79 +69,116 @@ describe('SongSheetsService', () => {
     expect(sheet.links).toEqual([]);
   });
 
-  it('creates normalized pattern items from sheet-local patterns', () => {
+  it('starts with an empty part, repeats music without copying it, and keeps lyrics independent', async () => {
+    const { service, getStoredSheet } = createService(createSheet());
+    const first = await service.addOccurrence('sheet-1');
+    const source = getStoredSheet()!.parts[0];
+    expect(source.measures).toHaveLength(0);
+    await service.saveOccurrence('sheet-1', first.id, 'First words', { ...source, section: 'Verse' });
+    const second = await service.addOccurrence('sheet-1', first.partId, first.id);
+    expect(getStoredSheet()!.parts).toHaveLength(1);
+    expect(second.lyrics).toBe('');
+    await service.saveOccurrence('sheet-1', second.id, 'Second words', { ...source, section: 'Verse', notes: 'Once for both' });
+    expect(getStoredSheet()!.arrangement?.map(item => item.lyrics)).toEqual(['First words', 'Second words']);
+    expect(getStoredSheet()!.parts[0].notes).toBe('Once for both');
+    await service.moveOccurrence('sheet-1', 1, 0);
+    expect(getStoredSheet()!.arrangement?.map(item => item.lyrics)).toEqual(['Second words', 'First words']);
+    await service.removeOccurrence('sheet-1', first.id);
+    expect(getStoredSheet()!.arrangement?.map(item => item.id)).toEqual([second.id]);
+    expect(getStoredSheet()!.parts).toHaveLength(1);
+  });
+
+  it('makes one occurrence independent without losing lyrics or changing the source', async () => {
+    const { service, getStoredSheet } = createService(createSheet());
+    const first = await service.addOccurrence('sheet-1');
+    const second = await service.addOccurrence('sheet-1', first.partId);
+    const source = getStoredSheet()!.parts[0];
+    source.measures = [service.createEmptyPartMeasure()];
+    await service.saveOccurrence('sheet-1', second.id, 'Different lyrics', {
+      ...source, id: 'variation', section: 'Verse 2', notes: 'New notes',
+      measures: [{ ...source.measures[0], id: 'variation-measure' }]
+    });
+    expect(getStoredSheet()!.arrangement?.[0].partId).toBe(source.id);
+    expect(getStoredSheet()!.arrangement?.[1]).toMatchObject({ partId: 'variation', lyrics: 'Different lyrics' });
+    expect(getStoredSheet()!.parts[0].notes).toBe('');
+    expect(getStoredSheet()!.parts[1]).toMatchObject({ section: 'Verse 2', notes: 'New notes' });
+    await service.removePart('sheet-1', 1);
+    expect(getStoredSheet()!.arrangement?.map(item => item.id)).toEqual([first.id]);
+  });
+
+  it('copies measures from sheet-local patterns without storing pattern references', () => {
     const { service } = createService();
     const sheet = createSheet();
 
-    const item = service.createPatternItem(sheet.patterns[0]);
+    const measures = service.createMeasuresFromPattern(sheet.patterns[0]);
 
-    expect(item.patternId).toBe('pattern-1');
-    expect(item.measureTexts).toEqual([
-      { measureIndex: 0, lyrics: '', notes: '' },
-      { measureIndex: 1, lyrics: '', notes: '' }
+    expect(measures).toHaveLength(2);
+    expect((measures[0] as any).lyrics).toBeUndefined();
+    expect((measures[0] as any).notes).toBeUndefined();
+    expect(measures[0].measure.actionGrips).toEqual([]);
+    expect(measures[1].measure.actionGrips).toEqual([
+      { measureIndex: 0, actionIndex: 2, gripId: 'grip-g', name: 'G' }
     ]);
-    expect(item.actionGrips).toEqual([]);
+    expect((measures[0] as any).patternId).toBeUndefined();
+    expect(measures[0].measure).toMatchObject({
+      timeSignature: sheet.patterns[0].measures[0].timeSignature,
+      actions: sheet.patterns[0].measures[0].actions
+    });
+    expect(measures[0].measure).not.toBe(sheet.patterns[0].measures[0]);
   });
 
-  it('normalizes overlays and removes out-of-range action assignments', () => {
+  it('creates empty measures using the requested time signature', () => {
     const { service } = createService();
-    const pattern = createSheet().patterns[0];
-    const item: SongPartPatternItem = {
-      id: 'item-1',
-      patternId: pattern.id,
-      measureTexts: [{ measureIndex: 1, lyrics: 'line', notes: '' }],
-      actionGrips: [
-        { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', name: 'C' },
-        { measureIndex: 1, actionIndex: 20, gripId: 'grip-g', name: 'G' }
-      ]
-    };
 
-    service.normalizePartItem(item, pattern);
+    const measure = service.createEmptyPartMeasure('3/4');
 
-    expect(item.measureTexts).toEqual([
-      { measureIndex: 0, lyrics: '', notes: '' },
-      { measureIndex: 1, lyrics: 'line', notes: '' }
-    ]);
-    expect(item.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 15, gripId: 'grip-c', name: 'C' }
-    ]);
+    expect(measure.measure.timeSignature).toBe('3/4');
+    expect(measure.measure.actions).toHaveLength(12);
+    expect((measure as any).lyrics).toBeUndefined();
+    expect((measure as any).notes).toBeUndefined();
   });
 
-  it('resolves a part item by joining the pattern with arrangement overlays', () => {
+  it('resolves part measures directly from copied part data', () => {
     const { service } = createService();
     const sheet = createSheet();
-    const item: SongPartPatternItem = {
-      id: 'item-1',
-      patternId: 'pattern-1',
-      measureTexts: [
-        { measureIndex: 0, lyrics: 'hello', notes: 'accent' },
-        { measureIndex: 1, lyrics: '', notes: 'hold' }
-      ],
-      actionGrips: [{ measureIndex: 1, actionIndex: 2, gripId: 'grip-g', name: 'G' }]
+    const part = {
+      id: 'part-1',
+      section: 'Verse',
+      lyrics: 'hello',
+      notes: 'accent',
+      measures: [{
+        id: 'measure-1',
+        measure: {
+          ...sheet.patterns[0].measures[0],
+          actionGrips: [{ measureIndex: 0, actionIndex: 2, gripId: 'grip-g', name: 'G' }]
+        }
+      }]
     };
 
-    const resolved = service.resolvePartItem(sheet, item);
+    const resolved = service.resolvePartMeasures(sheet, part);
 
-    expect(resolved).toHaveLength(2);
-    expect(resolved[0].patternName).toBe('Verse Pattern');
-    expect(resolved[0].absoluteMeasureIndex).toBe(0);
-    expect(resolved[0].lyrics).toBe('hello');
-    expect(resolved[1].absoluteMeasureIndex).toBe(1);
-    expect(resolved[1].notes).toBe('hold');
-    expect(resolved[1].actionGrips[0].actionIndex).toBe(2);
-    expect(resolved[1].patternActionGrips[0].actionIndex).toBe(2);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0].measureId).toBe('measure-1');
+    expect((resolved[0] as any).lyrics).toBeUndefined();
+    expect((resolved[0] as any).notes).toBeUndefined();
+    expect(resolved[0].measure.actionGrips?.[0].actionIndex).toBe(2);
+    expect((resolved[0] as any).patternName).toBeUndefined();
+    expect((resolved[0] as any).absoluteMeasureIndex).toBeUndefined();
   });
 
-  it('removes grip references from all part items when a grip is deleted', async () => {
+  it('removes grip references from all part measures when a grip is deleted', async () => {
     const sheet = createSheet();
     sheet.parts = [{
       id: 'part-1',
       section: 'Verse',
-      items: [{
-        id: 'item-1',
-        patternId: 'pattern-1',
-        measureTexts: [],
-        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
+      lyrics: '',
+      notes: '',
+      measures: [{
+        id: 'measure-1',
+        measure: {
+          ...sheet.patterns[0].measures[0],
+          actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
+        }
       }]
     }];
 
@@ -150,7 +187,7 @@ describe('SongSheetsService', () => {
     await service.removeGrip('sheet-1', 'grip-c');
 
     expect(getStoredSheet()?.grips).toEqual([{ gripId: 'grip-g', name: 'G' }]);
-    expect(getStoredSheet()?.parts[0].items[0].actionGrips).toEqual([]);
+    expect(getStoredSheet()?.parts[0].measures[0].measure.actionGrips).toEqual([]);
   });
 
   it('duplicates patterns with a new id and independent nested data', async () => {
@@ -178,16 +215,19 @@ describe('SongSheetsService', () => {
     expect(copiedPattern?.actionGrips?.[0]).not.toBe(originalPattern?.actionGrips?.[0]);
   });
 
-  it('duplicates parts with copied overlays and reused pattern references', async () => {
+  it('duplicates parts with independent copied measures', async () => {
     const sheet = createSheet();
     sheet.parts = [{
       id: 'part-1',
       section: 'Verse',
-      items: [{
-        id: 'item-1',
-        patternId: 'pattern-1',
-        measureTexts: [{ measureIndex: 0, lyrics: 'hello', notes: 'accent' }],
-        actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
+      lyrics: 'hello',
+      notes: 'accent',
+      measures: [{
+        id: 'measure-1',
+        measure: {
+          ...sheet.patterns[0].measures[0],
+          actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: 'grip-c', name: 'C' }]
+        }
       }]
     }];
     const { service, getStoredSheet } = createService(sheet);
@@ -200,13 +240,37 @@ describe('SongSheetsService', () => {
     expect(copy.id).not.toBe('part-1');
     expect(copiedPart?.id).toBe(copy.id);
     expect(copiedPart?.section).toBe('Verse (Copy)');
-    expect(copiedPart?.items).toHaveLength(1);
-    expect(copiedPart?.items[0].id).not.toBe('item-1');
-    expect(copiedPart?.items[0].patternId).toBe('pattern-1');
-    expect(copiedPart?.items[0].measureTexts).toEqual(originalPart?.items[0].measureTexts);
-    expect(copiedPart?.items[0].actionGrips).toEqual(originalPart?.items[0].actionGrips);
-    expect(copiedPart?.items[0].measureTexts[0]).not.toBe(originalPart?.items[0].measureTexts[0]);
-    expect(copiedPart?.items[0].actionGrips[0]).not.toBe(originalPart?.items[0].actionGrips[0]);
+    expect(copiedPart?.lyrics).toBe(originalPart?.lyrics);
+    expect(copiedPart?.notes).toBe(originalPart?.notes);
+    expect(copiedPart?.measures).toHaveLength(1);
+    expect(copiedPart?.measures[0].id).not.toBe('measure-1');
+    expect(copiedPart?.measures[0].measure.actionGrips).toEqual(originalPart?.measures[0].measure.actionGrips);
+    expect(copiedPart?.measures[0].measure).toEqual(originalPart?.measures[0].measure);
+    expect(copiedPart?.measures[0].measure).not.toBe(originalPart?.measures[0].measure);
+    expect(copiedPart?.measures[0].measure.actionGrips?.[0]).not.toBe(originalPart?.measures[0].measure.actionGrips?.[0]);
+  });
+
+  it('removes patterns after they have been imported into a part', async () => {
+    const sheet = createSheet();
+    sheet.parts = [{
+      id: 'part-1',
+      section: 'Verse',
+      lyrics: '',
+      notes: '',
+      measures: [{
+        id: 'measure-1',
+        measure: {
+          ...sheet.patterns[0].measures[0],
+          actionGrips: []
+        }
+      }]
+    }];
+    const { service, getStoredSheet } = createService(sheet);
+
+    await service.removePattern('sheet-1', 'pattern-1');
+
+    expect(getStoredSheet()?.patterns).toEqual([]);
+    expect(getStoredSheet()?.parts[0].measures).toHaveLength(1);
   });
 
   it('moves patterns and ignores invalid pattern moves', async () => {
@@ -233,8 +297,8 @@ describe('SongSheetsService', () => {
   it('moves parts and ignores invalid part moves', async () => {
     const sheet = createSheet();
     sheet.parts = [
-      { id: 'part-1', section: 'Verse', items: [] },
-      { id: 'part-2', section: 'Chorus', items: [] }
+      { id: 'part-1', section: 'Verse', lyrics: '', notes: '', measures: [] },
+      { id: 'part-2', section: 'Chorus', lyrics: '', notes: '', measures: [] }
     ];
     const { service, getStoredSheet, db } = createService(sheet);
 

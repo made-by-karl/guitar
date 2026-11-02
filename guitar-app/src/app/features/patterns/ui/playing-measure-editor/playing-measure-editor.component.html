@@ -1,0 +1,426 @@
+<div class="playing-measure-editor">
+  <div class="measure-controls mb-3">
+    <div class="row align-items-center">
+      <div class="col-md-4">
+        <label class="form-label small" for="timeSignature">Time Signature</label>
+        <select
+          class="form-select form-select-sm"
+          id="timeSignature"
+          [ngModel]="measure().timeSignature"
+          (ngModelChange)="changeTimeSignature($event)"
+          name="timeSignature">
+          @for (timeSig of getAvailableTimeSignatures(); track timeSig.value) {
+            <option [ngValue]="timeSig.value">{{ timeSig.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small" for="subdivisionSwitch">Subdivision</label>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small">8th</span>
+          <div class="form-check form-switch mb-0">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="subdivisionSwitch"
+              name="subdivisionSwitch"
+              [checked]="isSixteenthDisplayActive()"
+              [disabled]="!canToggleSixteenthSteps()"
+              (change)="toggleSixteenthSteps()">
+          </div>
+          <span class="small">16th</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-label small">Actions</div>
+        <div class="small text-muted">
+          {{ getActionsForDisplay().length }} positions
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-column-container">
+    <div class="action-positions">
+      @for (actionData of getActionsForDisplay(); track actionData.originalIndex) {
+        <div
+          class="action-position"
+          [class.main-position]="actionData.isMainPosition"
+          [class.quarter-position]="actionData.subdivision === 'quarter'"
+          [class.eighth-position]="actionData.subdivision === 'eighth'"
+          [class.sixteenth-position]="actionData.subdivision === 'sixteenth'">
+          <div class="action-slot-header">
+            <span class="action-position-label">{{ getActionPositionLabel(actionData) }}</span>
+            @if (showGripControls()) {
+              <button
+                type="button"
+                class="btn btn-sm action-grip-button"
+                [class.btn-primary]="getActionGrip(actionData.originalIndex)"
+                [class.btn-outline-secondary]="!getActionGrip(actionData.originalIndex)"
+                (click)="requestActionGrip(actionData.originalIndex)"
+                [title]="'Set grip for ' + getActionPositionLabel(actionData)">
+                <i class="bi bi-music-note-beamed"></i>
+                <span>{{ getActionGrip(actionData.originalIndex)?.name || 'Grip' }}</span>
+              </button>
+            }
+          </div>
+
+          <div class="action-content-wrapper">
+            @if (actionData.action) {
+              <div class="action-content card">
+                <div class="action-header d-flex justify-content-between align-items-center">
+                  <span class="badge" [class]="'bg-' + (actionData.action.technique === 'strum' ? 'primary' :
+                                                        actionData.action.technique === 'pick' ? 'success' :
+                                                        actionData.action.technique === 'percussive' ? 'warning' : 'info')">
+                    {{ actionData.action.technique }}
+                    @if (actionData.action.strum) {
+                      <i class="bi" [class]="actionData.action.strum.direction === 'D' ? 'bi-arrow-down' : 'bi-arrow-up'"></i>
+                    }
+                  </span>
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    type="button"
+                    (click)="removeAction(actionData.originalIndex)"
+                    title="Remove action">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+
+                <div class="action-details">
+                  @if (actionData.action.technique === 'strum' || actionData.action.technique === 'pick') {
+                    <div class="modifiers-section">
+                      <div class="form-label small">Modifiers</div>
+                      <div class="d-flex gap-1 flex-wrap">
+                        @for (modifier of getAvailableModifiers(); track modifier.value) {
+                          <div class="form-check form-check-inline">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              [id]="'modifier_' + actionData.originalIndex + '_' + modifier.value"
+                              [checked]="hasModifier(actionData.action, modifier.value)"
+                              (change)="toggleModifier(actionData.originalIndex, modifier.value)" />
+                            <label class="form-check-label small" [for]="'modifier_' + actionData.originalIndex + '_' + modifier.value">
+                              {{ modifier.label }}
+                            </label>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (actionData.action.technique === 'strum' && actionData.action.strum) {
+                    <div class="direction-section">
+                      <label class="form-label small" [attr.for]="'direction_' + actionData.originalIndex">Direction</label>
+                      <select
+                        class="form-select form-select-sm"
+                        [id]="'direction_' + actionData.originalIndex"
+                        [ngModel]="actionData.action.strum.direction"
+                        (ngModelChange)="updateStrumDirection(actionData.originalIndex, $event)"
+                        [name]="'direction_' + actionData.originalIndex">
+                        <option [ngValue]="'D'">Down</option>
+                        <option [ngValue]="'U'">Up</option>
+                      </select>
+                    </div>
+
+                    <div class="strum-section">
+                      <label class="form-label small" [attr.for]="'strumStrings_' + actionData.originalIndex">Strings</label>
+                      <select
+                        class="form-select form-select-sm"
+                        [id]="'strumStrings_' + actionData.originalIndex"
+                        [ngModel]="getStrumStringsMode(actionData.action)"
+                        (ngModelChange)="updateStrumStringsMode(actionData.originalIndex, $event)"
+                        [name]="'strumStrings_' + actionData.originalIndex">
+                        @for (option of strumStringOptions; track option.value) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                      @if (isRelativeStrumStrings(actionData.action)) {
+                        <div class="d-flex gap-2 mt-2">
+                          <select
+                            class="form-select form-select-sm"
+                            [attr.aria-label]="'Strum range start for ' + measureLabel() + ' action ' + getActionPositionLabel(actionData)"
+                            [ngModel]="getStrumRangeFrom(actionData.action)"
+                            (ngModelChange)="updateStrumRangeFrom(actionData.originalIndex, $event)"
+                            [name]="'strumRangeFrom_' + actionData.originalIndex">
+                            @for (relativeString of relativeStrings; track relativeString) {
+                              <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
+                            }
+                          </select>
+                          <select
+                            class="form-select form-select-sm"
+                            [attr.aria-label]="'Strum range end for ' + measureLabel() + ' action ' + getActionPositionLabel(actionData)"
+                            [ngModel]="getStrumRangeTo(actionData.action)"
+                            (ngModelChange)="updateStrumRangeTo(actionData.originalIndex, $event)"
+                            [name]="'strumRangeTo_' + actionData.originalIndex">
+                            @for (relativeString of relativeStrings; track relativeString) {
+                              <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
+                            }
+                          </select>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (actionData.action.technique === 'pick') {
+                    <div class="pick-section">
+                      <div class="form-label small">Notes</div>
+                      <div class="pick-notes">
+                        <div class="pick-note-header small text-muted">
+                          <span>Mode</span>
+                          <span>String</span>
+                          <span>Fret</span>
+                          <span>Offset</span>
+                          <span></span>
+                        </div>
+                        @if (actionData.action.pick) {
+                          @for (note of actionData.action.pick; track noteIndex; let noteIndex = $index) {
+                            <div class="pick-note">
+                              <div class="pick-note-grid">
+                                <div class="pick-note-field">
+                                  <label class="form-label small" [attr.for]="'pickNoteMode_' + actionData.originalIndex + '_' + noteIndex">Mode</label>
+                                  <select
+                                    class="form-select form-select-sm"
+                                    [id]="'pickNoteMode_' + actionData.originalIndex + '_' + noteIndex"
+                                    [ngModel]="getPickNoteMode(note)"
+                                    (ngModelChange)="setPickNoteMode(actionData.originalIndex, noteIndex, $event)"
+                                    [name]="'pickNoteMode_' + actionData.originalIndex + '_' + noteIndex">
+                                    <option value="relative">Relative</option>
+                                    <option value="explicit">Explicit</option>
+                                  </select>
+                                </div>
+                                @if (isRelativePickNote(note)) {
+                                  <div class="pick-note-field">
+                                    <label class="form-label small" [attr.for]="'pickRelativeString_' + actionData.originalIndex + '_' + noteIndex">String</label>
+                                    <select
+                                      class="form-select form-select-sm"
+                                      [id]="'pickRelativeString_' + actionData.originalIndex + '_' + noteIndex"
+                                      [ngModel]="getPickRelativeString(note)"
+                                      (ngModelChange)="updatePickNoteRelativeString(actionData.originalIndex, noteIndex, $event)"
+                                      [name]="'pickRelativeString_' + actionData.originalIndex + '_' + noteIndex">
+                                      @for (relativeString of relativeStrings; track relativeString) {
+                                        <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
+                                      }
+                                    </select>
+                                  </div>
+                                  <div class="pick-note-field">
+                                    <label class="form-label small" [attr.for]="'pickAnchor_' + actionData.originalIndex + '_' + noteIndex">Fret</label>
+                                    <select
+                                      class="form-select form-select-sm"
+                                      [id]="'pickAnchor_' + actionData.originalIndex + '_' + noteIndex"
+                                      [ngModel]="getPickAnchor(note)"
+                                      (ngModelChange)="updatePickNoteAnchor(actionData.originalIndex, noteIndex, $event)"
+                                      [name]="'pickAnchor_' + actionData.originalIndex + '_' + noteIndex">
+                                      <option value="grip-note">Grip</option>
+                                      <option value="base-note">Base</option>
+                                    </select>
+                                  </div>
+                                  @if (canEditPickOffset(note)) {
+                                    <div class="pick-note-field">
+                                      <label class="form-label small" [attr.for]="'pickOffset_' + actionData.originalIndex + '_' + noteIndex">Offset</label>
+                                      <input
+                                        type="number"
+                                        class="form-control form-control-sm"
+                                        [id]="'pickOffset_' + actionData.originalIndex + '_' + noteIndex"
+                                        autocomplete="off"
+                                        [ngModel]="getRelativePickOffset(note)"
+                                        (ngModelChange)="updatePickNoteOffset(actionData.originalIndex, noteIndex, $event)"
+                                        [name]="'pickOffset_' + actionData.originalIndex + '_' + noteIndex"
+                                        min="-24"
+                                        max="24"
+                                        placeholder="Offset" />
+                                    </div>
+                                  } @else {
+                                    <div class="pick-note-field pick-note-field-empty"></div>
+                                  }
+                                } @else {
+                                  <div class="pick-note-field">
+                                    <label class="form-label small" [attr.for]="'pickString_' + actionData.originalIndex + '_' + noteIndex">String</label>
+                                    <select
+                                      class="form-select form-select-sm"
+                                      [id]="'pickString_' + actionData.originalIndex + '_' + noteIndex"
+                                      [ngModel]="note.string"
+                                      (ngModelChange)="updatePickNoteString(actionData.originalIndex, noteIndex, $event)"
+                                      [name]="'pickString_' + actionData.originalIndex + '_' + noteIndex">
+                                      @for (stringIdx of [0,1,2,3,4,5]; track stringIdx) {
+                                        <option [ngValue]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                                      }
+                                    </select>
+                                  </div>
+                                  <div class="pick-note-field">
+                                    <label class="form-label small" [attr.for]="'pickFret_' + actionData.originalIndex + '_' + noteIndex">Fret</label>
+                                    <input
+                                      type="number"
+                                      class="form-control form-control-sm"
+                                      [id]="'pickFret_' + actionData.originalIndex + '_' + noteIndex"
+                                      autocomplete="off"
+                                      [ngModel]="note.fret"
+                                      (ngModelChange)="updatePickNoteFret(actionData.originalIndex, noteIndex, $event)"
+                                      [name]="'pickFret_' + actionData.originalIndex + '_' + noteIndex"
+                                      min="-1"
+                                      max="24"
+                                      placeholder="Fret" />
+                                  </div>
+                                  <div class="pick-note-field pick-note-field-empty"></div>
+                                }
+                                <button
+                                  class="btn btn-outline-danger btn-sm"
+                                  type="button"
+                                  (click)="removePickingNote(actionData.originalIndex, noteIndex)">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        }
+                        <button
+                          class="btn btn-outline-secondary btn-sm"
+                          type="button"
+                          [disabled]="(actionData.action.pick?.length ?? 0) >= maxPickNotes"
+                          (click)="addPickingNote(actionData.originalIndex)">
+                          <i class="bi bi-plus"></i> Add Note
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  @if ((actionData.action.technique === 'hammer-on' || actionData.action.technique === 'pull-off' || actionData.action.technique === 'slide') && actionData.action.legato) {
+                    <div class="pick-section">
+                      <label class="form-label small" [attr.for]="'legatoMode_' + actionData.originalIndex">Mode</label>
+                      <select
+                        class="form-select form-select-sm mb-2"
+                        [id]="'legatoMode_' + actionData.originalIndex"
+                        [ngModel]="getLegatoModeForAction(actionData.action)"
+                        (ngModelChange)="setLegatoMode(actionData.originalIndex, $event)"
+                        [name]="'legatoMode_' + actionData.originalIndex">
+                        <option value="relative">Relative</option>
+                        <option value="explicit">Explicit</option>
+                      </select>
+                      @if (isRelativeLegato(actionData.action.legato)) {
+                        <label class="form-label small" [attr.for]="'legatoRelativeString_' + actionData.originalIndex">String</label>
+                        <select
+                          class="form-select form-select-sm mb-2"
+                          [id]="'legatoRelativeString_' + actionData.originalIndex"
+                          [ngModel]="getLegatoRelativeString(actionData.action.legato)"
+                          (ngModelChange)="updateLegatoRelativeString(actionData.originalIndex, $event)"
+                          [name]="'legatoRelativeString_' + actionData.originalIndex">
+                          @for (relativeString of relativeStrings; track relativeString) {
+                            <option [value]="relativeString">{{ getRelativeStringLabel(relativeString) }}</option>
+                          }
+                        </select>
+
+                        <div class="form-label small">Target</div>
+                        <div class="pick-note">
+                          <div class="d-flex align-items-center gap-1">
+                            <select
+                              class="form-select form-select-sm"
+                              [ngModel]="getLegatoTargetAnchor(actionData.action.legato)"
+                              (ngModelChange)="updateLegatoTargetAnchor(actionData.originalIndex, $event)"
+                              [name]="'legatoTargetAnchor_' + actionData.originalIndex">
+                              <option value="base-note">Base</option>
+                              <option value="grip-note">Grip</option>
+                            </select>
+                            @if (canEditLegatoTargetOffset(actionData.action.legato)) {
+                              <input
+                                type="number"
+                                class="form-control form-control-sm"
+                                autocomplete="off"
+                                [ngModel]="getRelativeLegatoTargetOffset(actionData.action.legato)"
+                                (ngModelChange)="updateLegatoTargetFretOffset(actionData.originalIndex, $event)"
+                                [name]="'legatoTargetOffset_' + actionData.originalIndex"
+                                min="-24"
+                                max="24"
+                                placeholder="Target Offset" />
+                            }
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="form-label small">Legato Note</div>
+                        <div class="pick-note">
+                          <div class="d-flex align-items-center gap-1">
+                            <select
+                              class="form-select form-select-sm"
+                              [ngModel]="actionData.action.legato.string"
+                              (ngModelChange)="updateLegatoString(actionData.originalIndex, $event)"
+                              [name]="'legatoString_' + actionData.originalIndex">
+                              @for (stringIdx of [0,1,2,3,4,5]; track stringIdx) {
+                                <option [value]="stringIdx">{{ getStringName(stringIdx) }}</option>
+                              }
+                            </select>
+                            <input
+                              type="number"
+                              class="form-control form-control-sm"
+                              autocomplete="off"
+                              [ngModel]="actionData.action.legato.toFret"
+                              (ngModelChange)="updateLegatoToFret(actionData.originalIndex, $event)"
+                              [name]="'legatoToFret_' + actionData.originalIndex"
+                              min="0"
+                              max="24"
+                              placeholder="Target" />
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (actionData.action.technique === 'percussive') {
+                    <div class="percussion-section">
+                      <label class="form-label small" [attr.for]="'percussionTechnique_' + actionData.originalIndex">Percussion Technique</label>
+                      <select
+                        class="form-select form-select-sm"
+                        [id]="'percussionTechnique_' + actionData.originalIndex"
+                        [ngModel]="actionData.action.percussive?.technique || 'body-knock'"
+                        (ngModelChange)="updatePercussionTechnique(actionData.originalIndex, $event)"
+                        [name]="'percussionTechnique_' + actionData.originalIndex">
+                        <option value="body-knock">Body Knock</option>
+                        <option value="string-slap">String Slap</option>
+                      </select>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="empty-action-slot">
+                <div class="dropdown">
+                  <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Add Technique">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'strum-down'); $event.preventDefault()">
+                      <i class="bi bi-arrow-down text-primary"></i> Strum Down
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'strum-up'); $event.preventDefault()">
+                      <i class="bi bi-arrow-up text-primary"></i> Strum Up
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'pick'); $event.preventDefault()">
+                      <i class="bi bi-hand-index text-success"></i> Pick
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'hammer-on'); $event.preventDefault()">
+                      <i class="bi bi-chevron-double-up text-info"></i> Hammer-On
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'pull-off'); $event.preventDefault()">
+                      <i class="bi bi-chevron-double-down text-info"></i> Pull-Off
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'slide'); $event.preventDefault()">
+                      <i class="bi bi-slash-lg text-info"></i> Slide
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" (click)="addAction(actionData.originalIndex, 'percussive'); $event.preventDefault()">
+                      <i class="bi bi-soundwave text-warning"></i> Percussion
+                    </a></li>
+                  </ul>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (showGripControls()) {
+    <div class="d-flex justify-content-end mt-3">
+      <button class="btn btn-outline-secondary btn-sm" type="button" (click)="clearMeasureGrips()">
+        Clear Grips
+      </button>
+    </div>
+  }
+</div>

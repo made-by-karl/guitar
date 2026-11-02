@@ -2,7 +2,7 @@
   <div class="section-header">
     <div>
       <h5 class="mb-0">Song Parts</h5>
-      <p class="section-copy mb-0">Arrange sheet-local patterns into verses, choruses, and bridges.</p>
+      <p class="section-copy mb-0">Arrange measures into verses, choruses, and bridges.</p>
     </div>
     <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPart()">
       <i class="bi bi-plus-lg"></i> Add Part
@@ -21,7 +21,7 @@
             </div>
             <div>
               <h6 class="mb-1">{{ part.section }}</h6>
-              <div class="small text-muted">{{ part.items.length }} pattern item(s)</div>
+              <div class="small text-muted">{{ part.measures.length }} measure(s)</div>
             </div>
           </div>
 
@@ -45,7 +45,7 @@
                 <i class="bi bi-stop-fill"></i> Stop
               </button>
               } @else {
-              <button class="btn btn-outline-primary btn-sm" type="button" (click)="playPart(part)">
+              <button class="btn btn-outline-primary btn-sm" type="button" [disabled]="!canPlayPart(part)" (click)="playPart(part)">
                 <i class="bi bi-play-fill"></i> Play
               </button>
               }
@@ -59,45 +59,35 @@
                 <i class="bi bi-trash"></i>
               </button>
             </div>
+            @if (!canPlayPart(part)) {
+            <div class="small text-muted">Assign a grip or add playable notes to enable playback.</div>
+            }
             @if (isPartPlaybackActive(part)) {
             <div class="small text-muted">{{ getPartMeasureCounter(part) }}</div>
             }
           </div>
         </div>
 
-        @if (part.items.length > 0) {
+        @if (part.measures.length > 0) {
         <div class="part-detail-list mt-3">
-          @for (item of part.items; track item.id) {
-          <div class="part-pattern-detail">
-            @if (getPartItemMeasures(item); as measures) {
-            @if (measures.length > 0) {
-            <div class="part-pattern-label">{{ getPatternName(item.patternId) }}</div>
+          @if (hasPartNotes(part)) {
+          <div class="part-notes">{{ part.notes }}</div>
+          }
+
+          @if (getPartMeasures(part); as measures) {
+          @if (measures.length > 0) {
             <div class="part-measure-list">
-              @for (measure of measures; track measure.itemId + ':' + measure.measureIndex) {
-              <div class="part-measure-detail">
-                @if (hasMeasureNotes(measure)) {
-                <div class="measure-notes">{{ measure.notes }}</div>
-                }
-
-                <div class="measure-actions">
-                  <app-playing-actions
-                    [measures]="[measure.measure]"
-                    [showActionIndex]="true"
-                    [measureWidth]="'100%'"
-                    [notationContexts]="[getMeasureNotationContext(measure)]" />
-                </div>
-
-                @if (hasMeasureLyrics(measure)) {
-                <div class="measure-lyrics">{{ measure.lyrics }}</div>
-                }
-              </div>
-              }
+              <app-playing-actions
+                [measures]="getNotationMeasures(measures)"
+                [showActionIndex]="true"
+                [measureWidth]="'100%'"
+                [notationContexts]="getNotationContexts(measures)" />
             </div>
-            } @else if (!hasPattern(item.patternId)) {
-            <div class="alert alert-warning mb-0">This item points to a missing pattern.</div>
-            }
-            }
-          </div>
+          }
+          }
+
+          @if (hasPartLyrics(part)) {
+          <div class="part-lyrics">{{ part.lyrics }}</div>
           }
         </div>
         }

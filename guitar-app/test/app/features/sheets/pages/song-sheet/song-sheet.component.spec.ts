@@ -7,11 +7,18 @@ import { SongGripsTabComponent } from '@/app/features/sheets/pages/song-sheet/so
 import { SongSheetLinkEditorModalComponent } from '@/app/features/sheets/pages/song-sheet/song-sheet-link-editor-modal.component';
 import { SongPartsTabComponent } from '@/app/features/sheets/pages/song-sheet/song-parts-tab/song-parts-tab.component';
 import { SongPatternsTabComponent } from '@/app/features/sheets/pages/song-sheet/song-patterns-tab/song-patterns-tab.component';
+import { SongArrangementComponent } from '@/app/features/sheets/pages/song-sheet/song-arrangement/song-arrangement.component';
 import { SongSheetComponent } from '@/app/features/sheets/pages/song-sheet/song-sheet.component';
 import { SongTuningEditorComponent } from '@/app/features/sheets/pages/song-sheet/song-tuning-editor/song-tuning-editor.component';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
+
+@Component({ selector: 'app-song-arrangement', standalone: true, template: '' })
+class StubSongArrangementComponent {
+  @Input() sheet!: SongSheetWithData;
+  @Output() changed = new EventEmitter<void>();
+}
 
 @Component({ selector: 'app-song-sheet-parts-tab', standalone: true, template: '' })
 class StubSongPartsTabComponent {
@@ -40,7 +47,6 @@ class StubSongTuningEditorComponent {
   @Input() tempo = 0;
   @Output() capodasterChange = new EventEmitter<number>();
   @Output() tempoChange = new EventEmitter<number>();
-  @Output() cancel = new EventEmitter<void>();
   @Output() save = new EventEmitter<void>();
 }
 
@@ -95,7 +101,8 @@ describe('SongSheetComponent', () => {
           provide: SongPartPlaybackService,
           useValue: {
             stopMeasurePreview: jest.fn(),
-            stopSongPart: jest.fn()
+            stopSongPart: jest.fn(),
+            stopSong: jest.fn()
           }
         },
         {
@@ -115,11 +122,7 @@ describe('SongSheetComponent', () => {
         {
           provide: ModalService,
           useValue: {
-            show,
-            showTemplate: jest.fn(() => ({
-              afterClosed: jest.fn().mockResolvedValue(undefined),
-              close: jest.fn()
-            }))
+            show
           }
         }
       ]
@@ -128,6 +131,7 @@ describe('SongSheetComponent', () => {
         remove: {
           imports: [
             SongPartsTabComponent,
+            SongArrangementComponent,
             SongGripsTabComponent,
             SongPatternsTabComponent,
             SongTuningEditorComponent
@@ -136,6 +140,7 @@ describe('SongSheetComponent', () => {
         add: {
           imports: [
             StubSongPartsTabComponent,
+            StubSongArrangementComponent,
             StubSongGripsTabComponent,
             StubSongPatternsTabComponent,
             StubSongTuningEditorComponent
@@ -155,8 +160,101 @@ describe('SongSheetComponent', () => {
     };
   }
 
+  it('shows the Song tab first and keeps the library and settings tabs and keeps tuning and links in their own panels', async () => {
+    const { fixture } = await createComponent();
+    const element: HTMLElement = fixture.nativeElement;
+    const tabs = Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    expect(tabs.map(tab => tab.getAttribute('aria-label')))
+      .toEqual(['Song', 'Parts', 'Grips', 'Patterns', 'Tempo & Tuning', 'Links']);
+    expect(element.querySelector('app-song-arrangement')).not.toBeNull();
+    expect(element.querySelector('app-song-tuning-editor')).toBeNull();
+    expect(element.querySelector('.sheet-links')).toBeNull();
+    expect(element.querySelector('.sheet-meta')).toBeNull();
+
+    const selectors = ['app-song-arrangement', 'app-song-sheet-parts-tab', 'app-song-sheet-grips-tab', 'app-song-sheet-patterns-tab',
+      'app-song-tuning-editor', '.sheet-links'];
+    for (const [index, tab] of tabs.entries()) {
+      tab.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      const panel = element.querySelector('[role="tabpanel"]');
+      expect(panel?.id).toBe(tab.getAttribute('aria-controls'));
+      expect(panel?.getAttribute('aria-labelledby')).toBe(tab.id);
+      expect(tab.getAttribute('aria-selected')).toBe('true');
+      expect(tab.tabIndex).toBe(0);
+      expect(tabs.filter(button => button.tabIndex === 0)).toHaveLength(1);
+      expect(panel?.querySelector(selectors[index])).not.toBeNull();
+      expect(tab.querySelector('i[aria-hidden="true"]')).not.toBeNull();
+      expect(tab.title).toBe(tab.getAttribute('aria-label'));
+    }
+  });
+
+  it('keeps tuning changes as a draft across tabs until saved', async () => {
+    const originalSheet: SongSheetWithData = {
+      ...sheet, tuning: [{ semitone: 'E', octave: 2 }], capodaster: 1, tempo: 90
+    };
+    const { fixture, update } = await createComponent({ sheet: originalSheet });
+    const component = fixture.componentInstance;
+    await component.selectTab('tuning');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-song-tuning-editor')).not.toBeNull();
+    component.tempTuning[0].semitone = 'D';
+    component.tempCapodaster = 3;
+    component.tempTempo = 110;
+    await component.selectTab('parts');
+    await component.selectTab('tuning');
+    expect(component.tempTuning[0].semitone).toBe('D');
+    expect(component.sheet?.tuning[0].semitone).toBe('E');
+    expect(component.sheet?.capodaster).toBe(1);
+    expect(update).not.toHaveBeenCalled();
+
+  });
+
+  it('saves tuning settings from the tab without sharing mutable tuning notes', async () => {
+    const { fixture, update, show } = await createComponent({
+      sheet: { ...sheet, tuning: [{ semitone: 'E', octave: 2 }] }
+    });
+    const component = fixture.componentInstance;
+    await component.selectTab('tuning');
+    component.tempTuning[0].semitone = 'D';
+    component.tempCapodaster = 2;
+    component.tempTempo = 110;
+    await component.saveTuning();
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      tuning: [{ semitone: 'D', octave: 2 }], capodaster: 2, tempo: 110
+    }));
+    expect(show).not.toHaveBeenCalled();
+    expect(component.activeTab).toBe('tuning');
+    component.tempTuning[0].semitone = 'C';
+    expect(component.sheet?.tuning[0].semitone).toBe('D');
+  });
+
+  it.each([
+    { start: 0, key: 'ArrowRight', end: 1 },
+    { start: 0, key: 'ArrowLeft', end: 5 },
+    { start: 5, key: 'Home', end: 0 },
+    { start: 0, key: 'End', end: 5 }
+  ])('supports $key keyboard navigation', async ({ start, key, end }) => {
+    const { fixture } = await createComponent();
+    const element: HTMLElement = fixture.nativeElement;
+    const tabs = element.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    tabs[start].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    tabs[start].focus();
+    tabs[start].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(tabs[end]);
+    expect(tabs[end].getAttribute('aria-selected')).toBe('true');
+    expect(tabs[end].tabIndex).toBe(0);
+  });
+
   it('renders external links with optional descriptions and safe new-window attributes', async () => {
     const { fixture } = await createComponent();
+    await fixture.componentInstance.selectTab('links');
+    fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const anchors = Array.from(compiled.querySelectorAll('.sheet-link-anchor')) as HTMLAnchorElement[];

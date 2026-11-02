@@ -18,5 +18,4 @@ export class SongTuningEditorComponent {
   readonly tempo = model.required<number>();
 
   readonly save = output<void>();
-  readonly cancel = output<void>();
 }

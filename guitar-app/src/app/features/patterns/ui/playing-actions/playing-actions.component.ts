@@ -19,6 +19,7 @@ import {
   isRelativeStrumRange
 } from '@/app/features/patterns/services/playing-patterns.model';
 import {
+  resolveNotationGrip,
   resolveRelativeLegatoEndpointFret,
   resolveRelativePickFret,
   resolveRelativeStringIndex,
@@ -30,6 +31,11 @@ export interface PlayingActionsNotationContext {
   actionGrips?: PlayingPatternActionGrip[];
   gripById?: Record<string, Grip | undefined>;
   initialGrip?: Grip;
+}
+
+export interface PlayingActionsNotationHistoryEntry {
+  measure: Measure;
+  context?: PlayingActionsNotationContext;
 }
 
 interface SlotPickMark {
@@ -92,6 +98,8 @@ interface ResolvedLegatoRender {
   styleUrl: './playing-actions.component.scss'
 })
 export class PlayingActionsComponent {
+  readonly notationHistory = input<PlayingActionsNotationHistoryEntry[]>([]);
+
   readonly strings = [0, 1, 2, 3, 4, 5];
   readonly slotTop = 12;
   readonly gripLabelTopBand = 15;
@@ -389,12 +397,12 @@ export class PlayingActionsComponent {
 
   getStrumMinY(actionIndex: number, action: PlayingAction): number {
     const strings = this.getStrumStringIndices(actionIndex, action);
-    return this.stringY(Math.max(...strings));
+    return this.stringY(strings.length > 0 ? Math.max(...strings) : 2);
   }
 
   getStrumMaxY(actionIndex: number, action: PlayingAction): number {
     const strings = this.getStrumStringIndices(actionIndex, action);
-    return this.stringY(Math.min(...strings));
+    return this.stringY(strings.length > 0 ? Math.min(...strings) : 2);
   }
 
   getStrumArrowY(actionIndex: number, action: PlayingAction): number {
@@ -749,7 +757,7 @@ export class PlayingActionsComponent {
     return boundaries;
   }
 
-  private getStrumStringIndices(actionIndex: number, action: PlayingAction): number[] {
+  getStrumStringIndices(actionIndex: number, action: PlayingAction): number[] {
     if (!action.strum) {
       return [0, 1, 2, 3, 4, 5];
     }
@@ -758,6 +766,7 @@ export class PlayingActionsComponent {
       return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings);
     }
 
+    const grip = this.resolvedGripTimeline().get(actionIndex);
     return getStringsForStrum(action.strum.strings);
   }
 

@@ -2,9 +2,8 @@ import { Injectable } from '@angular/core';
 import {
   ResolvedSongPartMeasure,
   SongPart,
-  SongPartActionGrip,
-  SongPartMeasureText,
-  SongPartPatternItem,
+  SongPartOccurrence,
+  SongPartMeasure,
   SongSheetLink,
   SongSheet,
   SongSheetGrip,
@@ -15,6 +14,9 @@ import {
 import { note } from '@/app/core/music/semitones';
 import { parseGrip } from '@/app/features/grips/services/grips/grip.model';
 import { DatabaseService } from '@/app/core/services/database.service';
+import { Measure } from '@/app/features/patterns/services/playing-patterns.model';
+import { getSongArrangement, migrateSongArrangement } from './song-arrangement';
+import { cloneMeasure } from '@/app/features/patterns/services/playing-pattern-clone';
 
 @Injectable({ providedIn: 'root' })
 export class SongSheetsService {
@@ -31,7 +33,9 @@ export class SongSheetsService {
 
   async getAll(): Promise<SongSheet[]> {
     try {
-      return await this.db.songSheets.toArray();
+      const sheets = await this.db.songSheets.toArray();
+      sheets.forEach(migrateSongArrangement);
+      return sheets;
     } catch (error) {
       console.error('Error loading song sheets:', error);
       return [];
@@ -40,7 +44,9 @@ export class SongSheetsService {
 
   async getById(id: string): Promise<SongSheet | undefined> {
     try {
-      return await this.db.songSheets.get(id);
+      const sheet = await this.db.songSheets.get(id);
+      if (sheet) migrateSongArrangement(sheet);
+      return sheet;
     } catch (error) {
       console.error('Error loading song sheet:', error);
       return undefined;
@@ -77,6 +83,7 @@ export class SongSheetsService {
       grips: [],
       patterns: [],
       parts: [],
+      arrangement: [],
       created: now,
       updated: now
     };
@@ -149,9 +156,12 @@ export class SongSheetsService {
     sheet.grips = sheet.grips.filter(grip => grip.gripId !== gripId);
     sheet.parts = sheet.parts.map(part => ({
       ...part,
-      items: part.items.map(item => ({
-        ...item,
-        actionGrips: item.actionGrips.filter(grip => grip.gripId !== gripId)
+      measures: part.measures.map(measure => ({
+        ...measure,
+        measure: {
+          ...measure.measure,
+          actionGrips: (measure.measure.actionGrips ?? []).filter(grip => grip.gripId !== gripId)
+        }
       }))
     }));
 
@@ -242,10 +252,6 @@ export class SongSheetsService {
       return;
     }
 
-    if (this.getPatternUsageCountFromSheet(sheet, patternId) > 0) {
-      throw new Error('Pattern is still used in song parts');
-    }
-
     sheet.patterns = sheet.patterns.filter(pattern => pattern.id !== patternId);
     await this.update(sheet);
   }
@@ -277,6 +283,63 @@ export class SongSheetsService {
     await this.update(sheet);
   }
 
+  async addOccurrence(sheetId: string, partId?: string, afterOccurrenceId?: string): Promise<SongPartOccurrence> {
+    const sheet = await this.getById(sheetId);
+    if (!sheet) throw new Error('Song sheet not found');
+    let part = sheet.parts.find(item => item.id === partId);
+    if (partId && !part) throw new Error('Song part not found');
+    if (!part) {
+      part = { id: this.createId('sp'), section: 'Untitled part', notes: '', measures: [] };
+      sheet.parts.push(part);
+    }
+    const occurrence = { id: this.createId('occ'), partId: part.id, lyrics: '' };
+    const arrangement = [...getSongArrangement(sheet)];
+    const afterIndex = arrangement.findIndex(item => item.id === afterOccurrenceId);
+    arrangement.splice(afterIndex < 0 ? arrangement.length : afterIndex + 1, 0, occurrence);
+    sheet.arrangement = arrangement;
+    await this.update(sheet);
+    return occurrence;
+  }
+
+  async saveOccurrence(sheetId: string, occurrenceId: string, lyrics: string, music?: SongPart): Promise<void> {
+    const sheet = await this.getById(sheetId);
+    if (!sheet) throw new Error('Song sheet not found');
+    const occurrence = getSongArrangement(sheet).find(item => item.id === occurrenceId);
+    if (!occurrence) throw new Error('Song occurrence not found');
+    if (music) {
+      const cleanMusic = this.clonePart({ ...music, section: music.section.trim() || 'Untitled part', notes: music.notes.trim() });
+      if (music.id === occurrence.partId) {
+        const index = sheet.parts.findIndex(part => part.id === music.id);
+        if (index < 0) throw new Error('Song part not found');
+        sheet.parts[index] = cleanMusic;
+      } else {
+        if (sheet.parts.some(part => part.id === music.id)) throw new Error('Independent part must have a new identity');
+        sheet.parts.push(cleanMusic);
+        occurrence.partId = music.id;
+      }
+    }
+    occurrence.lyrics = lyrics;
+    await this.update(sheet);
+  }
+
+  async moveOccurrence(sheetId: string, from: number, to: number): Promise<void> {
+    const sheet = await this.getById(sheetId);
+    if (!sheet) return;
+    const arrangement = getSongArrangement(sheet);
+    if (from === to || from < 0 || to < 0 || from >= arrangement.length || to >= arrangement.length) return;
+    const [occurrence] = arrangement.splice(from, 1);
+    arrangement.splice(to, 0, occurrence);
+    sheet.arrangement = arrangement;
+    await this.update(sheet);
+  }
+
+  async removeOccurrence(sheetId: string, occurrenceId: string): Promise<void> {
+    const sheet = await this.getById(sheetId);
+    if (!sheet) return;
+    sheet.arrangement = getSongArrangement(sheet).filter(occurrence => occurrence.id !== occurrenceId);
+    await this.update(sheet);
+  }
+
   async updatePart(sheetId: string, partIndex: number, part: SongPart): Promise<void> {
     const sheet = await this.getById(sheetId);
     if (!sheet || partIndex < 0 || partIndex >= sheet.parts.length) {
@@ -293,7 +356,8 @@ export class SongSheetsService {
       return;
     }
 
-    sheet.parts.splice(partIndex, 1);
+    const [removed] = sheet.parts.splice(partIndex, 1);
+    sheet.arrangement = getSongArrangement(sheet).filter(occurrence => occurrence.partId !== removed.id);
     await this.update(sheet);
   }
 
@@ -311,9 +375,10 @@ export class SongSheetsService {
     const copy: SongPart = {
       id: this.createId('sp'),
       section: part.section ? part.section + ' (Copy)' : 'Copy',
-      items: part.items.map(item => ({
-        ...this.clonePartItem(item),
-        id: this.createId('spi')
+      notes: part.notes,
+      measures: part.measures.map(measure => ({
+        ...this.clonePartMeasure(measure),
+        id: this.createId('spm')
       }))
     };
 
@@ -334,105 +399,45 @@ export class SongSheetsService {
     await this.update(sheet);
   }
 
-  async replacePatternForPartItem(sheetId: string, partIndex: number, itemId: string, patternId: string): Promise<void> {
-    const sheet = await this.getById(sheetId);
-    if (!sheet || partIndex < 0 || partIndex >= sheet.parts.length) {
-      return;
-    }
-
-    const item = sheet.parts[partIndex].items.find(existing => existing.id === itemId);
-    if (!item) {
-      return;
-    }
-
-    item.patternId = patternId;
-    this.normalizePartItem(item, sheet.patterns.find(pattern => pattern.id === patternId));
-    await this.update(sheet);
-  }
-
   getPatternUsageCount(sheet: SongSheet | SongSheetWithData, patternId: string): number {
-    return this.getPatternUsageCountFromSheet(sheet as SongSheet, patternId);
+    void sheet;
+    void patternId;
+    return 0;
   }
 
   resolvePartMeasures(sheet: SongSheet | SongSheetWithData, part: SongPart): ResolvedSongPartMeasure[] {
-    const measures: ResolvedSongPartMeasure[] = [];
-    let absoluteMeasureIndex = 0;
-
-    for (let itemIndex = 0; itemIndex < part.items.length; itemIndex++) {
-      const itemMeasures = this.resolvePartItem(sheet, part.items[itemIndex]);
-      for (const itemMeasure of itemMeasures) {
-        measures.push({
-          ...itemMeasure,
-          itemIndex,
-          absoluteMeasureIndex
-        });
-        absoluteMeasureIndex++;
-      }
-    }
-
-    return measures;
-  }
-
-  resolvePartItem(sheet: SongSheet | SongSheetWithData, item: SongPartPatternItem): ResolvedSongPartMeasure[] {
-    const pattern = sheet.patterns.find(existing => existing.id === item.patternId);
-    if (!pattern) {
-      return [];
-    }
-
-    const normalizedItem = this.clonePartItem(item);
-    this.normalizePartItem(normalizedItem, pattern);
-
-    return pattern.measures.map((measure, measureIndex) => ({
-      itemId: normalizedItem.id,
-      itemIndex: 0,
-      patternId: pattern.id,
-      patternName: pattern.name,
+    return part.measures.map((partMeasure, measureIndex) => ({
+      measureId: partMeasure.id,
       measureIndex,
-      absoluteMeasureIndex: measureIndex,
-      measure: this.cloneMeasure(measure),
-      lyrics: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.lyrics ?? '',
-      notes: normalizedItem.measureTexts.find(text => text.measureIndex === measureIndex)?.notes ?? '',
-      patternActionGrips: (pattern.actionGrips ?? []).filter(grip => grip.measureIndex === measureIndex).map(grip => ({ ...grip })),
-      actionGrips: normalizedItem.actionGrips.filter(grip => grip.measureIndex === measureIndex)
+      measure: this.cloneMeasure(partMeasure.measure)
     }));
   }
 
-  createPatternItem(pattern: SongSheetPattern): SongPartPatternItem {
-    return {
-      id: this.createId('spi'),
-      patternId: pattern.id,
-      measureTexts: pattern.measures.map((_, measureIndex) => ({
-        measureIndex,
-        lyrics: '',
-        notes: ''
-      })),
-      actionGrips: []
-    };
-  }
+  createMeasuresFromPattern(pattern: SongSheetPattern): SongPartMeasure[] {
+    return pattern.measures.map((measure, measureIndex) => {
+      const actionGrips = (pattern.actionGrips ?? [])
+        .filter(grip => grip.measureIndex === measureIndex)
+        .map(grip => ({ ...grip, measureIndex: 0 }));
 
-  normalizePartItem(item: SongPartPatternItem, pattern: SongSheetPattern | undefined): SongPartPatternItem {
-    if (!pattern) {
-      item.measureTexts = [];
-      item.actionGrips = [];
-      return item;
-    }
-
-    const existingMeasureTexts = new Map(item.measureTexts.map(text => [text.measureIndex, text]));
-    item.measureTexts = pattern.measures.map((_, measureIndex) => {
-      const existing = existingMeasureTexts.get(measureIndex);
       return {
-        measureIndex,
-        lyrics: existing?.lyrics ?? '',
-        notes: existing?.notes ?? ''
+        id: this.createId('spm'),
+        measure: {
+          ...this.cloneMeasure(measure),
+          actionGrips
+        }
       };
     });
+  }
 
-    item.actionGrips = item.actionGrips.filter(grip => {
-      const measure = pattern.measures[grip.measureIndex];
-      return !!measure && grip.actionIndex >= 0 && grip.actionIndex < measure.actions.length;
-    });
-
-    return item;
+  createEmptyPartMeasure(timeSignature: Measure['timeSignature'] = '4/4'): SongPartMeasure {
+    return {
+      id: this.createId('spm'),
+      measure: {
+        timeSignature,
+        actions: Array(timeSignature === '3/4' ? 12 : 16).fill(null),
+        actionGrips: []
+      }
+    };
   }
 
   private cleanSheetForStorage(sheet: SongSheet): SongSheet {
@@ -444,6 +449,7 @@ export class SongSheetsService {
         name: grip.name
       })),
       patterns: sheet.patterns.map(pattern => this.clonePattern(pattern)),
+      arrangement: getSongArrangement(sheet).map(occurrence => ({ ...occurrence })),
       parts: sheet.parts.map(part => this.clonePart(part))
     };
   }
@@ -452,7 +458,8 @@ export class SongSheetsService {
     return {
       id: part.id,
       section: part.section,
-      items: part.items.map(item => this.clonePartItem(item))
+      notes: part.notes,
+      measures: part.measures.map(measure => this.clonePartMeasure(measure))
     };
   }
 
@@ -464,12 +471,10 @@ export class SongSheetsService {
     };
   }
 
-  private clonePartItem(item: SongPartPatternItem): SongPartPatternItem {
+  private clonePartMeasure(measure: SongPartMeasure): SongPartMeasure {
     return {
-      id: item.id,
-      patternId: item.patternId,
-      measureTexts: item.measureTexts.map(text => ({ ...text })),
-      actionGrips: item.actionGrips.map(grip => ({ ...grip }))
+      id: measure.id,
+      measure: this.cloneMeasure(measure.measure)
     };
   }
 
@@ -482,28 +487,7 @@ export class SongSheetsService {
   }
 
   private cloneMeasure(measure: SongSheetPattern['measures'][number]) {
-    return {
-      ...measure,
-      actions: measure.actions.map(action => {
-        if (!action) {
-          return null;
-        }
-
-        return {
-          ...action,
-          modifiers: action.modifiers ? [...action.modifiers] : undefined,
-          strum: action.strum ? { ...action.strum } : undefined,
-          pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
-          percussive: action.percussive ? { ...action.percussive } : undefined
-        };
-      })
-    };
-  }
-
-  private getPatternUsageCountFromSheet(sheet: SongSheet, patternId: string): number {
-    return sheet.parts.reduce((count, part) => (
-      count + part.items.filter(item => item.patternId === patternId).length
-    ), 0);
+    return cloneMeasure(measure);
   }
 
   private createId(prefix: string): string {

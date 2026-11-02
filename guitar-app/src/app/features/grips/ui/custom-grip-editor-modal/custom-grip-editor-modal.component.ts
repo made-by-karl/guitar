@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Note } from '@/app/core/music/semitones';
 import {
   MODAL_DATA,
   MODAL_REF,
@@ -24,6 +25,8 @@ export interface CustomGripEditorModalData {
   submitLabel?: string;
   initialName?: string;
   initialGrip?: Grip;
+  tuning?: Note[];
+  capodaster?: number;
 }
 
 export interface CustomGripEditorResult {

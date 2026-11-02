@@ -1,0 +1,16 @@
+.part-measure-editor-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .modal-header,
+  .modal-footer {
+    flex: 0 0 auto;
+  }
+
+  .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+}

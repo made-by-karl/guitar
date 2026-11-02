@@ -1,30 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject, OnDestroy, computed, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, Inject, OnDestroy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MODAL_DATA, MODAL_REF, ModalComponent, ModalDataComponent, ModalRef, ModalService } from '@/app/core/services/modal.service';
 import { NotificationService } from '@/app/core/services/notification.service';
-import { chordToString } from '@/app/core/music/chords';
-import { getSixteenthPerBeatFromTimeSignature, PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
+import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
-import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { PlayingActionsComponent, PlayingActionsNotationContext, PlayingActionsNotationHistoryEntry } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
-import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
-import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
-import {
-  CustomGripEditorModalComponent,
-  CustomGripEditorResult
-} from '@/app/features/grips/ui/custom-grip-editor-modal/custom-grip-editor-modal.component';
-import {
-  GripSourceSelectorModalComponent,
-  GripSourceSelectorResult
-} from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
 import {
   SongPart,
-  SongPartActionGrip,
-  SongPartMeasureText,
-  SongPartPatternItem,
-  SongSheetGrip,
+  SongPartOccurrence,
+  SongPartMeasure,
   SongSheetPattern,
   SongSheetWithData
 } from '@/app/features/sheets/services/song-sheets.model';
@@ -36,7 +23,7 @@ import {
   canForwardPart,
   canRewindPart,
   cloneSongPart,
-  cloneSongPartItem,
+  cloneSongPartMeasure,
   cloneSongSheetPattern,
   createEmptySongSheetPattern,
   createSongSheetEntityId,
@@ -46,19 +33,23 @@ import {
   toSongSheetPattern
 } from '../song-sheet.helpers';
 import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalData } from '../song-sheet-choice-modal.component';
+import { getSongArrangement, getOccurrenceHistory } from '@/app/features/sheets/services/song-arrangement';
+import { SongPartNotesModalComponent } from './song-part-notes-modal.component';
+import { SongPartUnlockModalComponent } from './song-part-unlock-modal.component';
+import {
+  SongPartMeasureEditorModalComponent,
+  SongPartMeasureEditorResult
+} from './song-part-measure-editor-modal.component';
 
-type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
-
-interface ActionGripPosition {
-  actionIndex: number;
-  label: string;
-  subdivision: ActionSubdivision;
-}
+type SongPartEditorTab = 'music' | 'lyrics';
 
 export interface SongPartEditorModalData {
   sheet: SongSheetWithData;
   part: SongPart;
   editingPartIndex: number | null;
+  occurrence?: SongPartOccurrence;
+  occurrenceNumber?: number;
+  embedded?: boolean;
 }
 
 @Component({
@@ -72,17 +63,24 @@ export class SongPartEditorComponent implements
   ModalComponent<boolean>,
   ModalDataComponent<SongPartEditorModalData>,
   OnDestroy {
-  readonly isDraggingPatternItem = signal(false);
+  get tabs(): ReadonlyArray<{ id: SongPartEditorTab; label: string }> {
+    return this.data.occurrence ? [{ id: 'music', label: 'Music' }, { id: 'lyrics', label: 'Lyrics' }] : [{ id: 'music', label: 'Music' }];
+  }
+  readonly activeTab = signal<SongPartEditorTab>('music');
+  readonly musicUnlocked = signal(false);
+  readonly saving = signal(false);
+  readonly tempLyrics;
+  private savedPart = '';
+  private savedLyrics = '';
+  readonly isDraggingMeasure = signal(false);
+  readonly selectedMeasureIndex = signal<number | null>(null);
   readonly sheet;
   readonly tempPart;
   readonly editingPartIndex;
   playbackState = { type: 'none', status: 'idle' } as SongSheetPlaybackState;
 
-  private readonly expandedMeasureGripKeys = signal(new Set<string>());
-  private readonly patternNames = computed(() => (
-    new Map(this.sheet().patterns.map(pattern => [pattern.id, pattern.name || 'Untitled Pattern']))
-  ));
   private readonly playbackStateSubscription: Subscription;
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   constructor(
     @Inject(MODAL_REF) public modalRef: ModalRef<boolean>,
@@ -94,13 +92,68 @@ export class SongPartEditorComponent implements
   ) {
     this.sheet = signal<SongSheetWithData>(this.data.sheet);
     this.tempPart = signal<SongPart>(cloneSongPart(this.data.part));
+    this.tempLyrics = signal(this.data.occurrence?.lyrics ?? this.data.part.lyrics ?? '');
+    this.rememberSavedState();
     this.editingPartIndex = this.data.editingPartIndex;
-    this.syncTempPart();
     this.playbackState = this.songPartPlayback.getSnapshot();
     this.playbackStateSubscription = this.songPartPlayback.state$.subscribe(state => {
       this.playbackState = state;
     });
   }
+
+  readonly musicLocked = computed(() => !this.musicUnlocked() &&
+    getSongArrangement(this.sheet()).filter(occurrence => occurrence.partId === this.tempPart().id).length > 1);
+
+  hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.tempPart()) !== this.savedPart || this.tempLyrics() !== this.savedLyrics;
+  }
+
+  async canLeave(): Promise<boolean> {
+    if (!this.hasUnsavedChanges()) return true;
+    const choice = await this.openChoiceDialog({ title: 'Keep your changes?', choices: [
+      { value: 'save', text: 'Save and continue' },
+      { value: 'discard', text: 'Discard changes' },
+      { value: 'stay', text: 'Keep editing' }
+    ] });
+    if (choice === 'save') { await this.save(); return true; }
+    return choice === 'discard';
+  }
+
+  async unlockMusic(): Promise<void> {
+    const count = getSongArrangement(this.sheet()).filter(occurrence => occurrence.partId === this.tempPart().id).length;
+    const ref = this.modalService.show(SongPartUnlockModalComponent, {
+      data: { count, canMakeIndependent: !!this.data.occurrence }, width: '460px', maxWidth: '95vw', closeOnBackdropClick: false
+    });
+    const choice = await ref.afterClosed();
+    if (choice === 'unlock') this.musicUnlocked.set(true);
+    if (choice === 'independent' && this.data.occurrence) {
+      const copy = cloneSongPart(this.tempPart());
+      copy.id = createSongSheetEntityId('sp');
+      copy.measures = copy.measures.map(measure => ({ ...measure, id: createSongSheetEntityId('spm') }));
+      this.tempPart.set(copy);
+      this.data.occurrenceNumber = 1;
+      this.musicUnlocked.set(true);
+    }
+  }
+
+  async editNotes(): Promise<void> {
+    const ref = this.modalService.show(SongPartNotesModalComponent, {
+      data: { notes: this.tempPart().notes, readOnly: this.musicLocked() }, width: '560px', maxWidth: '95vw', closeOnBackdropClick: false
+    });
+    const notes = await ref.afterClosed();
+    if (notes !== undefined) this.updateNotes(notes);
+  }
+
+  private rememberSavedState(): void {
+    this.savedPart = JSON.stringify(this.tempPart());
+    this.savedLyrics = this.tempLyrics();
+  }
+
+  readonly canPlayPart = computed(() => this.songPartPlayback.canPlaySongPart(this.sheet(), this.tempPart(), this.data.occurrence?.id));
+  readonly canPlaySelectedMeasure = computed(() => {
+    const measure = this.getSelectedMeasure();
+    return !!measure && this.songPartPlayback.canPlayMeasure(this.sheet(), this.tempPart(), measure.id, this.data.occurrence?.id);
+  });
 
   ngOnDestroy(): void {
     this.playbackStateSubscription.unsubscribe();
@@ -108,163 +161,234 @@ export class SongPartEditorComponent implements
     this.songPartPlayback.stopSongPart();
   }
 
+  onTabKeydown(event: KeyboardEvent, tabIndex: number): void {
+    let nextIndex: number;
+    switch (event.key) {
+      case 'ArrowRight': nextIndex = (tabIndex + 1) % this.tabs.length; break;
+      case 'ArrowLeft': nextIndex = (tabIndex + this.tabs.length - 1) % this.tabs.length; break;
+      case 'Home': nextIndex = 0; break;
+      case 'End': nextIndex = this.tabs.length - 1; break;
+      default: return;
+    }
+
+    event.preventDefault();
+    this.activeTab.set(this.tabs[nextIndex].id);
+    if (event.currentTarget instanceof HTMLElement) {
+      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+    }
+  }
+
   updateSectionName(section: string): void {
+    if (this.musicLocked()) return;
     this.tempPart.update(part => ({
       ...part,
       section
     }));
   }
 
-  removePatternItem(itemIndex: number): void {
+  updateLyrics(lyrics: string): void {
+    this.tempLyrics.set(lyrics);
+  }
+
+  updateNotes(notes: string): void {
+    if (this.musicLocked()) return;
     this.tempPart.update(part => ({
       ...part,
-      items: part.items.filter((_, index) => index !== itemIndex)
+      notes
     }));
   }
 
-  duplicatePatternItem(itemIndex: number): void {
+  removeMeasure(measureIndex: number): void {
+    if (this.musicLocked()) return;
+    const measureCount = this.tempPart().measures.length;
+    this.tempPart.update(part => ({
+      ...part,
+      measures: part.measures.filter((_, index) => index !== measureIndex)
+    }));
+    this.selectNearestMeasureAfterRemoval(measureIndex, measureCount);
+  }
+
+  duplicateMeasure(measureIndex: number): void {
+    if (this.musicLocked()) return;
     const part = this.tempPart();
-    const item = part.items[itemIndex];
-    if (!item) {
+    const measure = part.measures[measureIndex];
+    if (!measure) {
       return;
     }
 
-    const nextItems = [...part.items];
-    nextItems.splice(itemIndex + 1, 0, {
-      ...cloneSongPartItem(item),
-      id: createSongSheetEntityId('spi')
+    const nextMeasures = [...part.measures];
+    nextMeasures.splice(measureIndex + 1, 0, {
+      ...cloneSongPartMeasure(measure),
+      id: createSongSheetEntityId('spm')
     });
     this.tempPart.set({
       ...part,
-      items: nextItems
+      measures: nextMeasures
     });
-    this.notificationService.success(`Copied pattern item ${itemIndex + 1}`);
+    this.selectedMeasureIndex.set(measureIndex + 1);
+    this.notificationService.success(`Copied measure ${measureIndex + 1}`);
   }
 
-  dropPatternItem(event: CdkDragDrop<SongPartPatternItem[]>): void {
-    this.isDraggingPatternItem.set(false);
+  async editMeasure(measureIndex: number): Promise<void> {
+    if (this.musicLocked()) return;
+    const part = this.tempPart();
+    const partMeasure = part.measures[measureIndex];
+    if (!partMeasure) {
+      return;
+    }
+
+    const modalRef = this.modalService.show(SongPartMeasureEditorModalComponent, {
+      data: {
+        sheet: this.sheet(),
+        part,
+        measureId: partMeasure.id,
+        occurrenceId: this.data.occurrence?.id,
+        measure: partMeasure.measure,
+        actionGrips: partMeasure.measure.actionGrips ?? [],
+        measureLabel: `Measure ${measureIndex + 1}`
+      },
+      width: '95vw',
+      height: '90vh',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'modal-xl',
+      closeOnBackdropClick: false
+    });
+
+    const result: SongPartMeasureEditorResult | undefined = await modalRef.afterClosed();
+    if (!result) {
+      return;
+    }
+
+    const nextMeasures = [...this.tempPart().measures];
+    nextMeasures[measureIndex] = {
+      ...nextMeasures[measureIndex],
+      measure: {
+        ...result.measure,
+        actionGrips: result.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }))
+      }
+    };
+    this.tempPart.update(current => ({
+      ...current,
+      measures: nextMeasures
+    }));
+    await this.refreshSheet();
+  }
+
+  startMeasureDrag(): void {
+    this.isDraggingMeasure.set(true);
+    // Render collapsed rows before CDK measures the drop targets.
+    this.changeDetector.detectChanges();
+  }
+
+  dropMeasure(event: CdkDragDrop<SongPartMeasure[]>): void {
+    if (this.musicLocked()) return;
+    this.isDraggingMeasure.set(false);
     const part = this.tempPart();
     if (event.previousIndex === event.currentIndex) {
+      this.ensureSelectedMeasure();
       return;
     }
 
-    const nextItems = [...part.items];
-    moveItemInArray(nextItems, event.previousIndex, event.currentIndex);
+    const selectedMeasureId = this.getSelectedMeasure()?.id;
+    const nextMeasures = [...part.measures];
+    moveItemInArray(nextMeasures, event.previousIndex, event.currentIndex);
     this.tempPart.set({
       ...part,
-      items: nextItems
+      measures: nextMeasures
     });
+    this.selectMeasureById(selectedMeasureId);
   }
 
-  getPattern(patternId: string): SongSheetPattern | undefined {
-    return this.sheet().patterns.find(pattern => pattern.id === patternId);
-  }
-
-  getPatternName(patternId: string): string {
-    return this.patternNames().get(patternId) || 'Unknown Pattern';
-  }
-
-  getMeasureText(item: SongPartPatternItem, measureIndex: number): SongPartMeasureText {
-    let text = item.measureTexts.find(existing => existing.measureIndex === measureIndex);
-    if (!text) {
-      text = { measureIndex, lyrics: '', notes: '' };
-      item.measureTexts.push(text);
+  selectMeasure(measureIndex: number): void {
+    if (!this.tempPart().measures[measureIndex]) {
+      this.ensureSelectedMeasure();
+      return;
     }
-    return text;
+
+    this.selectedMeasureIndex.update(selectedIndex => selectedIndex === measureIndex ? null : measureIndex);
   }
 
-  clearMeasureGrips(item: SongPartPatternItem, measureIndex: number): void {
-    item.actionGrips = item.actionGrips.filter(grip => grip.measureIndex !== measureIndex);
+  clearMeasureSelection(): void {
+    this.selectedMeasureIndex.set(null);
   }
 
-  getActionGrip(item: SongPartPatternItem, measureIndex: number, actionIndex: number): SongPartActionGrip | undefined {
-    return item.actionGrips.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+  getSelectedMeasure(): SongPartMeasure | undefined {
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex === null) {
+      return undefined;
+    }
+
+    return this.tempPart().measures[selectedIndex];
   }
 
-  getEffectiveActionGrip(
-    item: SongPartPatternItem,
-    pattern: SongSheetPattern,
-    measureIndex: number,
-    actionIndex: number
-  ): SongPartActionGrip | undefined {
-    return this.getActionGrip(item, measureIndex, actionIndex) ??
-      pattern.actionGrips?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
+  getSelectedMeasureLabel(): string {
+    const selectedIndex = this.selectedMeasureIndex();
+    return selectedIndex === null ? '' : `Measure ${selectedIndex + 1}`;
   }
 
-  isMeasureGripsExpanded(item: SongPartPatternItem, measureIndex: number): boolean {
-    return this.expandedMeasureGripKeys().has(this.getMeasureGripKey(item, measureIndex));
-  }
-
-  toggleMeasureGrips(item: SongPartPatternItem, measureIndex: number): void {
-    const key = this.getMeasureGripKey(item, measureIndex);
-    this.expandedMeasureGripKeys.update(keys => {
-      const next = new Set(keys);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  }
-
-  getMeasureGripNames(item: SongPartPatternItem, pattern: SongSheetPattern, measureIndex: number): string[] {
-    return this.getActionGripPositions(pattern, measureIndex)
-      .map(actionData => this.getEffectiveActionGrip(item, pattern, measureIndex, actionData.actionIndex)?.name)
-      .filter((name): name is string => !!name);
-  }
-
-  getActionGripPositions(pattern: SongSheetPattern, measureIndex: number): ActionGripPosition[] {
-    const measure = pattern.measures[measureIndex];
+  async toggleSelectedMeasurePlayback(part: SongPart): Promise<void> {
+    const measure = this.getSelectedMeasure();
     if (!measure) {
-      return [];
+      return;
     }
 
-    const sixteenthPerBeat = getSixteenthPerBeatFromTimeSignature(measure.timeSignature);
-    return measure.actions.map((_, actionIndex) => {
-      const subdivision = this.getActionSubdivision(actionIndex);
-      return {
-        actionIndex,
-        subdivision,
-        label: `${Math.floor(actionIndex / sixteenthPerBeat) + 1} ${subdivision.substring(0, 1).toUpperCase()}`
-      };
-    });
+    await this.toggleMeasurePlayback(part, measure);
+  }
+
+  async editSelectedMeasure(): Promise<void> {
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex === null) {
+      return;
+    }
+
+    await this.editMeasure(selectedIndex);
+  }
+
+  duplicateSelectedMeasure(): void {
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex === null) {
+      return;
+    }
+
+    this.duplicateMeasure(selectedIndex);
+  }
+
+  removeSelectedMeasure(): void {
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex === null) {
+      return;
+    }
+
+    this.removeMeasure(selectedIndex);
+  }
+
+  getPartMeasureNotationHistory(measureIndex: number): PlayingActionsNotationHistoryEntry[] {
+    const history = this.data.occurrence ? getOccurrenceHistory(this.sheet(), this.data.occurrence.id, this.tempPart()).flatMap(part => part.measures) : [];
+    return [...history, ...this.tempPart().measures.slice(0, measureIndex)].map(partMeasure => ({
+      measure: partMeasure.measure,
+      context: this.getPartMeasureNotationContext(partMeasure)
+    }));
   }
 
   getPartMeasureNotationContext(
-    item: SongPartPatternItem,
-    pattern: SongSheetPattern,
-    measureIndex: number
+    partMeasure: SongPartMeasure
   ): PlayingActionsNotationContext {
-    const actionGrips: SongPartActionGrip[] = [];
-    for (let actionIndex = 0; actionIndex < pattern.measures[measureIndex].actions.length; actionIndex++) {
-      const effective = this.getEffectiveActionGrip(item, pattern, measureIndex, actionIndex);
-      if (effective) {
-        actionGrips.push({
-          measureIndex,
-          actionIndex,
-          gripId: effective.gripId,
-          name: effective.name
-        });
-      }
-    }
-
     return {
-      timeSignature: pattern.measures[measureIndex].timeSignature,
-      actionGrips,
+      timeSignature: partMeasure.measure.timeSignature,
+      actionGrips: (partMeasure.measure.actionGrips ?? []).map(grip => ({ ...grip })),
       gripById: buildGripByIdMap(this.sheet())
     };
   }
 
-  isMeasurePlaybackActive(item: SongPartPatternItem, measureIndex: number): boolean {
+  isMeasurePlaybackActive(measure: SongPartMeasure): boolean {
     return this.playbackState.type === 'measure' &&
       this.playbackState.status === 'playing' &&
-      this.playbackState.itemId === item.id &&
-      this.playbackState.itemMeasureIndex === measureIndex;
+      this.playbackState.measureId === measure.id && this.playbackState.occurrenceId === this.data.occurrence?.id;
   }
 
   isPartPlaybackActive(part: SongPart): boolean {
-    return isPartPlaybackActive(this.playbackState, part.id);
+    return isPartPlaybackActive(this.playbackState, part.id) && this.playbackState.occurrenceId === this.data.occurrence?.id;
   }
 
   isPartPlaybackPaused(part: SongPart): boolean {
@@ -283,140 +407,50 @@ export class SongPartEditorComponent implements
     return canForwardPart(this.playbackState, part.id);
   }
 
-  async addPatternItem(): Promise<void> {
-    const choices: SongSheetChoice[] = [];
+  async addContent(insertionIndex: number): Promise<void> {
+    if (this.musicLocked()) return;
+    const choices: SongSheetChoice[] = [
+      { value: 'new-measure', text: 'New measure' }
+    ];
     if (this.sheet().patterns.length > 0) {
-      choices.push({ value: 'from-sheet', text: 'Use sheet pattern' });
+      choices.push({ value: 'from-sheet', text: 'Use existing sheet pattern' });
     }
     choices.push(
-      { value: 'from-library', text: 'Import from library' },
+      { value: 'from-library', text: 'Import pattern from library' },
       { value: 'create-new', text: 'Create new pattern' }
     );
 
     const source = await this.openChoiceDialog({
-      title: 'Add Pattern To Part',
+      title: insertionIndex === 0 ? 'Add to Song Part' : `Add after Measure ${insertionIndex}`,
       choices
     });
 
+    if (source === 'new-measure') {
+      const timeSignature = this.tempPart().measures[insertionIndex - 1]?.measure.timeSignature ?? '4/4';
+      this.insertMeasures(insertionIndex, [this.songSheetService.createEmptyPartMeasure(timeSignature)]);
+      return;
+    }
+
+    let patterns: SongSheetPattern[] = [];
     if (source === 'from-sheet') {
       const selectedPattern = await this.selectSheetPattern();
-      if (selectedPattern) {
-        this.tempPart.update(part => ({
-          ...part,
-          items: [...part.items, this.songSheetService.createPatternItem(selectedPattern)]
-        }));
-      }
-      return;
-    }
-
-    if (source === 'from-library') {
-      const importedPatterns = await this.importPatternsFromLibrary();
-      if (importedPatterns.length > 0) {
-        this.tempPart.update(part => ({
-          ...part,
-          items: [
-            ...part.items,
-            ...importedPatterns.map(pattern => this.songSheetService.createPatternItem(pattern))
-          ]
-        }));
-      }
-      return;
-    }
-
-    if (source === 'create-new') {
+      patterns = selectedPattern ? [selectedPattern] : [];
+    } else if (source === 'from-library') {
+      patterns = await this.importPatternsFromLibrary();
+    } else if (source === 'create-new') {
       const createdPattern = await this.createPatternAndAddToSheet();
-      if (createdPattern) {
-        this.tempPart.update(part => ({
-          ...part,
-          items: [...part.items, this.songSheetService.createPatternItem(createdPattern)]
-        }));
-      }
+      patterns = createdPattern ? [createdPattern] : [];
     }
+
+    this.insertMeasures(insertionIndex, patterns.flatMap(pattern => this.songSheetService.createMeasuresFromPattern(pattern)));
   }
 
-  async changePatternItem(item: SongPartPatternItem): Promise<void> {
-    const selectedPattern = await this.selectSheetPattern();
-    if (!selectedPattern) {
-      return;
-    }
-
-    item.patternId = selectedPattern.id;
-    this.songSheetService.normalizePartItem(item, selectedPattern);
-  }
-
-  async editPattern(item: SongPartPatternItem): Promise<void> {
-    const pattern = this.getPattern(item.patternId);
-    if (!pattern) {
-      return;
-    }
-
-    let patternToEdit = pattern;
-    const usageCount = this.songSheetService.getPatternUsageCount(this.sheet(), pattern.id);
-
-    if (usageCount > 1) {
-      const choice = await this.openChoiceDialog({
-        title: 'Edit Reused Pattern',
-        choices: [
-          { value: 'update-all', text: 'Update all uses' },
-          { value: 'duplicate', text: 'Duplicate into variation' }
-        ]
-      });
-
-      if (!choice) {
-        return;
-      }
-
-      if (choice === 'duplicate') {
-        patternToEdit = await this.songSheetService.duplicatePattern(this.sheet().id, pattern.id);
-        item.patternId = patternToEdit.id;
-        await this.refreshSheet();
-        this.notificationService.success(`Created variation "${patternToEdit.name || 'Untitled Pattern'}"`);
-      }
-    }
-
-    const editedPattern = await this.openPatternEditor(cloneSongSheetPattern(patternToEdit));
-    if (!editedPattern) {
-      await this.refreshSheet();
-      return;
-    }
-
-    await this.songSheetService.updatePattern(this.sheet().id, editedPattern);
-    await this.refreshSheet();
-    this.songSheetService.normalizePartItem(item, this.getPattern(item.patternId));
-  }
-
-  async toggleMeasurePlayback(part: SongPart, item: SongPartPatternItem, measureIndex: number): Promise<void> {
-    await this.songPartPlayback.toggleMeasurePreview(this.sheet(), part, item.id, measureIndex);
-  }
-
-  async assignActionGrip(
-    item: SongPartPatternItem,
-    pattern: SongSheetPattern,
-    measureIndex: number,
-    actionIndex: number
-  ): Promise<void> {
-    const effectiveGrip = item.actionGrips.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex) ??
-      pattern.actionGrips?.find(grip => grip.measureIndex === measureIndex && grip.actionIndex === actionIndex);
-    const selectedGrip = await this.selectGrip(effectiveGrip?.name);
-    if (selectedGrip === undefined) {
-      return;
-    }
-
-    item.actionGrips = item.actionGrips.filter(
-      grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)
-    );
-    if (selectedGrip) {
-      item.actionGrips.push({
-        measureIndex,
-        actionIndex,
-        gripId: selectedGrip.gripId,
-        name: selectedGrip.name
-      });
-    }
+  async toggleMeasurePlayback(part: SongPart, measure: SongPartMeasure): Promise<void> {
+    await this.songPartPlayback.toggleMeasurePreview(this.sheet(), part, measure.id, this.data.occurrence?.id);
   }
 
   async playPart(part: SongPart): Promise<void> {
-    await this.songPartPlayback.playSongPart(this.sheet(), part);
+    await this.songPartPlayback.playSongPart(this.sheet(), part, this.data.occurrence?.id);
   }
 
   pausePart(): void {
@@ -444,53 +478,119 @@ export class SongPartEditorComponent implements
   }
 
   async save(): Promise<void> {
+    if (this.saving()) return;
     const part = this.tempPart();
-    if (!part.section.trim()) {
+    const cleanPart = cloneSongPart({
+      ...part,
+      section: part.section.trim() || 'Untitled part',
+      notes: part.notes.trim()
+    });
+    this.saving.set(true);
+    try {
+      if (this.data.occurrence) {
+        await this.songSheetService.saveOccurrence(this.sheet().id, this.data.occurrence.id, this.tempLyrics(), this.musicLocked() ? undefined : cleanPart);
+        this.data.occurrence = { ...this.data.occurrence, partId: cleanPart.id, lyrics: this.tempLyrics() };
+      } else if (this.editingPartIndex === null) {
+        await this.songSheetService.addPart(this.sheet().id, cleanPart);
+      } else if (!this.musicLocked()) {
+        await this.songSheetService.updatePart(this.sheet().id, this.editingPartIndex, cleanPart);
+      }
+      this.tempPart.set(cleanPart);
+      await this.refreshSheet();
+      this.musicUnlocked.set(false);
+      this.rememberSavedState();
+      this.modalRef.close(true);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private insertMeasures(insertionIndex: number, measures: SongPartMeasure[]): void {
+    if (measures.length === 0) {
       return;
     }
 
-    const cleanPart = cloneSongPart({
+    this.tempPart.update(part => ({
       ...part,
-      section: part.section.trim()
-    });
-
-    if (this.editingPartIndex === null) {
-      await this.songSheetService.addPart(this.sheet().id, cleanPart);
-    } else {
-      await this.songSheetService.updatePart(this.sheet().id, this.editingPartIndex, cleanPart);
-    }
-
-    this.modalRef.close(true);
+      measures: [
+        ...part.measures.slice(0, insertionIndex),
+        ...measures,
+        ...part.measures.slice(insertionIndex)
+      ]
+    }));
+    this.selectFirstAddedMeasure(insertionIndex);
   }
 
   private getPartMeasureCount(part: SongPart): number {
-    return part.items.reduce((count, item) => (
-      count + (this.getPattern(item.patternId)?.measures.length ?? 0)
-    ), 0);
+    return part.measures.length;
   }
 
-  private getActionSubdivision(actionIndex: number): ActionSubdivision {
-    if (actionIndex % 4 === 0) return 'quarter';
-    if (actionIndex % 2 === 0) return 'eighth';
-    return 'sixteenth';
+  private selectNearestMeasureAfterRemoval(removedIndex: number, previousMeasureCount: number): void {
+    const nextMeasureCount = Math.max(previousMeasureCount - 1, 0);
+    if (nextMeasureCount === 0) {
+      this.selectedMeasureIndex.set(null);
+      return;
+    }
+
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex === null) {
+      return;
+    }
+
+    if (selectedIndex === removedIndex) {
+      this.selectedMeasureIndex.set(Math.min(removedIndex, nextMeasureCount - 1));
+      return;
+    }
+
+    if (selectedIndex > removedIndex) {
+      this.selectedMeasureIndex.set(selectedIndex - 1);
+      return;
+    }
+
+    this.ensureSelectedMeasure();
   }
 
-  private getMeasureGripKey(item: SongPartPatternItem, measureIndex: number): string {
-    return `${item.id}:${measureIndex}`;
+  private selectMeasureById(measureId: string | undefined): void {
+    if (!measureId) {
+      this.ensureSelectedMeasure();
+      return;
+    }
+
+    const nextSelectedIndex = this.tempPart().measures.findIndex(measure => measure.id === measureId);
+    if (nextSelectedIndex === -1) {
+      this.ensureSelectedMeasure();
+      return;
+    }
+
+    this.selectedMeasureIndex.set(nextSelectedIndex);
+  }
+
+  private ensureSelectedMeasure(): void {
+    const measureCount = this.tempPart().measures.length;
+    if (measureCount === 0) {
+      this.selectedMeasureIndex.set(null);
+      return;
+    }
+
+    const selectedIndex = this.selectedMeasureIndex();
+    if (selectedIndex !== null && (selectedIndex < 0 || selectedIndex >= measureCount)) {
+      this.selectedMeasureIndex.set(null);
+    }
+  }
+
+  private selectFirstAddedMeasure(firstAddedMeasureIndex: number): void {
+    if (this.tempPart().measures[firstAddedMeasureIndex]) {
+      this.selectedMeasureIndex.set(firstAddedMeasureIndex);
+      return;
+    }
+
+    this.ensureSelectedMeasure();
   }
 
   private async refreshSheet(): Promise<void> {
     const sheet = await this.songSheetService.getByIdWithData(this.sheet().id);
     if (sheet) {
       this.sheet.set(sheet);
-      this.syncTempPart();
-    }
-  }
-
-  private syncTempPart(): void {
-    const part = this.tempPart();
-    for (const item of part.items) {
-      this.songSheetService.normalizePartItem(item, this.getPattern(item.patternId));
     }
   }
 
@@ -512,104 +612,6 @@ export class SongPartEditorComponent implements
     }
 
     return this.sheet().patterns.find(pattern => pattern.id === choice);
-  }
-
-  private async selectGrip(name?: string): Promise<SongSheetGrip | null | undefined> {
-    const source = await this.openGripSourceSelector();
-    if (!source || source.kind === 'cancel') {
-      return undefined;
-    }
-
-    if (source.kind === 'clear') {
-      return null;
-    }
-
-    if (source.kind === 'saved') {
-      const selectedGrip = this.sheet().grips.find(grip => grip.gripId === source.gripId);
-      return selectedGrip ? { gripId: selectedGrip.gripId, name: selectedGrip.name } : undefined;
-    }
-
-    if (source.kind === 'custom') {
-      return this.openCustomGripEditor(name);
-    }
-
-    return this.openGripSelector();
-  }
-
-  private async openGripSourceSelector(): Promise<GripSourceSelectorResult | undefined> {
-    const modalRef = this.modalService.show(GripSourceSelectorModalComponent, {
-      data: {
-        title: 'Select Grip',
-        allowSavedGripSelection: this.sheet().grips.length > 0,
-        allowClear: true,
-        savedGrips: this.sheet().grips.map(grip => ({
-          gripId: grip.gripId,
-          name: grip.name
-        }))
-      },
-      width: '420px',
-      maxWidth: '95vw',
-      closeOnBackdropClick: true
-    });
-
-    return modalRef.afterClosed();
-  }
-
-  private async openCustomGripEditor(name?: string): Promise<SongSheetGrip | undefined> {
-    const modalRef = this.modalService.show(CustomGripEditorModalComponent, {
-      data: {
-        title: 'Create Custom Grip',
-        submitLabel: 'Save Grip',
-        initialName: name
-      },
-      width: '95vw',
-      maxWidth: '720px',
-      maxHeight: '90vh',
-      closeOnBackdropClick: true
-    });
-
-    const result = await modalRef.afterClosed();
-    if (!result) {
-      return undefined;
-    }
-
-    const createdGrip = this.toSongSheetGrip(result);
-    await this.songSheetService.addGrip(createdGrip, this.sheet().id);
-    await this.refreshSheet();
-    return this.sheet().grips.find(grip => grip.gripId === createdGrip.gripId) ?? createdGrip;
-  }
-
-  private async openGripSelector(): Promise<SongSheetGrip | undefined> {
-    const data: GripSelectorModalData = {};
-    const modalRef = this.modalService.show(GripSelectorModalComponent, {
-      data,
-      width: '95vw',
-      height: '90vh',
-      maxHeight: '90vh',
-      panelClass: 'modal-xl',
-      closeOnBackdropClick: true
-    });
-
-    const result = await modalRef.afterClosed();
-    if (!result || result.grips.length === 0) {
-      return undefined;
-    }
-
-    const songSheetGrips = result.grips.map((grip: TunedGrip): SongSheetGrip => ({
-      gripId: serializeGrip(grip),
-      name: chordToString(result.chord)
-    }));
-
-    await this.songSheetService.addGrips(songSheetGrips, this.sheet().id);
-    await this.refreshSheet();
-    return this.sheet().grips.find(grip => grip.gripId === songSheetGrips[0].gripId) ?? songSheetGrips[0];
-  }
-
-  private toSongSheetGrip(result: CustomGripEditorResult): SongSheetGrip {
-    return {
-      gripId: serializeGrip(result.grip),
-      name: result.name
-    };
   }
 
   private async openChoiceDialog(context: SongSheetChoiceModalData): Promise<string | undefined> {
@@ -667,6 +669,10 @@ export class SongPartEditorComponent implements
 
     if (modalRef.componentInstance) {
       modalRef.componentInstance.pattern = cloneSongSheetPattern(pattern);
+      modalRef.componentInstance.savedGrips = this.sheet().grips;
+      modalRef.componentInstance.tuning = this.sheet().tuning;
+      modalRef.componentInstance.capodaster = this.sheet().capodaster;
+      modalRef.componentInstance.tempo = this.sheet().tempo;
     }
 
     const result = await modalRef.afterClosed();

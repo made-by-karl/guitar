@@ -1,0 +1,35 @@
+<div class="part-measure-editor-modal">
+  <div class="modal-header">
+    <div>
+      <div class="small text-uppercase text-muted">Editing Measure</div>
+      <h5 class="modal-title mb-0">{{ data.measureLabel }}</h5>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'"
+        [disabled]="!isPlaying && !canPlay"
+        (click)="togglePlayback()">
+        <i class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying"></i>
+        {{ isPlaying ? 'Stop' : 'Play' }}
+      </button>
+      <button type="button" class="btn-close" aria-label="Close measure editor" (click)="cancel()"></button>
+    </div>
+  </div>
+
+  <div class="modal-body">
+    <app-playing-measure-editor
+      [(measure)]="editedMeasure"
+      [(actionGrips)]="editedActionGrips"
+      [measureLabel]="data.measureLabel"
+      (assignActionGrip)="assignActionGrip($event)" />
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn-success" type="button" (click)="save()">
+      <i class="bi bi-check-lg"></i> Save Measure
+    </button>
+  </div>
+</div>

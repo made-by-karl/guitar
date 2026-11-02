@@ -1,4 +1,4 @@
-import { Component, computed, model, OnDestroy } from '@angular/core';
+import { Component, computed, input, model, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -24,6 +24,7 @@ import {
   RelativeStrumRange,
   RelativeString,
   StrumRange,
+  formatActionPosition,
   getLegatoMode,
   getBeatsFromTimeSignature,
   getSixteenthPerBeatFromTimeSignature,
@@ -46,6 +47,9 @@ import {
   GripSourceSelectorModalComponent,
   GripSourceSelectorResult
 } from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
+import { PlayingMeasureEditorComponent } from '@/app/features/patterns/ui/playing-measure-editor/playing-measure-editor.component';
+
+import { Note, transpose } from '@/app/core/music/semitones';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
 type ActionSubdivision = 'quarter' | 'eighth' | 'sixteenth';
@@ -65,7 +69,7 @@ interface CopiedMeasure {
 
 @Component({
   selector: 'app-playing-pattern-editor',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PlayingMeasureEditorComponent],
   templateUrl: './playing-pattern-editor.component.html',
   styleUrl: './playing-pattern-editor.component.scss'
 })
@@ -82,6 +86,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   ] as const;
 
   pattern = model.required<PlayingPattern>();
+  readonly savedGrips = input<PlayingPatternGripReference[]>([]);
+  readonly tuning = input<Note[] | undefined>();
+  readonly capodaster = input(0);
+  readonly tempo = input(80);
   playbackState = { status: 'idle' } as ReturnType<PatternPlaybackService['getSnapshot']>;
   
   // Internal display model to manage UI state per measure
@@ -328,6 +336,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     if (!action) return;
     
     let updatedAction: PlayingAction = { ...action };
+    if (action.technique !== 'slide') delete updatedAction.slide;
     
     if (action.technique === 'strum') {
       // Ensure strum pattern exists
@@ -362,7 +371,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       delete updatedAction.legato;
       delete updatedAction.legatoMode;
     } else if (action.technique === 'hammer-on' || action.technique === 'pull-off' || action.technique === 'slide') {
-      if (!updatedAction.legato) {
+      if (!updatedAction.legato && !updatedAction.slide) {
         updatedAction.legatoMode = 'relative';
         updatedAction.legato = this.getDefaultLegato(action.technique, 'relative');
       }
@@ -1261,6 +1270,39 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
+  updateMeasure(measureIndex: number, measure: Measure): void {
+    const pattern = this.pattern();
+    if (!pattern || !pattern.measures[measureIndex]) {
+      return;
+    }
+
+    const updatedMeasures = [...pattern.measures];
+    updatedMeasures[measureIndex] = measure;
+
+    this.updatePattern({
+      ...pattern,
+      measures: updatedMeasures,
+      actionGrips: this.filterActionGripsForMeasure(pattern, measureIndex, measure)
+    });
+  }
+
+  getMeasureActionGrips(measureIndex: number): PlayingPatternActionGrip[] {
+    return (this.pattern().actionGrips ?? [])
+      .filter(grip => grip.measureIndex === measureIndex)
+      .map(grip => ({ ...grip, measureIndex: 0 }));
+  }
+
+  updateMeasureActionGrips(measureIndex: number, actionGrips: PlayingPatternActionGrip[]): void {
+    const pattern = this.pattern();
+    this.updatePattern({
+      ...pattern,
+      actionGrips: [
+        ...(pattern.actionGrips ?? []).filter(grip => grip.measureIndex !== measureIndex),
+        ...actionGrips.map(grip => ({ ...grip, measureIndex }))
+      ]
+    });
+  }
+
   getActionsForDisplay(measureData: { measure: Measure, measureIndex: number, useSixteenthSteps: boolean }): ActionDisplayData[] {
     const measure = measureData.measure;
     if (!measure) return [];
@@ -1273,7 +1315,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
 
     for (let i = 0; i < totalSixteenths; i += measureData.useSixteenthSteps ? 1 : 2) {
       displayActions.push({
-        position: (Math.floor(i / sixteenthPerBeat) + 1).toString(),
+        position: formatActionPosition(i, measure.timeSignature),
         action: measure.actions[i] || null,
         originalIndex: i,
         isMainPosition: i % 4 === 0,
@@ -1285,7 +1327,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   }
 
   getActionPositionLabel(actionData: Pick<ActionDisplayData, 'position' | 'subdivision'>): string {
-    return `${actionData.position} ${actionData.subdivision.substring(0, 1).toUpperCase()}`;
+    return actionData.position;
   }
 
   // Helper method to determine if a action position should be highlighted (main actions)
@@ -1351,6 +1393,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       } : undefined,
       pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
       legato: action.legato ? this.cloneLegato(action.legato) : undefined,
+      slide: action.slide ? { ...action.slide } : undefined,
       percussive: action.percussive ? { ...action.percussive } : undefined
     };
   }
@@ -1427,6 +1470,10 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       return null;
     }
 
+    if (source.kind === 'saved') {
+      return this.savedGrips().find(grip => grip.gripId === source.gripId);
+    }
+
     if (source.kind === 'custom') {
       return this.openCustomGripEditor(name);
     }
@@ -1456,7 +1503,8 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     const modalRef = this.modalService.show(GripSourceSelectorModalComponent, {
       data: {
         title: 'Set Grip',
-        allowSavedGripSelection: false,
+        allowSavedGripSelection: this.savedGrips().length > 0,
+        savedGrips: this.savedGrips(),
         allowClear: true
       },
       width: '420px',

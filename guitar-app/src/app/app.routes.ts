@@ -18,7 +18,7 @@ export const routes: Routes = [
   { path: 'grips/:chord', component: ChordComponent },
   { path: 'grips', component: ChordComponent },
   { path: 'sheets', component: SheetsListComponent },
-  { path: 'sheets/:id', component: SongSheetComponent },
+  { path: 'sheets/:id', component: SongSheetComponent, canDeactivate: [(component: SongSheetComponent) => component.canDeactivate()] },
   { path: 'patterns', component: PatternsLibraryComponent },
   { path: 'patterns/editor', component: PatternsEditorComponent },
   { path: 'metronome', component: MetronomeComponent },

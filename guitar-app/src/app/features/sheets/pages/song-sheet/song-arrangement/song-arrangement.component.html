@@ -1,0 +1,52 @@
+<section class="song-arrangement" [class.has-editor]="editorInjector()">
+  <div class="arrangement-header">
+    <div><h2>Song</h2><p class="text-muted mb-0">{{ occurrences().length }} {{ occurrences().length === 1 ? 'section' : 'sections' }} in playback order</p></div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="busy() || (playbackState().type !== 'song' && !canPlay())" [title]="canPlay() ? 'Play song' : 'Add playable content to every section'" (click)="toggleSong()">
+        <i aria-hidden="true" class="bi" [class.bi-play-fill]="playbackState().type !== 'song' || playbackState().status === 'paused'" [class.bi-pause-fill]="playbackState().type === 'song' && playbackState().status === 'playing'"></i>
+        {{ playbackState().type === 'song' ? (playbackState().status === 'paused' ? 'Resume song' : 'Pause song') : 'Play song' }}
+      </button>
+      @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stopSong()">Stop song</button> }
+    </div>
+  </div>
+  @if (occurrences().length === 0) {
+    <div class="song-empty-state"><h3>Start with the bit you know</h3><p>Write a measure, a chord, or a line of lyrics. Build the rest of the song as it takes shape.</p>
+      <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="startWriting()">Start writing</button>
+      @if (currentSheet().parts.length) { <button class="btn btn-outline-secondary ms-2" type="button" [disabled]="busy()" (click)="chooseSection()">Use a part</button> }
+    </div>
+  } @else {
+    <div class="arrangement-layout">
+      <div class="song-outline">
+        <div class="occurrence-list" cdkDropList (cdkDropListDropped)="drop($event)" aria-label="Song order">
+          @for (occurrence of occurrences(); track occurrence.id; let index = $index) {
+            <div class="occurrence-row" cdkDrag [cdkDragDisabled]="busy()" [class.is-selected]="selectedId() === occurrence.id" [class.is-playing]="playbackState().occurrenceId === occurrence.id">
+              <span class="occurrence-drag" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
+              <button class="occurrence-select" type="button" [disabled]="busy() || !part(occurrence)" [attr.aria-label]="(part(occurrence)?.section || 'Missing part') + ', occurrence ' + number(occurrence)" [attr.aria-pressed]="selectedId() === occurrence.id" (click)="selectOccurrence(occurrence.id)">
+                <span class="occurrence-title"><strong>{{ part(occurrence)?.section || 'Missing part' }}</strong><span class="occurrence-number">{{ number(occurrence) }}</span></span>
+                <span class="occurrence-summary">{{ summary(occurrence) }}</span>
+                @if (occurrence.lyrics.trim()) { <span class="occurrence-lyric">{{ occurrence.lyrics.split('\n')[0] }}</span> }
+              </button>
+              <div class="occurrence-options">
+                <button class="btn btn-sm" type="button" [disabled]="busy()" [attr.aria-label]="'Options for ' + (part(occurrence)?.section || 'missing part') + ', occurrence ' + number(occurrence)" [attr.aria-expanded]="menuId() === occurrence.id" (click)="menuId.set(menuId() === occurrence.id ? undefined : occurrence.id)"><i aria-hidden="true" class="bi bi-three-dots"></i></button>
+                @if (menuId() === occurrence.id) {
+                  <div class="occurrence-menu">
+                    <button type="button" [disabled]="index === 0" (click)="move(index, index - 1)">Move earlier</button>
+                    <button type="button" [disabled]="index === occurrences().length - 1" (click)="move(index, index + 1)">Move later</button>
+                    <button type="button" [disabled]="!part(occurrence)" (click)="repeat(occurrence)">Repeat music</button>
+                    <button type="button" class="text-danger" (click)="remove(occurrence)">Remove from song</button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <button class="btn btn-outline-primary add-song-section" type="button" [disabled]="busy()" (click)="chooseSection()"><i aria-hidden="true" class="bi bi-plus-lg"></i> Add section</button>
+      </div>
+      @if (editorInjector(); as injector) {
+        <div class="occurrence-editor"><ng-container *ngComponentOutlet="editorComponent; injector: injector" /></div>
+      } @else {
+        <div class="occurrence-editor-placeholder"><i aria-hidden="true" class="bi bi-music-note-beamed"></i><p>Select a section to write its music or lyrics.</p></div>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,247 @@
+.playing-measure-editor {
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .measure-controls {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+
+    .form-label {
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-select {
+      font-size: 0.85rem;
+    }
+
+    .form-check-input:checked {
+      background-color: #D2691E;
+      border-color: #D2691E;
+    }
+
+    .text-muted {
+      font-size: 0.75rem;
+    }
+  }
+
+  .action-column-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    min-height: 200px;
+  }
+
+  .action-positions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .action-position {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%;
+
+    &.quarter-position {
+      border-left-color: #D2691E;
+      background-color: #FFF8F0;
+
+      .action-position-label {
+        color: #7a3a0d;
+      }
+    }
+
+    &.eighth-position {
+      border-left-color: #8B5E3C;
+      background-color: #F5F1EC;
+
+      .action-position-label {
+        color: #5c3a24;
+      }
+    }
+
+    &.sixteenth-position {
+      border-left-color: #6c757d;
+      background-color: #F8F9FA;
+
+      .action-position-label {
+        color: #495057;
+      }
+    }
+
+    &.main-position {
+      border-left-width: 4px;
+      box-shadow: 0 2px 6px rgba(210, 105, 30, 0.2);
+    }
+  }
+
+  .action-slot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .action-position-label {
+    font-weight: 700;
+    color: #333;
+  }
+
+  .action-grip-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 5.75rem;
+    justify-content: center;
+  }
+
+  .action-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .action-content {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: white;
+    width: 100%;
+    box-sizing: border-box;
+
+    .action-header {
+      margin-bottom: 0.5rem;
+
+      .badge {
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+    }
+
+    .action-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .modifiers-section,
+      .direction-section,
+      .strum-section,
+      .pick-section,
+      .percussion-section {
+        .form-label {
+          font-size: 0.8rem;
+          margin-bottom: 0.25rem;
+          font-weight: 600;
+          color: #495057;
+        }
+
+        .form-select,
+        .form-control {
+          font-size: 0.8rem;
+        }
+      }
+
+      .pick-notes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .pick-note-header {
+          display: grid;
+          grid-template-columns: minmax(6rem, 0.9fr) minmax(8rem, 1.2fr) minmax(7rem, 1fr) minmax(5rem, 0.7fr) 2rem;
+          gap: 0.25rem;
+          padding: 0 0.25rem;
+          font-weight: 600;
+        }
+
+        .pick-note {
+          padding: 0.25rem;
+          background-color: #f8f9fa;
+          border-radius: 3px;
+
+          & + .pick-note {
+            border-top: 1px solid #dee2e6;
+            margin-top: 0.25rem;
+            padding-top: 0.5rem;
+          }
+
+          .form-select,
+          .form-control {
+            font-size: 0.75rem;
+          }
+
+          .pick-note-grid {
+            display: grid;
+            grid-template-columns: minmax(6rem, 0.9fr) minmax(8rem, 1.2fr) minmax(7rem, 1fr) minmax(5rem, 0.7fr) 2rem;
+            gap: 0.25rem;
+            align-items: end;
+          }
+
+          .pick-note-field {
+            min-width: 0;
+
+            .form-label {
+              display: none;
+            }
+          }
+
+          .btn {
+            align-self: end;
+          }
+        }
+      }
+    }
+  }
+
+  .empty-action-slot {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #dee2e6;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.8);
+    width: 100%;
+    box-sizing: border-box;
+
+    &:hover {
+      border-color: #D2691E;
+      background-color: rgba(210, 105, 30, 0.1);
+    }
+
+    .btn {
+      opacity: 0.7;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .pick-note-header {
+      display: none !important;
+    }
+
+    .pick-note-grid {
+      grid-template-columns: 1fr !important;
+
+      .pick-note-field .form-label {
+        display: block !important;
+      }
+    }
+  }
+}

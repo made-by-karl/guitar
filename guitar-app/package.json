@@ -1,14 +1,18 @@
 {
   "name": "guitar-companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
+    "start:e2e": "ng serve --host 0.0.0.0 --allowed-hosts guitar-web",
     "build": "ng build",
     "build-prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "jest --config test/jest.config.js",
     "test:watch": "jest --config test/jest.config.js --watch",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui --host 0.0.0.0",
+    "e2e:headed": "playwright test --headed",
     "prebuild": "node ../scripts/generate-version.js",
     "prebuild-prod": "node ../scripts/generate-version.js"
   },
@@ -37,6 +41,7 @@
     "@angular-devkit/build-angular": "^19.2.12",
     "@angular/cli": "^19.2.12",
     "@angular/compiler-cli": "^19.2.0",
+    "@playwright/test": "1.61.0",
     "@types/bootstrap": "^5.2.10",
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",

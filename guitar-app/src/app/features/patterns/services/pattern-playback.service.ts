@@ -85,6 +85,7 @@ export class PatternPlaybackService {
       tempo
     );
 
+    for (const message of preview.diagnostics) console.warn(message);
     if (preview.instructions.length === 0) {
       return;
     }

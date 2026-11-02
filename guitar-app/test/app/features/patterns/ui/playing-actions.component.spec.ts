@@ -10,6 +10,7 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+
   it.each(['hammer-on', 'pull-off', 'slide'] as const)(
     'draws %s legato actions as a backward connection to the previous action',
     async technique => {

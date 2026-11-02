@@ -87,6 +87,7 @@ export interface Percussive {
 export interface Measure {
   timeSignature: TimeSignature;
   actions: (PlayingAction | null)[];
+  actionGrips?: PlayingPatternActionGrip[];
 }
 
 export interface PlayingPatternGripReference {
@@ -114,6 +115,9 @@ export interface PlayingAction {
   // For hammer-ons, pull-offs, and slides
   legatoMode?: LegatoMode;
   legato?: LegatoNote;
+
+  // Move all currently sounding fretted strings by the same number of frets.
+  slide?: { fretOffset: number };
 
   // For percussive technique
   percussive?: Percussive;
@@ -200,4 +204,11 @@ export function isGripRelativeLegatoEndpoint(note: RelativeLegatoEndpointNote): 
 
 export function isBaseRelativeLegatoEndpoint(note: RelativeLegatoEndpointNote): note is BaseRelativeLegatoEndpoint {
   return note.anchor === 'base-note';
+}
+
+/** Count subdivisions relative to the written beat (quarters or eighths). */
+export function formatActionPosition(actionIndex: number, timeSignature: TimeSignature): string {
+  const slotsPerBeat = getSixteenthPerBeatFromTimeSignature(timeSignature);
+  const suffixes = slotsPerBeat === 4 ? ['', 'e', '&', 'a'] : ['', '&'];
+  return `${Math.floor(actionIndex / slotsPerBeat) + 1}${suffixes[actionIndex % slotsPerBeat]}`;
 }

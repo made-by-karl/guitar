@@ -8,6 +8,7 @@ export interface MidiInstruction {
   notes?: MidiNote[];     // Notes to play (for guitar techniques)
   percussion?: MidiPercussion; // Percussion to play (for body/string percussion)
   legato?: MidiLegato;
+  legatos?: MidiLegato[];
   velocity: number;       // Volume/intensity (0-1)
   technique: MidiTechnique;
   playNotes?: 'parallel' | 'sequential' | 'reversed'; // How to play multiple notes (default: parallel)

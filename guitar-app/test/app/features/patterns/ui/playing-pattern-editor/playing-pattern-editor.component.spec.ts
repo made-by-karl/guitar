@@ -80,6 +80,19 @@ describe('PlayingPatternEditorComponent', () => {
     expect(mockPatternPlaybackService.togglePatternPreview).toHaveBeenCalledWith(component.pattern());
   });
 
+
+  it('assigns a song-library grip without opening a chord or custom editor', async () => {
+    const grip = { gripId: 'x|x|o|2|3|2', name: 'Verse D' };
+    fixture.componentRef.setInput('savedGrips', [grip]);
+    mockModalService.show.mockReturnValueOnce({ afterClosed: async () => ({ kind: 'saved', gripId: grip.gripId }) } as never);
+    await component.assignActionGrip(0, 0);
+    expect(component.pattern().actionGrips).toEqual([{ ...grip, measureIndex: 0, actionIndex: 0 }]);
+    expect(mockModalService.show).toHaveBeenCalledTimes(1);
+    expect(mockModalService.show).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      data: expect.objectContaining({ allowSavedGripSelection: true, savedGrips: [grip] })
+    }));
+  });
+
   it('edits pattern genre and example song metadata', async () => {
     const suggestedGenreInput = fixture.nativeElement.querySelector('input[name="suggestedGenre"]') as HTMLInputElement;
     const exampleSongInput = fixture.nativeElement.querySelector('input[name="exampleSong"]') as HTMLInputElement;
@@ -265,8 +278,8 @@ describe('PlayingPatternEditorComponent', () => {
   it('renders action grip controls with rhythm labels in action slots', () => {
     const text = fixture.nativeElement.textContent;
 
-    expect(text).toContain('1 Q');
-    expect(text).toContain('1 E');
+    expect(text).toContain('1');
+    expect(text).toContain('1&');
     expect(text).toContain('Grip');
     expect(text).not.toContain('Beat Grips');
     expect(text).not.toContain('Advanced timing overrides');

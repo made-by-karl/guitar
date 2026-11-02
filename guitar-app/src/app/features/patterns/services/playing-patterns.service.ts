@@ -129,6 +129,7 @@ export class PlayingPatternsService {
           strum: action.strum ? { ...action.strum } : undefined,
           pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
           legato: action.legato ? { ...action.legato } : undefined,
+          slide: action.slide ? { ...action.slide } : undefined,
           percussive: action.percussive ? { ...action.percussive } : undefined
         } : null)
       }))
