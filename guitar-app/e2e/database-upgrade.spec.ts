@@ -74,7 +74,7 @@ for (const version of [4, 7, 9]) {
       database.close();
       return snapshot;
     });
-    expect(snapshot.version).toBe(90);
+    expect(snapshot.version).toBe(100);
     expect(snapshot.sheet.parts[0]).not.toHaveProperty('items');
     expect(snapshot.sheet.parts[0].lyrics).toBeUndefined();
     expect(snapshot.sheet.parts[0].notes).toBe('Keep these notes');

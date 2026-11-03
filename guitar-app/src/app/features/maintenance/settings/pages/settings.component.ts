@@ -1,3 +1,6 @@
+import { CommonModule } from '@angular/common';
+import { DataTransferService } from '@/app/core/services/data-transfer.service';
+import { JsonImportComponent } from '@/app/core/ui/json-import/json-import.component';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -7,7 +10,7 @@ import { DebugSettingsService } from '@/app/core/services/debug-settings.service
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule, JsonImportComponent],
   template: `
     <div class="container app-page">
       <h2 class="mb-4"><i class="bi bi-gear me-2"></i>Settings</h2>
@@ -17,11 +20,18 @@ import { DebugSettingsService } from '@/app/core/services/debug-settings.service
           <h5 class="mb-0"><i class="bi bi-database me-2"></i>Data Management</h5>
         </div>
         <div class="card-body">
-          <p class="text-muted">Manage your data storage</p>
+          <p>Back up all saved song sheets and stored global patterns, including built-in and custom patterns.</p>
+          <p class="small text-muted">Backups exclude device debug settings, update history, diagnostics, permissions, audio caches, unsaved drafts, and live playback.</p>
+          <p role="status">{{ lastBackup ? 'Last backup download initiated: ' : 'No backup yet' }}@if (lastBackup) { {{ lastBackup | date:'medium' }} }</p>
+          <button type="button" class="btn btn-primary mb-2" [disabled]="downloading" (click)="downloadBackup()">{{ downloading ? 'Preparing backup…' : 'Download backup' }}</button>
+          <p class="small text-muted">The date records download handoff on this browser. Keep the downloaded file somewhere safe.</p>
+          @if (backupError) { <p class="alert alert-danger" role="alert">{{ backupError }}</p> }
+          <app-json-import kind="guitar-backup" />
+          <hr>
           <button class="btn btn-warning me-2" (click)="clearData()">
-            <i class="bi bi-trash me-1"></i>Clear All Data
+            <i class="bi bi-trash me-1"></i>Clear Practice Data
           </button>
-          <p><small class="text-muted">This will remove all song sheets, playing patterns, and settings.</small></p>
+          <p><small class="text-muted">This will remove all song sheets and playing patterns stored on this browser.</small></p>
         </div>
       </div>
 
@@ -51,11 +61,26 @@ import { DebugSettingsService } from '@/app/core/services/debug-settings.service
   styles: [``]
 })
 export class SettingsComponent {
+  downloading = false;
+  backupError = '';
+  lastBackup?: number;
+
   constructor(
     private dialogService: DialogService,
     private db: DatabaseService,
-    readonly debugSettings: DebugSettingsService
-  ) {}
+    readonly debugSettings: DebugSettingsService,
+    private readonly transfer: DataTransferService
+  ) { this.lastBackup = transfer.lastBackupDownload(); }
+
+  async downloadBackup(): Promise<void> {
+    if (this.downloading) return;
+    this.downloading = true; this.backupError = '';
+    try {
+      await this.transfer.downloadBackup();
+      this.lastBackup = this.transfer.lastBackupDownload();
+    } catch (error) { this.backupError = error instanceof Error ? error.message : 'Backup failed. Try again.'; }
+    finally { this.downloading = false; }
+  }
 
   setTunerDebugEnabled(enabled: boolean): void {
     this.debugSettings.setTunerDebugEnabled(enabled);
@@ -63,8 +88,8 @@ export class SettingsComponent {
 
   async clearData() {
     const confirmed = await this.dialogService.confirm(
-      'Are you sure you want to clear all data? This action cannot be undone.',
-      'Clear All Data',
+      'Remove all song sheets and playing patterns on this browser? This action cannot be undone.',
+      'Clear Practice Data',
       'Clear Data',
       'Cancel',
       { variant: 'danger' }
@@ -72,10 +97,9 @@ export class SettingsComponent {
 
     if (confirmed) {
       try {
-        await this.db.songSheets.clear();
-        await this.db.playingPatterns.clear();
+        await this.db.restorePracticeData({ songSheets: [], playingPatterns: [] }, 'replace');
         await this.dialogService.alert(
-          'All data has been cleared. Please refresh the page to see the changes.',
+          'All practice content has been cleared. Please refresh the page to see the changes.',
           'Data Cleared',
           undefined,
           { variant: 'success' }

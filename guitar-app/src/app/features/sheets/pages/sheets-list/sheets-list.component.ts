@@ -1,3 +1,5 @@
+import { JsonImportComponent } from '@/app/core/ui/json-import/json-import.component';
+import { JsonExportButtonComponent } from '@/app/core/ui/json-export-button/json-export-button.component';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +11,7 @@ import { DialogService } from '@/app/core/services/dialog.service';
 @Component({
   selector: 'app-sheets-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterOutlet],
+  imports: [CommonModule, FormsModule, RouterLink, RouterOutlet, JsonImportComponent, JsonExportButtonComponent],
   templateUrl: './sheets-list.component.html',
   styleUrls: ['./sheets-list.component.scss']
 })
