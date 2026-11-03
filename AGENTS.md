@@ -95,7 +95,7 @@ Keep framework versions, app-specific paths, commands, musical examples, viewpor
 of `.agents/skills/`, `ai/workflows/`, and `ai/roles/`.
 
 - `$specify`: `ai/workflows/specify.md` — idea to testable task/spec; create an issue when requested.
-- `$implement`: `ai/workflows/implement.md` — clear task to implementation, tests, verification, and review.
+- `$implement`: `ai/workflows/implement.md` — ticket assignment, implementation, tests, verification, review, and PR.
 - `$component`: `ai/workflows/component.md` — a component integrated with the existing app.
 - `$verify`: `ai/workflows/verify.md` — verification gate and checks required by the change.
 - `$code-review`: `ai/roles/code-reviewer.md` — read-only correctness and maintainability review.
@@ -106,8 +106,10 @@ Apply roles within the current session; a role brief does not require spawning s
 Use the user's clear request or supplied issue as the task specification. Keep evolving feature
 criteria in that task. Inspect status and branch before editing and preserve existing user work.
 Create a feature branch before committing; never commit directly to `main`. Fetch and verify
-the intended base before starting a new delivery branch. Commit, push, or create a PR when
-included in the user's requested delivery; otherwise hand back a reviewable diff. Use
+the intended base before starting a new delivery branch. `$implement` includes assigning a supplied
+ticket to the user and, after verification and review pass, committing, pushing, and creating a PR,
+unless the user explicitly limits delivery scope. For other workflows, commit, push, or create a PR
+when included in the user's requested delivery; otherwise hand back a reviewable diff. Use
 `Closes #<number>` for a PR that fully resolves an issue. Merge and deployment require their
 own authorized scope.
 
