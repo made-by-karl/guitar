@@ -2,8 +2,9 @@
 
 Guitar Companion uses a task → implementation → verification → review loop. A clear request
 can go directly into implementation; an ambiguous idea first becomes a testable specification.
-The handoff is a reviewable diff, or a PR when requested. Merging and deployment follow the
-user's delivery instructions.
+`implement` assigns a supplied ticket to the user and creates a PR after verification and review
+pass, unless the user explicitly limits delivery scope. Other workflows hand off a reviewable
+diff, or a PR when requested. Merging and deployment require separate scope.
 
 ## Where guidance lives
 
@@ -45,6 +46,9 @@ $ux-review Review the changed pattern library on phone and desktop.
 
 `specify` ends with a spec or an issue when issue creation was requested. `implement` carries a
 clear task through code, tests, verification, rendered UI checks when relevant, and self-review.
+It assigns a supplied ticket to the authenticated tracker user unless the session identifies a
+different account, then commits on a feature branch, pushes, and creates a PR once checks and
+reviews pass. An explicit request for local-only work overrides that delivery default.
 `component` handles a scoped UI building block. Review skills report findings without editing.
 Roles can be applied by the current agent; no subagent configuration is required.
 

@@ -3,6 +3,10 @@ import Dexie, { Table } from 'dexie';
 import { migrateSongArrangement } from '@/app/features/sheets/services/song-arrangement';
 import { SongPartActionGrip, SongPartMeasure, SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 import { Measure, PickingNote, PlayingAction, PlayingPattern, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
+import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
+import type { PracticeData } from '@/app/core/services/data-transfer-format';
+
+export const PATTERNS_INITIALIZED = 'patternsInitialized';
 
 /**
  * Database service for managing IndexedDB storage using Dexie.js
@@ -13,6 +17,7 @@ import { Measure, PickingNote, PlayingAction, PlayingPattern, RelativeString } f
 export class DatabaseService extends Dexie {
   songSheets!: Table<SongSheet, string>;
   playingPatterns!: Table<PlayingPattern, string>;
+  metadata!: Table<{ key: string; value: boolean }, string>;
 
   constructor() {
     super('GuitarAppDatabase');
@@ -58,6 +63,42 @@ export class DatabaseService extends Dexie {
       await tx.table('songSheets').toCollection().modify(sheet => {
         migrateSongSheetToCurrentFormat(sheet as RawSongSheetWithLegacyParts);
       });
+    });
+
+    this.version(10).stores({
+      metadata: 'key'
+    }).upgrade(async tx => {
+      // Existing installations own their current library, including an empty one.
+      await tx.table('metadata').put({ key: PATTERNS_INITIALIZED, value: true });
+    });
+  }
+
+  async initializePatterns(): Promise<void> {
+    await this.transaction('rw', [this.playingPatterns, this.metadata], async () => {
+      if (await this.metadata.get(PATTERNS_INITIALIZED)) return;
+      if (await this.playingPatterns.count() === 0) {
+        await this.playingPatterns.bulkAdd(createDefaultPlayingPatterns());
+      }
+      await this.metadata.put({ key: PATTERNS_INITIALIZED, value: true });
+    });
+  }
+
+  readPracticeData(): Promise<PracticeData> {
+    return this.transaction('r', [this.songSheets, this.playingPatterns], async () => ({
+      songSheets: await this.songSheets.toArray(),
+      playingPatterns: await this.playingPatterns.toArray()
+    }));
+  }
+
+  async restorePracticeData(data: PracticeData, mode: 'merge' | 'replace'): Promise<void> {
+    await this.transaction('rw', [this.songSheets, this.playingPatterns, this.metadata], async () => {
+      if (mode === 'replace') {
+        await this.songSheets.clear();
+        await this.playingPatterns.clear();
+      }
+      await this.songSheets.bulkPut(data.songSheets);
+      await this.playingPatterns.bulkPut(data.playingPatterns);
+      await this.metadata.put({ key: PATTERNS_INITIALIZED, value: true });
     });
   }
 }

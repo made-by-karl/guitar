@@ -1,3 +1,5 @@
+import { JsonImportComponent } from '@/app/core/ui/json-import/json-import.component';
+import { JsonExportButtonComponent } from '@/app/core/ui/json-export-button/json-export-button.component';
 import {AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {CommonModule, DOCUMENT} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -20,7 +22,7 @@ type PatternEditorMode = 'create' | 'edit' | 'clone';
 @Component({
   selector: 'app-patterns-library',
   standalone: true,
-  imports: [CommonModule, FormsModule, PlayingActionsComponent],
+  imports: [CommonModule, FormsModule, PlayingActionsComponent, JsonImportComponent, JsonExportButtonComponent],
   templateUrl: './patterns-library.component.html',
   styleUrls: ['./patterns-library.component.scss']
 })

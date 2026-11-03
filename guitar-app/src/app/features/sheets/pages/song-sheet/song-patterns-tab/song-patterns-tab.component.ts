@@ -1,3 +1,4 @@
+import { JsonExportButtonComponent } from '@/app/core/ui/json-export-button/json-export-button.component';
 import { Component, OnDestroy, inject, input, output } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ModalService } from '@/app/core/services/modal.service';
@@ -24,7 +25,7 @@ import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalDat
 @Component({
   selector: 'app-song-sheet-patterns-tab',
   standalone: true,
-  imports: [DragDropModule, PlayingActionsComponent],
+  imports: [DragDropModule, PlayingActionsComponent, JsonExportButtonComponent],
   templateUrl: './song-patterns-tab.component.html',
   styleUrl: './song-patterns-tab.component.scss'
 })

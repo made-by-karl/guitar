@@ -1,4 +1,4 @@
-import { migratePlayingPatternPickNotes, migrateSongSheetPartsToMeasures, migrateSongSheetToCurrentFormat } from '@/app/core/services/database.service';
+import { DatabaseService, PATTERNS_INITIALIZED, migratePlayingPatternPickNotes, migrateSongSheetPartsToMeasures, migrateSongSheetToCurrentFormat } from '@/app/core/services/database.service';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 
@@ -222,3 +222,123 @@ function createLegacyPattern(actions: unknown[]): PlayingPattern {
     isCustom: true
   };
 }
+
+describe('DatabaseService pattern initialization', () => {
+  it('seeds a curated campfire-first starter library when the pattern table is empty', async () => {
+    const bulkAdd = jest.fn().mockResolvedValue(undefined);
+    const db = {
+      metadata: { get: jest.fn().mockResolvedValue(undefined), put: jest.fn().mockResolvedValue(undefined) },
+      transaction: jest.fn((_mode: string, _tables: unknown, run: () => Promise<void>) => run()),
+      playingPatterns: {
+        count: jest.fn().mockResolvedValue(0),
+        bulkAdd
+      }
+    };
+
+    await DatabaseService.prototype.initializePatterns.call(db as unknown as DatabaseService);
+
+    expect(bulkAdd).toHaveBeenCalledTimes(1);
+
+    const defaults = bulkAdd.mock.calls[0][0];
+    expect(defaults).toHaveLength(16);
+    expect(defaults.every((pattern: { isCustom: boolean }) => pattern.isCustom === false)).toBe(true);
+    expect(defaults.map((pattern: { name: string }) => pattern.name)).toEqual(expect.arrayContaining([
+      'Steady Downstrokes (4/4)',
+      'Folk Strum (D-D-U-U-D-U)',
+      'Roll Strum (D-DU-UDU)',
+      'Country Roads Strum (D-DUD-DU)',
+      'Boom-Chick Bass + Brush',
+      'Soft Ballad Brush',
+      'Bass + Brush Hybrid',
+      'Two-Beat Country / Train Beat',
+      'Campfire Backbeat Tap',
+      'Hammer-On Campfire Drive',
+      'Waltz Bass + Brush (3/4)',
+      '6/8 Ballad Strum',
+      'Chorus Lift Strum',
+      'Bass-Treble Arpeggio',
+      'Travis Alternating Bass',
+      '6/8 Bass + Pinch'
+    ]));
+    expect(defaults.map((pattern: { name: string }) => pattern.name)).not.toEqual(expect.arrayContaining([
+      'Bass + Treble Pinch',
+      'Alternating Bass + Pinch',
+      'Shuffle Drive 12/8',
+      'Muted Funk-Folk Groove',
+      'Relative Campfire Bass Walk'
+    ]));
+    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Campfire')).toHaveLength(13);
+    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Fingerstyle')).toHaveLength(3);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action =>
+          action?.pick?.some((note: { mode?: string }) => note.mode === 'relative')
+          || (action?.strum?.strings && typeof action.strum.strings === 'object' && 'from' in action.strum.strings)
+        )
+      )
+    )).toBe(true);
+    expect(defaults.some((pattern: { category: string; measures: Array<{ actions: Array<any> }> }) =>
+      pattern.category === 'Fingerstyle' && pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'pick' && action.pick?.length > 1)
+      )
+    )).toBe(true);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action =>
+          action?.technique === 'pull-off'
+          || action?.technique === 'slide'
+        )
+      )
+    )).toBe(false);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'percussive')
+      )
+    )).toBe(true);
+    expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
+      pattern.measures.some(measure =>
+        measure.actions.some(action => action?.technique === 'hammer-on')
+      )
+    )).toBe(true);
+    const defaultIds = defaults.map((pattern: { id: string }) => pattern.id);
+    expect(new Set(defaultIds).size).toBe(16);
+    expect(defaultIds).toEqual(expect.arrayContaining([
+      'default-chorus-lift-strum',
+      'default-country-roads-strum-d-dud-du',
+      'default-bass-brush-hybrid',
+      'default-two-beat-country-train-beat',
+      'default-campfire-backbeat-tap',
+      'default-hammer-on-campfire-drive',
+      'default-bass-pinch-6-8'
+    ]));
+    expect(defaultIds.every((id: string) => /^default-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))).toBe(true);
+    expect(defaultIds.every((id: string) => !/^default-\d+$/.test(id))).toBe(true);
+  });
+
+  it('does not reseed defaults when patterns already exist', async () => {
+    const bulkAdd = jest.fn().mockResolvedValue(undefined);
+    const db = {
+      metadata: { get: jest.fn().mockResolvedValue(undefined), put: jest.fn().mockResolvedValue(undefined) },
+      transaction: jest.fn((_mode: string, _tables: unknown, run: () => Promise<void>) => run()),
+      playingPatterns: {
+        count: jest.fn().mockResolvedValue(3),
+        bulkAdd
+      }
+    };
+
+    await DatabaseService.prototype.initializePatterns.call(db as unknown as DatabaseService);
+
+    expect(bulkAdd).not.toHaveBeenCalled();
+  });
+
+  it('preserves an intentionally empty initialized library', async () => {
+    const db = {
+      metadata: { get: jest.fn().mockResolvedValue({ key: PATTERNS_INITIALIZED, value: true }), put: jest.fn() },
+      playingPatterns: { count: jest.fn(), bulkAdd: jest.fn() },
+      transaction: jest.fn((_mode: string, _tables: unknown, run: () => Promise<void>) => run())
+    };
+    await DatabaseService.prototype.initializePatterns.call(db as unknown as DatabaseService);
+    expect(db.playingPatterns.bulkAdd).not.toHaveBeenCalled();
+    expect(db.metadata.put).not.toHaveBeenCalled();
+  });
+});

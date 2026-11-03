@@ -42,8 +42,10 @@ Apply the checks that match the change. The [product charter](product.md),
   actionable findings within scope.
 - Report what changed, what passed, and any remaining blockers or limits. A failed or unavailable
   check is reported explicitly and does not count as a pass.
-- A reviewable diff completes a local implementation request. Commit, push, or create a PR when
-  requested by the user or the agreed delivery scope; leave merging and deployment to that scope.
+- `$implement` assigns a supplied ticket to the user and completes with a committed, pushed
+  feature branch and a PR after required verification and review pass, unless the user explicitly
+  limits delivery scope. A reviewable diff completes an explicitly local-only request. Other
+  workflows commit, push, or create a PR when requested. Merging and deployment require separate scope.
 - For a PR that fully resolves an issue, include `Closes #<number>`; use a reference for partial work.
 
 The script provides a manual verification gate. Review roles and these instructions are guidance;

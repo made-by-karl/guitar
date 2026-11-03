@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { DatabaseService } from '@/app/core/services/database.service';
+import { cloneMeasure } from '@/app/features/patterns/services/playing-pattern-clone';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
 
 @Injectable({ providedIn: 'root' })
@@ -11,12 +12,9 @@ export class PlayingPatternsService {
     this.initializer = this.initialize();
   }
 
-  private async initialize() {
+  private async initialize(): Promise<void> {
     try {
-      const count = await this.db.playingPatterns.count();
-      if (count === 0) {
-        await this.addDefaultPatterns();
-      }
+      await this.db.initializePatterns();
     } catch (error) {
       console.error('Error initializing patterns:', error);
     }
@@ -108,31 +106,11 @@ export class PlayingPatternsService {
     }
   }
 
-  private async addDefaultPatterns() {
-    const defaults: PlayingPattern[] = createDefaultPlayingPatterns();
-    try {
-      await this.db.playingPatterns.bulkAdd(defaults);
-    } catch (error) {
-      console.error('Error adding default patterns:', error);
-    }
-  }
-
   private clonePattern(pattern: PlayingPattern): PlayingPattern {
     return {
       ...pattern,
       actionGrips: (pattern.actionGrips ?? []).map(grip => ({ ...grip })),
-      measures: pattern.measures.map(measure => ({
-        ...measure,
-        actions: measure.actions.map(action => action ? {
-          ...action,
-          modifiers: action.modifiers ? [...action.modifiers] : undefined,
-          strum: action.strum ? { ...action.strum } : undefined,
-          pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
-          legato: action.legato ? { ...action.legato } : undefined,
-          slide: action.slide ? { ...action.slide } : undefined,
-          percussive: action.percussive ? { ...action.percussive } : undefined
-        } : null)
-      }))
+      measures: pattern.measures.map(measure => cloneMeasure(measure))
     };
   }
 }
