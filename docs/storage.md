@@ -6,14 +6,15 @@ Client-side persistence is handled with Dexie/IndexedDB in `guitar-app/src/app/c
 
 ## Tables
 
-Current schema version is `9` with two tables:
+Current schema version is `10` with three tables:
 
 - `songSheets`: keyed by `id`, indexed by `created` and `updated`
 - `playingPatterns`: keyed by `id`, indexed by `category` and `isCustom`
+- `metadata`: keyed by `key`; stores the `patternsInitialized` marker
 
 Version 2 clears `playingPatterns` during upgrade so defaults can be rebuilt cleanly. Versions 2–4 retain their previously released upgrade behavior.
 
-Version 9 combines the song-sheet changes developed on this branch into one upgrade. It copies legacy part pattern items into measures, folds grip and text overlays into their current locations, creates reusable-part occurrences with independent lyrics, and repairs explicit legato string indices in both song sheets and library patterns. Versions 5–8 were development-only steps and are no longer registered separately. The conversion helpers tolerate those intermediate shapes and preserve existing occurrence and measure identities. Databases already at version 9 open without rerunning the upgrade.
+Version 9 combines the song-sheet changes developed on this branch into one upgrade. It copies legacy part pattern items into measures, folds grip and text overlays into their current locations, creates reusable-part occurrences with independent lyrics, and repairs explicit legato string indices in both song sheets and library patterns. Versions 5–8 were development-only steps and are no longer registered separately. The conversion helpers tolerate those intermediate shapes and preserve existing occurrence and measure identities. Databases already at version 9 open without rerunning that upgrade. Version 10 adds initialization metadata without modifying practice records. Existing installations receive the marker, preserving their current library, including an empty one.
 
 ## Ownership Model
 
@@ -34,7 +35,8 @@ Important implication: patterns embedded in a sheet are snapshots stored on the 
 
 `PlayingPatternsService` manages the reusable global pattern library stored in `playingPatterns`.
 
-- Default patterns are inserted on first use when the table is empty.
+- Default patterns are inserted on first use only when the table is empty and the persistent initialization marker is absent. Seeding and marking use one transaction.
+- Restore writes the marker in the same transaction as practice data so empty or partially restored libraries survive reload without adding defaults. The marker is local metadata, outside the backup payload.
 - `restoreMissingDefaults()` repopulates any missing built-in patterns by id.
 - Custom patterns are cloned before storage to avoid shared nested object references.
 
@@ -55,6 +57,13 @@ Avoid storing parsed/runtime-only objects such as `Grip` instances in IndexedDB.
 - Keep upgrade steps explicit and local to the version change.
 - Treat migration changes as behavioral work: update tests around both storage services and any affected consumers.
 - Be careful with destructive upgrades. The existing version 2 pattern reset is intentional and should not be copied casually to unrelated tables.
+
+## JSON transfer
+
+See [JSON import and export](json-import-export.md) for versioned file envelopes, copy naming,
+backup coverage, Merge/Replace semantics, validation, transaction boundaries, and local download metadata.
+Backup reads and restores use `DatabaseService` directly; they bypass editor normalization and service
+read-error fallbacks to preserve records and propagate failures.
 
 ## Related Files
 

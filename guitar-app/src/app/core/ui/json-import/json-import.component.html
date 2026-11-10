@@ -1,0 +1,57 @@
+<div class="json-import" [class.mb-3]="showPicker || reading || error || status || inspection">
+  <label class="d-block" [class.d-none]="!showPicker">
+    <span class="d-block fw-semibold mb-2">{{ label }}</span>
+    <input #picker type="file" accept=".json,application/json" class="form-control" [disabled]="writing" (change)="choose($event)" (cancel)="onPickerCancel()">
+  </label>
+  @if (reading) { <p class="mt-2" role="status">Reading and checking file…</p> }
+  @if (error) { <p class="alert alert-danger mt-2 text-break" role="alert">{{ error }}</p> }
+  @if (status) { <p class="alert alert-success mt-2" role="status">{{ status }}</p> }
+  @if (inspection; as preview) {
+    <section class="border rounded p-3 mt-3" aria-label="JSON import preview" [attr.aria-busy]="writing">
+      <h6>File preview</h6>
+      <p class="text-break mb-2">{{ filename }}</p>
+      <p class="small mb-2">Exported {{ preview.file.exportedAt | date:'medium' }} · App {{ preview.file.appVersion || 'unknown' }}</p>
+      @if (preview.file.format === 'guitar-backup') {
+        <p><strong>Practice backup</strong></p>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <caption class="visually-hidden">Backup contents and current library</caption>
+            <thead><tr><th scope="col">Records</th><th scope="col">File</th><th scope="col">Current</th><th scope="col">Matching IDs</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Song sheets</th><td>{{ counts.sheets }}</td><td>{{ preview.current.sheets }}</td><td>{{ preview.matching.sheets }}</td></tr>
+              <tr><th scope="row">Patterns</th><td>{{ counts.patterns }}</td><td>{{ preview.current.patterns }}</td><td>{{ preview.matching.patterns }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <fieldset [disabled]="writing">
+          <legend class="fs-6">Restore mode</legend>
+          <label class="d-block mb-2"><input type="radio" name="backupRestoreMode" value="merge" [(ngModel)]="mode" (ngModelChange)="replaceConfirmed = false"> Merge</label>
+          <p class="small">Add missing IDs and replace matching IDs with the file’s complete records, even when older. Keep records absent from the file.</p>
+          <label class="d-block mb-2"><input type="radio" name="backupRestoreMode" value="replace" [(ngModel)]="mode" (ngModelChange)="replaceConfirmed = false"> Replace everything</label>
+          <p class="small">Remove all current song sheets and global patterns, then restore exactly the file’s records with their original IDs and timestamps.</p>
+          @if (mode === 'replace') {
+            <label class="d-block alert alert-warning">
+              <input type="checkbox" [(ngModel)]="replaceConfirmed">
+              I confirm replacing all current song sheets ({{ preview.current.sheets }}) and patterns ({{ preview.current.patterns }}).
+              @if (counts.sheets === 0 && counts.patterns === 0) { This empty backup will delete all practice content. }
+            </label>
+          }
+        </fieldset>
+      } @else {
+        <p><strong>{{ preview.file.format === 'guitar-song-sheet' ? 'Song sheet' : 'Playing pattern' }}:</strong> {{ preview.file.data.name || 'Untitled' }}</p>
+        <p class="text-break"><strong>Import as:</strong> {{ preview.resultingName || 'Untitled' }}</p>
+        <p>Measures: {{ counts.measures }}@if (counts.parts !== undefined) { · Parts: {{ counts.parts }} · Occurrences: {{ counts.occurrences }} · Patterns: {{ counts.patterns }} · Grips: {{ counts.grips }} }</p>
+        <p class="small">Creates a new copy with a new ID and timestamps. Existing records stay unchanged. Imported patterns are editable custom patterns.</p>
+      }
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-secondary" [disabled]="writing" (click)="cancel()">Cancel import</button>
+        <button type="button" class="btn" [class.btn-danger]="preview.file.format === 'guitar-backup' && mode === 'replace'" [class.btn-primary]="preview.file.format !== 'guitar-backup' || mode === 'merge'"
+          [disabled]="reading || writing || (preview.file.format === 'guitar-backup' && mode === 'replace' && !replaceConfirmed)" (click)="apply()">
+          {{ writing ? 'Importing…' : preview.file.format === 'guitar-backup' ? (mode === 'replace' ? 'Replace all practice content' : 'Merge backup') : 'Import copy' }}
+        </button>
+      </div>
+    </section>
+  } @else if (reading || error) {
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel import</button>
+  }
+</div>
