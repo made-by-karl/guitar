@@ -90,7 +90,7 @@ export class PatternsLibrarySelectorComponent implements OnDestroy, OnChanges {
   }
 
   isPatternPlaybackActive(pattern: PlayingPattern): boolean {
-    return this.playbackState.status === 'playing' && this.playbackState.patternId === pattern.id;
+    return (this.playbackState.status === 'playing' || this.playbackState.status === 'preparing') && this.playbackState.patternId === pattern.id;
   }
 
   getMeasureNotationContext(pattern: PlayingPattern, measureIndex: number): PlayingActionsNotationContext {

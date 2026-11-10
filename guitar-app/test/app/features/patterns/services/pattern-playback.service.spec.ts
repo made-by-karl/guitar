@@ -1,5 +1,5 @@
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
-import { PlaybackService } from '@/app/core/services/playback.service';
+import { createPlaybackService } from '@test/helpers/media-playback';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
@@ -47,11 +47,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
     const pattern = createPattern();
@@ -74,11 +74,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
 
@@ -86,7 +86,7 @@ describe('PatternPlaybackService', () => {
 
     jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       percussion: { technique: 'body-knock' },
       technique: 'percussive'
     }));
@@ -97,11 +97,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
 
@@ -115,12 +115,12 @@ describe('PatternPlaybackService', () => {
 
     jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'G#', octave: 3 }) })
       ])
     }));
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'C#', octave: 4 }) })
       ])
@@ -131,11 +131,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
     const pattern = createPattern();
@@ -154,11 +154,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
     const pattern = createPattern();
@@ -174,12 +174,12 @@ describe('PatternPlaybackService', () => {
 
     jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'G#', octave: 3 }) })
       ])
     }));
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'C#', octave: 4 }) })
       ])
@@ -190,11 +190,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
     const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Chorus Lift Strum');
@@ -209,7 +209,7 @@ describe('PatternPlaybackService', () => {
       patternId: pattern!.id
     });
 
-    jest.advanceTimersByTime(2000);
+    jest.advanceTimersByTime(10000);
     expect(service.getSnapshot()).toEqual({ status: 'idle' });
   });
 
@@ -217,11 +217,11 @@ describe('PatternPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const service = new PatternPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       new PlayingPatternPlaybackPlannerService()
     );
     const pattern = {
@@ -232,7 +232,7 @@ describe('PatternPlaybackService', () => {
     await service.togglePatternPreview(pattern, undefined, undefined, 120);
     jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'E', octave: 2 }) })
       ])

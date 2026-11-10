@@ -37,10 +37,10 @@ describe('MidiTestComponent', () => {
     fixture.detectChanges();
   });
 
-  it('shows a transient playing notification for chord playback', async () => {
+  it('delegates chord playback without announcing a premature playing state', async () => {
     await component.playChord(['E4', 'G#4', 'B4']);
 
-    expect(mockNotificationService.info).toHaveBeenCalledWith('Playing chord: E4, G#4, B4');
+    expect(mockNotificationService.info).not.toHaveBeenCalled();
     expect(mockPlaybackService.playChordFromNotes).toHaveBeenCalledWith(['E4', 'G#4', 'B4'], 2.0, 0.7, 'normal');
   });
 
@@ -63,7 +63,7 @@ describe('MidiTestComponent', () => {
 
     await component.playSelectedNote();
 
-    expect(mockNotificationService.info).toHaveBeenCalledWith('Playing note: F#2');
+    expect(mockNotificationService.info).not.toHaveBeenCalled();
     expect(mockPlaybackService.playChordFromNotes).toHaveBeenCalledWith(['F#2'], 2.0, 0.7, 'normal');
   });
 

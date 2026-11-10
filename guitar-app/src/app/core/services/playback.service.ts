@@ -1,238 +1,100 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { MidiService } from '@/app/core/services/midi.service';
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/midi.model';
 import { noteNameToNote } from '@/app/core/music/semitones';
-import { FinitePlaybackScheduler, PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { RenderedAudioService } from '@/app/core/services/rendered-audio.service';
+import { HtmlAudioPlaybackService, HtmlAudioProgress } from '@/app/core/services/html-audio-playback.service';
 
-/**
- * Describes a finite playback run as timed instructions plus segment boundaries.
- */
+export type PlaybackStatus = 'idle' | 'preparing' | 'playing' | 'paused';
+
 export interface PlaybackPlan {
   instructions: MidiInstruction[];
   segmentStartTimes: number[];
   totalDuration: number;
   totalSegments: number;
 }
-
-/**
- * Represents the transport state of a playback session.
- */
 export interface PlaybackSessionState {
-  sessionId: string;
-  scope: string;
-  status: PlaybackStatus;
-  cursor: number;
-  total: number;
-  canPause: boolean;
-  canSeek: boolean;
+  sessionId: string; scope: string; status: PlaybackStatus; cursor: number;
+  total: number; canPause: boolean; canSeek: boolean;
 }
-
-/**
- * Controls a finite playback run and exposes its transport state.
- */
 export interface PlaybackSession {
   readonly state$: Observable<PlaybackSessionState>;
-  /** Returns the current transport state without subscribing. */
   getSnapshot(): PlaybackSessionState;
-  /** Starts playback for the provided plan, optionally from a later segment. */
   play(plan: PlaybackPlan, startCursor?: number): Promise<void>;
-  /** Suspends playback and keeps the current segment position. */
   pause(): void;
-  /** Continues a paused playback run from its current segment. */
   resume(): void;
-  /** Stops playback and resets the session to its idle state. */
   stop(): void;
-  /** Moves the transport to another segment in the active plan. */
   seek(cursor: number): void;
-  /** Releases scheduler state and removes the session from the manager. */
   destroy(): void;
 }
 
 class FinitePlaybackSession implements PlaybackSession {
-  private readonly scheduler = new FinitePlaybackScheduler({
-    total: 0,
-    scheduleFrom: (cursor, onCursor, onComplete) => this.schedulePlan(cursor, onCursor, onComplete),
-    onStop: () => this.handleStop()
-  });
-
-  private readonly stateSubject = new BehaviorSubject<PlaybackSessionState>({
-    sessionId: '',
-    scope: '',
-    status: 'idle',
-    cursor: 0,
-    total: 0,
-    canPause: true,
-    canSeek: true
-  });
-
-  readonly state$ = this.stateSubject.asObservable();
-
+  private readonly stateSubject: BehaviorSubject<PlaybackSessionState>;
+  readonly state$: Observable<PlaybackSessionState>;
   private plan: PlaybackPlan | null = null;
-  private isStartingPlayback = false;
+  private readonly progress: Subscription;
+  private destroyed = false;
 
   constructor(
     private readonly sessionId: string,
     private readonly scope: string,
-    private readonly midiService: MidiService,
+    private readonly rendered: RenderedAudioService,
+    private readonly media: HtmlAudioPlaybackService,
     private readonly beforePlay: (session: FinitePlaybackSession) => void,
-    private readonly onDestroySession: (sessionId: string) => void
+    private readonly onDestroySession: (id: string) => void
   ) {
-    this.stateSubject.next({
-      ...this.stateSubject.getValue(),
-      sessionId: this.sessionId,
-      scope: this.scope
-    });
-
-    this.scheduler.state$.subscribe((state) => {
-      // Starting playback updates the scheduler total before the first play event,
-      // which would otherwise look like a spurious "idle" transition to consumers.
-      if (this.isStartingPlayback && state.status === 'idle' && this.plan) {
-        return;
-      }
-
-      if (state.status === 'playing') {
-        this.isStartingPlayback = false;
-      }
-
-      this.stateSubject.next({
-        sessionId: this.sessionId,
-        scope: this.scope,
-        status: state.status,
-        cursor: state.cursor ?? 0,
-        total: state.total ?? 0,
-        canPause: state.canPause,
-        canSeek: state.canSeek
-      });
-    });
+    this.stateSubject = new BehaviorSubject<PlaybackSessionState>({ sessionId, scope,
+      status: 'idle', cursor: 0, total: 0, canPause: false, canSeek: false });
+    this.state$ = this.stateSubject.asObservable();
+    this.progress = media.progress$(this.channel).subscribe(state => this.onProgress(state));
   }
-
-  getSnapshot(): PlaybackSessionState {
-    return this.stateSubject.getValue();
-  }
-
-  async play(plan: PlaybackPlan, startCursor: number = 0): Promise<void> {
-    if (plan.instructions.length === 0 || plan.totalSegments === 0) {
-      this.stop();
-      return;
-    }
-
-    await this.midiService.ensureReady();
+  getSnapshot(): PlaybackSessionState { return this.stateSubject.value; }
+  async play(plan: PlaybackPlan, startCursor = 0): Promise<void> {
+    if (this.destroyed) return;
+    if (!plan.instructions.length || !plan.totalSegments) { this.stop(); return; }
     this.beforePlay(this);
     this.plan = plan;
-    this.isStartingPlayback = true;
-    this.scheduler.updateTotal(plan.totalSegments);
-    this.scheduler.play(startCursor);
+    const startTime = plan.segmentStartTimes[this.clamp(startCursor)] ?? 0;
+    await this.media.play(this.channel, signal => this.rendered.renderInstructions(plan.instructions, plan.totalDuration, signal),
+      { label: this.sessionId === 'pattern-preview' ? 'Pattern preview' : 'Song playback', startTime });
   }
-
-  pause(): void {
-    this.scheduler.pause();
-  }
-
-  resume(): void {
-    if (!this.plan) {
-      return;
-    }
-
-    this.scheduler.resume();
-  }
-
-  stop(): void {
-    this.isStartingPlayback = false;
-    this.plan = null;
-    this.scheduler.stop();
-  }
-
+  pause(): void { this.media.pause(this.channel); }
+  resume(): void { if (this.plan) void this.media.resume(this.channel); }
+  stop(): void { this.media.stop(this.channel); this.plan = null; }
   seek(cursor: number): void {
-    if (!this.plan) {
-      return;
-    }
-
-    this.scheduler.seek(cursor);
+    if (this.plan && this.getSnapshot().canSeek) this.media.seek(this.channel, this.plan.segmentStartTimes[this.clamp(cursor)] ?? 0);
   }
-
   destroy(): void {
-    this.isStartingPlayback = false;
-    this.plan = null;
-    this.scheduler.destroy();
-    this.stateSubject.complete();
-    this.onDestroySession(this.sessionId);
+    if (this.destroyed) return;
+    this.destroyed = true; this.stop(); this.progress.unsubscribe();
+    this.media.release(this.channel); this.stateSubject.complete(); this.onDestroySession(this.sessionId);
   }
-
-  isActive(): boolean {
-    const status = this.getSnapshot().status;
-    return status === 'playing' || status === 'paused';
-  }
-
-  hasScope(scope: string): boolean {
-    return this.scope === scope;
-  }
-
-  private schedulePlan(
-    startCursor: number,
-    onCursor: (cursor: number) => void,
-    onComplete: () => void
-  ): () => void {
+  isActive(): boolean { return this.getSnapshot().status !== 'idle'; }
+  hasScope(scope: string): boolean { return this.scope === scope; }
+  private get channel(): string { return `finite:${this.sessionId}`; }
+  private clamp(cursor: number): number { return Math.max(0, Math.min((this.plan?.totalSegments ?? 1) - 1, Math.round(cursor))); }
+  private onProgress(progress: HtmlAudioProgress): void {
     const plan = this.plan;
-    if (!plan) {
-      onComplete();
-      return () => {};
-    }
-
-    const startTime = plan.segmentStartTimes[startCursor] ?? 0;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
-    onCursor(startCursor);
-
-    for (let segmentIndex = startCursor; segmentIndex < plan.totalSegments; segmentIndex++) {
-      const delay = Math.max(0, (plan.segmentStartTimes[segmentIndex] - startTime) * 1000);
-      timeoutIds.push(setTimeout(() => {
-        onCursor(segmentIndex);
-      }, delay));
-    }
-
-    for (const instruction of plan.instructions) {
-      if (instruction.time < startTime) {
-        continue;
-      }
-
-      const delay = Math.max(0, (instruction.time - startTime) * 1000);
-      timeoutIds.push(setTimeout(() => {
-        this.midiService.triggerInstruction({
-          ...instruction,
-          time: instruction.time - startTime
-        });
-      }, delay));
-    }
-
-    timeoutIds.push(setTimeout(() => {
-      this.isStartingPlayback = false;
-      this.plan = null;
-      onComplete();
-    }, Math.max(0, (plan.totalDuration - startTime + 0.1) * 1000)));
-
-    return () => {
-      for (const id of timeoutIds) {
-        clearTimeout(id);
-      }
-    };
-  }
-
-  private handleStop(): void {
-    this.isStartingPlayback = false;
-    this.plan = null;
+    if (!plan) return;
+    const status: PlaybackStatus = progress.status === 'preparing' || progress.status === 'starting' ? 'preparing'
+      : progress.status === 'ready' || progress.status === 'error' ? 'paused' : progress.status;
+    let cursor = 0;
+    plan.segmentStartTimes.forEach((time, index) => { if (time <= progress.currentTime) cursor = index; });
+    this.stateSubject.next({ ...this.getSnapshot(), status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
+      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused' });
+    // Ended comes from the media element after its release tail, never from plan duration.
+    if (status === 'idle' && this.plan === plan) this.plan = null;
   }
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 /**
  * Provides generic playback primitives for finite sessions and direct note playback.
  */
-export class PlaybackService {
+export class PlaybackService implements OnDestroy {
   private readonly finiteSessions = new Map<string, FinitePlaybackSession>();
 
-  constructor(private midiService: MidiService) { }
+  constructor(private rendered: RenderedAudioService, private media: HtmlAudioPlaybackService) {}
 
   /**
    * Returns a stable finite playback session for the given identifier.
@@ -246,7 +108,8 @@ export class PlaybackService {
     const session = new FinitePlaybackSession(
       sessionId,
       scope,
-      this.midiService,
+      this.rendered,
+      this.media,
       (nextSession) => this.stopOtherFiniteSessionsInScope(nextSession),
       (destroyedSessionId) => this.finiteSessions.delete(destroyedSessionId)
     );
@@ -262,7 +125,8 @@ export class PlaybackService {
     noteNames: string[],
     duration: number = 2.0,
     velocity: number = 0.7,
-    technique: MidiTechnique = 'normal'
+    technique: MidiTechnique = 'normal',
+    owner: string = 'chord-preview'
   ): Promise<void> {
     const notes: MidiNote[] = noteNames.map(noteName => ({
       note: noteNameToNote(noteName)
@@ -278,7 +142,14 @@ export class PlaybackService {
       playNotes: 'parallel'
     };
 
-    await this.midiService.playSequence([instruction]);
+    await this.media.play(owner, signal => this.rendered.renderInstructions([instruction], duration, signal), { label: 'Chord preview' });
+  }
+
+  stopChordPreview(owner = 'chord-preview'): void { this.media.release(owner); }
+
+  ngOnDestroy(): void {
+    for (const session of [...this.finiteSessions.values()]) session.destroy();
+    this.media.release('chord-preview');
   }
 
   private stopOtherFiniteSessionsInScope(nextSession: FinitePlaybackSession): void {

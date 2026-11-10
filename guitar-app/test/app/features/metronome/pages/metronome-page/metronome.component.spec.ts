@@ -25,6 +25,7 @@ describe('MetronomeComponent', () => {
 
     mockMetronomeService = {
       state$: stateSubject.asObservable(),
+      currentTime: jest.fn(() => 0),
       start: jest.fn(),
       stop: jest.fn(),
       updateConfig: jest.fn(async (config: MetronomeConfig) => {

@@ -2,7 +2,7 @@ import { computed, signal } from '@angular/core';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
-import { PlaybackService } from '@/app/core/services/playback.service';
+import { createPlaybackService } from '@test/helpers/media-playback';
 import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
@@ -50,7 +50,7 @@ describe('SongPartPlaybackService', () => {
   };
 
   function availabilityService(): SongPartPlaybackService {
-    return new SongPartPlaybackService(new PlaybackService({} as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    return new SongPartPlaybackService(createPlaybackService({} as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
   }
 
   it.each<{ action: PlayingAction; playable: boolean }>([
@@ -77,8 +77,8 @@ describe('SongPartPlaybackService', () => {
 
   it('uses occurrence order and inherited string state for repeated parts and full-song playback', async () => {
     jest.useFakeTimers();
-    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), triggerInstruction: jest.fn() };
-    const service = new SongPartPlaybackService(new PlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), captureInstruction: jest.fn() };
+    const service = new SongPartPlaybackService(createPlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
     const source: SongPart = { id: 'source', section: 'Intro', notes: '', measures: [{ id: 'source-m', measure: {
       timeSignature: '4/4', actions: [{ technique: 'strum', strum: { direction: 'D', strings: 'all' } }],
       actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'x|x|o|2|3|2', name: 'D' }]
@@ -94,14 +94,14 @@ describe('SongPartPlaybackService', () => {
       expect(service.canPlaySongPart(song, sliding, 'verse2')).toBe(true);
       await service.playSongPart(song, sliding, 'verse2');
       jest.runAllTimers();
-      expect(midi.triggerInstruction).toHaveBeenCalledTimes(1);
-      expect(midi.triggerInstruction.mock.calls[0][0].legatos[0]).toMatchObject({ string: 3, source: { note: { semitone: 'A#', octave: 3 } } });
-      midi.triggerInstruction.mockClear();
+      expect(midi.captureInstruction).toHaveBeenCalledTimes(1);
+      expect(midi.captureInstruction.mock.calls[0][0].legatos[0]).toMatchObject({ string: 3, source: { note: { semitone: 'A#', octave: 3 } } });
+      midi.captureInstruction.mockClear();
       await service.playSong(song);
       expect(service.getSnapshot()).toMatchObject({ type: 'song', occurrenceId: 'intro', totalMeasures: 3 });
       jest.runAllTimers();
-      expect(midi.triggerInstruction).toHaveBeenCalledTimes(3);
-      expect(midi.triggerInstruction.mock.calls.map(call => call[0].technique)).toEqual(['normal', 'slide', 'slide']);
+      expect(midi.captureInstruction).toHaveBeenCalledTimes(3);
+      expect(midi.captureInstruction.mock.calls.map(call => call[0].technique)).toEqual(['normal', 'slide', 'slide']);
       expect(service.canPlaySong({ ...song, arrangement: [...song.arrangement!, { id: 'missing', partId: 'missing', lyrics: '' }] })).toBe(false);
       const rest: SongPart = { id: 'rest', section: 'Break', notes: '', measures: [{ id: 'rest-m', measure: { timeSignature: '4/4', actions: [null, null, null, null] } }] };
       expect(service.canPlaySong({ ...song, parts: [...song.parts, rest], arrangement: [...song.arrangement!, { id: 'break', partId: rest.id, lyrics: '' }] })).toBe(true);
@@ -111,9 +111,9 @@ describe('SongPartPlaybackService', () => {
 
   it('plays only the chosen measure using the last preceding grip, including changes on rests', async () => {
     jest.useFakeTimers();
-    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), triggerInstruction: jest.fn() };
+    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), captureInstruction: jest.fn() };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService()
+      createPlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService()
     );
     const candidate: SongPart = { ...part, measures: [
       { id: 'first', measure: { ...part.measures[0].measure, actions: [null] } },
@@ -129,8 +129,8 @@ describe('SongPartPlaybackService', () => {
       expect(service.canPlayMeasure(sheet, candidate, 'target')).toBe(true);
       await service.toggleMeasurePreview(sheet, candidate, 'target');
       jest.runAllTimers();
-      expect(midi.triggerInstruction).toHaveBeenCalledTimes(1);
-      expect(midi.triggerInstruction.mock.calls[0][0].notes).toEqual([
+      expect(midi.captureInstruction).toHaveBeenCalledTimes(1);
+      expect(midi.captureInstruction.mock.calls[0][0].notes).toEqual([
         { note: { semitone: 'D', octave: 3 } },
         { note: { semitone: 'A', octave: 3 } },
         { note: { semitone: 'D', octave: 4 } },
@@ -143,9 +143,9 @@ describe('SongPartPlaybackService', () => {
 
   it('inherits sounding D strings for isolated single and group slides in a later measure', async () => {
     jest.useFakeTimers();
-    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), triggerInstruction: jest.fn() };
+    const midi = { ensureReady: jest.fn().mockResolvedValue(undefined), captureInstruction: jest.fn() };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService()
+      createPlaybackService(midi as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService()
     );
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const candidate: SongPart = { ...part, measures: [
@@ -163,11 +163,11 @@ describe('SongPartPlaybackService', () => {
       await service.toggleMeasurePreview(sheet, candidate, 'target');
       jest.runAllTimers();
       expect(warn).not.toHaveBeenCalled();
-      expect(midi.triggerInstruction).toHaveBeenCalledTimes(2);
-      expect(midi.triggerInstruction.mock.calls[0][0]).toMatchObject({
+      expect(midi.captureInstruction).toHaveBeenCalledTimes(2);
+      expect(midi.captureInstruction.mock.calls[0][0]).toMatchObject({
         time: 0, technique: 'slide', legato: { string: 3, source: { note: { semitone: 'A', octave: 3 } } }
       });
-      expect(midi.triggerInstruction.mock.calls[1][0].legatos).toHaveLength(3);
+      expect(midi.captureInstruction.mock.calls[1][0].legatos).toHaveLength(3);
     } finally {
       service.stopMeasurePreview();
       warn.mockRestore();
@@ -203,7 +203,7 @@ describe('SongPartPlaybackService', () => {
   it('reports planning diagnostics when playback is requested', async () => {
     jest.useFakeTimers();
     const service = new SongPartPlaybackService(
-      new PlaybackService({ ensureReady: async () => undefined, triggerInstruction: jest.fn() } as never),
+      createPlaybackService({ ensureReady: async () => undefined, captureInstruction: jest.fn() } as never),
       new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService()
     );
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -231,7 +231,7 @@ describe('SongPartPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const songSheetsService = {
@@ -250,7 +250,7 @@ describe('SongPartPlaybackService', () => {
       }])
     };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       songSheetsService as any,
       new PlayingPatternPlaybackPlannerService()
     );
@@ -276,7 +276,7 @@ describe('SongPartPlaybackService', () => {
     jest.useFakeTimers();
     const midiService = {
       ensureReady: jest.fn().mockResolvedValue(undefined),
-      triggerInstruction: jest.fn(),
+      captureInstruction: jest.fn(),
       playSequence: jest.fn().mockResolvedValue(undefined)
     };
     const songSheetsService = {
@@ -295,7 +295,7 @@ describe('SongPartPlaybackService', () => {
       }])
     };
     const service = new SongPartPlaybackService(
-      new PlaybackService(midiService as any),
+      createPlaybackService(midiService as any),
       songSheetsService as any,
       new PlayingPatternPlaybackPlannerService()
     );
@@ -303,7 +303,7 @@ describe('SongPartPlaybackService', () => {
     await service.playSongPart(sheet, part);
     jest.runAllTimers();
 
-    expect(midiService.triggerInstruction).toHaveBeenCalledWith(expect.objectContaining({
+    expect(midiService.captureInstruction).toHaveBeenCalledWith(expect.objectContaining({
       notes: expect.arrayContaining([
         expect.objectContaining({ note: expect.objectContaining({ semitone: 'E', octave: 2 }) })
       ])

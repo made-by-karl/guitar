@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Note, transpose } from '@/app/core/music/semitones';
 import { PlaybackService } from '@/app/core/services/playback.service';
@@ -45,7 +45,11 @@ export interface CustomGripEditorResult {
   styleUrl: './custom-grip-editor-modal.component.scss'
 })
 export class CustomGripEditorModalComponent
-  implements ModalComponent<CustomGripEditorResult>, ModalDataComponent<CustomGripEditorModalData> {
+  implements OnDestroy, ModalComponent<CustomGripEditorResult>, ModalDataComponent<CustomGripEditorModalData> {
+  private static nextPreview = 0;
+  private readonly previewOwner = `custom-grip:${++CustomGripEditorModalComponent.nextPreview}`;
+  ngOnDestroy(): void { this.playback.stopChordPreview(this.previewOwner); }
+
   readonly modeOptions: { value: CustomGripStringMode; label: string }[] = [
     { value: 'muted', label: 'Muted' },
     { value: 'open', label: 'Open' },
@@ -121,7 +125,7 @@ export class CustomGripEditorModalComponent
 
     try {
       const notes = this.previewNotes.filter((note): note is string => note !== null);
-      await this.playback.playChordFromNotes(notes);
+      await this.playback.playChordFromNotes(notes, 2, 0.7, 'normal', this.previewOwner);
     } catch (error) {
       console.error('Error playing grip:', error);
     }

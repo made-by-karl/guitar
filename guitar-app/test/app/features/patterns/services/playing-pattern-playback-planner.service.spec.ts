@@ -1,8 +1,23 @@
 import { note } from '@/app/core/music/semitones';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
+import { PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
 
 describe('PlayingPatternPlaybackPlannerService', () => {
+  it.each(['pick', 'strum'] as const)('keeps palm-mute and mute articulation when accent changes %s dynamics', technique => {
+    const planner = new PlayingPatternPlaybackPlannerService();
+    const action: PlayingAction = technique === 'pick'
+      ? { technique, pick: [{ mode: 'explicit', string: 0, fret: 3 }] }
+      : { technique, strum: { direction: 'U', strings: 'all' } };
+    const variants: PlayingAction['modifiers'][] = [[], ['palm-mute'], ['palm-mute', 'accent'], ['mute', 'palm-mute', 'accent']];
+    const instructions = variants.map(modifiers => planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4',
+      actions: [{ ...action, modifiers }] }, actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'o|2|2|1|o|o', name: 'E' }]
+    }], [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4)], 120).instructions[0]);
+    expect(instructions.map(i => i.technique)).toEqual(['normal', 'palm-muted', 'palm-muted', 'muted']);
+    expect(instructions[2].velocity).toBeGreaterThan(instructions[1].velocity);
+    expect(instructions[2].notes).toEqual(instructions[1].notes);
+    expect(instructions[2].playNotes).toBe(technique === 'strum' ? 'reversed' : 'parallel');
+  });
   it('slides sounding fretted strings together while leaving open strings unchanged', () => {
     const planner = new PlayingPatternPlaybackPlannerService();
     const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [

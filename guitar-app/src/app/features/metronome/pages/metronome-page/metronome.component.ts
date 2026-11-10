@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { MetronomeService } from '@/app/features/metronome/services/metronome.service';
-import { AudioService } from '@/app/core/services/audio.service';
 import { TIME_SIGNATURES, TimeSignature, timeSignatureLabel } from '@/app/core/music/rhythm/time-signature.model';
 import { BpmSelectorComponent } from '@/app/core/ui/bpm-selector/bpm-selector.component';
 import {
@@ -31,6 +30,8 @@ export class MetronomeComponent implements OnInit, OnDestroy {
   scales: number[] = [];
   activeIndex = -1;
   running = false;
+  preparing = false;
+  error = '';
 
   private tickAudioTime = 0;
   private tickDurationSeconds = 0.5;
@@ -40,13 +41,17 @@ export class MetronomeComponent implements OnInit, OnDestroy {
 
   constructor(
     private metronomeService: MetronomeService,
-    private audioService: AudioService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.subscription = this.metronomeService.state$.subscribe(state => {
       this.running = state.running;
+      this.preparing = !!state.preparing;
+      this.error = state.error ?? '';
+      this.bpm = state.config.bpm;
+      this.timeSignature = state.config.timeSignature;
+      this.subdivision = state.config.subdivision;
       this.labels = state.labels;
       this.activeIndex = state.activeIndex;
       this.tickAudioTime = state.tickAudioTime;
@@ -80,7 +85,7 @@ export class MetronomeComponent implements OnInit, OnDestroy {
   }
 
   async toggle(): Promise<void> {
-    if (this.running) {
+    if (this.running || this.preparing) {
       this.stop();
       return;
     }
@@ -159,7 +164,7 @@ export class MetronomeComponent implements OnInit, OnDestroy {
     const scales = new Array(this.labels.length).fill(1);
 
     if (this.running) {
-      const now = this.audioService.now();
+      const now = this.metronomeService.currentTime();
       const elapsed = now - this.tickAudioTime;
       const progress = this.tickDurationSeconds > 0 ? Math.min(1, Math.max(0, elapsed / this.tickDurationSeconds)) : 1;
       const scale = 1 + 0.6 * (1 - progress);
