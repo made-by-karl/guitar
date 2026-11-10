@@ -1,7 +1,7 @@
-<div class="json-import mb-3">
-  <label class="d-block">
+<div class="json-import" [class.mb-3]="showPicker || reading || error || status || inspection">
+  <label class="d-block" [class.d-none]="!showPicker">
     <span class="d-block fw-semibold mb-2">{{ label }}</span>
-    <input #picker type="file" accept=".json,application/json" class="form-control" [disabled]="writing" (change)="choose($event)">
+    <input #picker type="file" accept=".json,application/json" class="form-control" [disabled]="writing" (change)="choose($event)" (cancel)="onPickerCancel()">
   </label>
   @if (reading) { <p class="mt-2" role="status">Reading and checking file…</p> }
   @if (error) { <p class="alert alert-danger mt-2 text-break" role="alert">{{ error }}</p> }

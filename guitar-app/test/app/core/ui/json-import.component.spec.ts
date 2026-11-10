@@ -63,4 +63,31 @@ describe('JSON import interactions', () => {
     const focus = jest.spyOn(component.picker!.nativeElement, 'focus'); component.cancel();
     expect(focus).toHaveBeenCalled(); expect(component.error).toBe('');
   });
+
+  it('opens the picker from a menu and restores focus after cancel or import', async () => {
+    const fixture = TestBed.createComponent(JsonImportComponent), component = fixture.componentInstance;
+    fixture.componentRef.setInput('kind', 'guitar-playing-pattern');
+    fixture.componentRef.setInput('showPicker', false);
+    fixture.detectChanges();
+    const trigger = document.createElement('button');
+    const focus = jest.spyOn(trigger, 'focus');
+    const click = jest.spyOn(component.picker!.nativeElement, 'click').mockImplementation(() => undefined);
+    component.openPicker(trigger);
+    expect(click).toHaveBeenCalledTimes(1);
+    component.onPickerCancel();
+    expect(focus).toHaveBeenCalledTimes(1);
+
+    await component.choose(select(async () => 'valid file'));
+    expect(focus).toHaveBeenCalledTimes(2);
+    component.cancel();
+    expect(focus).toHaveBeenCalledTimes(3);
+    await component.choose(select(async () => 'valid file'));
+    await component.apply();
+    expect(transfer.importCopy).toHaveBeenCalledWith(preview);
+    expect(focus).toHaveBeenCalledTimes(5);
+
+    component.writing = true;
+    component.openPicker(trigger);
+    expect(click).toHaveBeenCalledTimes(1);
+  });
 });

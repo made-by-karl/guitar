@@ -4,6 +4,9 @@ Song Sheets can export a saved sheet and import a sheet JSON file. Playing Patte
 export a library pattern and import a pattern JSON file. A sheet's Patterns tab also exports
 its saved local pattern snapshots using the same pattern format. File imports first show a preview;
 selecting a file never writes practice content.
+Single-item import is available in each library's actions menu beside the page title.
+Choosing Import opens the file chooser; validation and preview appear on the page only after
+selection. Canceling or completing an import returns focus to that actions menu button.
 
 Single-item imports always create a copy with a fresh top-level ID and timestamps. A pattern
 copy is custom, including when the source was a built-in. Nested sheet identities and ownership

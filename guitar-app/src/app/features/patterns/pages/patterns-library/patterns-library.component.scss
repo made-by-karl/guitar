@@ -1,18 +1,14 @@
 /* Basic styling for strumming patterns library */
 .patterns-library-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.patterns-library-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
+.page-menu-toggle {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .card.border-primary {
@@ -26,11 +22,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-@media (max-width: 767px) {
-  .patterns-library-header-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
 }

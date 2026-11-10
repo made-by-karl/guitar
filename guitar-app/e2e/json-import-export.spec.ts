@@ -23,7 +23,7 @@ async function readData(page: Page): Promise<PracticeData> {
   });
 }
 async function seed(page: Page, data: PracticeData): Promise<void> {
-  await expect(page.locator('app-json-import')).toBeVisible();
+  await expect(page.locator('app-json-import input[type=file]')).toBeAttached();
   await page.evaluate(async () => {
     // Dexie opens lazily; establish the app schema before native IndexedDB fixture writes.
     const ng = (window as unknown as { ng: { getComponent(el: Element): { transfer: { db: { open(): Promise<unknown> } } } } }).ng;
@@ -45,8 +45,41 @@ async function seed(page: Page, data: PracticeData): Promise<void> {
   }, data);
 }
 async function upload(page: Page, format: 'guitar-song-sheet' | 'guitar-playing-pattern' | 'guitar-backup', data: unknown, filename = 'shared.json'): Promise<void> {
-  await page.locator('app-json-import input[type=file]').setInputFiles({ name: filename, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(transferEnvelope(format, data))) });
+  const file = { name: filename, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(transferEnvelope(format, data))) };
+  if (format === 'guitar-backup') {
+    await page.locator('app-json-import input[type=file]').setInputFiles(file);
+  } else {
+    const isSheet = format === 'guitar-song-sheet';
+    const menu = page.getByRole('button', { name: isSheet ? 'Song sheets actions' : 'Pattern library actions', exact: true });
+    await menu.click();
+    const choosing = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: isSheet ? 'Import song sheet' : 'Import pattern', exact: true }).click();
+    await (await choosing).setFiles(file);
+    await expect(menu).toHaveAttribute('aria-expanded', 'false');
+    await expect(menu).toBeFocused();
+  }
   await expect(page.getByRole('region', { name: 'JSON import preview' })).toBeVisible();
+}
+async function checkPageMenu(page: Page, title: string, menuName: string, action: string, width: number) {
+  const heading = page.getByRole('heading', { name: title, exact: true });
+  const menu = page.getByRole('button', { name: menuName, exact: true });
+  await expect(menu).toBeVisible();
+  await expect(page.locator('app-json-import input[type=file]')).toBeHidden();
+  await expect(page.getByRole('button', { name: action, exact: true })).toBeHidden();
+  const headingBox = await heading.boundingBox(), menuBox = await menu.boundingBox();
+  expect(Math.abs(headingBox!.y + headingBox!.height / 2 - menuBox!.y - menuBox!.height / 2)).toBeLessThan(1);
+  expect(menuBox!.width).toBeGreaterThanOrEqual(44);
+  expect(menuBox!.height).toBeGreaterThanOrEqual(44);
+  await menu.focus();
+  await page.keyboard.press('Enter');
+  await expect(menu).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('button', { name: action, exact: true })).toBeFocused();
+  await mkdir('../temp/ux/import-menus', { recursive: true });
+  await page.screenshot({ path: `../temp/ux/import-menus/${title === 'Song Sheets' ? 'sheets' : 'patterns'}-menu-${width}.png`, fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveAttribute('aria-expanded', 'false');
+  await expect(menu).toBeFocused();
 }
 async function downloadJSON(page: Page, click: () => Promise<void>) {
   const waiting = page.waitForEvent('download'); await click(); const download = await waiting;
@@ -241,6 +274,8 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await page.screenshot({ path: `../temp/ux/json-import-export/restore-${viewport.width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
     await page.goto('/sheets');
+    await checkPageMenu(page, 'Song Sheets', 'Song sheets actions', 'Import song sheet', viewport.width);
+    await page.screenshot({ path: `../temp/ux/import-menus/sheets-${viewport.width}.png`, fullPage: true });
     const sheetExport = await checkExportButton(page.locator('app-export-button'), viewport.width);
     await sheetExport.focus();
     const sheetDownload = await downloadJSON(page, () => page.keyboard.press('Enter'));
@@ -250,10 +285,15 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await upload(page, 'guitar-song-sheet', richSheet());
     await page.screenshot({ path: `../temp/ux/json-import-export/sheet-${viewport.width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Song sheets actions', exact: true })).toBeFocused();
     await page.locator('app-json-import input[type=file]').setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(transferEnvelope('guitar-backup', { songSheets: [], playingPatterns: [] }))) });
     await expect(page.getByRole('alert')).toContainText('Settings');
     await page.goto('/patterns');
-    await expect(page.getByLabel('Import playing pattern JSON', { exact: true })).toBeVisible();
+    await checkPageMenu(page, 'Playing Patterns', 'Pattern library actions', 'Import pattern', viewport.width);
+    await page.screenshot({ path: `../temp/ux/import-menus/patterns-${viewport.width}.png`, fullPage: true });
+    await upload(page, 'guitar-playing-pattern', richPattern());
+    await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Pattern library actions', exact: true })).toBeFocused();
     await checkExportButton(page.locator('app-export-button'), viewport.width);
     await page.screenshot({ path: `../temp/ux/export-button/patterns-${viewport.width}.png`, fullPage: true });
     await page.screenshot({ path: `../temp/ux/json-import-export/patterns-${viewport.width}.png`, fullPage: true });

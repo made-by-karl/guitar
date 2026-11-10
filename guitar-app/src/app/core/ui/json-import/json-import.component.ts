@@ -13,6 +13,7 @@ import { TransferKind } from '@/app/core/services/data-transfer-format';
 })
 export class JsonImportComponent implements OnDestroy {
   @Input({ required: true }) kind!: TransferKind;
+  @Input() showPicker = true;
   @Output() imported = new EventEmitter<void>();
   @ViewChild('picker') picker?: ElementRef<HTMLInputElement>;
   inspection?: TransferInspection;
@@ -24,6 +25,7 @@ export class JsonImportComponent implements OnDestroy {
   mode: 'merge' | 'replace' = 'merge';
   replaceConfirmed = false;
   private selection = 0;
+  private returnFocusTo?: HTMLElement;
 
   constructor(private readonly transfer: DataTransferService) {}
 
@@ -43,14 +45,25 @@ export class JsonImportComponent implements OnDestroy {
     return { measures: file.data.measures.length };
   }
 
+  openPicker(returnFocusTo: HTMLElement): void {
+    if (this.writing) return;
+    this.returnFocusTo = returnFocusTo;
+    this.picker?.nativeElement.click();
+  }
+
+  onPickerCancel(): void {
+    this.restoreFocus();
+  }
+
   async choose(event: Event): Promise<void> {
     if (this.writing) return;
+    if (!this.showPicker) this.restoreFocus();
     const input = event.target as HTMLInputElement, file = input.files?.[0];
     input.value = ''; // Selecting the same file again must dispatch change.
     const selection = ++this.selection;
     this.inspection = undefined; this.error = ''; this.status = ''; this.replaceConfirmed = false;
     this.filename = file?.name ?? ''; this.reading = !!file;
-    if (!file) return;
+    if (!file) { this.restoreFocus(); return; }
     try {
       const inspection = await this.transfer.inspect(await file.text(), this.kind);
       if (selection === this.selection) this.inspection = inspection;
@@ -65,7 +78,7 @@ export class JsonImportComponent implements OnDestroy {
     if (this.writing) return;
     ++this.selection; this.inspection = undefined; this.reading = false; this.error = ''; this.status = ''; this.filename = '';
     this.replaceConfirmed = false;
-    this.picker?.nativeElement.focus();
+    this.restoreFocus();
   }
 
   async apply(): Promise<void> {
@@ -83,12 +96,16 @@ export class JsonImportComponent implements OnDestroy {
         this.inspection = undefined;
         this.status = `Imported “${name || 'Untitled'}”.`;
         this.imported.emit();
-        this.picker?.nativeElement.focus();
+        this.restoreFocus();
       }
     } catch (error) { this.error = `${this.message(error)} Nothing was imported. You can retry or choose another file.`; }
     finally { this.writing = false; }
   }
 
   ngOnDestroy(): void { ++this.selection; }
+  private restoreFocus(): void {
+    if (this.showPicker) this.picker?.nativeElement.focus();
+    else this.returnFocusTo?.focus();
+  }
   private message(error: unknown): string { return error instanceof Error ? error.message : 'The file could not be imported.'; }
 }
