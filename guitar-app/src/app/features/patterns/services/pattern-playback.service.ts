@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { PlaybackService } from '@/app/core/services/playback.service';
-import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { PlaybackService, PlaybackStatus } from '@/app/core/services/playback.service';
 import { note, Note } from '@/app/core/music/semitones';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import {
@@ -71,7 +70,7 @@ export class PatternPlaybackService {
     tempo: number = 80
   ): Promise<void> {
     const snapshot = this.getSnapshot();
-    if (snapshot.status === 'playing' && snapshot.patternId === pattern.id) {
+    if ((snapshot.status === 'playing' || snapshot.status === 'preparing') && snapshot.patternId === pattern.id) {
       this.stopPatternPreview();
       return;
     }
@@ -95,7 +94,7 @@ export class PatternPlaybackService {
       totalMeasures: preview.totalSegments
     };
     this.stateSubject.next({
-      status: 'playing',
+      status: 'preparing',
       patternId: pattern.id,
       currentMeasureIndex: 0,
       totalMeasures: preview.totalSegments

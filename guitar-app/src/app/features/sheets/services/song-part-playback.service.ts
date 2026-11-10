@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { PlaybackService } from '@/app/core/services/playback.service';
-import { PlaybackStatus } from '@/app/core/services/playback-scheduler.service';
+import { PlaybackService, PlaybackStatus } from '@/app/core/services/playback.service';
 import { Note, transpose } from '@/app/core/music/semitones';
 import { getSongArrangement, getOccurrenceHistory } from './song-arrangement';
 import {
@@ -102,7 +101,7 @@ export class SongPartPlaybackService {
     const snapshot = this.getSnapshot();
     if (
       snapshot.type === 'measure' &&
-      snapshot.status === 'playing' &&
+      (snapshot.status === 'playing' || snapshot.status === 'preparing') &&
       snapshot.partId === part.id &&
       snapshot.measureId === measureId
       && snapshot.occurrenceId === occurrenceId
@@ -133,7 +132,7 @@ export class SongPartPlaybackService {
     };
     this.stateSubject.next({
       type: 'measure',
-      status: 'playing',
+      status: 'preparing',
       partId: part.id,
       measureId,
       occurrenceId,
@@ -180,7 +179,7 @@ export class SongPartPlaybackService {
     };
     this.stateSubject.next({
       type: 'part',
-      status: 'playing',
+      status: 'preparing',
       partId: part.id,
       occurrenceId,
       currentMeasureIndex: 0,
@@ -278,7 +277,7 @@ export class SongPartPlaybackService {
     const plan = this.planner.buildPlaybackPlan(measures, this.getTuningForSheet(sheet), sheet.tempo);
     for (const message of plan.diagnostics) console.warn(message);
     this.activePlayback = { type: 'song', occurrenceIds, totalMeasures: measures.length };
-    this.stateSubject.next({ type: 'song', status: 'playing', occurrenceId: occurrenceIds[0], currentMeasureIndex: 0, totalMeasures: measures.length });
+    this.stateSubject.next({ type: 'song', status: 'preparing', occurrenceId: occurrenceIds[0], currentMeasureIndex: 0, totalMeasures: measures.length });
     await this.session.play(plan, 0);
   }
 

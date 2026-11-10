@@ -6,7 +6,9 @@ export class Sampler {
   toDestination = jest.fn().mockReturnThis();
   dispose = jest.fn();
   
+  options: any;
   constructor(...args: any[]) {
+    this.options = args.length === 1 ? args[0] : args[1];
     __samplerInstances.push(this);
 
     // Tone.Sampler can be constructed in a few different ways:
@@ -61,6 +63,7 @@ export const getTransport = jest.fn().mockReturnValue(Transport);
 export const __bufferSources: ToneBufferSource[] = [];
 
 export class ToneAudioBuffer {
+  get = jest.fn(() => fakeAudioBuffer(1, 24000, 24000));
   duration = 4;
   dispose = jest.fn();
   static fromUrl = jest.fn(async (_url: string) => new ToneAudioBuffer());
@@ -78,4 +81,19 @@ export class ToneBufferSource {
   constructor(public options: { playbackRate: number; onended: () => void }) {
     __bufferSources.push(this);
   }
+}
+
+function fakeAudioBuffer(channels: number, length: number, sampleRate: number) {
+  const data = Array.from({ length: channels }, () => new Float32Array(length));
+  return { numberOfChannels: channels, length, sampleRate,
+    getChannelData: (channel: number) => data[channel],
+    copyToChannel: (source: Float32Array, channel: number) => data[channel].set(source) };
+}
+export const __offlineContexts: OfflineContext[] = [];
+export class OfflineContext {
+  render = jest.fn(async () => new ToneAudioBuffer());
+  close = jest.fn(async () => undefined);
+  dispose = jest.fn();
+  createBuffer = jest.fn(fakeAudioBuffer);
+  constructor(public channels: number, public duration: number, public sampleRate: number) { __offlineContexts.push(this); }
 }

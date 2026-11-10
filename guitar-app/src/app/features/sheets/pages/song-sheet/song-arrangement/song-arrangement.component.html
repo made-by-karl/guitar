@@ -2,9 +2,9 @@
   <div class="arrangement-header">
     <div><h2>Song</h2><p class="text-muted mb-0">{{ occurrences().length }} {{ occurrences().length === 1 ? 'section' : 'sections' }} in playback order</p></div>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="busy() || (playbackState().type !== 'song' && !canPlay())" [title]="canPlay() ? 'Play song' : 'Add playable content to every section'" (click)="toggleSong()">
+      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="busy() || playbackState().status === 'preparing' || (playbackState().type !== 'song' && !canPlay())" [title]="canPlay() ? 'Play song' : 'Add playable content to every section'" (click)="toggleSong()">
         <i aria-hidden="true" class="bi" [class.bi-play-fill]="playbackState().type !== 'song' || playbackState().status === 'paused'" [class.bi-pause-fill]="playbackState().type === 'song' && playbackState().status === 'playing'"></i>
-        {{ playbackState().type === 'song' ? (playbackState().status === 'paused' ? 'Resume song' : 'Pause song') : 'Play song' }}
+        {{ playbackState().type === 'song' && playbackState().status === 'preparing' ? 'Preparing…' : playbackState().type === 'song' ? (playbackState().status === 'paused' ? 'Resume song' : 'Pause song') : 'Play song' }}
       </button>
       @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stopSong()">Stop song</button> }
     </div>
@@ -20,7 +20,7 @@
         <div class="occurrence-list" cdkDropList (cdkDropListDropped)="drop($event)" aria-label="Song order">
           @for (occurrence of occurrences(); track occurrence.id; let index = $index) {
             <div class="occurrence-entry" cdkDrag [cdkDragDisabled]="busy()" (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)">
-              <div class="occurrence-row" [class.is-selected]="selectedId() === occurrence.id" [class.is-playing]="playbackState().occurrenceId === occurrence.id">
+              <div class="occurrence-row" [class.is-selected]="selectedId() === occurrence.id" [class.is-playing]="playbackState().status === 'playing' && playbackState().occurrenceId === occurrence.id">
                 <span class="occurrence-drag" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
                 <button class="occurrence-select" type="button" [disabled]="busy() || !part(occurrence)" [attr.aria-label]="(part(occurrence)?.section || 'Missing part') + ', occurrence ' + number(occurrence)" [attr.aria-pressed]="selectedId() === occurrence.id" (click)="selectOccurrence(occurrence.id)">
                   <span class="occurrence-title"><strong>{{ part(occurrence)?.section || 'Missing part' }}</strong><span class="occurrence-number">{{ number(occurrence) }}</span></span>

@@ -125,7 +125,7 @@ export class SongPatternsTabComponent implements OnDestroy {
   }
 
   isPatternPlaybackActive(pattern: SongSheetPattern): boolean {
-    return this.patternPlaybackState.status === 'playing' && this.patternPlaybackState.patternId === pattern.id;
+    return (this.patternPlaybackState.status === 'playing' || this.patternPlaybackState.status === 'preparing') && this.patternPlaybackState.patternId === pattern.id;
   }
 
   getPatternMeasureNotationContext(pattern: SongSheetPattern, measureIndex: number): PlayingActionsNotationContext {

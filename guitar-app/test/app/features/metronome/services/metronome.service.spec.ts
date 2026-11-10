@@ -1,236 +1,97 @@
-import * as Tone from 'tone';
-import { MetronomeService } from '@/app/features/metronome/services/metronome.service';
-import { AudioService } from '@/app/core/services/audio.service';
+import { MetronomeService, MetronomeConfig } from '@/app/features/metronome/services/metronome.service';
+import { RenderedAudioService } from '@/app/core/services/rendered-audio.service';
+import { HtmlAudioPlaybackService } from '@/app/core/services/html-audio-playback.service';
+import { playbackHarness } from '@test/helpers/media-playback';
+const config: MetronomeConfig = { bpm: 80, timeSignature: '4/4', subdivision: '8th' };
+const audio = { blob: new Blob(), durationSeconds: 12 };
 
-describe('MetronomeService', () => {
-  beforeEach(() => {
-    (Tone as any).__samplerInstances.length = 0;
-    (Tone as any).Transport.scheduleRepeat.mockClear();
-    (Tone as any).Transport.clear.mockClear();
-    (Tone as any).Transport.start.mockClear();
-    (Tone as any).Transport.stop.mockClear();
-    (Tone as any).loaded.mockClear();
-    (Tone as any).context.resume.mockClear();
-    (Tone as any).context.state = 'running';
-    (Tone as any).Transport.state = 'stopped';
-    (Tone as any).Transport.seconds = 0;
+describe('Rendered metronome', () => {
+  function setup() {
+    const { media, emit } = playbackHarness();
+    const sampler = { triggerAttackRelease: jest.fn() };
+    const rendered = {
+      render: jest.fn(async (_key, duration, schedule, _signal, trim = 0) => {
+        await schedule({}, []); return { blob: new Blob(), durationSeconds: duration - trim };
+      }), sampler: jest.fn(async () => sampler)
+    };
+    const service = new MetronomeService(rendered as unknown as RenderedAudioService, media as unknown as HtmlAudioPlaybackService);
+    return { service, rendered, media, emit, sampler };
+  }
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+  it.each([20, 80, 260])('renders four looping measures plus decay pre-roll at %i BPM', async bpm => {
+    const { service, rendered, media, sampler, emit } = setup();
+    await service.start({ ...config, bpm });
+    const tick = 60 / bpm / 2;
+    expect(service.getSnapshot()).toMatchObject({ running: true, config: { bpm }, tickDurationSeconds: tick });
+    expect(rendered.render).toHaveBeenCalledWith(expect.stringContaining('metronome:'), expect.any(Number), expect.any(Function), expect.any(AbortSignal), expect.any(Number));
+    expect(media.play).toHaveBeenCalledWith('metronome', expect.any(Function), { loop: true, label: 'Metronome' });
+    expect(sampler.triggerAttackRelease.mock.calls[0]).toEqual(['C#3', 0.2, 0, 1]);
+    expect(sampler.triggerAttackRelease.mock.calls[1]).toEqual(['D3', 0.15, tick, 0.8]);
+    for (const position of [0, tick * 8 * 3 + tick * 5, tick * 8 - 0.01, 0.01]) {
+      emit('metronome', { currentTime: position });
+      expect(service.getSnapshot().activeIndex).toBe(Math.floor(position / tick) % 8);
+    }
+    service.ngOnDestroy();
   });
-
-  it('schedules repeat ticks and clears only its own ids on stop', async () => {
-    const audio = new AudioService();
-    const ensureStartedSpy = jest.spyOn(audio, 'ensureStarted');
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'stopped';
-    (Tone as any).Transport.seconds = 0;
-    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(42);
-
-    await service.start({
-      bpm: 120,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    expect(ensureStartedSpy).toHaveBeenCalled();
-    expect((Tone as any).Transport.start).toHaveBeenCalled();
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalled();
-
-    service.stop();
-    expect((Tone as any).Transport.clear).toHaveBeenCalledWith(42);
-    expect((Tone as any).Transport.stop).toHaveBeenCalled();
+  it('preserves grouped-meter accents and sixteenth subdivision spacing', async () => {
+    const { service, sampler } = setup();
+    await service.start({ bpm: 120, timeSignature: '6/8', subdivision: '16th' });
+    expect(service.getSnapshot().labels).toHaveLength(12);
+    expect(service.getSnapshot().tickDurationSeconds).toBe(0.125);
+    expect(sampler.triggerAttackRelease.mock.calls[6]).toEqual(['C#3', 0.2, 0.75, 1]);
+    service.ngOnDestroy();
   });
-
-  it('plays accented downbeat and sub-beat sounds', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 0;
-    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(7);
-
-    await service.start({
-      bpm: 100,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    const callback = (Tone as any).Transport.scheduleRepeat.mock.calls[0][0];
-
-    // first tick => label '1' => accented snare (C#3)
-    callback(0.1);
-    const sampler = (Tone as any).__samplerInstances[0];
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('C#3', 0.2, 0.1, 1.0);
-
-    // second tick => label '&' => djembe (D3)
-    callback(0.2);
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('D3', 0.15, 0.2, 0.8);
+  it('keeps the old tempo during rendering and changes on the next tick with preserved beat order', async () => {
+    const { service, rendered, emit } = setup();
+    await service.start(config); emit('metronome', { currentTime: 0.8 });
+    let finish!: (value: typeof audio) => void;
+    rendered.render.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const updating = service.updateConfig({ ...config, bpm: 100 });
+    expect(service.getSnapshot()).toMatchObject({ running: true, preparing: true, config: { bpm: 80 }, activeIndex: 2 });
+    finish(audio); await updating;
+    await jest.advanceTimersByTimeAsync(320);
+    expect(service.getSnapshot().config.bpm).toBe(80);
+    await jest.advanceTimersByTimeAsync(10);
+    expect(service.getSnapshot()).toMatchObject({ running: true, config: { bpm: 100 }, activeIndex: 3 });
+    service.ngOnDestroy();
   });
-
-  it('uses time-signature accent mapping for main beats (6/8 accents beat 4)', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 0;
-    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(9);
-
-    await service.start({
-      bpm: 100,
-      timeSignature: '6/8',
-      subdivision: 'none'
-    });
-
-    const callback = (Tone as any).Transport.scheduleRepeat.mock.calls[0][0];
-    const sampler = (Tone as any).__samplerInstances[0];
-
-    // Beat 1
-    callback(0.1);
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('C#3', 0.2, 0.1, 1.0);
-
-    // Beat 2
-    callback(0.2);
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('C3', 0.2, 0.2, 0.85);
-
-    // Beat 3
-    callback(0.3);
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('C3', 0.2, 0.3, 0.85);
-
-    // Beat 4 (accented in 6/8)
-    callback(0.4);
-    expect(sampler.triggerAttackRelease).toHaveBeenCalledWith('C#3', 0.2, 0.4, 1.0);
-  });
-
-  it('uses sixteenth intervals for 4/4 sixteenth subdivisions', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'stopped';
-    (Tone as any).Transport.seconds = 0;
-    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(5);
-
-    await service.start({
-      bpm: 120,
-      timeSignature: '4/4',
-      subdivision: '16th'
-    });
-
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalledWith(expect.any(Function), '16n', 0.05);
-    expect(service.getSnapshot().tickDurationSeconds).toBeCloseTo(0.125);
-  });
-
-  it('updates labels immediately and reschedules when config changes while running', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 12.5;
-    (Tone as any).Transport.scheduleRepeat
-      .mockReturnValueOnce(11)
-      .mockReturnValueOnce(12);
-
-    await service.start({
-      bpm: 100,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    await service.updateConfig({
-      bpm: 100,
-      timeSignature: '6/8',
-      subdivision: '16th'
-    });
-
-    expect((Tone as any).Transport.clear).toHaveBeenCalledWith(11);
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenLastCalledWith(expect.any(Function), '16n', 12.55);
-    expect(service.getSnapshot().labels).toEqual(['1', 'e', '2', 'e', '3', 'e', '4', 'e', '5', 'e', '6', 'e']);
-    expect(service.getSnapshot().activeIndex).toBe(-1);
-    expect(service.getSnapshot().running).toBe(true);
-  });
-
-  it('rebuilds the running metronome schedule after the audio context resumes', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 3;
-    (Tone as any).Transport.scheduleRepeat
-      .mockReturnValueOnce(31)
-      .mockReturnValueOnce(32);
-
-    await service.start({
-      bpm: 90,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    (Tone as any).Transport.clear.mockClear();
-    (Tone as any).Transport.stop.mockClear();
-    (Tone as any).Transport.start.mockClear();
-    (Tone as any).Transport.scheduleRepeat.mockClear();
-
-    (Tone as any).context.state = 'suspended';
-    await audio.resumeIfSuspended();
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    expect((Tone as any).context.resume).toHaveBeenCalled();
-    expect((Tone as any).Transport.stop).toHaveBeenCalled();
-    expect((Tone as any).Transport.clear).toHaveBeenCalledWith(31);
-    expect((Tone as any).Transport.start).toHaveBeenCalled();
-    expect((Tone as any).Transport.scheduleRepeat).toHaveBeenCalledWith(expect.any(Function), '8n', 3.05);
-    expect(service.getSnapshot().running).toBe(true);
-    expect(service.getSnapshot().activeIndex).toBe(-1);
-  });
-
-  it('updates bpm without rebuilding the repeat schedule when only tempo changes while running', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'started';
-    (Tone as any).Transport.seconds = 8;
-    (Tone as any).Transport.scheduleRepeat.mockReturnValueOnce(21);
-
-    await service.start({
-      bpm: 60,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    const callback = (Tone as any).Transport.scheduleRepeat.mock.calls[0][0];
-    callback(8.1);
-
-    (Tone as any).Transport.clear.mockClear();
-    (Tone as any).Transport.scheduleRepeat.mockClear();
-
-    await service.updateConfig({
-      bpm: 120,
-      timeSignature: '4/4',
-      subdivision: '8th'
-    });
-
-    expect((Tone as any).Transport.bpm.value).toBe(120);
-    expect((Tone as any).Transport.clear).not.toHaveBeenCalled();
-    expect((Tone as any).Transport.scheduleRepeat).not.toHaveBeenCalled();
-    expect(service.getSnapshot().activeIndex).toBe(0);
-    expect(service.getSnapshot().tickAudioTime).toBe(8.1);
-    expect(service.getSnapshot().tickDurationSeconds).toBeCloseTo(0.25);
-    expect(service.getSnapshot().running).toBe(true);
-  });
-
-  it('updates labels immediately without starting transport when config changes while stopped', async () => {
-    const audio = new AudioService();
-    const service = new MetronomeService(audio);
-
-    (Tone as any).Transport.state = 'stopped';
-    (Tone as any).Transport.seconds = 0;
-
-    await service.updateConfig({
-      bpm: 90,
-      timeSignature: '4/4',
-      subdivision: '16th'
-    });
-
-    expect((Tone as any).Transport.start).not.toHaveBeenCalled();
-    expect(service.getSnapshot().labels).toEqual(['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a']);
+  it('uses only the latest meter update and prevents pending changes from starting after Stop', async () => {
+    const { service, rendered, media } = setup();
+    await service.start(config);
+    let finish!: (value: typeof audio) => void;
+    rendered.render.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const stale = service.updateConfig({ ...config, bpm: 60 });
+    await service.updateConfig({ ...config, timeSignature: '6/8', subdivision: 'none' });
+    finish(audio); await stale; await jest.advanceTimersByTimeAsync(376);
+    expect(service.getSnapshot()).toMatchObject({ config: { timeSignature: '6/8' }, activeIndex: 0 });
+    rendered.render.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const stopped = service.updateConfig({ ...config, bpm: 260 }); service.stop();
+    const count = media.play.mock.calls.length;
+    finish(audio); await stopped; await jest.runAllTimersAsync();
+    expect(media.play).toHaveBeenCalledTimes(count);
     expect(service.getSnapshot().running).toBe(false);
+    service.ngOnDestroy();
+  });
+  it('retains a working loop after replacement failure and does not start when configuring stopped controls', async () => {
+    const { service, rendered, media } = setup();
+    await service.updateConfig({ ...config, timeSignature: '6/8', subdivision: '16th' });
+    expect(media.play).not.toHaveBeenCalled(); expect(service.getSnapshot().labels).toHaveLength(12);
+    await service.start(config); rendered.render.mockRejectedValueOnce(new Error('Decode failed'));
+    await service.updateConfig({ ...config, bpm: 100 });
+    expect(service.getSnapshot()).toMatchObject({ running: true, config: { bpm: 80 }, preparing: false, error: 'Decode failed' });
+    service.ngOnDestroy();
+  });
+
+  it('replaces interrupted media when configuration changes and waits for an explicit resume', async () => {
+    const { service, media, emit } = setup();
+    await service.start(config);
+    emit('metronome', { status: 'paused' });
+    await service.updateConfig({ ...config, bpm: 120 });
+    expect(media.play).toHaveBeenLastCalledWith('metronome', expect.any(Function), { label: 'Metronome', loop: true, autoStart: false });
+    expect(service.getSnapshot()).toMatchObject({ running: false, config: { bpm: 120 } });
+    emit('metronome', { status: 'playing' });
+    expect(service.getSnapshot()).toMatchObject({ running: true, config: { bpm: 120 } });
+    service.ngOnDestroy();
   });
 });

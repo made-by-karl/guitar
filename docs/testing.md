@@ -99,3 +99,44 @@ docker compose -f compose.playwright.yml down
 
 The unit/build gate does not start Docker or run browser tests. The applicable acceptance checks
 are listed in [../ai/definition-of-done.md](../ai/definition-of-done.md).
+
+## Media playback and iPhone verification
+
+Run `e2e/media-playback.spec.ts` through the Docker workflow above using the default Chromium
+project. The focused `playwright.media.config.ts`
+also provides WebKit without changing unrelated specs. In the e2e container, run
+`npx playwright test --config=playwright.media.config.ts --project=webkit` for that engine
+(or omit the project flag for both). Desktop WebKit is not iPhone Safari. The spec tracks actual HTML
+media elements, decodes the rendered WAV to check nonzero samples, exercises rejection/retry,
+Stop during a held sample request, navigation cleanup, repeated-occurrence transport and
+three complete uninterrupted native metronome loop boundaries at 20, 80 and 260 BPM,
+without injected seeks or playback-rate changes. The 20 BPM fixture takes about 2.5 minutes;
+its extended timeout is intentional. Device timing and listening checks remain separate.
+The long-plan check renders a five-minute plan and seeks through its final release; it does
+not establish five minutes of uninterrupted real-device playback.
+
+Browser screenshots belong under `temp/ux/media-playback/`. Desktop preparation metrics are
+retained there as `desktop-five-minute-<project>.json`; browser tests do not establish physical-device
+memory use, iPhone Silent Mode behavior or listening acceptance.
+
+Before accepting issue #4 on a device, record iPhone model, exact iOS/Safari version, tab or
+installed mode, media volume/output route and Silent Mode setting. From a fresh load, check
+cold and cached grip/custom-grip, library and local pattern, measure/occurrence/song, MIDI
+maintenance/percussion and metronome playback. If preparation exposes Play, use that action.
+Repeat with Silent Mode off and zero media volume. Confirm no sound begins merely by opening
+or focusing a page, and no microphone permission is requested by output preparation.
+
+Exercise Stop/navigation while loading, interrupted pause/resume, seeks across repeated
+occurrences, continuous single/group slides, long releases and rapid metronome changes. Listen
+across at least three complete loop boundaries at low, medium and high tempo and grouped meters.
+On the phone, play a representative five-minute arrangement to completion and record cold/cached
+preparation time, rendered sizes, memory/resource observations and cleanup after leaving.
+
+Replace the synthetic palm-muted WAVs using their bank README before comparing matched-level
+clean and recorded palm-muted picks/strums, accented combinations, alternate tuning/capo and
+low/high pitches. That listening acceptance is intentionally deferred while placeholders ship.
+`e2e/media-service-worker.spec.ts` additionally serves the production build on a disposable
+local origin and verifies fresh caching of all seven WAVs plus retained MP3s, offline retrieval,
+and activation of a changed WAV fixture. Run the build first; that spec skips without generated
+production files. It changes only in-memory test responses. This verifies these asset requests,
+not complete offline application operation or iPhone support.

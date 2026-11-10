@@ -268,7 +268,7 @@ export class PlayingPatternPlaybackPlannerService {
     }
 
     if (action.modifiers?.includes('accent')) {
-      technique = 'accented';
+      if (technique === 'normal') technique = 'accented';
       velocity = 0.9;
     }
 
