@@ -9,6 +9,7 @@ import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 
 export const LAST_BACKUP_DOWNLOAD = 'guitar.lastBackupDownload';
+export type ExportType = Exclude<TransferKind, 'guitar-backup'>;
 export interface TransferInspection {
   file: TransferFile;
   current: { sheets: number; patterns: number };
@@ -70,14 +71,19 @@ export class DataTransferService {
     await this.db.restorePracticeData(file.data, mode);
   }
 
-  async exportSheet(id: string): Promise<void> {
-    const sheet = await this.db.songSheets.get(id);
-    if (!sheet) throw new Error('This song sheet no longer exists. Refresh the list.');
-    this.download(this.envelope({ format: 'guitar-song-sheet', data: sheet }), transferFilename('guitar-song-sheet', sheet.name));
-  }
-
-  exportPattern(pattern: PlayingPattern): void {
-    this.download(this.envelope({ format: 'guitar-playing-pattern', data: pattern }), transferFilename('guitar-playing-pattern', pattern.name));
+  /** A sheet ID scopes a pattern export to that sheet's saved snapshot. */
+  async export(id: string, type: ExportType, sheetId?: string): Promise<void> {
+    if (type === 'guitar-song-sheet') {
+      const sheet = await this.db.songSheets.get(id);
+      if (!sheet) throw new Error('This song sheet no longer exists. Refresh the list.');
+      this.download(this.envelope({ format: type, data: sheet }), transferFilename(type, sheet.name));
+    } else {
+      const pattern = sheetId !== undefined
+        ? (await this.db.songSheets.get(sheetId))?.patterns.find(pattern => pattern.id === id)
+        : await this.db.playingPatterns.get(id);
+      if (!pattern) throw new Error('This playing pattern no longer exists. Refresh the list.');
+      this.download(this.envelope({ format: type, data: pattern }), transferFilename(type, pattern.name));
+    }
   }
 
   async downloadBackup(): Promise<void> {

@@ -29,6 +29,56 @@ describe('DataTransferService', () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
+  async function downloadedFile() {
+    const blob = (URL.createObjectURL as jest.Mock).mock.calls.at(-1)[0] as Blob;
+    const json = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(blob);
+    });
+    return JSON.parse(json);
+  }
+
+  it('loads saved sheets and library patterns by ID on every export', async () => {
+    const sheet = richSheet(), pattern = richPattern();
+    const { service, db, data } = setup({ songSheets: [sheet], playingPatterns: [pattern] });
+    await service.export(sheet.id, 'guitar-song-sheet');
+    expect(db.songSheets.get).toHaveBeenCalledWith(sheet.id);
+    expect(await downloadedFile()).toMatchObject({ format: 'guitar-song-sheet', data: sheet });
+    await service.export(pattern.id, 'guitar-playing-pattern');
+    expect(db.playingPatterns.get).toHaveBeenCalledWith(pattern.id);
+    expect(await downloadedFile()).toMatchObject({ format: 'guitar-playing-pattern', data: pattern });
+    data.playingPatterns[0] = { ...pattern, name: 'Updated in another tab' };
+    await service.export(pattern.id, 'guitar-playing-pattern');
+    expect((await downloadedFile()).data.name).toBe('Updated in another tab');
+  });
+
+  it('loads the owning sheet snapshot even when other scopes share its pattern ID', async () => {
+    const sheet = richSheet(), other = richSheet('other');
+    other.patterns[0].name = 'Other sheet snapshot';
+    const global = { ...sheet.patterns[0], name: 'Library version' };
+    const { service, db } = setup({ songSheets: [sheet, other], playingPatterns: [global] });
+    await service.export(global.id, 'guitar-playing-pattern', sheet.id);
+    expect(await downloadedFile()).toMatchObject({ format: 'guitar-playing-pattern', data: sheet.patterns[0] });
+    expect(db.playingPatterns.get).not.toHaveBeenCalled();
+    sheet.patterns = [];
+    await expect(service.export(global.id, 'guitar-playing-pattern', sheet.id)).rejects.toThrow('no longer exists');
+    await expect(service.export(global.id, 'guitar-playing-pattern', 'missing')).rejects.toThrow('no longer exists');
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects missing records and database read failures without downloading', async () => {
+    const { service, db } = setup();
+    await expect(service.export('missing', 'guitar-song-sheet')).rejects.toThrow('song sheet no longer exists');
+    await expect(service.export('missing', 'guitar-playing-pattern')).rejects.toThrow('playing pattern no longer exists');
+    db.playingPatterns.get.mockRejectedValueOnce(new Error('Read failed'));
+    await expect(service.export('pattern', 'guitar-playing-pattern')).rejects.toThrow('Read failed');
+    db.songSheets.get.mockRejectedValueOnce(new Error('Sheet read failed'));
+    await expect(service.export('pattern', 'guitar-playing-pattern', 'sheet')).rejects.toThrow('Sheet read failed');
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
   it('inspects without writing, then imports repeated sheets as independent copies', async () => {
     const original = richSheet(), originalJSON = JSON.stringify(original);
     const { db, data, service } = setup({ songSheets: [original], playingPatterns: [] });
@@ -96,7 +146,8 @@ describe('DataTransferService', () => {
     expect(blob.type).toBe('application/json');
     expect(service.lastBackupDownload()).toBeGreaterThan(0);
     const previous = localStorage.getItem(LAST_BACKUP_DOWNLOAD);
-    await service.exportSheet('sheet'); service.exportPattern(richPattern());
+    await service.export('sheet', 'guitar-song-sheet');
+    await service.export(richPattern().id, 'guitar-playing-pattern');
     expect(localStorage.getItem(LAST_BACKUP_DOWNLOAD)).toBe(previous);
     db.readPracticeData.mockRejectedValueOnce(new Error('Read failed'));
     await expect(service.downloadBackup()).rejects.toThrow('Read failed');

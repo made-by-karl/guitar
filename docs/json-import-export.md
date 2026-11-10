@@ -2,7 +2,7 @@
 
 Song Sheets can export a saved sheet and import a sheet JSON file. Playing Patterns can
 export a library pattern and import a pattern JSON file. A sheet's Patterns tab also exports
-its local pattern snapshots using the same pattern format. File imports first show a preview;
+its saved local pattern snapshots using the same pattern format. File imports first show a preview;
 selecting a file never writes practice content.
 
 Single-item imports always create a copy with a fresh top-level ID and timestamps. A pattern
@@ -73,6 +73,12 @@ if localStorage is unavailable, downloads still work but their date cannot be re
 ## Implementation and verification
 
 `DataTransferService` owns inspection, apply, envelope construction, and download handoff.
+The shared `ExportButtonComponent` takes an `id` and an `ExportType` from that service.
+`export(id, type, sheetId?)` reads the record from IndexedDB for every download. Pattern
+exports with a `sheetId` read only that sheet's saved snapshot; without it they read the
+global pattern library. Missing records fail without falling back to another identity scope.
+The button shows “Export” from the small breakpoint upward and only the download icon on
+phones, retaining its accessible name and busy/error feedback.
 `data-transfer-format.ts` owns pure validation/version/name rules. `DatabaseService` owns
 snapshot reads, initialization coordination, and atomic restore. The shared JSON import control
 invalidates obsolete reads, permits choosing the same file again, blocks changes/submission

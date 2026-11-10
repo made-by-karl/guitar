@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import type { PracticeData } from '../src/app/core/services/data-transfer-format';
 import type { DataTransferService } from '../src/app/core/services/data-transfer.service';
@@ -54,6 +54,25 @@ async function downloadJSON(page: Page, click: () => Promise<void>) {
   for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
   return { filename: download.suggestedFilename(), json: JSON.parse(Buffer.concat(chunks).toString()) };
 }
+async function checkExportButton(host: Locator, width: number) {
+  const button = host.getByRole('button', { name: 'Export', exact: true });
+  await expect(button).toBeVisible();
+  await button.scrollIntoViewIfNeeded();
+  await expect(button.locator('i.bi-download')).toBeVisible();
+  if (width < 576) await expect(button.locator('span')).toBeHidden();
+  else {
+    await expect(button.locator('span')).toBeVisible();
+    await expect(button.locator('span')).toHaveText('Export');
+  }
+  const box = await button.boundingBox();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(host.page().viewportSize()!.height);
+  return button;
+}
 async function replace(page: Page, data: PracticeData): Promise<void> {
   await upload(page, 'guitar-backup', data);
   await page.getByRole('radio', { name: 'Replace everything', exact: true }).check();
@@ -66,7 +85,8 @@ async function replace(page: Page, data: PracticeData): Promise<void> {
 }
 
 test('exports exact stored payloads, creates independent sheet/pattern copies and opens embedded music', async ({ page, browser }) => {
-  const sheet = { ...richSheet(), extra: { preserved: ['yes'] } }, pattern = richPattern('global', 'Global');
+  const sheet = { ...richSheet(), extra: { preserved: ['yes'] } };
+  const pattern = richPattern(sheet.patterns[0].id, 'Global');
   await page.goto(settings); await expect(page.getByText('No backup yet', { exact: true })).toBeVisible();
   await seed(page, { songSheets: [sheet], playingPatterns: [pattern] });
   const before = await readData(page);
@@ -82,7 +102,7 @@ test('exports exact stored payloads, creates independent sheet/pattern copies an
     expect(restored.json.data).toEqual(before);
   } finally { await other.close(); }
   await page.goto('/sheets');
-  const exported = await downloadJSON(page, () => page.getByRole('button', { name: 'Export JSON', exact: true }).click());
+  const exported = await downloadJSON(page, () => page.getByRole('button', { name: 'Export', exact: true }).click());
   expect(exported.filename).toBe('guitar-song-sheet-my-song.json'); expect(exported.json.data).toEqual(sheet);
   expect(await readData(page)).toEqual(before);
   for (const name of ['My song (Imported)', 'My song (Imported 2)']) {
@@ -100,9 +120,17 @@ test('exports exact stored payloads, creates independent sheet/pattern copies an
   await expect(page.locator('app-song-arrangement .occurrence-row')).toHaveCount(2);
   await expect(page.locator('app-song-arrangement')).toContainText('Morning words');
   await page.getByRole('tab', { name: /^Patterns/ }).click();
-  const localPattern = await downloadJSON(page, () => page.locator('app-song-sheet-patterns-tab').getByRole('button', { name: 'Export JSON', exact: true }).click());
+  const localPattern = await downloadJSON(page, () => page.locator('app-song-sheet-patterns-tab').getByRole('button', { name: 'Export', exact: true }).click());
   expect(localPattern.json.data).toEqual(sheet.patterns[0]);
   await page.goto('/patterns');
+  await expect(page.getByRole('heading', { name: 'Global', exact: true })).toBeVisible();
+  const freshPattern = { ...pattern, name: 'New saved version' };
+  await seed(page, { ...await readData(page), playingPatterns: [freshPattern] });
+  // The displayed object is stale; export must read the updated database record.
+  await expect(page.getByRole('heading', { name: 'Global', exact: true })).toBeVisible();
+  const libraryPattern = await downloadJSON(page, () => page.getByRole('button', { name: 'Export', exact: true }).click());
+  expect(libraryPattern.json.format).toBe('guitar-playing-pattern');
+  expect(libraryPattern.json.data).toEqual(freshPattern);
   await upload(page, 'guitar-playing-pattern', localPattern.json.data);
   await page.getByRole('button', { name: 'Import copy', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Fingerpicking', exact: true })).toBeVisible();
@@ -213,6 +241,12 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await page.screenshot({ path: `../temp/ux/json-import-export/restore-${viewport.width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
     await page.goto('/sheets');
+    const sheetExport = await checkExportButton(page.locator('app-export-button'), viewport.width);
+    await sheetExport.focus();
+    const sheetDownload = await downloadJSON(page, () => page.keyboard.press('Enter'));
+    expect(sheetDownload.json.data).toEqual(richSheet());
+    await mkdir('../temp/ux/export-button', { recursive: true });
+    await page.screenshot({ path: `../temp/ux/export-button/sheets-${viewport.width}.png`, fullPage: true });
     await upload(page, 'guitar-song-sheet', richSheet());
     await page.screenshot({ path: `../temp/ux/json-import-export/sheet-${viewport.width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Cancel import', exact: true }).click();
@@ -220,11 +254,13 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(page.getByRole('alert')).toContainText('Settings');
     await page.goto('/patterns');
     await expect(page.getByLabel('Import playing pattern JSON', { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Export JSON', exact: true })).toBeVisible();
+    await checkExportButton(page.locator('app-export-button'), viewport.width);
+    await page.screenshot({ path: `../temp/ux/export-button/patterns-${viewport.width}.png`, fullPage: true });
     await page.screenshot({ path: `../temp/ux/json-import-export/patterns-${viewport.width}.png`, fullPage: true });
     await page.goto('/sheets/sheet');
     await page.getByRole('tab', { name: 'Patterns', exact: true }).click();
-    await expect(page.locator('app-song-sheet-patterns-tab').getByRole('button', { name: 'Export JSON', exact: true })).toBeVisible();
+    await checkExportButton(page.locator('app-song-sheet-patterns-tab app-export-button'), viewport.width);
+    await page.screenshot({ path: `../temp/ux/export-button/sheet-patterns-${viewport.width}.png`, fullPage: true });
     await page.screenshot({ path: `../temp/ux/json-import-export/sheet-patterns-${viewport.width}.png`, fullPage: true });
     expect(errors).toEqual([]);
   });
