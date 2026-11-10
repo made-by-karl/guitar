@@ -68,8 +68,8 @@ async function checkPageMenu(page: Page, title: string, menuName: string, action
   await expect(page.getByRole('button', { name: action, exact: true })).toBeHidden();
   const headingBox = await heading.boundingBox(), menuBox = await menu.boundingBox();
   expect(Math.abs(headingBox!.y + headingBox!.height / 2 - menuBox!.y - menuBox!.height / 2)).toBeLessThan(1);
-  expect(menuBox!.width).toBeGreaterThanOrEqual(44);
-  expect(menuBox!.height).toBeGreaterThanOrEqual(44);
+  expect(menuBox!.width).toBeLessThan(44);
+  expect(menuBox!.height).toBeLessThan(44);
   await menu.focus();
   await page.keyboard.press('Enter');
   await expect(menu).toHaveAttribute('aria-expanded', 'true');
@@ -98,8 +98,9 @@ async function checkExportButton(host: Locator, width: number) {
     await expect(button.locator('span')).toHaveText('Export');
   }
   const box = await button.boundingBox();
-  expect(box!.width).toBeGreaterThanOrEqual(44);
-  expect(box!.height).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeLessThan(44);
+  const adjacent = await host.locator('..').locator(':scope > button').first().boundingBox();
+  expect(box!.height).toBe(adjacent!.height);
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(width);
   expect(box!.y).toBeGreaterThanOrEqual(0);
