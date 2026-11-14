@@ -84,9 +84,9 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
   });
 }
 
-test('failed palm-muted assets produce a retryable error while clean and percussion playback stay independent', async ({ page }) => {
+test('failed guitar sources produce a retryable palm-mute error and playback recovers after sources return', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 }); await trackMedia(page);
-  await page.route('**/samples/palm-muted/*.wav', route => route.abort());
+  await page.route('**/samples/notes/*.mp3', route => route.abort());
   await page.goto('/maintenance/midi-test');
   await page.getByRole('button', { name: /Palm Muted/ }).click();
   await expect(controls(page).getByRole('button', { name: 'Retry playback', exact: true })).toBeVisible();
@@ -94,6 +94,7 @@ test('failed palm-muted assets produce a retryable error while clean and percuss
   await page.screenshot({ path: '../temp/ux/media-playback/error-375.png', fullPage: true });
   expect(await page.evaluate(() => window.mediaElements.length)).toBe(0);
   await controls(page).getByRole('button', { name: 'Stop playback', exact: true }).click();
+  await page.unroute('**/samples/notes/*.mp3');
   await page.getByRole('button', { name: 'E Major Triad', exact: true }).click();
   await audibleMedia(page);
   await controls(page).getByRole('button', { name: 'Stop playback', exact: true }).click();
@@ -102,7 +103,6 @@ test('failed palm-muted assets produce a retryable error while clean and percuss
   expect(percussion.peak).toBeGreaterThan(0.01);
   const stopPercussion = controls(page).getByRole('button', { name: 'Stop playback', exact: true });
   if (await stopPercussion.isVisible()) await stopPercussion.click();
-  await page.unroute('**/samples/palm-muted/*.wav');
   await page.getByRole('button', { name: /Palm Muted/ }).click();
   await expect(controls(page).getByRole('status')).toContainText('Playing');
   await audibleMedia(page);

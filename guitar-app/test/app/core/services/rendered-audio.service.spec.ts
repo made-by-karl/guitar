@@ -3,6 +3,7 @@ import { RenderedAudioService, RENDER_CACHE_BYTES, MAX_PENDING_RENDERS } from '@
 import { WavEncoderService } from '@/app/core/services/wav-encoder.service';
 import { MidiInstruction } from '@/app/core/services/midi.model';
 import { note } from '@/app/core/music/semitones';
+import * as articulation from '@/app/core/services/guitar-articulation';
 
 const tone = Tone as typeof Tone & { __samplerInstances: { options: { urls: Record<string, string> }; dispose: jest.Mock; triggerAttackRelease: jest.Mock }[];
   __offlineContexts: { dispose: jest.Mock; close: jest.Mock; render: jest.Mock }[] };
@@ -14,7 +15,9 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
   beforeEach(() => {
     tone.__samplerInstances.length = 0; tone.__offlineContexts.length = 0;
     encoder = { encode: jest.fn(() => new Blob(['sound'])) };
+    jest.mocked(Tone.ToneAudioBuffer.fromUrl).mockImplementation(async () => new Tone.ToneAudioBuffer());
     service = new RenderedAudioService(encoder as unknown as WavEncoderService);
+    jest.spyOn(articulation, 'renderGuitarArticulation').mockImplementation(async original => original);
   });
   afterEach(() => { service.ngOnDestroy(); jest.restoreAllMocks(); });
 
@@ -29,13 +32,15 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
     expect(tone.__offlineContexts[0].dispose).toHaveBeenCalled();
   });
 
-  it('loads a distinct WAV bank for palm mute without requiring percussion or clean notes', async () => {
+  it('processes original guitar anchors for palm mute without loading synthetic or percussion banks', async () => {
+    const load = jest.spyOn(Tone.ToneAudioBuffer, 'fromUrl');
     await service.renderInstructions([{ ...clean, technique: 'palm-muted' }], 1);
-    expect(tone.__samplerInstances).toHaveLength(1);
-    expect(Object.values(tone.__samplerInstances[0].options.urls)).toEqual(expect.arrayContaining(['/samples/palm-muted/guitar_E2.wav', '/samples/palm-muted/guitar_E5.wav']));
+    expect(tone.__samplerInstances).toHaveLength(0);
+    expect(load.mock.calls.map(call => call[0])).toContain('/samples/notes/guitar_E2.mp3');
+    expect(articulation.renderGuitarArticulation).toHaveBeenCalledWith(expect.anything(), 40, 'E2', 'palm-muted');
     await service.renderInstructions([clean], 1);
     expect(encoder.encode).toHaveBeenCalledTimes(2);
-    expect(tone.__samplerInstances[1].options.urls['E2']).toBe('/samples/notes/guitar_E2.mp3');
+    expect(tone.__samplerInstances[0].options.urls['E2']).toBe('/samples/notes/guitar_E2.mp3');
   });
 
   it('keeps queued sound and its cache identity detached from later plan edits', async () => {
@@ -96,13 +101,36 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
     expect(tone.__samplerInstances[0].dispose).toHaveBeenCalled();
   });
 
-  it('rejects failed required assets, allows retry and never substitutes the clean bank', async () => {
-    const loading = jest.spyOn(service, 'sampler').mockRejectedValueOnce(new Error('Palm sample decode failed'));
+  it('rejects failed required source assets and allows articulated playback to be retried', async () => {
+    const loading = jest.spyOn(Tone.ToneAudioBuffer, 'fromUrl').mockRejectedValueOnce(new Error('Guitar sample decode failed'));
     await expect(service.renderInstructions([{ ...clean, technique: 'palm-muted' }], 1)).rejects.toThrow('decode failed');
     expect(tone.__offlineContexts[0].dispose).toHaveBeenCalled();
-    loading.mockRestore();
+    loading.mockImplementation(async () => new Tone.ToneAudioBuffer());
     await expect(service.renderInstructions([{ ...clean, technique: 'palm-muted' }], 1)).resolves.toBeDefined();
-    expect(Object.values(tone.__samplerInstances[0].options.urls).every(url => url.includes('/palm-muted/'))).toBe(true);
+    expect(tone.__samplerInstances).toHaveLength(0);
+    expect(articulation.renderGuitarArticulation).toHaveBeenCalled();
+  });
+
+  it('cuts previous voices and delayed strum notes at a dead-strum boundary, while later notes survive', async () => {
+    const sources = (Tone as unknown as { __bufferSources: { start: jest.Mock; stop: jest.Mock; options: { fadeOut: number } }[] }).__bufferSources;
+    const gates = (Tone as unknown as { __gains: { gain: { linearRampToValueAtTime: jest.Mock }; dispose: jest.Mock }[] }).__gains;
+    sources.length = 0;
+    gates.length = 0;
+    await service.renderInstructions([
+      { ...clean, notes: Array(6).fill(clean.notes![0]), playNotes: 'sequential', chokeAt: 0.05 },
+      { ...clean, time: 0.05, technique: 'dead-note' },
+      { ...clean, time: 0.5 }
+    ], 1);
+    const before = sources.filter(source => source.start.mock.calls[0][0] < 0.05);
+    expect(before).toHaveLength(2);
+    for (const source of before) expect(source.options.fadeOut).toBe(3);
+    expect(gates).toHaveLength(2);
+    for (const gate of gates) {
+      expect(gate.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.05);
+      expect(gate.dispose).toHaveBeenCalled();
+    }
+    expect(sources.some(source => source.start.mock.calls[0][0] === 0.05)).toBe(true);
+    expect(tone.__samplerInstances[0].triggerAttackRelease).toHaveBeenCalledWith('E2', 0.5, 0.5, 0.7);
   });
 
   it('times out a stalled slide load and disposes a buffer that arrives after the timeout', async () => {
@@ -112,7 +140,7 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
     const pending = service.renderInstructions([{ ...clean, technique: 'slide',
       legato: { string: 0, source: { note: note('E', 2) }, target: { note: note('F#', 2) } }
     }], 1);
-    const failure = expect(pending).rejects.toThrow('Slide samples could not be loaded');
+    const failure = expect(pending).rejects.toThrow('Guitar samples could not be loaded');
     try {
       await jest.advanceTimersByTimeAsync(20001); await failure;
       const late = new Tone.ToneAudioBuffer(); finish(late);

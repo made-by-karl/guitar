@@ -85,6 +85,7 @@ function action(value: unknown, path: string): void {
   optional(o, 'strum', (v, p) => {
     const s = object(v, p);
     choice(s['direction'], ['D', 'U'], `${p}.direction`);
+    optional(s, 'mode', (v, p) => choice(v, ['normal', 'dead-note'], p), p);
     const range = s['strings'];
     if (Array.isArray(range)) range.forEach((n, i) => number(n, `${p}.strings[${i}]`, 0, 5));
     else if (typeof range === 'object' && range) {

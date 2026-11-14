@@ -3,7 +3,17 @@ import { MidiInstruction } from '@/app/core/services/midi.model';
 import { note } from '@/app/core/music/semitones';
 
 describe('MIDI rendering', () => {
-  it.each(['parallel', 'sequential', 'reversed'] as const)('routes every palm-muted %s note to the dedicated bank at its planned pitch', playNotes => {
+  it('plays dead strums in the requested order with a 12 ms string gap and preserves accent velocity', () => {
+    const deadNote = { triggerAttackRelease: jest.fn() };
+    scheduleMidiInstruction({ deadNote }, { time: 0, playbackDuration: 0.5, actionDuration: 0.125,
+      technique: 'dead-note', playNotes: 'reversed', velocity: 0.9,
+      notes: [{ note: note('E', 2) }, { note: note('A', 2) }]
+    }, 2);
+    expect(deadNote.triggerAttackRelease.mock.calls).toEqual([
+      ['A2', 0.5, 2, 0.9], ['E2', 0.5, 2.012, 0.9]
+    ]);
+  });
+  it.each(['parallel', 'sequential', 'reversed'] as const)('routes every palm-muted %s note to its articulated voice at the planned pitch', playNotes => {
     const guitar = { triggerAttackRelease: jest.fn() }, palmMuted = { triggerAttackRelease: jest.fn() };
     scheduleMidiInstruction({ guitar, palmMuted }, {
       time: 0, playbackDuration: 0.4, actionDuration: 0.25, velocity: 0.9, technique: 'palm-muted', playNotes,
@@ -17,7 +27,7 @@ describe('MIDI rendering', () => {
     expect(calls[1][2]).toBeCloseTo(playNotes === 'parallel' ? 1 : 1.03);
   });
 
-  it('fails a missing palm-muted bank instead of substituting clean notes', () => {
+  it('fails a missing palm-muted voice instead of substituting clean notes', () => {
     const guitar = { triggerAttackRelease: jest.fn() };
     expect(() => scheduleMidiInstruction({ guitar }, {
       time: 0, playbackDuration: 1, actionDuration: 1, velocity: 0.7, technique: 'palm-muted', notes: [{ note: note('E', 2) }]

@@ -132,11 +132,11 @@ across at least three complete loop boundaries at low, medium and high tempo and
 On the phone, play a representative five-minute arrangement to completion and record cold/cached
 preparation time, rendered sizes, memory/resource observations and cleanup after leaving.
 
-Replace the synthetic palm-muted WAVs using their bank README before comparing matched-level
-clean and recorded palm-muted picks/strums, accented combinations, alternate tuning/capo and
-low/high pitches. That listening acceptance is intentionally deferred while placeholders ship.
-`e2e/media-service-worker.spec.ts` additionally serves the production build on a disposable
-local origin and verifies fresh caching of all seven WAVs plus retained MP3s, offline retrieval,
-and activation of a changed WAV fixture. Run the build first; that spec skips without generated
-production files. It changes only in-memory test responses. This verifies these asset requests,
-not complete offline application operation or iPhone support.
+Compare processed palm-muted and dead-note strums against their accepted A/C sounds, with
+accent combinations, both directions, string ranges, alternate tuning/capo and low/high pitches.
+`e2e/dead-note-strum.spec.ts` covers mode editing, persistence, cross notation and actual rendered
+WAV decay; device listening remains separate. `e2e/media-service-worker.spec.ts` serves the
+production build on a disposable local origin and verifies source sample caching, offline
+retrieval and activation of a changed source revision. Run the build first; that spec skips
+without generated production files. It changes only in-memory test responses. These checks
+verify sample requests, not complete offline application operation or iPhone support.

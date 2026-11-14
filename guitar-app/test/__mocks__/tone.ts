@@ -61,6 +61,14 @@ export const setContext = jest.fn();
 export const getTransport = jest.fn().mockReturnValue(Transport);
 
 export const __bufferSources: ToneBufferSource[] = [];
+export const __gains: Gain[] = [];
+
+export class Gain {
+  gain = { setValueAtTime: jest.fn(), linearRampToValueAtTime: jest.fn() };
+  toDestination = jest.fn().mockReturnThis();
+  dispose = jest.fn();
+  constructor(public options: unknown) { __gains.push(this); }
+}
 
 export class ToneAudioBuffer {
   get = jest.fn(() => fakeAudioBuffer(1, 24000, 24000));
@@ -70,6 +78,7 @@ export class ToneAudioBuffer {
 }
 
 export class ToneBufferSource {
+  connect = jest.fn().mockReturnThis();
   playbackRate = {
     setValueAtTime: jest.fn().mockReturnThis(),
     exponentialRampToValueAtTime: jest.fn().mockReturnThis()
@@ -85,7 +94,7 @@ export class ToneBufferSource {
 
 function fakeAudioBuffer(channels: number, length: number, sampleRate: number) {
   const data = Array.from({ length: channels }, () => new Float32Array(length));
-  return { numberOfChannels: channels, length, sampleRate,
+  return { numberOfChannels: channels, length, sampleRate, duration: length / sampleRate,
     getChannelData: (channel: number) => data[channel],
     copyToChannel: (source: Float32Array, channel: number) => data[channel].set(source) };
 }

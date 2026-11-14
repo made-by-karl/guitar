@@ -93,13 +93,13 @@ export function resolveRelativeLegatoEndpointFret(
   return resolveGripNoteFret(grip, stringIndex) + endpoint.fretOffset;
 }
 
-export function resolveRelativeStrumRange(grip: Grip | undefined, range: RelativeStrumRange): number[] {
+export function resolveRelativeStrumRange(grip: Grip | undefined, range: RelativeStrumRange, includeMuted = false): number[] {
   const from = resolveRelativeStringIndex(grip, range.from);
   const to = resolveRelativeStringIndex(grip, range.to);
   const start = Math.min(from, to);
   const end = Math.max(from, to);
 
-  return getPlayableStringIndices(grip).filter(index => index >= start && index <= end);
+  return (includeMuted ? [0, 1, 2, 3, 4, 5] : getPlayableStringIndices(grip)).filter(index => index >= start && index <= end);
 }
 
 /** Resolve serialized pattern grips even when they are not in the song library. */

@@ -139,7 +139,7 @@ export class PlaybackService implements OnDestroy {
       notes,
       velocity,
       technique,
-      playNotes: 'parallel'
+      playNotes: technique === 'dead-note' ? 'sequential' : 'parallel'
     };
 
     await this.media.play(owner, signal => this.rendered.renderInstructions([instruction], duration, signal), { label: 'Chord preview' });

@@ -6,24 +6,25 @@ import { extname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const root = resolve('dist/guitar-app/browser');
-const wavPath = '/samples/palm-muted/guitar_E2.wav';
+const revisionPath = '/samples/notes/guitar_A2.mp3';
 const mp3Path = '/samples/notes/guitar_E2.mp3';
 const digest = (data: Buffer) => createHash('sha1').update(data).digest('hex');
 
-test('production service worker caches WAV and MP3 assets and activates a revised WAV', async ({ page, context }) => {
+test('production service worker caches guitar sources and activates a revised source', async ({ page, context }) => {
   test.skip(!existsSync(resolve(root, 'ngsw.json')), 'Run npm run build before the production service-worker check.');
-  const original = await readFile(resolve(root, wavPath.slice(1)));
+  const original = await readFile(resolve(root, revisionPath.slice(1)));
   const changed = Buffer.from(original); changed[60] ^= 1;
   const manifest = JSON.parse(await readFile(resolve(root, 'ngsw.json'), 'utf8')) as { hashTable: Record<string, string> };
-  expect(Object.keys(manifest.hashTable).filter(path => path.startsWith('/samples/palm-muted/') && path.endsWith('.wav'))).toHaveLength(7);
+  expect(Object.keys(manifest.hashTable).filter(path => path.startsWith('/samples/notes/') && path.endsWith('.mp3'))).toHaveLength(7);
+  expect(Object.keys(manifest.hashTable).some(path => path.startsWith('/samples/palm-muted/') || path.startsWith('/samples/audition/'))).toBe(false);
   expect(manifest.hashTable[mp3Path]).toBeDefined();
   const samplePaths = Object.keys(manifest.hashTable).filter(path => path.startsWith('/samples/') && /\.(wav|mp3)$/.test(path));
   let updated = false;
   const server = createServer(async (request, response) => {
     const pathname = new URL(request.url!, 'http://localhost').pathname;
     try {
-      const revision = { ...manifest, hashTable: { ...manifest.hashTable, [wavPath]: digest(changed) } };
-      const data = updated && pathname === wavPath ? changed : updated && pathname === '/ngsw.json'
+      const revision = { ...manifest, hashTable: { ...manifest.hashTable, [revisionPath]: digest(changed) } };
+      const data = updated && pathname === revisionPath ? changed : updated && pathname === '/ngsw.json'
         ? Buffer.from(JSON.stringify(revision)) : await readFile(resolve(root, pathname === '/' ? 'index.html' : pathname.slice(1)));
       const type: Record<string, string> = { '.html': 'text/html', '.js': 'application/javascript', '.json': 'application/json', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.css': 'text/css' };
       response.writeHead(200, { 'Content-Type': type[extname(pathname)] ?? (pathname === '/' ? 'text/html' : 'application/octet-stream'), 'Cache-Control': 'no-store' });
@@ -34,14 +35,14 @@ test('production service worker caches WAV and MP3 assets and activates a revise
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('Production test server did not start');
   const origin = `http://127.0.0.1:${address.port}`;
-  const fetchHash = () => page.evaluate(async ({ wavPath, mp3Path, samplePaths }) => {
+  const fetchHash = () => page.evaluate(async ({ revisionPath, mp3Path, samplePaths }) => {
     const buffers = new Map(await Promise.all(samplePaths.map(async path => [path, await (await fetch(path)).arrayBuffer()] as const)));
-    const wav = buffers.get(wavPath)!;
+    const revised = buffers.get(revisionPath)!;
     const mp3 = buffers.get(mp3Path)!;
-    const hash = await crypto.subtle.digest('SHA-1', wav);
+    const hash = await crypto.subtle.digest('SHA-1', revised);
     return { hash: [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join(''), mp3Size: mp3.byteLength,
       sizes: [...buffers.values()].map(buffer => buffer.byteLength) };
-  }, { wavPath, mp3Path, samplePaths });
+  }, { revisionPath, mp3Path, samplePaths });
   const operation = (action: string, nonce: number) => page.evaluate(({ action, nonce }) => new Promise<boolean>((resolve, reject) => {
     const listener = (event: MessageEvent) => {
       if (event.data.type === 'OPERATION_COMPLETED' && event.data.nonce === nonce) {

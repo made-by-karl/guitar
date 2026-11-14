@@ -26,7 +26,8 @@ import {
   RelativeNoteAnchor,
   RelativeString,
   RelativeStrumRange,
-  StrumRange
+  StrumRange,
+  StrumMode
 } from '@/app/features/patterns/services/playing-patterns.model';
 import {
   parseTimeSignature,
@@ -244,6 +245,14 @@ export class PlayingMeasureEditorComponent {
     });
   }
 
+  updateStrumMode(originalIndex: number, mode: StrumMode): void {
+    if (mode !== 'normal' && mode !== 'dead-note') return;
+    this.updateAction(originalIndex, action => action?.technique === 'strum' && action.strum ? {
+      ...action, strum: { ...action.strum, mode },
+      modifiers: mode === 'dead-note' ? action.modifiers?.filter(value => value === 'accent') : action.modifiers
+    } : action);
+  }
+
   updateStrumStringsMode(originalIndex: number, value: string): void {
     this.updateAction(originalIndex, action => {
       if (!action || action.technique !== 'strum' || !action.strum) return action;
@@ -423,12 +432,14 @@ export class PlayingMeasureEditorComponent {
     return action.modifiers?.includes(modifier) || false;
   }
 
-  getAvailableModifiers(): { value: PlayingModifier; label: string }[] {
-    return [
+  getAvailableModifiers(action?: PlayingAction): { value: PlayingModifier; label: string }[] {
+    const modifiers: { value: PlayingModifier; label: string }[] = [
       { value: 'mute', label: 'Mute' },
       { value: 'palm-mute', label: 'Palm Mute' },
       { value: 'accent', label: 'Accent' }
     ];
+    return action?.technique === 'strum' && action.strum?.mode === 'dead-note'
+      ? modifiers.filter(modifier => modifier.value === 'accent') : modifiers;
   }
 
   getAvailableTimeSignatures(): { value: TimeSignature; label: string }[] {

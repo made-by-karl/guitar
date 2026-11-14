@@ -12,6 +12,7 @@ export interface MidiInstruction {
   velocity: number;       // Volume/intensity (0-1)
   technique: MidiTechnique;
   playNotes?: 'parallel' | 'sequential' | 'reversed'; // How to play multiple notes (default: parallel)
+  chokeAt?: number;       // Absolute boundary at which a following dead strum damps guitar voices.
 }
 
 export interface MidiNote {
@@ -32,6 +33,7 @@ export type MidiTechnique =
   | 'normal'        // Clean guitar notes
   | 'muted'         // Muted strings (chick sound)
   | 'palm-muted'    // Palm muted (damped)
+  | 'dead-note'     // Short processed guitar strum
   | 'percussive'    // Body hits, taps
   | 'accented'      // Emphasized notes
   | 'hammer-on'     // Ascending legato note

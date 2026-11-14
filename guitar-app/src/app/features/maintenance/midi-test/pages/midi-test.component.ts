@@ -49,6 +49,9 @@ import { NotificationService } from '@/app/core/services/notification.service';
               <button class="btn btn-info me-2 mb-2" (click)="playTechnique('palm-muted')">
                 🤚 Palm Muted
               </button>
+              <button class="btn btn-info me-2 mb-2" (click)="playTechnique('dead-note')">
+                Dead-note Strum
+              </button>
               <button class="btn btn-secondary me-2 mb-2" (click)="playTechnique('percussive')">
                 🥁 Percussive
               </button>
@@ -198,7 +201,7 @@ export class MidiTestComponent {
   async playTechnique(technique: MidiTechnique) {
     try {
       // Play a C major chord with the specified technique
-      const chordNotes = ['C4', 'E4', 'G4'];
+      const chordNotes = technique === 'dead-note' ? ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] : ['C4', 'E4', 'G4'];
       await this.playbackService.playChordFromNotes(chordNotes, 1.5, 0.7, technique);
     } catch (error) {
       this.notificationService.error(`Could not play ${this.getTechniqueLabel(technique)} technique.`);

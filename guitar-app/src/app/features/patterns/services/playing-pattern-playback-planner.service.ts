@@ -144,6 +144,7 @@ export class PlayingPatternPlaybackPlannerService {
     const instructions: MidiInstruction[] = [];
     const nextStringPlayTime = new Map<number, number>();
     let nextStringSlapTime: number | null = null;
+    let nextDeadNoteTime: number | undefined;
     const maxDuration = 2.0;
 
     for (let index = flatEvents.length - 1; index >= 0; index--) {
@@ -194,8 +195,11 @@ export class PlayingPatternPlaybackPlannerService {
         legatos: eventData.legatos,
         velocity: eventData.velocity,
         technique: eventData.technique,
-        playNotes: eventData.playNotes
+        playNotes: eventData.playNotes,
+        ...(nextDeadNoteTime !== undefined ? { chokeAt: nextDeadNoteTime } : {})
       });
+
+      if (eventData.technique === 'dead-note') nextDeadNoteTime = event.time;
 
       for (const stringIndex of eventData.affectedStrings) {
         nextStringPlayTime.set(stringIndex, event.time);
@@ -259,7 +263,9 @@ export class PlayingPatternPlaybackPlannerService {
     let technique: MidiTechnique = 'normal';
     let velocity = 0.7;
 
-    if (action.modifiers?.includes('mute')) {
+    if (action.technique === 'strum' && action.strum?.mode === 'dead-note') {
+      technique = 'dead-note';
+    } else if (action.modifiers?.includes('mute')) {
       technique = 'muted';
     } else if (action.modifiers?.includes('palm-mute')) {
       technique = 'palm-muted';
@@ -303,16 +309,25 @@ export class PlayingPatternPlaybackPlannerService {
     } | undefined;
 
     if (action.technique === 'strum' && action.strum) {
-      if (!grip) {
+      const deadNote = action.strum.mode === 'dead-note';
+      if (!grip && !deadNote) {
         return undefined;
       }
 
-      const strings = this.resolveStrumStrings(grip, action.strum.strings);
+      const strings = deadNote
+        ? (isRelativeStrumRange(action.strum.strings)
+          ? this.resolveRelativeStrumRange(grip, action.strum.strings, true)
+          : getStringsForStrum(action.strum.strings))
+        : this.resolveStrumStrings(grip!, action.strum.strings);
       affectedStrings.push(...strings);
       playNotes = action.strum.direction === 'D' ? 'sequential' : 'reversed';
 
       for (const stringIndex of strings) {
-        const entry = grip.strings[stringIndex];
+        if (deadNote) {
+          notes.push({ note: tuning[stringIndex] });
+          continue;
+        }
+        const entry = grip!.strings[stringIndex];
         if (entry === 'x') {
           stringState.delete(stringIndex);
           continue;
@@ -329,6 +344,7 @@ export class PlayingPatternPlaybackPlannerService {
         notes.push(note);
         stringState.set(stringIndex, { fret, note });
       }
+      if (deadNote) stringState.clear();
     } else if (action.technique === 'pick' && action.pick) {
       for (const pickNote of action.pick) {
         const stringIndex = isRelativePickingNote(pickNote)
@@ -477,13 +493,13 @@ export class PlayingPatternPlaybackPlannerService {
     return getStringsForStrum(strings);
   }
 
-  private resolveRelativeStrumRange(grip: Grip, range: RelativeStrumRange): number[] {
+  private resolveRelativeStrumRange(grip: Grip | undefined, range: RelativeStrumRange, includeMuted = false): number[] {
     const from = this.resolveRelativeStringIndex(grip, range.from);
     const to = this.resolveRelativeStringIndex(grip, range.to);
     const start = Math.min(from, to);
     const end = Math.max(from, to);
 
-    return this.getPlayableStringIndices(grip).filter(index => index >= start && index <= end);
+    return (includeMuted ? [0, 1, 2, 3, 4, 5] : this.getPlayableStringIndices(grip)).filter(index => index >= start && index <= end);
   }
 
   private resolveRelativeStringIndex(grip: Grip | undefined, relativeString: RelativeString): number {

@@ -14,6 +14,7 @@ export interface TriggerableSampler {
 export interface MidiSamplerSet {
   guitar?: TriggerableSampler;
   palmMuted?: TriggerableSampler;
+  deadNote?: TriggerableSampler;
   percussion?: TriggerableSampler;
   slide?: (voice: PitchSlideVoice) => void;
 }
@@ -28,7 +29,7 @@ export const PERCUSSION_TECHNIQUE_ALIASES = {
   string_slap: 'string-slap'
 } as const;
 
-export const MIDI_SAMPLE_SET_VERSION = 'guitar-palm-placeholder-v2';
+export const MIDI_SAMPLE_SET_VERSION = 'guitar-articulations-a-c-v1';
 
 export const MIDI_PLAYBACK_CONFIG = {
   dynamics: {
@@ -52,9 +53,6 @@ export const MIDI_PLAYBACK_CONFIG = {
     muted: {
       durationSeconds: 0.3,
       velocityScale: 0.6
-    },
-    palmMuted: {
-      releaseSeconds: 0.12
     },
     percussive: {
       durationSeconds: 0.015,
@@ -107,7 +105,8 @@ export function scheduleMidiInstruction(
     return;
   }
 
-  const sampler = instruction.technique === 'palm-muted' ? samplers.palmMuted : samplers.guitar;
+  const sampler = instruction.technique === 'dead-note' ? samplers.deadNote
+    : instruction.technique === 'palm-muted' ? samplers.palmMuted : samplers.guitar;
   if (!sampler) throw new Error('Required guitar samples are not ready.');
   const options = getPlaybackOptions(instruction.technique, instruction.velocity);
   const playMode = instruction.playNotes || 'parallel';
@@ -190,7 +189,7 @@ function scheduleSequentialNotes(
   const notes = instruction.notes;
   if (!notes || notes.length === 0) return;
 
-  const noteSpacing = getSequentialNoteSpacing(instruction.actionDuration, notes.length);
+  const noteSpacing = instruction.technique === 'dead-note' ? 0.012 : getSequentialNoteSpacing(instruction.actionDuration, notes.length);
   const playMode = instruction.playNotes || 'parallel';
   const sortedNotes = playMode === 'reversed' ? [...notes].reverse() : [...notes];
 

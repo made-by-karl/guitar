@@ -91,7 +91,7 @@
                     <div class="modifiers-section">
                       <div class="form-label small">Modifiers</div>
                       <div class="d-flex gap-1 flex-wrap">
-                        @for (modifier of getAvailableModifiers(); track modifier.value) {
+                        @for (modifier of getAvailableModifiers(actionData.action); track modifier.value) {
                           <div class="form-check form-check-inline">
                             <input
                               class="form-check-input"
@@ -109,6 +109,17 @@
                   }
 
                   @if (actionData.action.technique === 'strum' && actionData.action.strum) {
+                    <div class="strum-section">
+                      <label class="form-label small" [attr.for]="'strumMode_' + actionData.originalIndex">Mode</label>
+                      <select class="form-select form-select-sm"
+                        [id]="'strumMode_' + actionData.originalIndex"
+                        [ngModel]="actionData.action.strum.mode ?? 'normal'"
+                        (ngModelChange)="updateStrumMode(actionData.originalIndex, $event)"
+                        [name]="'strumMode_' + actionData.originalIndex">
+                        <option value="normal">Normal</option>
+                        <option value="dead-note">Dead note</option>
+                      </select>
+                    </div>
                     <div class="direction-section">
                       <label class="form-label small" [attr.for]="'direction_' + actionData.originalIndex">Direction</label>
                       <select

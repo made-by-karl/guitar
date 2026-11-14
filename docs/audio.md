@@ -69,20 +69,35 @@ with the plan rather than relying on a stale cached song/pattern ID.
 - `MIDI_SAMPLE_SET_VERSION`, full instructions, duration and render sample rate form the cache
   identity. Bump the sample version when replacing or remapping recordings.
 
-## Palm-muted bank
+## Palm mute and dead strums
 
-Palm-muted picks and all strings of palm-muted strums use `/samples/palm-muted/*.wav`.
-Clean notes and existing percussion/metronome recordings remain unchanged. The planner keeps
-articulation when accent increases velocity; `mute` still wins over `palm-mute`. Palm mute no
-longer uses fixed `0.8 s` duration / `0.7` velocity as its articulation mechanism.
+Both articulations use the original clean guitar MP3 anchors. The synthetic palm-muted WAV
+bank and temporary comparison UI/assets have been removed. The listening selections are A
+for palm mute (320 ms decay, 2400 Hz low-pass tail) and final C for dead strums (85 ms decay,
+900 Hz tail, 12 ms between strings, +3 dB). The cutoff retains a pitch-relative floor so high
+notes stay audible. These are processed guitar sounds, not recorded dead-note percussion.
 
-Per the implementation request, the shipped bank is a **temporary synthetic placeholder**.
-It is not a recorded palm-muted guitar and has no listening acceptance. See the
-[bank README](../guitar-app/public/samples/palm-muted/README.md) for all seven pitched anchor
-filenames, metadata, provenance and replacement instructions. Nearest-anchor pitch shifting
-also covers generated notes below E2 and above E5; recordings and extreme transpositions need
-listening checks. Missing required WAVs fail preparation without a clean-note fallback.
-The service worker prefetches WAV and retained MP3 samples with content hashes.
+`guitar-articulation.ts` transposes each required note before applying its own filter/envelope
+in a short offline render. Prepared voices are reused by pitch/articulation within the main
+render job. Attack energy is calibrated per pitched voice; velocity retains accent dynamics.
+The main mix applies a peak ceiling to avoid clipping. All output still uses WAV media and
+the existing HTML audio lifecycle; no live Web Audio output is introduced.
+
+Strum actions have optional `strum.mode`: `normal` (also the default when absent) or
+`dead-note`. The shared measure editor exposes Mode alongside direction and string range.
+Dead mode uses the selected open-string pitches from the current tuning, including strings
+marked x in a grip, and works without a grip. It keeps up/down order and displays x marks.
+Accent remains available; dead mode takes precedence over imported Mute/Palm mute flags.
+Ordinary strums/picks keep the existing Mute-over-Palm-mute precedence.
+
+A dead strum damps the previous guitar sound and clears all sounding-string history. Earlier
+voices, release tails and delayed strum notes are bounded at that action, so subsequent
+slides/pull-offs cannot inherit a muted source. Later explicit notes play normally.
+Mode survives library/sheet snapshots and JSON/backup round trips without a storage reset.
+
+Required source failures produce recoverable preparation errors. Render identity includes
+instructions, strum mode resolved into technique, damping boundaries and a bumped
+`MIDI_SAMPLE_SET_VERSION`. Source files remain covered by the service-worker MP3 rules.
 
 ## Metronome
 
