@@ -8,6 +8,7 @@ import {AudioService} from '@/app/core/services/audio.service';
 import {Component, TemplateRef, ViewChild} from '@angular/core';
 import {of} from 'rxjs';
 import {PageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
+import { HtmlAudioPlaybackService } from '@/app/core/services/html-audio-playback.service';
 
 // Mock component for router testing
 @Component({ standalone: true, template: '' })
@@ -77,7 +78,8 @@ describe('AppComponent', () => {
           { path: 'maintenance/about', component: MockComponent },
           { path: 'maintenance/settings', component: MockComponent },
           { path: 'maintenance/logs', component: MockComponent },
-          { path: 'maintenance/midi-test', component: MockComponent }
+          { path: 'maintenance/midi-test', component: MockComponent, data: { playbackControls: 'overlay' } },
+          { path: 'own-playback-controls', component: MockComponent, data: { playbackControls: 'none' } }
         ]),
         { provide: SongSheetsService, useValue: mockSongSheetsService },
         { provide: UpdateService, useValue: mockUpdateService },
@@ -108,13 +110,15 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 
-  it('should release wake lock on destroy', () => {
+  it('releases wake lock and playback on app destruction independently of the panel', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const component = fixture.componentInstance;
+    const stop = jest.spyOn(TestBed.inject(HtmlAudioPlaybackService), 'stopAll');
 
     component.ngOnDestroy();
 
     expect(mockWakeLockService.releaseWakeLock).toHaveBeenCalled();
+    expect(stop).toHaveBeenCalled();
   });
 
   it('renders page toolbar content for routes that provide it', async () => {
@@ -147,5 +151,26 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.mock-page-toolbar-button')).toBeNull();
+  });
+
+  it('chooses playback presentation per route and stops audio even when no panel is mounted', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const media = TestBed.inject(HtmlAudioPlaybackService);
+    const stop = jest.spyOn(media, 'stopAll');
+    fixture.detectChanges();
+    await fixture.ngZone!.run(() => router.navigateByUrl('/maintenance/midi-test'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.playbackControls).toBe('overlay');
+    expect(fixture.nativeElement.querySelector('app-media-playback-controls.overlay')).toBeTruthy();
+    await fixture.ngZone!.run(() => router.navigateByUrl('/sheets'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.playbackControls).toBe('inline');
+    expect(fixture.nativeElement.querySelector('app-media-playback-controls.overlay')).toBeNull();
+    await fixture.ngZone!.run(() => router.navigateByUrl('/own-playback-controls'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-media-playback-controls')).toBeNull();
+    stop.mockClear();
+    await fixture.ngZone!.run(() => router.navigateByUrl('/grips'));
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 });

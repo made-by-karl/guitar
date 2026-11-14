@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { Component, Inject, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -40,14 +41,14 @@ export interface CustomGripEditorResult {
 @Component({
   selector: 'app-custom-grip-editor-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, GripDiagramComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, GripDiagramComponent],
   templateUrl: './custom-grip-editor-modal.component.html',
   styleUrl: './custom-grip-editor-modal.component.scss'
 })
 export class CustomGripEditorModalComponent
   implements OnDestroy, ModalComponent<CustomGripEditorResult>, ModalDataComponent<CustomGripEditorModalData> {
   private static nextPreview = 0;
-  private readonly previewOwner = `custom-grip:${++CustomGripEditorModalComponent.nextPreview}`;
+  readonly previewOwner = `custom-grip:${++CustomGripEditorModalComponent.nextPreview}`;
   ngOnDestroy(): void { this.playback.stopChordPreview(this.previewOwner); }
 
   readonly modeOptions: { value: CustomGripStringMode; label: string }[] = [

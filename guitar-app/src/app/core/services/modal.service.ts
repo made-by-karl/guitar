@@ -4,7 +4,8 @@ import {
   TemplateRef,
   ComponentRef,
   ViewContainerRef,
-  InjectionToken
+  InjectionToken,
+  signal
 } from '@angular/core';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType, TemplatePortal } from '@angular/cdk/portal';
@@ -76,6 +77,8 @@ interface ModalInstance {
 export class ModalService {
   private modals: ModalInstance[] = [];
   private openModals = 0;
+  private readonly modalsOpen = signal(false);
+  readonly hasOpenModals = this.modalsOpen.asReadonly();
 
   constructor(
     private overlay: Overlay,
@@ -193,6 +196,7 @@ export class ModalService {
 
     // scroll handling
     this.openModals++;
+    this.modalsOpen.set(true);
     document.body.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
 
@@ -234,6 +238,7 @@ export class ModalService {
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
       this.openModals = 0;
+      this.modalsOpen.set(false);
     }
   }
 

@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { Component, Inject, ViewChild, OnInit } from '@angular/core';
 import { Note } from '@/app/core/music/semitones';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import {MODAL_REF, ModalComponent, ModalRef} from '@/app/core/services/modal.ser
 @Component({
   selector: 'app-playing-pattern-editor-modal',
   standalone: true,
-  imports: [CommonModule, PlayingPatternEditorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, PlayingPatternEditorComponent],
   templateUrl: './playing-pattern-editor-modal.component.html',
   styleUrls: ['./playing-pattern-editor-modal.component.scss']
 })

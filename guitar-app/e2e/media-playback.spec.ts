@@ -132,6 +132,8 @@ test('sheet arrangements follow media pause, resume and completion, including re
   await page.getByRole('link', { name: 'My song', exact: true }).click();
   await page.getByRole('button', { name: 'Play song', exact: true }).click();
   await audibleMedia(page);
+  await expect(page.locator('app-media-playback-controls.overlay')).toHaveCount(0);
+  await expect(controls(page).locator('section')).toHaveCount(0);
   await expect(page.locator('.occurrence-row.is-playing')).toHaveCount(1);
   await page.getByRole('button', { name: 'Pause song', exact: true }).click();
   expect(await page.evaluate(() => window.mediaElements.every(audio => audio.paused))).toBe(true);

@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import {Component, Inject, Optional} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -14,7 +15,7 @@ export interface PatternLibrarySelectorModalData { selectionMode?: SelectionMode
 @Component({
   selector: 'app-pattern-library-selector-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PatternsLibrarySelectorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, RouterModule, PatternsLibrarySelectorComponent],
   templateUrl: './pattern-library-selector-modal.component.html',
   styleUrls: ['./pattern-library-selector-modal.component.scss']
 })

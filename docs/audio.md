@@ -23,13 +23,25 @@ superseded work. A late play promise only pauses its own old element. Stop remov
 reloads the element and revokes its URL. Ended/error events, interruptions and explicit
 pause/resume drive state; focus/visibility events never restart a stopped media player.
 
-The shared playback controls show Preparing, Starting, Playing, Paused, errors and explicit
-Play/Retry/Stop actions. Preparation does not count as Playing. If a browser rejects playback
-after asynchronous rendering, the prepared source stays available: Play calls `audio.play()`
-directly from the next interaction. There is no silent helper track, microphone request,
-output-backend setting or automatic retry. The controls remain above modal overlays.
-Navigation stops media and pending preparation; custom-grip modal previews also have an
-individual owner released on destruction.
+Playback feedback is a per-page route choice through `data.playbackControls`:
+
+- `overlay`: full floating Preparing/Starting/Playing/Paused and Play/Retry/Stop controls.
+  Enabled on `/maintenance/midi-test`.
+- `inline` (default): ordinary playback stays quiet; an inline Play/Retry message appears
+  only for prepared audio awaiting interaction or errors. Normal page transport controls remain.
+- `none`: the page provides all feedback/recovery itself; no shell panel is mounted.
+
+`MediaPlaybackControlsComponent` only displays state and delegates user actions. It does not
+own or stop audio when created/destroyed. Inline controls can be reused with a `channels`
+input to limit them to a dialog's player. Audio dialogs expose these in their footer, while
+the shell's inline message is hidden when a dialog is open, keeping recovery reachable inside it.
+
+Preparation does not count as Playing. If a browser rejects playback after asynchronous
+rendering, the prepared source stays available: Play calls `audio.play()` directly from the
+next interaction. There is no silent helper track, microphone request, output-backend setting
+or automatic retry. AppComponent owns navigation/destruction cleanup independently of the
+chosen presentation; navigation stops media and pending preparation even when no panel is
+mounted. Custom-grip modal previews retain their individual destruction cleanup.
 
 This media path is intended to address the iPhone Silent Mode requirement in issue #4.
 [WebKit's report](https://bugs.webkit.org/show_bug.cgi?id=237322) describes the media/Web Audio

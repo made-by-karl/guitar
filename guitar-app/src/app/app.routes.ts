@@ -24,7 +24,7 @@ export const routes: Routes = [
   { path: 'metronome', component: MetronomeComponent },
   { path: 'tuner', component: TunerComponent },
   { path: 'maintenance/about', component: AboutComponent },
-  { path: 'maintenance/midi-test', component: MidiTestComponent },
+  { path: 'maintenance/midi-test', component: MidiTestComponent, data: { playbackControls: 'overlay' } },
   { path: 'maintenance/logs', component: LogPageComponent },
   { path: 'maintenance/settings', component: SettingsComponent }
 ];

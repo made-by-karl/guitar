@@ -262,6 +262,9 @@
   </div>
 
   <div class="modal-footer">
+    @if (!data.embedded) {
+      <app-media-playback-controls class="w-100" [channels]="['finite:song-part-playback']" />
+    }
     <div class="part-save-status" role="status" [class.text-danger]="saveError()">
       @if (saving()) {
         Saving…
