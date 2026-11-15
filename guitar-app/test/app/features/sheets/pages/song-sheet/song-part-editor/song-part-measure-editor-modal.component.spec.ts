@@ -62,6 +62,24 @@ describe('SongPartMeasureEditorModalComponent', () => {
     }).compileComponents();
   });
 
+  it('draws accepted edits and separate grip updates with supplied occurrence history without persisting on cancel', () => {
+    const history = [{ measure: { timeSignature: '4/4' as const, actions: [
+      { technique: 'pick' as const, pick: [{ mode: 'explicit' as const, string: 2, fret: 5 }] }
+    ] } }];
+    TestBed.overrideProvider(MODAL_DATA, { useValue: { ...data, notationHistory: history } });
+    const fixture = TestBed.createComponent(SongPartMeasureEditorModalComponent);
+    const component = fixture.componentInstance;
+    component.editedMeasure = { ...component.editedMeasure, actions: [{ technique: 'slide', slide: { fretOffset: 2 } }] };
+    component.editedActionGrips = [];
+    expect(component.previewMeasures[0].history).toBe(history);
+    expect(component.previewMeasures[0].measure).toBe(component.editedMeasure);
+    expect(component.previewMeasures[0].context.actionGrips).toEqual([]);
+    expect(data.measure.actions[0]).toBeNull();
+    component.cancel();
+    expect(close).toHaveBeenCalledWith(undefined);
+    expect(TestBed.inject(SongSheetsService).addGrip).not.toHaveBeenCalled();
+  });
+
   it('previews the latest unsaved measure and grip edits in the original part context', async () => {
     const fixture = TestBed.createComponent(SongPartMeasureEditorModalComponent);
     const component = fixture.componentInstance;

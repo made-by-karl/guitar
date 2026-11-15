@@ -12,7 +12,8 @@
     </button>
     <button type="button" class="btn-close" (click)="onCancel()"></button>
   </div>
-  <div class="modal-body">
+  <app-measure-editor-preview [measures]="previewEditor()?.previewMeasures() ?? []" [content]="previewContent" />
+  <div class="modal-body" #previewContent>
     @if (pattern) {
       <app-playing-pattern-editor #editor
         [pattern]="pattern"

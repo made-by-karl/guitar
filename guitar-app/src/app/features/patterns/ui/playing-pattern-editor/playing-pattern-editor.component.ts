@@ -49,6 +49,8 @@ import {
 } from '@/app/features/grips/ui/grip-source-selector-modal/grip-source-selector-modal.component';
 import { PlayingMeasureEditorComponent } from '@/app/features/patterns/ui/playing-measure-editor/playing-measure-editor.component';
 
+import { patternPreviewMeasures } from '@/app/features/patterns/ui/measure-editor-preview/pattern-preview-measures';
+
 import { Note, transpose } from '@/app/core/music/semitones';
 
 type TechniqueType = 'strum-down' | 'strum-up' | 'pick' | 'percussive' | 'hammer-on' | 'pull-off' | 'slide';
@@ -86,6 +88,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   ] as const;
 
   pattern = model.required<PlayingPattern>();
+  readonly previewMeasures = computed(() => patternPreviewMeasures(this.pattern()));
   readonly savedGrips = input<PlayingPatternGripReference[]>([]);
   readonly tuning = input<Note[] | undefined>();
   readonly capodaster = input(0);
@@ -1236,28 +1239,35 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   }
 
   async assignActionGrip(measureIndex: number, actionIndex: number): Promise<void> {
-    const pattern = this.pattern();
-    if (!pattern) {
-      return;
-    }
+    const opener = document.activeElement;
+    try {
+      const pattern = this.pattern();
+      if (!pattern) {
+        return;
+      }
 
-    const selectedGrip = await this.selectGrip(this.getActionGrip(measureIndex, actionIndex)?.name);
-    if (selectedGrip === undefined) {
-      return;
-    }
+      const selectedGrip = await this.selectGrip(this.getActionGrip(measureIndex, actionIndex)?.name);
+      if (selectedGrip === undefined) {
+        return;
+      }
 
-    this.updatePattern({
-      ...pattern,
-      actionGrips: selectedGrip ? [
-        ...(pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)),
-        {
-          measureIndex,
-          actionIndex,
-          gripId: selectedGrip.gripId,
-          name: selectedGrip.name
-        }
-      ] : (pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
-    });
+      this.updatePattern({
+        ...pattern,
+        actionGrips: selectedGrip ? [
+          ...(pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex)),
+          {
+            measureIndex,
+            actionIndex,
+            gripId: selectedGrip.gripId,
+            name: selectedGrip.name
+          }
+        ] : (pattern.actionGrips ?? []).filter(grip => !(grip.measureIndex === measureIndex && grip.actionIndex === actionIndex))
+      });
+    } finally {
+      if (opener instanceof HTMLElement && opener.isConnected && document.activeElement === document.body) {
+        opener.focus({ preventScroll: true });
+      }
+    }
   }
 
   clearMeasureGrips(measureIndex: number): void {

@@ -145,3 +145,20 @@ production build on a disposable local origin and verifies source sample caching
 retrieval and activation of a changed source revision. Run the build first; that spec skips
 without generated production files. It changes only in-memory test responses. These checks
 verify sample requests, not complete offline application operation or iPhone support.
+
+## Live measure editor preview
+
+Run `e2e/measure-editor-preview.spec.ts` and the existing `e2e/song-measure-toolbar.spec.ts`
+through the Docker workflow above. The preview spec uses disposable mixed measures and
+compares individual SVG slot outlines with actual action-card intersections in the reduced
+forms viewport. It covers song drafts, pattern measure changes, nested grip return, subdivision
+and meter edits, collapse/expand, keyboard navigation and the short viewport. A resized
+375×400 viewport simulates constrained space; it does not establish real virtual-keyboard behavior.
+Curated screenshots belong in `temp/ux/floating-measure-editor-preview/`.
+
+The editor preview is a separate pane above the scrolling forms. Its chevron reclaims space, with a “Measure preview” label when collapsed;
+measure identity is available to assistive technology without an additional visible heading.
+The pane fits all grip-label lines without vertical scrolling. Only the editor opts into
+single-row notation and visible-slot outlines. Preceding measures
+supply notation history without being drawn. Preview geometry and expanded state are transient
+and do not cross existing Apply/Save boundaries.

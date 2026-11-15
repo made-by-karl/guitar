@@ -1,4 +1,4 @@
-<div class="notation-measure" [style.width]="measureWidth()">
+<div class="notation-measure" [class.compact]="compact()" [style.width]="measureWidth()">
   <div class="notation-scroll" #notation>
     @for (segment of getRenderableSegments(); track segment.actionIndex) {
       <svg
@@ -10,6 +10,14 @@
         [attr.viewBox]="getActionSvgViewBox(segment.actionIndex)"
         role="img"
         aria-hidden="true">
+      @if (compact() || visibleActionIndices().length > 0) {
+        @for (slotIndex of getSegmentSlotIndices(segment); track slotIndex) {
+          <rect class="visible-action-slot" [class.in-view]="visibleActionIndices().includes(slotIndex)"
+            [attr.data-slot-index]="slotIndex"
+            [attr.x]="getActionSlotLeft(slotIndex) + 1" y="2"
+            [attr.width]="slotSpacing / segment.compression - 2" [attr.height]="getActionSvgHeight() - 4" rx="3" />
+        }
+      }
       @for (stringIndex of strings; track stringIndex) {
         <line x1="0" [attr.y1]="stringY(stringIndex)" [attr.x2]="getActionSvgWidth(segment.actionIndex)" [attr.y2]="stringY(stringIndex)" class="string-line" />
       }

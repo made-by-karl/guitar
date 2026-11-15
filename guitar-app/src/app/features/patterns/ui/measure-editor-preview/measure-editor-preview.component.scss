@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.editor-preview {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #d8cdb8;
+  background: #fff;
+}
+
+.preview-collapsed-label {
+  flex: 1 1 auto;
+  align-self: center;
+}
+
+.preview-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 31px;
+  min-width: 32px;
+  min-height: 31px;
+  padding: 0;
+}
+
+.preview-drawing {
+  flex: 1 1 auto;
+  min-width: 0;
+  // Keep ordinary measures stable while allowing larger grip-label bands to grow.
+  min-height: 128px;
+  overflow: hidden;
+}
+
+@media (max-height: 480px) {
+  .preview-drawing {
+    min-height: 0;
+  }
+}

@@ -70,6 +70,25 @@ describe('PlayingPatternEditorComponent', () => {
     fixture.detectChanges();
   });
 
+  it('builds each preview from accepted drafts with earlier measures and local grip indices', () => {
+    const previous = component.pattern();
+    component.pattern.set({ ...previous, measures: [previous.measures[0], { timeSignature: '3/4', actions: Array(12).fill(null) }],
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, name: 'D', gripId: 'x|x|o|2|3|2' }] });
+    expect(component.previewMeasures()[1].history[0].context?.actionGrips?.[0].measureIndex).toBe(0);
+    expect(component.previewMeasures()[1].history[0].context?.actionGrips?.[0].name).toBe('D');
+    component.updateMeasureActionGrips(1, [{ measureIndex: 0, actionIndex: 2, name: 'C', gripId: 'x|3|2|o|1|o' }]);
+    expect(component.previewMeasures()[1].context.actionGrips?.[0].measureIndex).toBe(0);
+    const updated = { ...previous.measures[0], actions: Array(16).fill(null) };
+    updated.actions[0] = { technique: 'pick', pick: [{ mode: 'explicit', string: 2, fret: 5 }] };
+    component.updateMeasure(0, updated);
+    expect(component.previewMeasures()[1].history[0].measure).toBe(updated);
+    expect(previous.measures[0].actions[0]).toBeNull();
+    component.removeMeasure(0);
+    expect(component.previewMeasures()).toHaveLength(1);
+    expect(component.previewMeasures()[0].label).toBe('Measure 1');
+    expect(component.previewMeasures()[0].history).toEqual([]);
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });

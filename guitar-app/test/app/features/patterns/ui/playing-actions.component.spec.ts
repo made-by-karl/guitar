@@ -12,6 +12,29 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+  it('outlines individual visible slots, including rests inside a connected segment, without changing default layout', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const measure = createMeasure(Array(16).fill(null));
+    measure.actions[0] = { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 2 }] };
+    measure.actions[4] = { technique: 'slide', slide: { fretOffset: 2 } };
+    fixture.componentRef.setInput('measures', [measure]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.visible-action-slot')).toHaveLength(0);
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentRef.setInput('visibleActionIndices', [2, 4]);
+    fixture.componentRef.setInput('showActionIndex', true);
+    fixture.detectChanges();
+    const marks: SVGRectElement[] = Array.from(fixture.nativeElement.querySelectorAll('.in-view'));
+    expect(marks.map(mark => Number(mark.dataset['slotIndex']))).toEqual([2, 4]);
+    expect(marks[0].getAttribute('x')).not.toBe(marks[1].getAttribute('x'));
+    expect(fixture.nativeElement.querySelectorAll('.visible-action-slot')).toHaveLength(16);
+    expect(fixture.nativeElement.querySelectorAll('.rhythm-marker')).toHaveLength(16);
+    fixture.componentRef.setInput('visibleActionIndices', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.in-view')).toHaveLength(0);
+  });
+
   it('renders the small imported regression example and updates names without moving action slots', async () => {
     const file = parseTransferFile(JSON.stringify(longGripLabels), 'guitar-song-sheet');
     if (file.format !== 'guitar-song-sheet') throw new Error('Expected song-sheet fixture');

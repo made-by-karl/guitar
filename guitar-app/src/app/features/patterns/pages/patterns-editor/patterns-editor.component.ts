@@ -1,3 +1,5 @@
+import { MeasureEditorPreviewComponent } from '@/app/features/patterns/ui/measure-editor-preview/measure-editor-preview.component';
+import { patternPreviewMeasures } from '@/app/features/patterns/ui/measure-editor-preview/pattern-preview-measures';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,11 +12,14 @@ import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playin
 @Component({
   selector: 'app-patterns-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PlayingPatternEditorComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PlayingPatternEditorComponent, MeasureEditorPreviewComponent],
   templateUrl: './patterns-editor.component.html',
   styleUrls: ['./patterns-editor.component.scss']
 })
 export class PatternsEditorComponent {
+  get previewMeasures() {
+    return this.pattern ? patternPreviewMeasures(this.pattern) : [];
+  }
   pattern?: PlayingPattern;
   editorMode: 'create' | 'edit' | 'clone' = 'create';
 
