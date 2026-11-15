@@ -1,3 +1,7 @@
+App images are served from `/app-icons/` because the production webspace blocks `/icons/`.
+Deploy the `app-icons` directory with the build; the install manifest, social previews, media artwork,
+and service-worker cache all use it.
+
 To support deep links and redirect all unknown routes to your main index.html (Single Page Application routing), you need to configure your web server to rewrite all requests to index.html, except for static assets.
 
 How to do this depends on your web hosting:

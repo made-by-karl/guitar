@@ -5,7 +5,7 @@ import type { PlayingPattern } from '../src/app/features/patterns/services/playi
 for (const version of [4, 7, 9]) {
   test(`opens a version-${version} database with the consolidated song migration`, async ({ page }) => {
     // Establish the application origin without starting Angular or Dexie.
-    await page.goto('/icons/icon-96x96.png');
+    await page.goto('/app-icons/icon-96x96.png');
     await page.evaluate(async version => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open('GuitarAppDatabase', version * 10);

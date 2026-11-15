@@ -187,7 +187,7 @@ test('starts in an empty part and offers every source for its first measure', as
 
 test('upgrades a persisted version-seven sheet without losing music, order, lyrics or notes', async ({ page }) => {
   // An image document gives us the app origin without starting Angular/Dexie yet.
-  await page.goto('/icons/icon-96x96.png');
+  await page.goto('/app-icons/icon-96x96.png');
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('GuitarAppDatabase', 70);
