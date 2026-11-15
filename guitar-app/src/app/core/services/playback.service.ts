@@ -15,7 +15,7 @@ export interface PlaybackPlan {
 }
 export interface PlaybackSessionState {
   sessionId: string; scope: string; status: PlaybackStatus; cursor: number;
-  total: number; canPause: boolean; canSeek: boolean;
+  total: number; canPause: boolean; canSeek: boolean; ended: boolean;
 }
 export interface PlaybackSession {
   readonly state$: Observable<PlaybackSessionState>;
@@ -44,7 +44,7 @@ class FinitePlaybackSession implements PlaybackSession {
     private readonly onDestroySession: (id: string) => void
   ) {
     this.stateSubject = new BehaviorSubject<PlaybackSessionState>({ sessionId, scope,
-      status: 'idle', cursor: 0, total: 0, canPause: false, canSeek: false });
+      status: 'idle', cursor: 0, total: 0, canPause: false, canSeek: false, ended: false });
     this.state$ = this.stateSubject.asObservable();
     this.progress = media.progress$(this.channel).subscribe(state => this.onProgress(state));
   }
@@ -81,9 +81,11 @@ class FinitePlaybackSession implements PlaybackSession {
     let cursor = 0;
     plan.segmentStartTimes.forEach((time, index) => { if (time <= progress.currentTime) cursor = index; });
     this.stateSubject.next({ ...this.getSnapshot(), status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
-      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused' });
+      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused', ended: progress.ended });
     // Ended comes from the media element after its release tail, never from plan duration.
-    if (status === 'idle' && this.plan === plan) this.plan = null;
+    // The system player can replay completed media. Keep its plan so cursor and
+    // transport state follow that replay; explicit Stop/replacement still clear it.
+    if (status === 'idle' && !progress.ended && this.plan === plan) this.plan = null;
   }
 }
 

@@ -45,7 +45,7 @@ export class PatternPlaybackService {
     this.session = this.playback.getFiniteSession('pattern-preview');
     this.session.state$.subscribe((state) => {
       if (!this.activePreview || state.status === 'idle') {
-        this.activePreview = null;
+        if (!state.ended) this.activePreview = null;
         this.stateSubject.next({ status: 'idle' });
         return;
       }

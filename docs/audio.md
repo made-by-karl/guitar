@@ -23,6 +23,20 @@ superseded work. A late play promise only pauses its own old element. Stop remov
 reloads the element and revokes its URL. Ended/error events, interruptions and explicit
 pause/resume drive state; focus/visibility events never restart a stopped media player.
 
+The [Media Session API](https://www.w3.org/TR/mediasession/) supplies the playback label, app name, original 1024px artwork and
+media position to system/lock-screen controls. Play, Pause, Stop and supported seek actions
+delegate to the same channel. The most recently playing channel owns those controls;
+when it stops or finishes while another channel plays, ownership returns to that channel.
+Unsupported actions/position reporting do not block playback.
+
+On natural completion, the app transport returns to idle, but the last system-owned clip
+retains its media element and blob URL for lock-screen Play to replay from zero without
+rendering again. Its finite plan remains available so highlights and transport follow replay.
+Only one completed clip is retained; another playing clip, explicit Stop, navigation and
+destruction release it. Stop also clears system metadata, position and handlers when no
+other channel is playing. iOS controls the visibility of its recent-media card; clearing
+the session cannot guarantee immediate dismissal. Device checks are still required.
+
 Playback feedback is a per-page route choice through `data.playbackControls`:
 
 - `overlay`: full floating Preparing/Starting/Playing/Paused and Play/Retry/Stop controls.
@@ -76,7 +90,7 @@ with the plan rather than relying on a stale cached song/pattern ID.
 - Individual renders accept approximately ten minutes including release allowance. Larger plans
   produce a recoverable error suggesting section playback. A five-minute mono WAV is about
   26.7 MB; a native render also temporarily holds its float buffer and decoded source samples.
-- The cache stores blobs, never player URLs. Active and paused media own their URLs independently,
+- The cache stores blobs, never player URLs. Active, paused and the last completed media own their URLs independently,
   so eviction cannot revoke audio still in use. Stop/destruction releases those owners.
 - `MIDI_SAMPLE_SET_VERSION`, full instructions, duration and render sample rate form the cache
   identity. Bump the sample version when replacing or remapping recordings.

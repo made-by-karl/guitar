@@ -51,7 +51,7 @@ export class SongPartPlaybackService {
     this.session = this.playback.getFiniteSession('song-part-playback');
     this.session.state$.subscribe((state) => {
       if (!this.activePlayback || state.status === 'idle') {
-        this.activePlayback = null;
+        if (!state.ended) this.activePlayback = null;
         this.stateSubject.next({
           type: 'none',
           status: 'idle'

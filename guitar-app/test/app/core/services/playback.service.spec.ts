@@ -50,6 +50,10 @@ describe('Media-backed playback sessions', () => {
     expect(session.getSnapshot().status).toBe('playing');
     finish('finite:song');
     expect(session.getSnapshot()).toMatchObject({ status: 'idle', cursor: 0 });
+    emit('finite:song', { status: 'playing', currentTime: 0, ended: false });
+    emit('finite:song', { currentTime: 1.5 });
+    expect(session.getSnapshot()).toMatchObject({ status: 'playing', cursor: 1 });
+    expect(rendered.renderInstructions).toHaveBeenCalledTimes(1);
     session.destroy();
     expect(media.release).toHaveBeenCalledWith('finite:song');
   });

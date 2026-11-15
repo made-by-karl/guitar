@@ -1,5 +1,5 @@
 import { PatternPlaybackService } from '@/app/features/patterns/services/pattern-playback.service';
-import { createPlaybackService } from '@test/helpers/media-playback';
+import { createPlaybackService, playbackHarness } from '@test/helpers/media-playback';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
@@ -41,6 +41,20 @@ describe('PatternPlaybackService', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('restores pattern highlights when the system player replays completed media', async () => {
+    jest.useFakeTimers();
+    const harness = playbackHarness();
+    const service = new PatternPlaybackService(harness.service, new PlayingPatternPlaybackPlannerService());
+    await service.togglePatternPreview(createPattern());
+    harness.finish('finite:pattern-preview');
+    expect(service.getSnapshot()).toEqual({ status: 'idle' });
+    harness.emit('finite:pattern-preview', { status: 'playing', currentTime: 0, ended: false });
+    expect(service.getSnapshot()).toMatchObject({ status: 'playing', patternId: 'pattern-1', currentMeasureIndex: 0 });
+    service.stopPatternPreview();
+    expect(service.getSnapshot()).toEqual({ status: 'idle' });
+    harness.service.ngOnDestroy();
   });
 
   it('toggles the active pattern preview on and off', async () => {

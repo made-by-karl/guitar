@@ -128,6 +128,11 @@ or focusing a page, and no microphone permission is requested by output preparat
 
 Exercise Stop/navigation while loading, interrupted pause/resume, seeks across repeated
 occurrences, continuous single/group slides, long releases and rapid metronome changes. Listen
+on the lock screen for pause/resume, seek and Play after natural completion: the last clip
+should restart from zero with sharp artwork and the app transport/highlights should follow it.
+Check Stop/navigation clear the session and cannot restart old audio. iOS may keep a recent-media
+card visible after session cleanup; record that separately from playback correctness. Check
+preview completion returns system controls to a metronome that is still running. Listen
 across at least three complete loop boundaries at low, medium and high tempo and grouped meters.
 On the phone, play a representative five-minute arrangement to completion and record cold/cached
 preparation time, rendered sizes, memory/resource observations and cleanup after leaving.

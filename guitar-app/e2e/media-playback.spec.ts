@@ -3,11 +3,24 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { richSheet, transferEnvelope } from '../test/fixtures/data-transfer';
 
 declare global {
-  interface Window { mediaElements: HTMLAudioElement[]; }
+  interface Window {
+    mediaElements: HTMLAudioElement[];
+    mediaActions: Partial<Record<MediaSessionAction, MediaSessionActionHandler>>;
+  }
 }
 async function trackMedia(page: Page) {
   await page.addInitScript(() => {
     window.mediaElements = [];
+    window.mediaActions = {};
+    if (navigator.mediaSession) {
+      const prototype = Object.getPrototypeOf(navigator.mediaSession) as MediaSession;
+      const setActionHandler = prototype.setActionHandler;
+      prototype.setActionHandler = function(action, handler) {
+        setActionHandler.call(this, action, handler);
+        if (handler) window.mediaActions[action] = handler;
+        else delete window.mediaActions[action];
+      };
+    }
     window.Audio = new Proxy(window.Audio, {
       construct(Target, args) {
         const audio = new Target(...args);
@@ -53,6 +66,43 @@ test('cold and cached chord playback renders audible WAV media and navigation re
   await expect(controls(page).locator('section')).toHaveCount(0);
   expect(await page.evaluate(() => window.mediaElements.every(audio => audio.paused && !audio.getAttribute('src')))).toBe(true);
   expect(errors).toEqual([]);
+});
+
+test('system media controls use full-size artwork, replay an ended WAV and release on navigation', async ({ page }) => {
+  await trackMedia(page); await page.goto('/maintenance/midi-test');
+  test.skip(!await page.evaluate(() => !!navigator.mediaSession), 'Media Session API unavailable in this engine');
+  await page.getByRole('button', { name: 'E Major Triad', exact: true }).click();
+  await audibleMedia(page);
+  expect(await page.evaluate(() => ({ title: navigator.mediaSession.metadata?.title,
+    artist: navigator.mediaSession.metadata?.artist, artwork: navigator.mediaSession.metadata?.artwork,
+    state: navigator.mediaSession.playbackState }))).toMatchObject({
+    title: 'Chord preview', artist: 'Guitar Companion', state: 'playing',
+    artwork: [{ src: expect.stringContaining('/icons/guitar_icon.png'), sizes: '1024x1024', type: 'image/png' }]
+  });
+  const artwork = await page.evaluate(async () => {
+    const img = new Image(); img.src = navigator.mediaSession.metadata!.artwork[0].src;
+    await img.decode(); return { width: img.naturalWidth, height: img.naturalHeight };
+  });
+  expect(artwork).toEqual({ width: 1024, height: 1024 });
+  await page.evaluate(() => window.mediaActions.pause!({ action: 'pause' }));
+  await expect(controls(page).getByRole('status')).toContainText('Paused');
+  expect(await page.evaluate(() => navigator.mediaSession.playbackState)).toBe('paused');
+  await page.evaluate(() => window.mediaActions.play!({ action: 'play' }));
+  await audibleMedia(page);
+  await page.evaluate(() => { window.mediaElements[0].currentTime = window.mediaElements[0].duration - 0.15; });
+  await expect(controls(page).locator('section')).toHaveCount(0);
+  expect(await page.evaluate(() => navigator.mediaSession.playbackState)).toBe('paused');
+  expect(await page.evaluate(() => window.mediaElements[0].getAttribute('src'))).toMatch(/^blob:/);
+  await page.evaluate(() => window.mediaActions.play!({ action: 'play' }));
+  await expect(controls(page).getByRole('status')).toContainText('Playing');
+  await expect.poll(() => page.evaluate(() => window.mediaElements[0].currentTime)).toBeGreaterThan(0.1);
+  expect(await page.evaluate(() => ({ count: window.mediaElements.length, time: window.mediaElements[0].currentTime })))
+    .toMatchObject({ count: 1, time: expect.any(Number) });
+  expect(await page.evaluate(() => window.mediaElements[0].currentTime)).toBeLessThan(2);
+  await page.getByRole('link', { name: /Metronome/ }).first().click();
+  expect(await page.evaluate(() => ({ metadata: navigator.mediaSession.metadata, state: navigator.mediaSession.playbackState,
+    actions: Object.keys(window.mediaActions), src: window.mediaElements[0].getAttribute('src') })))
+    .toEqual({ metadata: null, state: 'none', actions: [], src: null });
 });
 
 for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
@@ -143,6 +193,21 @@ test('sheet arrangements follow media pause, resume and completion, including re
   await page.evaluate(() => { window.mediaElements.find(audio => !audio.paused)!.currentTime = 5; });
   await expect(page.locator('.occurrence-row.is-playing')).toHaveCount(1);
   expect(await page.evaluate(() => window.mediaElements.length)).toBe(1);
+  await page.evaluate(() => {
+    const audio = window.mediaElements[0]; audio.currentTime = audio.duration - 0.15;
+  });
+  await expect(page.getByRole('button', { name: 'Play song', exact: true })).toBeVisible();
+  if (await page.evaluate(() => !!window.mediaActions.play)) {
+    await page.evaluate(() => window.mediaActions.play!({ action: 'play' }));
+  } else {
+    await page.evaluate(() => {
+      const ng = (window as unknown as { ng: { getComponent(el: Element): { playback: { resumeSong(): void } } } }).ng;
+      ng.getComponent(document.querySelector('app-song-arrangement')!).playback.resumeSong();
+    });
+  }
+  await expect(page.getByRole('button', { name: 'Pause song', exact: true })).toBeVisible();
+  await expect(page.locator('.occurrence-row.is-playing')).toHaveCount(1);
+  expect(await page.evaluate(() => window.mediaElements.length)).toBe(1);
   await page.getByRole('button', { name: 'Stop song', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play song', exact: true })).toBeVisible();
   await expect(controls(page).locator('section')).toHaveCount(0);
@@ -203,7 +268,7 @@ test('Stop invalidates a cold render and late sample completion cannot start aud
   await expect(controls(page).locator('section')).toHaveCount(0);
 });
 
-test('a five-minute plan prepares bounded media, seeks into its existing tail and releases its player', async ({ page }) => {
+test('a five-minute plan prepares bounded media, retains its ended clip for replay and releases on navigation', async ({ page }) => {
   await trackMedia(page); await page.goto('/maintenance/midi-test');
   const metrics = await page.evaluate(async () => {
     const ng = (window as unknown as { ng: { getComponent(el: Element): { playbackService: {
@@ -227,6 +292,8 @@ test('a five-minute plan prepares bounded media, seeks into its existing tail an
   expect(await page.evaluate(() => window.mediaElements[0].duration)).toBeCloseTo(303, 1);
   await page.evaluate(() => { window.mediaElements[0].currentTime = 302.8; });
   await expect(controls(page).locator('section')).toHaveCount(0);
+  expect(await page.evaluate(() => window.mediaElements[0].getAttribute('src'))).toMatch(/^blob:/);
+  await page.getByRole('link', { name: /Metronome/ }).first().click();
   expect(await page.evaluate(() => window.mediaElements[0].getAttribute('src'))).toBeNull();
   await mkdir('../temp/ux/media-playback', { recursive: true });
   await writeFile(`../temp/ux/media-playback/desktop-five-minute-${test.info().project.name}.json`, JSON.stringify({ project: test.info().project.name, ...metrics }, null, 2));
