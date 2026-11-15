@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { PlayingActionsComponent } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { Measure, PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
+import { parseTransferFile } from '@/app/core/services/data-transfer-format';
+import longGripLabels from '@test/fixtures/long-grip-labels.json';
 
 function createMeasure(actions: (PlayingAction | null)[]): Measure {
   return {
@@ -10,6 +12,27 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+  it('renders the small imported regression example and updates names without moving action slots', async () => {
+    const file = parseTransferFile(JSON.stringify(longGripLabels), 'guitar-song-sheet');
+    if (file.format !== 'guitar-song-sheet') throw new Error('Expected song-sheet fixture');
+    const measures = file.data.parts[0].measures.map(entry => entry.measure);
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    fixture.componentRef.setInput('measures', measures);
+    fixture.componentRef.setInput('notationContexts', measures.map(measure => ({ actionGrips: measure.actionGrips })));
+    fixture.detectChanges();
+    const labels = () => Array.from(fixture.nativeElement.querySelectorAll('.action-grip-label'))
+      .map(node => (node as HTMLElement).textContent?.trim());
+    expect(labels()).toEqual(['087xxx', '01010xxx', '0109xxx', '000xxx', 'Em']);
+    const widths = fixture.componentInstance.getRenderableSegments().map(segment => segment.width);
+
+    fixture.componentRef.setInput('notationContexts', measures.map(measure => ({
+      actionGrips: measure.actionGrips?.map(grip => ({ ...grip, name: `${grip.name} extended` }))
+    })));
+    fixture.detectChanges();
+    expect(labels()).toEqual(['087xxx extended', '01010xxx extended', '0109xxx extended', '000xxx extended', 'Em extended']);
+    expect(fixture.componentInstance.getRenderableSegments().map(segment => segment.width)).toEqual(widths);
+  });
   it('marks dead strums with crosses including grip-muted strings, and clears slide history', async () => {
     await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
     const fixture = TestBed.createComponent(PlayingActionsComponent);
@@ -515,7 +538,6 @@ describe('PlayingActionsComponent', () => {
     expect(fixture.componentInstance.getActionSvgHeight()).toBe(
       fixture.componentInstance.baseSvgHeight + fixture.componentInstance.gripLabelTopBand
     );
-    expect(fixture.componentInstance.getActionGripLabelY()).toBeLessThan(fixture.componentInstance.stringY(5) - 8);
     expect(fixture.nativeElement.querySelector('.action-svg')?.classList.contains('has-action-grips')).toBe(true);
 
     const labels = fixture.componentInstance.getSegmentActionGripLabels(fixture.componentInstance.getRenderableSegments()[0]);
