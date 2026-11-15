@@ -45,6 +45,7 @@
     }
   </div>
 
+  <app-song-playback source="editor" />
   <div class="part-editor-tabs" role="tablist" aria-label="Song part sections">
     @for (tab of tabs; track tab.id; let tabIndex = $index) {
       <button

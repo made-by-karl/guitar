@@ -69,7 +69,7 @@ describe('SongArrangementComponent', () => {
     const toggle = jest.spyOn(component, 'toggleOccurrence');
     button('Play Verse, occurrence 2').click();
     await toggle.mock.results[0].value;
-    expect(playback.playSongPart).toHaveBeenCalledWith(sheet, sheet.parts[0], 'v2');
+    expect(playback.playSongPart).toHaveBeenCalledWith(sheet, sheet.parts[0], 'v2', 'song');
     expect(component.selectedId()).toBeUndefined();
 
     state.next({ type: 'part', status: 'playing', partId: 'verse', occurrenceId: 'v2' });

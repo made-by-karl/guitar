@@ -12,6 +12,32 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+  it('marks one local slot inside grouped notation and only the current measure in a multi-measure renderer', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const measure = createMeasure(Array(16).fill(null));
+    measure.actions[0] = { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 2 }] };
+    measure.actions[4] = { technique: 'hammer-on', legato: { string: 0, toFret: 4 } };
+    fixture.componentRef.setInput('measures', [measure, createMeasure(Array(16).fill(null))]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.playback-action-slot')).toHaveLength(0);
+    fixture.componentRef.setInput('playbackPosition', { measureIndex: 0, actionIndex: 2, status: 'playing' });
+    fixture.detectChanges();
+    const first: SVGRectElement = fixture.nativeElement.querySelector('.playback-action-slot');
+    expect(first.dataset['slotIndex']).toBe('2');
+    const parent = first.parentElement;
+    expect(parent?.querySelectorAll('.pick-label')).toHaveLength(2);
+    expect(Number(first.getAttribute('width'))).toBeLessThan(Number(parent?.getAttribute('viewBox')?.split(' ')[2]));
+    fixture.componentRef.setInput('playbackPosition', { measureIndex: 1, actionIndex: 0, status: 'paused' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.playback-action-slot')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('.playback-action-slot').dataset.slotIndex).toBe('16');
+    expect(fixture.nativeElement.querySelector('.notation-measure').classList.contains('playback-paused')).toBe(true);
+    fixture.componentRef.setInput('playbackPosition', undefined);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.playback-action-slot, .playback-measure-band')).toHaveLength(0);
+  });
+
   it('outlines individual visible slots, including rests inside a connected segment, without changing default layout', async () => {
     await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
     const fixture = TestBed.createComponent(PlayingActionsComponent);

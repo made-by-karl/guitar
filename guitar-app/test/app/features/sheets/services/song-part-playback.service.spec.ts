@@ -2,7 +2,7 @@ import { computed, signal } from '@angular/core';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
-import { createPlaybackService } from '@test/helpers/media-playback';
+import { createPlaybackService, playbackHarness } from '@test/helpers/media-playback';
 import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
@@ -52,6 +52,54 @@ describe('SongPartPlaybackService', () => {
   function availabilityService(): SongPartPlaybackService {
     return new SongPartPlaybackService(createPlaybackService({} as never), new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
   }
+
+  it('maps repeated occurrences, silent slots and rests to an immutable scheduled snapshot', async () => {
+    jest.useFakeTimers();
+    const harness = playbackHarness();
+    const service = new SongPartPlaybackService(harness.service, new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    const verse: SongPart = { ...part, measures: [{ id: 'v-m', measure: { timeSignature: '4/4', actions: [
+      null, { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] }, null, null
+    ] } }] };
+    const rest: SongPart = { id: 'rest', section: 'Rest', notes: '', measures: [{ id: 'r-m', measure: { timeSignature: '4/4', actions: [null, null, null, null] } }] };
+    const song: SongSheetWithData = { ...sheet, parts: [verse, rest], arrangement: [
+      { id: 'v1', partId: verse.id, lyrics: 'First' }, { id: 'r', partId: rest.id, lyrics: '' }, { id: 'v2', partId: verse.id, lyrics: 'Second' }
+    ] };
+    await service.playSong(song);
+    expect(service.getSnapshot()).toMatchObject({ partId: verse.id, measureId: 'v-m', occurrenceId: 'v1', actionIndex: 0 });
+    verse.section = 'Changed after playback';
+    verse.measures[0].measure.actions[1] = null;
+    harness.emit('finite:song-part-playback', { currentTime: 0.375 });
+    expect(service.getSnapshot()).toMatchObject({ occurrenceId: 'v1', actionIndex: 3, presentation: { part: { section: 'Verse' } } });
+    harness.emit('finite:song-part-playback', { currentTime: 0.5 });
+    expect(service.getSnapshot()).toMatchObject({ partId: 'rest', measureId: 'r-m', occurrenceId: 'r', actionIndex: 0 });
+    harness.emit('finite:song-part-playback', { currentTime: 1 });
+    expect(service.getSnapshot()).toMatchObject({ partId: verse.id, measureId: 'v-m', occurrenceId: 'v2', actionIndex: 0, presentation: { occurrenceNumber: 2 } });
+    expect(service.getSnapshot().presentation?.part.measures[0].measure.actions[1]).not.toBeNull();
+    expect(service.getSnapshot().presentation?.precedingMeasures).toHaveLength(2);
+    service.pauseSong();
+    expect(service.getSnapshot()).toMatchObject({ status: 'paused', occurrenceId: 'v2', actionIndex: 0 });
+    harness.finish('finite:song-part-playback');
+    expect(service.getSnapshot()).toEqual({ type: 'none', status: 'idle' });
+    service.stopSong(); harness.service.ngOnDestroy(); jest.useRealTimers();
+  });
+
+  it('starts a later draft-measure preview at its local slot zero, preserving unsounded history', async () => {
+    jest.useFakeTimers();
+    const harness = playbackHarness();
+    const service = new SongPartPlaybackService(harness.service, new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    const draft: SongPart = { ...part, measures: [part.measures[0], { id: 'later', measure: { timeSignature: '4/4', actions: [
+      { technique: 'strum', strum: { direction: 'D', strings: 'all' } }, null
+    ] } }] };
+    await service.toggleMeasurePreview(sheet, draft, 'later');
+    expect(service.getSnapshot()).toMatchObject({ type: 'measure', source: 'editor', measureId: 'later', actionIndex: 0,
+      presentation: { measureIndex: 1, precedingMeasures: [part.measures[0].measure] } });
+    expect(harness.rendered.renderInstructions.mock.calls[0][0]).toHaveLength(1);
+    draft.measures[1].measure.actions[0] = null;
+    expect(service.getSnapshot().presentation?.part.measures[1].measure.actions[0]).not.toBeNull();
+    service.stopMeasurePreview();
+    expect(service.getSnapshot()).toEqual({ type: 'none', status: 'idle' });
+    harness.service.ngOnDestroy(); jest.useRealTimers();
+  });
 
   it.each<{ action: PlayingAction; playable: boolean }>([
     { action: { technique: 'strum', strum: { direction: 'D', strings: 'all' } }, playable: false },

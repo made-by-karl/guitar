@@ -31,6 +31,12 @@ import {
 } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
 import { layoutGripLabels, MeasuredGripLabel } from './grip-label-layout';
 
+export interface NotationPlaybackPosition {
+  measureIndex: number;
+  actionIndex: number;
+  status: 'playing' | 'paused';
+}
+
 export interface PlayingActionsNotationContext {
   timeSignature?: TimeSignature;
   actionGrips?: PlayingPatternActionGrip[];
@@ -124,6 +130,11 @@ export class PlayingActionsComponent {
   readonly legatoLineSourceGap = 8;
 
   measures = input.required<Measure[]>();
+  playbackPosition = input<NotationPlaybackPosition | undefined>();
+  readonly playbackSlot = computed(() => {
+    const position = this.playbackPosition();
+    return position ? this.measures().slice(0, position.measureIndex).reduce((count, measure) => count + measure.actions.length, 0) + position.actionIndex : undefined;
+  });
   // Editor-only layout and orientation; independent of any playback position.
   compact = input(false);
   visibleActionIndices = input<readonly number[]>([]);
@@ -171,6 +182,7 @@ export class PlayingActionsComponent {
     });
     afterRenderEffect({ read: () => this.measureGripLabels() });
     afterRenderEffect({ read: () => this.revealVisibleActions() });
+    afterRenderEffect({ read: () => this.revealPlaybackPosition() });
 
     // A newly loaded font can change text bounds without changing the container width.
     afterRenderEffect(onCleanup => {
@@ -192,6 +204,28 @@ export class PlayingActionsComponent {
 
   getSegmentSlotIndices(segment: RenderableActionSegment): number[] {
     return Array.from({ length: segment.span }, (_, index) => segment.actionIndex + index);
+  }
+
+  getPlaybackMeasureBand(segment: RenderableActionSegment): { x: number; width: number } | undefined {
+    const position = this.playbackPosition();
+    if (!position) return undefined;
+    const first = this.measures().slice(0, position.measureIndex).reduce((count, measure) => count + measure.actions.length, 0);
+    const end = first + (this.measures()[position.measureIndex]?.actions.length ?? 0);
+    const left = Math.max(first, segment.actionIndex);
+    const right = Math.min(end, segment.actionIndex + segment.span);
+    return right > left ? { x: this.getActionSlotLeft(left), width: (right - left) * this.slotSpacing / segment.compression } : undefined;
+  }
+
+  private revealPlaybackPosition(): void {
+    this.playbackSlot();
+    const element = this.notationElement()?.nativeElement;
+    const marker = element?.querySelector<SVGRectElement>('.playback-action-slot');
+    if (!marker) return;
+    const bounds = marker.getBoundingClientRect();
+    const scroller = element?.parentElement?.getBoundingClientRect();
+    if (bounds.width && (bounds.top < 0 || bounds.bottom > window.innerHeight || bounds.left < Math.max(0, scroller?.left ?? 0) || bounds.right > Math.min(window.innerWidth, scroller?.right ?? window.innerWidth))) {
+      marker.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+    }
   }
 
   private revealVisibleActions(): void {

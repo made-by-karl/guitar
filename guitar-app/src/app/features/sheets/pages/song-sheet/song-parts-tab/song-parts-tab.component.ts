@@ -50,6 +50,7 @@ export class SongPartsTabComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.playbackStateSubscription.unsubscribe();
+    this.songPartPlayback.stopSongPart();
   }
 
   async addPart(): Promise<void> {
@@ -128,7 +129,15 @@ export class SongPartsTabComponent implements OnDestroy {
   }
 
   getPartMeasures(part: SongPart): ResolvedSongPartMeasure[] {
-    return this.songSheetService.resolvePartMeasures(this.sheet(), part);
+    const snapshot = this.playbackState.source === 'parts' && this.playbackState.partId === part.id ? this.playbackState.presentation?.part : part;
+    return this.songSheetService.resolvePartMeasures(this.sheet(), snapshot ?? part);
+  }
+
+  getPlaybackPosition(part: SongPart) {
+    const state = this.playbackState;
+    return state.source === 'parts' && state.partId === part.id && state.actionIndex !== undefined &&
+      (state.status === 'playing' || state.status === 'paused')
+      ? { measureIndex: state.currentMeasureIndex ?? 0, actionIndex: state.actionIndex, status: state.status } : undefined;
   }
 
   getNotationMeasures(measures: ResolvedSongPartMeasure[]): Measure[] {

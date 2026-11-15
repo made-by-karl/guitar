@@ -162,3 +162,24 @@ The pane fits all grip-label lines without vertical scrolling. Only the editor o
 single-row notation and visible-slot outlines. Preceding measures
 supply notation history without being drawn. Preview geometry and expanded state are transient
 and do not cross existing Apply/Save boundaries.
+
+## Synchronized song playback highlighting
+
+Run `e2e/playback-highlighting.spec.ts` through the Docker workflow. Its three-minute
+foreground test intentionally has a four-minute timeout and does not seek or accelerate the
+media. It checks repeated sections and whole rests, records DOM slot transitions against
+`HTMLAudioElement.currentTime` at the beginning, middle and end, and waits for actual completion.
+Short consecutive-attack fixtures cover 60 and 180 BPM with pause and seek. The first partial
+slot observation is excluded from boundary latency measurements.
+
+The remaining cases cover all song/occurrence/part/editor entry points at the documented
+viewports, later-measure preview, draft/selection/lock preservation, preparation cancellation,
+rejected startup, keyboard focus, reduced motion and tab teardown. Existing arrangement,
+measure-editor and media playback specs remain useful regressions.
+
+Curated screenshots, the review record and timing JSON are under
+`temp/ux/playback-highlighting/`. Timing is software evidence from foreground Chromium, not a
+screen/audio capture of physical output. The issue #5 target of 50 ms against heard audio
+still needs built-in-speaker or wired-output measurements and listening at 60/120/180 BPM;
+record device, OS/browser and route. Bluetooth, background animation and manual calibration
+are outside this feature's scope.

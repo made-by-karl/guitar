@@ -14,7 +14,8 @@ interface Player {
   abort?: AbortController;
   audio?: HTMLAudioElement;
   url?: string;
-  timer?: ReturnType<typeof setInterval>;
+  frame?: number;
+  frameGeneration?: number;
   prepare?: (signal: AbortSignal) => Promise<RenderedAudio>;
   options: PlayOptions;
 }
@@ -50,11 +51,16 @@ export class HtmlAudioPlaybackService implements OnDestroy {
       };
       audio.addEventListener('timeupdate', report);
       audio.addEventListener('playing', () => {
-        if (current()) { this.emit(player, { status: 'playing', error: undefined }); this.startProgress(player, audio); }
+        if (current()) { this.emit(player, { status: 'playing', currentTime: audio.currentTime || 0, error: undefined }); this.startProgress(player, audio); }
       });
       audio.addEventListener('pause', () => {
         if (current() && !audio.ended && player.state.value.status === 'playing') {
-          this.stopProgress(player); this.emit(player, { status: 'paused' });
+          this.stopProgress(player); this.emit(player, { status: 'paused', currentTime: audio.currentTime || 0 });
+        }
+      });
+      audio.addEventListener('waiting', () => {
+        if (current() && player.state.value.status === 'playing') {
+          this.stopProgress(player); this.emit(player, { status: 'paused', currentTime: audio.currentTime || 0 });
         }
       });
       audio.addEventListener('ended', () => {
@@ -164,11 +170,19 @@ export class HtmlAudioPlaybackService implements OnDestroy {
   }
   private startProgress(player: Player, audio: HTMLAudioElement): void {
     this.stopProgress(player);
-    player.timer = setInterval(() => {
-      if (player.audio === audio) this.emit(player, { currentTime: audio.currentTime || 0 });
-    }, 25);
+    const generation = player.generation, frameGeneration = player.frameGeneration;
+    const frame = () => {
+      if (player.audio !== audio || player.generation !== generation || player.frameGeneration !== frameGeneration || player.state.value.status !== 'playing') return;
+      this.emit(player, { currentTime: audio.currentTime || 0 });
+      player.frame = requestAnimationFrame(frame);
+    };
+    player.frame = requestAnimationFrame(frame);
   }
-  private stopProgress(player: Player): void { if (player.timer) clearInterval(player.timer); player.timer = undefined; }
+  private stopProgress(player: Player): void {
+    if (player.frame !== undefined) cancelAnimationFrame(player.frame);
+    player.frame = undefined;
+    player.frameGeneration = (player.frameGeneration ?? 0) + 1;
+  }
   private get mediaSession(): MediaSession | undefined {
     return typeof navigator !== 'undefined' ? navigator.mediaSession : undefined;
   }

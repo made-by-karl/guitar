@@ -1,3 +1,4 @@
+import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { Component, HostListener, Injector, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
@@ -15,7 +16,7 @@ import { cloneSongPart } from '../song-sheet.helpers';
 
 @Component({
   selector: 'app-song-arrangement',
-  imports: [CommonModule, DragDropModule, NgComponentOutlet],
+  imports: [SongPlaybackComponent, CommonModule, DragDropModule, NgComponentOutlet],
   templateUrl: './song-arrangement.component.html',
   styleUrl: './song-arrangement.component.scss'
 })
@@ -191,7 +192,7 @@ export class SongArrangementComponent implements OnDestroy {
     if (!await this.confirmNavigation()) return;
     const current = this.occurrences().find(item => item.id === occurrence.id);
     const part = current && this.part(current);
-    if (part) await this.playback.playSongPart(this.currentSheet(), part, occurrence.id);
+    if (part) await this.playback.playSongPart(this.currentSheet(), part, occurrence.id, 'song');
   }
 
   async toggleSong(): Promise<void> {

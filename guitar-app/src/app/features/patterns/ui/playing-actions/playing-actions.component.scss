@@ -183,3 +183,19 @@
     stroke-dasharray: 3 2;
   }
 }
+
+.playback-measure-band {
+  fill: #edf5f3;
+  stroke: #50776e;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.playback-action-slot {
+  fill: #c5e3da;
+  stroke: #195e50;
+  stroke-width: 2;
+  pointer-events: none;
+  scroll-margin: 12px;
+  scroll-margin-top: 160px;
+}
+.playback-paused .playback-action-slot { stroke-dasharray: 4 2; }

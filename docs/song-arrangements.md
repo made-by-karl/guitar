@@ -53,3 +53,24 @@ Single selection uses radio cards: choosing another item replaces the previous c
 ## Verification
 
 Jest covers migration/idempotency, per-part numbering, reference reuse, independent lyrics, independent copies, edit guards, and occurrence playback history. Chromium coverage includes a real upgrade from database version 7, the full arrangement workflow at 390/768/1280px, and starting an empty song with a pattern-library import. Existing sheet, grip, pattern and measure editor browser regressions remain covered.
+
+## Following playback
+
+Song and outline playback reveal a read-only notation pane automatically, without opening or
+switching the occurrence editor. The pane displays the scheduled snapshot's part/occurrence,
+measure and action, with Playing/Paused text and reachable Pause/Resume/Stop controls. Its
+position follows media time, including rests and repeated references. Only the current
+occurrence gets the outline's playback cue. Preparation/retry uses the existing media controls.
+
+Editor previews use a separate pane built from the current draft, including notation history
+for later measures. Editing selection, lyrics, reuse locks and save/cancel boundaries stay
+independent of playback position. Parts playback marks the scheduled part's multi-measure
+notation. Playback-owner teardown clears its transport, including a retained completed clip.
+
+The renderer's optional `playbackPosition` uses a local measure/action pair. An enclosing
+measure band and a solid slot outline are distinct from editor selection and focus; paused
+slots use a dashed outline. Blank slots and actions inside a connected SVG segment have their
+own marker. Existing consumers without this input retain their presentation. Following scrolls
+only when needed, without moving keyboard focus; all following is immediate, including under
+reduced motion. The focused regression is `e2e/playback-highlighting.spec.ts`; curated evidence
+is kept under `temp/ux/playback-highlighting/`.

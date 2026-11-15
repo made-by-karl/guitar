@@ -39,6 +39,36 @@ describe('HTML media lifecycle', () => {
     Reflect.deleteProperty(navigator, 'mediaSession'); Reflect.deleteProperty(globalThis, 'MediaMetadata');
   });
 
+  it('samples actual media time on frames, catches up after a stall and invalidates canceled frame callbacks', async () => {
+    const frames: FrameRequestCallback[] = [];
+    jest.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(callback => { frames.push(callback); return frames.length; });
+    const cancel = jest.spyOn(globalThis, 'cancelAnimationFrame');
+    await service.play('a', async () => audio);
+    const firstFrame = frames[frames.length - 1];
+    elements[0].currentTime = 2.75;
+    firstFrame(3000);
+    expect(service.getSnapshot('a').currentTime).toBe(2.75);
+    const stalledFrame = frames[frames.length - 1];
+    stalledFrame(9000);
+    expect(service.getSnapshot('a').currentTime).toBe(2.75);
+    const pausedFrame = frames[frames.length - 1];
+    service.pause('a');
+    await service.resume('a');
+    const count = frames.length;
+    pausedFrame(9500);
+    expect(frames).toHaveLength(count);
+    const staleFrame = frames[frames.length - 1];
+    elements[0].dispatchEvent(new Event('waiting'));
+    expect(service.getSnapshot('a').status).toBe('paused');
+    await service.play('a', async () => audio);
+    staleFrame(10000);
+    expect(service.getSnapshot('a')).toMatchObject({ status: 'playing', currentTime: 0 });
+    const pending = frames[frames.length - 1];
+    service.stop('a'); pending(11000);
+    expect(service.getSnapshot('a')).toMatchObject({ status: 'idle', currentTime: 0 });
+    expect(cancel).toHaveBeenCalled();
+  });
+
   it('cancels a render on stop and ignores its late result without creating a media element', async () => {
     let resolve!: (audio: RenderedAudio) => void;
     const preparing = service.play('a', () => new Promise(done => { resolve = done; }));

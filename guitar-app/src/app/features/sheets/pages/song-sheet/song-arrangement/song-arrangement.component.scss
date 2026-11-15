@@ -25,3 +25,5 @@
   .has-editor { .arrangement-header, .song-outline { display: none; } }
   .occurrence-editor { border: 0; }
 }
+
+app-song-playback { position: sticky; top: 0; z-index: 3; }

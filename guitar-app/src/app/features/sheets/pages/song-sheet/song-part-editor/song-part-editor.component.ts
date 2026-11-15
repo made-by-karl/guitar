@@ -1,3 +1,4 @@
+import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, computed, Inject, OnDestroy, inject, signal } from '@angular/core';
@@ -56,7 +57,7 @@ export interface SongPartEditorModalData {
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [SongPlaybackComponent, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })
@@ -454,7 +455,7 @@ export class SongPartEditorComponent implements
   }
 
   async playPart(part: SongPart): Promise<void> {
-    await this.songPartPlayback.playSongPart(this.sheet(), part, this.data.occurrence?.id);
+    await this.songPartPlayback.playSongPart(this.sheet(), part, this.data.occurrence?.id, 'editor');
   }
 
   pausePart(): void {
