@@ -119,7 +119,7 @@ describe('HTML media lifecycle', () => {
   it('provides full-size artwork and routes system pause, play and seek to the existing WAV', async () => {
     await service.play('song', async () => audio, { label: 'Song playback' });
     expect(session.metadata).toMatchObject({ title: 'Song playback', artist: 'Guitar Companion',
-      artwork: [{ src: new URL('icons/guitar_icon.png', document.baseURI).href, sizes: '1024x1024', type: 'image/png' }] });
+      artwork: [{ src: new URL('app-icons/guitar_icon.png', document.baseURI).href, sizes: '1024x1024', type: 'image/png' }] });
     expect(session.playbackState).toBe('playing');
     handlers.get('pause')!({ action: 'pause' });
     expect(service.getSnapshot('song').status).toBe('paused');

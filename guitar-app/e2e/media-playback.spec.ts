@@ -77,7 +77,7 @@ test('system media controls use full-size artwork, replay an ended WAV and relea
     artist: navigator.mediaSession.metadata?.artist, artwork: navigator.mediaSession.metadata?.artwork,
     state: navigator.mediaSession.playbackState }))).toMatchObject({
     title: 'Chord preview', artist: 'Guitar Companion', state: 'playing',
-    artwork: [{ src: expect.stringContaining('/icons/guitar_icon.png'), sizes: '1024x1024', type: 'image/png' }]
+    artwork: [{ src: expect.stringContaining('/app-icons/guitar_icon.png'), sizes: '1024x1024', type: 'image/png' }]
   });
   const artwork = await page.evaluate(async () => {
     const img = new Image(); img.src = navigator.mediaSession.metadata!.artwork[0].src;

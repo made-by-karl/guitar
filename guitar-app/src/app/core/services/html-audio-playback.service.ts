@@ -186,7 +186,7 @@ export class HtmlAudioPlaybackService implements OnDestroy {
       session.metadata = new MediaMetadata({
         title: player.state.value.label,
         artist: 'Guitar Companion',
-        artwork: [{ src: new URL('icons/guitar_icon.png', document.baseURI).href, sizes: '1024x1024', type: 'image/png' }]
+        artwork: [{ src: new URL('app-icons/guitar_icon.png', document.baseURI).href, sizes: '1024x1024', type: 'image/png' }]
       });
     }
     const channel = player.state.value.channel;
