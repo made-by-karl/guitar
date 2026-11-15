@@ -101,7 +101,14 @@
 </div>
 
 <div class="app-content-container">
-  <router-outlet (activate)="onRouteActivate($event)" (deactivate)="onRouteDeactivate()"></router-outlet>
+  @if (playbackControls === 'inline' && !modals.hasOpenModals()) {
+    <app-media-playback-controls class="container page-playback-feedback" />
+  }
+  <router-outlet #outlet="outlet" (activate)="onRouteActivate($event, outlet.activatedRouteData)" (deactivate)="onRouteDeactivate()"></router-outlet>
 </div>
 
 <app-notification-snackbar></app-notification-snackbar>
+
+@if (playbackControls === 'overlay') {
+  <app-media-playback-controls presentation="overlay" [attentionOnly]="false" />
+}

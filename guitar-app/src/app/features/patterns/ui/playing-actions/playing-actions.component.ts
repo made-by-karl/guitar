@@ -391,7 +391,7 @@ export class PlayingActionsComponent {
 
     if (action.technique === 'strum') {
       const direction = action.strum?.direction === 'D' ? 'down' : 'up';
-      return `Action ${actionIndex + 1}: strum ${direction}`;
+      return `Action ${actionIndex + 1}: ${action.strum?.mode === 'dead-note' ? 'dead-note ' : ''}strum ${direction}`;
     }
 
     if (action.technique === 'pick') {
@@ -551,7 +551,7 @@ export class PlayingActionsComponent {
   }
 
   getModifierMarks(actionIndex: number, action: PlayingAction): ModifierMark[] {
-    const modifiers = action.modifiers ?? [];
+    const modifiers = (action.modifiers ?? []).filter(modifier => action.strum?.mode !== 'dead-note' || modifier === 'accent');
     const labels = modifiers.map(modifier => {
       switch (modifier) {
         case 'accent':
@@ -783,11 +783,11 @@ export class PlayingActionsComponent {
     }
 
     if (isRelativeStrumRange(action.strum.strings)) {
-      return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings);
+      return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings, action.strum.mode === 'dead-note');
     }
 
     const grip = this.resolvedGripTimeline().get(actionIndex);
-    return getStringsForStrum(action.strum.strings).filter(index => !grip || (grip.strings[index] !== undefined && grip.strings[index] !== 'x'));
+    return getStringsForStrum(action.strum.strings).filter(index => action.strum?.mode === 'dead-note' || !grip || (grip.strings[index] !== undefined && grip.strings[index] !== 'x'));
   }
 
   private spreadPickMarksOnSameString(marks: SlotPickMark[], baseX: number): SlotPickMark[] {
@@ -826,6 +826,7 @@ export class PlayingActionsComponent {
     stringState: Map<number, NotationStringState>
   ): void {
     if (action.technique === 'strum' && action.strum) {
+      if (action.strum.mode === 'dead-note') { stringState.clear(); return; }
       const grip = this.resolvedGripTimeline().get(actionIndex);
       if (!grip) {
         return;

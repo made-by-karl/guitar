@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, computed, Inject, OnDestroy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -55,7 +56,7 @@ export interface SongPartEditorModalData {
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })

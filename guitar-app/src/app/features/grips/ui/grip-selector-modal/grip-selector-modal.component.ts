@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import {Component, Inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -16,7 +17,7 @@ export interface GripSelectorModalData {
 @Component({
   selector: 'app-grip-selector-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, GripSelectorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, RouterModule, GripSelectorComponent],
   templateUrl: './grip-selector-modal.component.html',
   styleUrls: ['./grip-selector-modal.component.scss']
 })

@@ -74,10 +74,12 @@ export type StrumRange =
   | number[];       // Specific string indices
 
 export type StrumDirection = 'D' | 'U';
+export type StrumMode = 'normal' | 'dead-note';
 
 export interface StrumPattern {
   strings: StrumRange;
   direction: StrumDirection;
+  mode?: StrumMode; // Missing on older patterns means normal.
 }
 
 export interface Percussive {

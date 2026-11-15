@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { Component, Inject, inject, OnDestroy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -39,7 +40,7 @@ export interface SongPartMeasureEditorResult {
 @Component({
   selector: 'app-song-part-measure-editor-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, PlayingMeasureEditorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent],
   templateUrl: './song-part-measure-editor-modal.component.html',
   styleUrl: './song-part-measure-editor-modal.component.scss'
 })

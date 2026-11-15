@@ -1,7 +1,39 @@
-import { MidiService } from '@/app/core/services/midi.service';
+import { scheduleMidiInstruction } from '@/app/core/services/midi-renderer';
+import { MidiInstruction } from '@/app/core/services/midi.model';
 import { note } from '@/app/core/music/semitones';
 
-describe('MidiService', () => {
+describe('MIDI rendering', () => {
+  it('plays dead strums in the requested order with a 12 ms string gap and preserves accent velocity', () => {
+    const deadNote = { triggerAttackRelease: jest.fn() };
+    scheduleMidiInstruction({ deadNote }, { time: 0, playbackDuration: 0.5, actionDuration: 0.125,
+      technique: 'dead-note', playNotes: 'reversed', velocity: 0.9,
+      notes: [{ note: note('E', 2) }, { note: note('A', 2) }]
+    }, 2);
+    expect(deadNote.triggerAttackRelease.mock.calls).toEqual([
+      ['A2', 0.5, 2, 0.9], ['E2', 0.5, 2.012, 0.9]
+    ]);
+  });
+  it.each(['parallel', 'sequential', 'reversed'] as const)('routes every palm-muted %s note to its articulated voice at the planned pitch', playNotes => {
+    const guitar = { triggerAttackRelease: jest.fn() }, palmMuted = { triggerAttackRelease: jest.fn() };
+    scheduleMidiInstruction({ guitar, palmMuted }, {
+      time: 0, playbackDuration: 0.4, actionDuration: 0.25, velocity: 0.9, technique: 'palm-muted', playNotes,
+      notes: [{ note: note('C', 1) }, { note: note('F#', 7) }]
+    }, 1);
+    expect(guitar.triggerAttackRelease).not.toHaveBeenCalled();
+    const calls = palmMuted.triggerAttackRelease.mock.calls;
+    expect(calls.map(call => call[0])).toEqual(playNotes === 'reversed' ? ['F#7', 'C1'] : ['C1', 'F#7']);
+    expect(calls.map(call => call[1])).toEqual([0.4, 0.4]);
+    expect(calls.map(call => call[3])).toEqual([0.9, 0.9]);
+    expect(calls[1][2]).toBeCloseTo(playNotes === 'parallel' ? 1 : 1.03);
+  });
+
+  it('fails a missing palm-muted voice instead of substituting clean notes', () => {
+    const guitar = { triggerAttackRelease: jest.fn() };
+    expect(() => scheduleMidiInstruction({ guitar }, {
+      time: 0, playbackDuration: 1, actionDuration: 1, velocity: 0.7, technique: 'palm-muted', notes: [{ note: note('E', 2) }]
+    }, 0)).toThrow('Required guitar samples');
+    expect(guitar.triggerAttackRelease).not.toHaveBeenCalled();
+  });
   const createSampler = () => ({
     triggerAttackRelease: jest.fn()
   });
@@ -16,7 +48,7 @@ describe('MidiService', () => {
     };
 
     return {
-      service: new MidiService(audioService as any),
+      service: { schedule: (instruction: MidiInstruction) => scheduleMidiInstruction({ guitar: guitarSampler, percussion: percussionSampler, slide: audioService.playPitchSlide }, instruction, 0.001) },
       guitarSampler,
       percussionSampler,
       audioService
@@ -26,7 +58,7 @@ describe('MidiService', () => {
   it('renders hammer-ons as target-only legato gestures', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.6,
       actionDuration: 0.125,
@@ -49,7 +81,7 @@ describe('MidiService', () => {
   it('plays orphan hammer-ons with a quieter target attack', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.125,
       actionDuration: 0.125,
@@ -72,7 +104,7 @@ describe('MidiService', () => {
   it('renders slides as one continuous pitch voice', () => {
     const { service, guitarSampler, audioService } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.8,
       actionDuration: 0.125,
@@ -98,7 +130,7 @@ describe('MidiService', () => {
 
   it('renders each voice of a simultaneous multi-string slide', () => {
     const { service, guitarSampler, audioService } = createService();
-    service.triggerInstruction({
+    service.schedule({
       time: 0, playbackDuration: 0.8, actionDuration: 0.125, velocity: 0.7, technique: 'slide',
       notes: [{ note: note('F#', 2) }, { note: note('B', 2) }],
       legatos: [
@@ -115,7 +147,7 @@ describe('MidiService', () => {
   it('keeps sequential strums tight for sixteenth-like durations', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.8,
       actionDuration: 0.125,
@@ -137,7 +169,7 @@ describe('MidiService', () => {
   it('uses normal sequential strum spacing for eighth-like action durations', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.25,
@@ -161,7 +193,7 @@ describe('MidiService', () => {
   it('uses the same normal strum spacing for quarter-like action durations', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.5,
@@ -185,7 +217,7 @@ describe('MidiService', () => {
   it('keeps reversed strum order while widening longer strums', () => {
     const { service, guitarSampler } = createService();
 
-    service.triggerInstruction({
+    service.schedule({
       time: 0,
       playbackDuration: 0.5,
       actionDuration: 0.25,

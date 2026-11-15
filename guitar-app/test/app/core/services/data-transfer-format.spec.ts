@@ -8,6 +8,17 @@ import { richPattern, richSheet, transferEnvelope } from '../../../fixtures/data
 describe('Portable Guitar JSON', () => {
   const read = (format: 'guitar-song-sheet' | 'guitar-playing-pattern' | 'guitar-backup', data: unknown) => parseTransferFile(JSON.stringify(transferEnvelope(format, data)));
 
+  it('round trips strum modes and rejects unknown modes without changing legacy patterns', () => {
+    const pattern = richPattern();
+    pattern.measures[0].actions[0]!.strum!.mode = 'dead-note';
+    expect(read('guitar-playing-pattern', pattern).data).toEqual(pattern);
+    const sheet = richSheet(); sheet.patterns[0] = pattern;
+    expect(read('guitar-song-sheet', sheet).data).toEqual(sheet);
+    expect(read('guitar-backup', { playingPatterns: [pattern], songSheets: [sheet] }).data).toEqual({ playingPatterns: [pattern], songSheets: [sheet] });
+    Object.assign(pattern.measures[0].actions[0]!.strum!, { mode: 'future' });
+    expect(() => read('guitar-playing-pattern', pattern)).toThrow('mode');
+  });
+
   it('preserves the complete sheet aggregate and additional JSON fields', () => {
     const sheet = { ...richSheet(), extra: { nested: ['kept'] } };
     expect(read('guitar-song-sheet', sheet).data).toEqual(JSON.parse(JSON.stringify(sheet)));

@@ -1,10 +1,13 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import {Component, OnDestroy, TemplateRef} from '@angular/core';
-import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import {Data, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import { Subscription } from 'rxjs';
+import { HtmlAudioPlaybackService } from '@/app/core/services/html-audio-playback.service';
+import { ModalService } from '@/app/core/services/modal.service';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {UpdateService} from '@/app/core/services/update.service';
 import {ScreenWakeLockService} from '@/app/core/services/screen-wake-lock.service';
-import {AudioService} from '@/app/core/services/audio.service';
 import {ConsoleLogStoreService} from '@/app/core/services/console-log-store.service';
 import {NotificationSnackbarComponent} from '@/app/core/ui/notification-snackbar/notification-snackbar.component';
 import {isPageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
@@ -12,7 +15,7 @@ import {isPageToolbarProvider} from '@/app/core/ui/page-toolbar-provider';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule, FormsModule, RouterLinkActive, NotificationSnackbarComponent],
+  imports: [RouterOutlet, RouterLink, CommonModule, FormsModule, RouterLinkActive, NotificationSnackbarComponent, MediaPlaybackControlsComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
@@ -21,15 +24,21 @@ export class AppComponent implements OnDestroy {
   isNavbarCollapsed = true;
   pageToolbarTemplate: TemplateRef<object> | null = null;
   pageToolbarContext: object | null = null;
+  playbackControls: 'inline' | 'overlay' | 'none' = 'inline';
+  private readonly navigation: Subscription;
 
   constructor(
     private updateService: UpdateService,
     public wakeLockService: ScreenWakeLockService,
-    // Instantiate early so auto-resume handlers are installed app-wide
-    private audioService: AudioService,
-    private consoleLogStore: ConsoleLogStoreService
+    private consoleLogStore: ConsoleLogStoreService,
+    private media: HtmlAudioPlaybackService,
+    router: Router,
+    public readonly modals: ModalService
   ) {
     this.consoleLogStore.installConsoleCapture();
+    this.navigation = router.events.subscribe(event => {
+      if (event instanceof NavigationStart) this.media.stopAll();
+    });
   }
 
   closeNavbar() {
@@ -53,7 +62,9 @@ export class AppComponent implements OnDestroy {
     return this.wakeLockService.isWakeLockSupported();
   }
 
-  onRouteActivate(component: unknown): void {
+  onRouteActivate(component: unknown, data: Data = {}): void {
+    const presentation = data['playbackControls'];
+    this.playbackControls = presentation === 'overlay' || presentation === 'none' ? presentation : 'inline';
     if (!isPageToolbarProvider(component)) {
       this.clearPageToolbar();
       return;
@@ -65,9 +76,12 @@ export class AppComponent implements OnDestroy {
 
   onRouteDeactivate(): void {
     this.clearPageToolbar();
+    this.playbackControls = 'inline';
   }
 
   ngOnDestroy() {
+    this.navigation.unsubscribe();
+    this.media.stopAll();
     // Release wake lock when app is destroyed
     this.wakeLockService.releaseWakeLock();
   }

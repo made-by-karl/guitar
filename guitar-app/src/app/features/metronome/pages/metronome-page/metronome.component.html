@@ -52,16 +52,19 @@
           <button
             class="btn"
             type="button"
-            [class.btn-danger]="running"
-            [class.btn-outline-primary]="!running"
+            [class.btn-danger]="running || preparing"
+            [class.btn-outline-primary]="!running && !preparing"
             (click)="toggle()">
-            <i class="bi" [class.bi-stop-fill]="running" [class.bi-play-fill]="!running"></i>
-            {{ running ? 'Stop' : 'Play' }}
+            <i aria-hidden="true" class="bi" [class.bi-stop-fill]="running" [class.bi-play-fill]="!running"></i>
+            {{ running || preparing ? 'Stop' : 'Play' }}
           </button>
         </div>
       </div>
     </div>
   </div>
+
+  @if (preparing) { <p role="status">Preparing audio…</p> }
+  @if (error) { <p class="alert alert-danger" role="alert">{{ error }}</p> }
 
   <div class="card">
     <div class="card-body">

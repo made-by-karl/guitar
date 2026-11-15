@@ -8,6 +8,13 @@ import {
 } from '@/app/features/grips/ui/custom-grip-editor-modal/custom-grip-editor-modal.component';
 
 describe('CustomGripEditorModalComponent preview', () => {
+  it('releases only its own chord preview when the modal is destroyed', async () => {
+    await createEditor({ initialGrip: parseGrip('o|2|2|1|o|o') });
+    await component.playGrip();
+    const owner = playChordFromNotes.mock.calls[0][4];
+    fixture.destroy();
+    expect(TestBed.inject(PlaybackService).stopChordPreview).toHaveBeenCalledWith(owner);
+  });
   let fixture: ComponentFixture<CustomGripEditorModalComponent>;
   let component: CustomGripEditorModalComponent;
   let data: CustomGripEditorModalData;
@@ -23,7 +30,7 @@ describe('CustomGripEditorModalComponent preview', () => {
       providers: [
         { provide: MODAL_DATA, useValue: data },
         { provide: MODAL_REF, useValue: { close } },
-        { provide: PlaybackService, useValue: { playChordFromNotes } }
+        { provide: PlaybackService, useValue: { playChordFromNotes, stopChordPreview: jest.fn() } }
       ]
     }).compileComponents();
   });
@@ -67,7 +74,7 @@ describe('CustomGripEditorModalComponent preview', () => {
     const host: HTMLElement = fixture.nativeElement;
     host.querySelector<HTMLButtonElement>('.preview-details button')!.click();
     await fixture.whenStable();
-    expect(playChordFromNotes).toHaveBeenCalledWith(['E2', 'E4', 'E4']);
+    expect(playChordFromNotes).toHaveBeenCalledWith(['E2', 'E4', 'E4'], 2, 0.7, 'normal', expect.stringMatching(/^custom-grip:/));
   });
 
   it('uses the supplied tuning and capo for barre and open notes', async () => {
@@ -83,7 +90,7 @@ describe('CustomGripEditorModalComponent preview', () => {
     });
     expect(component.previewNotes).toEqual(['F2', 'C3', 'E3', null, null, 'F#4']);
     await component.playGrip();
-    expect(playChordFromNotes).toHaveBeenCalledWith(['F2', 'C3', 'E3', 'F#4']);
+    expect(playChordFromNotes).toHaveBeenCalledWith(['F2', 'C3', 'E3', 'F#4'], 2, 0.7, 'normal', expect.stringMatching(/^custom-grip:/));
     component.save();
     expect(close).toHaveBeenCalledWith({ name: 'Barre', grip: component.previewGrip });
   });

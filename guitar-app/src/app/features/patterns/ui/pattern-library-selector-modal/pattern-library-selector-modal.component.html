@@ -8,6 +8,7 @@
     </app-patterns-library-selector>
   </div>
   <div class="modal-footer">
+    <app-media-playback-controls class="w-100" [channels]="['finite:pattern-preview']" />
     <button class="btn btn-secondary" type="button" (click)="onCancel()">
       <i aria-hidden="true" class="bi bi-x"></i> Cancel
     </button>

@@ -4,6 +4,19 @@ import { Measure } from '@/app/features/patterns/services/playing-patterns.model
 import { PlayingMeasureEditorComponent } from '@/app/features/patterns/ui/playing-measure-editor/playing-measure-editor.component';
 
 describe('PlayingMeasureEditorComponent', () => {
+  it('stores dead note as a strum mode while retaining direction, range and accent', () => {
+    const previous: Measure = { timeSignature: '4/4', actions: [{ technique: 'strum',
+      strum: { direction: 'U', strings: 'bass' }, modifiers: ['mute', 'palm-mute', 'accent'] }] };
+    component.measure.set(previous);
+    component.updateStrumMode(0, 'dead-note');
+    const action = component.measure().actions[0]!;
+    expect(action.strum).toEqual({ direction: 'U', strings: 'bass', mode: 'dead-note' });
+    expect(action.modifiers).toEqual(['accent']);
+    expect(component.getAvailableModifiers(action).map(m => m.value)).toEqual(['accent']);
+    expect(previous.actions[0]!.strum!.mode).toBeUndefined();
+    component.updateStrumMode(0, 'normal');
+    expect(component.measure().actions[0]!.strum!.mode).toBe('normal');
+  });
   let component: PlayingMeasureEditorComponent;
   let fixture: ComponentFixture<PlayingMeasureEditorComponent>;
 

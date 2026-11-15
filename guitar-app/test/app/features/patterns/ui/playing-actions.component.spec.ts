@@ -10,6 +10,15 @@ function createMeasure(actions: (PlayingAction | null)[]): Measure {
 }
 
 describe('PlayingActionsComponent', () => {
+  it('marks dead strums with crosses including grip-muted strings, and clears slide history', async () => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const action: PlayingAction = { technique: 'strum', strum: { direction: 'U', strings: 'all', mode: 'dead-note' } };
+    fixture.componentRef.setInput('measures', [createMeasure([action])]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dead-note-mark')).toHaveLength(6);
+    expect(fixture.componentInstance.getActionTitle(action, 0)).toContain('dead-note strum up');
+  });
   it.each([false, true])('keeps a beat-four slide beside its fret number instead of connecting back to beat two (group: %s)', async group => {
     await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
     const fixture = TestBed.createComponent(PlayingActionsComponent);

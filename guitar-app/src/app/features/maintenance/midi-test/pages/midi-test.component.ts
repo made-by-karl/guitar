@@ -49,6 +49,9 @@ import { NotificationService } from '@/app/core/services/notification.service';
               <button class="btn btn-info me-2 mb-2" (click)="playTechnique('palm-muted')">
                 🤚 Palm Muted
               </button>
+              <button class="btn btn-info me-2 mb-2" (click)="playTechnique('dead-note')">
+                Dead-note Strum
+              </button>
               <button class="btn btn-secondary me-2 mb-2" (click)="playTechnique('percussive')">
                 🥁 Percussive
               </button>
@@ -188,7 +191,6 @@ export class MidiTestComponent {
 
   async playChord(notes: string[]) {
     try {
-      this.notificationService.info(`Playing chord: ${notes.join(', ')}`);
       await this.playbackService.playChordFromNotes(notes, 2.0, 0.7, 'normal');
     } catch (error) {
       this.notificationService.error('Could not play chord.');
@@ -199,8 +201,7 @@ export class MidiTestComponent {
   async playTechnique(technique: MidiTechnique) {
     try {
       // Play a C major chord with the specified technique
-      const chordNotes = ['C4', 'E4', 'G4'];
-      this.notificationService.info(`Playing ${this.getTechniqueLabel(technique)} technique`);
+      const chordNotes = technique === 'dead-note' ? ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] : ['C4', 'E4', 'G4'];
       await this.playbackService.playChordFromNotes(chordNotes, 1.5, 0.7, technique);
     } catch (error) {
       this.notificationService.error(`Could not play ${this.getTechniqueLabel(technique)} technique.`);
@@ -211,9 +212,7 @@ export class MidiTestComponent {
   async playString(stringIndex: number) {
     try {
       const note = this.openStrings[stringIndex];
-      const stringName = ['Low E (6th)', 'A (5th)', 'D (4th)', 'G (3rd)', 'B (2nd)', 'High E (1st)'][stringIndex];
 
-      this.notificationService.info(`Playing ${stringName}: ${note}`);
       await this.playbackService.playChordFromNotes([note], 2.0, 0.7, 'normal');
     } catch (error) {
       this.notificationService.error('Could not play string.');
@@ -243,7 +242,6 @@ export class MidiTestComponent {
 
   async playSelectedNote(): Promise<void> {
     try {
-      this.notificationService.info(`Playing note: ${this.selectedNote}`);
       await this.playbackService.playChordFromNotes([this.selectedNote], 2.0, 0.7, 'normal');
     } catch (error) {
       this.notificationService.error(`Could not play ${this.selectedNote}.`);
@@ -253,7 +251,6 @@ export class MidiTestComponent {
 
   async playPercussion(technique: string) {
     try {
-      this.notificationService.info(`Playing ${this.getPercussionLabel(technique)}`);
       await this.midiService.playPercussionTechnique(technique);
     } catch (error) {
       this.notificationService.error(`Could not play ${this.getPercussionLabel(technique)}.`);

@@ -21,7 +21,8 @@
       "installMode": "prefetch",
       "resources": {
         "files": [
-          "/samples/**/*.mp3"
+          "/samples/**/*.mp3",
+          "/samples/**/*.wav"
         ]
       }
     }

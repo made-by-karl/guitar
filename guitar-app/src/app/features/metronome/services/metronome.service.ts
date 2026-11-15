@@ -1,260 +1,127 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { AudioService } from '@/app/core/services/audio.service';
-import { TransportRepeatPlaybackScheduler } from '@/app/core/services/playback-scheduler.service';
-import {
-  buildMetronomeLabels,
-  isMainBeatLabel,
-  MetronomeSubdivision,
-  normalizeSubdivision
-} from '@/app/features/metronome/services/metronome-labels';
+import { HtmlAudioPlaybackService, HtmlAudioProgress } from '@/app/core/services/html-audio-playback.service';
+import { RenderedAudioService, RenderedAudio } from '@/app/core/services/rendered-audio.service';
+import { buildMetronomeLabels, isMainBeatLabel, MetronomeSubdivision, normalizeSubdivision } from './metronome-labels';
 import { getAccentedBeats, getTimeSignatureParts, parseTimeSignature, TimeSignature } from '@/app/core/music/rhythm/time-signature.model';
 
-export interface MetronomeConfig {
-  bpm: number;
-  timeSignature: TimeSignature;
-  subdivision: MetronomeSubdivision;
-}
-
+export interface MetronomeConfig { bpm: number; timeSignature: TimeSignature; subdivision: MetronomeSubdivision; }
 export interface MetronomeState {
-  running: boolean;
-  config: MetronomeConfig;
-  labels: string[];
-  activeIndex: number;
-  tickAudioTime: number;
-  tickDurationSeconds: number;
+  running: boolean; config: MetronomeConfig; labels: string[]; activeIndex: number;
+  tickAudioTime: number; tickDurationSeconds: number; preparing?: boolean; error?: string;
 }
+interface Loop {
+  config: MetronomeConfig; labels: string[]; tickDurationSeconds: number;
+}
+const CHANNEL = 'metronome';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class MetronomeService implements OnDestroy {
-  private tickIndex = -1;
-  private readonly scheduler: TransportRepeatPlaybackScheduler;
-  private readonly audioResumeSubscription: Subscription;
-  private recoveringAfterResume = false;
-
+  private generation = 0;
+  private abort?: AbortController;
+  private boundary?: ReturnType<typeof setTimeout>;
+  private pending?: Loop;
+  private startRequested = false;
+  private readonly progress: Subscription;
   private readonly stateSubject = new BehaviorSubject<MetronomeState>({
-    running: false,
-    config: { bpm: 80, timeSignature: '4/4', subdivision: '8th' },
-    labels: buildMetronomeLabels('4/4', '8th'),
-    activeIndex: -1,
-    tickAudioTime: 0,
-    tickDurationSeconds: 0.5
+    running: false, config: { bpm: 80, timeSignature: '4/4', subdivision: '8th' },
+    labels: buildMetronomeLabels('4/4', '8th'), activeIndex: -1, tickAudioTime: 0, tickDurationSeconds: 0.375
   });
-
   readonly state$ = this.stateSubject.asObservable();
 
-  constructor(private audioService: AudioService) {
-    this.scheduler = new TransportRepeatPlaybackScheduler(audioService);
-    this.audioResumeSubscription = this.audioService.resumed$.subscribe(() => {
-      void this.recoverAfterAudioResume();
+  constructor(private rendered: RenderedAudioService, private media: HtmlAudioPlaybackService) {
+    this.progress = media.progress$(CHANNEL).subscribe(progress => this.onProgress(progress));
+  }
+  getSnapshot(): MetronomeState { return this.stateSubject.value; }
+  currentTime(): number { return this.media.getCurrentTime(CHANNEL); }
+  async start(config: MetronomeConfig, autoStart = true): Promise<void> {
+    this.cancelPending();
+    this.startRequested = autoStart;
+    const loop = this.normalize(config);
+    this.pending = loop;
+    this.stateSubject.next({ ...this.getSnapshot(), preparing: true, error: undefined });
+    await this.media.play(CHANNEL, signal => this.renderLoop(loop, signal), {
+      label: 'Metronome', loop: true, ...(autoStart ? {} : { autoStart: false })
     });
   }
-
-  ngOnDestroy(): void {
-    this.audioResumeSubscription.unsubscribe();
-    this.stop();
-    this.scheduler.destroy();
-    this.audioService.disposeSampler('metronome');
-  }
-
-  getSnapshot(): MetronomeState {
-    return this.stateSubject.getValue();
-  }
-
-  async start(config: MetronomeConfig): Promise<void> {
-    await this.ensureInitialized();
-    this.applyConfig(config, true);
-  }
-
   async updateConfig(config: MetronomeConfig): Promise<void> {
-    const state = this.stateSubject.getValue();
-    if (state.running) {
-      await this.ensureInitialized();
-    }
-    this.applyConfig(config, state.running);
-  }
-
-  stop(): void {
-    this.tickIndex = -1;
-    this.scheduler.stop();
-
-    const previous = this.stateSubject.getValue();
-    if (previous.running) {
-      this.stateSubject.next({
-        ...previous,
-        running: false,
-        activeIndex: -1,
-        tickAudioTime: 0
-      });
-    }
-  }
-
-  private async ensureInitialized(): Promise<void> {
-    await this.audioService.ensureStarted();
-
-    await this.audioService.ensureSamplerInitialized('metronome', {
-      urls: {
-        // Normal beats
-        C3: '/samples/metronome/snare-drum__025_mezzo-forte_with-snares.mp3',
-        // Accented beats
-        'C#3': '/samples/metronome/snare-drum__025_fortissimo_with-snares.mp3',
-        // Sub-beats
-        D3: '/samples/metronome/djembe__05_forte_undamped.mp3'
-      },
-      release: 0.6,
-      attack: 0.001,
-      volume: 0
-    });
-  }
-
-  private async recoverAfterAudioResume(): Promise<void> {
-    const state = this.stateSubject.getValue();
-    if (!state.running || this.recoveringAfterResume) {
+    const loop = this.normalize(config), previous = this.getSnapshot();
+    if (!previous.running) {
+      if (this.media.getSnapshot(CHANNEL).status !== 'idle') { await this.start(config, this.startRequested); return; }
+      this.cancelPending();
+      this.stateSubject.next({ ...previous, ...loop, activeIndex: -1, preparing: false, error: undefined });
       return;
     }
-
-    this.recoveringAfterResume = true;
-
+    this.cancelPending();
+    const generation = this.generation;
+    this.abort = new AbortController();
+    this.stateSubject.next({ ...previous, preparing: true, error: undefined });
     try {
-      await this.ensureInitialized();
-
-      const snapshot = this.stateSubject.getValue();
-      if (!snapshot.running) {
-        return;
-      }
-
-      this.tickIndex = -1;
-      this.scheduler.stop();
-      this.stateSubject.next({
-        ...snapshot,
-        running: false,
-        activeIndex: -1,
-        tickAudioTime: 0
-      });
-
-      this.applyConfig(snapshot.config, true);
-    } finally {
-      this.recoveringAfterResume = false;
-    }
-  }
-
-  private onTick(time: number): void {
-    const state = this.stateSubject.getValue();
-    if (!state.running) return;
-
-    const sampler = this.audioService.getSampler('metronome');
-    if (!sampler) return;
-
-    // Tone's scheduler can occasionally call back late (main-thread stalls), which may
-    // result in `time` being slightly in the past. Some instruments behave poorly when
-    // asked to schedule events in the past, so clamp to "now".
-    const now = this.audioService.now();
-    const safeTime = Number.isFinite(time) ? Math.max(time, now + 0.001) : now + 0.001;
-
-    const labels = state.labels;
-    this.tickIndex = (this.tickIndex + 1) % labels.length;
-    const label = labels[this.tickIndex];
-
-    const isMainBeat = isMainBeatLabel(label);
-    const accentedBeats = getAccentedBeats(state.config.timeSignature);
-    const beatNumber = isMainBeat ? Number(label) : NaN;
-    const isAccentedBeat = Number.isFinite(beatNumber) && accentedBeats.includes(beatNumber);
-
-    try {
-      if (isMainBeat) {
-        const note = isAccentedBeat ? 'C#3' : 'C3';
-        sampler.triggerAttackRelease(note, 0.2, safeTime, isAccentedBeat ? 1.0 : 0.85);
-      } else {
-        sampler.triggerAttackRelease('D3', 0.15, safeTime, 0.8);
-      }
+      const audio = await this.renderLoop(loop, this.abort.signal);
+      if (generation !== this.generation || !this.getSnapshot().running) return;
+      // Keep the old loop playing throughout preparation. Switch at its next tick,
+      // retaining the beat index for tempo-only changes; other changes start at 1.
+      const now = this.currentTime(), tick = previous.tickDurationSeconds;
+      const nextTick = Math.floor(now / tick) + 1;
+      const sameMeter = previous.config.timeSignature === loop.config.timeSignature && previous.config.subdivision === loop.config.subdivision;
+      const startTime = sameMeter ? (nextTick % loop.labels.length) * loop.tickDurationSeconds : 0;
+      this.boundary = setTimeout(() => {
+        if (generation !== this.generation || !this.getSnapshot().running) return;
+        this.pending = loop;
+        this.startRequested = true;
+        void this.media.play(CHANNEL, async () => audio, { label: 'Metronome', loop: true, startTime });
+      }, Math.max(0, (nextTick * tick - now) * 1000));
     } catch (error) {
-      // Don’t let an occasional sampler error stop the transport callback chain.
-      console.error('Metronome tick failed:', error);
-      return;
+      if (generation !== this.generation) return;
+      this.stateSubject.next({ ...this.getSnapshot(), preparing: false,
+        error: error instanceof Error ? error.message : 'The change could not be prepared. The previous beat is still playing.' });
     }
-
-    this.stateSubject.next({
-      ...state,
-      activeIndex: this.tickIndex,
-      tickAudioTime: safeTime
-    });
   }
-
-  private sanitizeBpm(bpm: number): number {
-    if (!Number.isFinite(bpm)) return 80;
-    return Math.min(260, Math.max(20, Math.round(bpm)));
+  stop(): void { this.cancelPending(); this.pending = undefined; this.media.stop(CHANNEL); }
+  ngOnDestroy(): void { this.stop(); this.progress.unsubscribe(); this.media.release(CHANNEL); this.stateSubject.complete(); }
+  private cancelPending(): void { this.generation++; this.abort?.abort(); clearTimeout(this.boundary); this.boundary = undefined; }
+  private onProgress(progress: HtmlAudioProgress): void {
+    const previous = this.getSnapshot();
+    if (progress.status === 'idle') { this.cancelPending(); this.startRequested = false; }
+    if (['playing', 'paused', 'ready', 'error'].includes(progress.status)) this.startRequested = false;
+    if ((progress.status === 'playing' || progress.status === 'ready') && this.pending) {
+      this.stateSubject.next({ ...previous, ...this.pending, preparing: false, error: undefined, running: progress.status === 'playing' });
+      if (progress.status === 'playing') this.pending = undefined;
+    }
+    const state = this.getSnapshot();
+    const running = progress.status === 'playing';
+    const position = progress.currentTime;
+    const activeIndex = running ? Math.floor(position / state.tickDurationSeconds) % state.labels.length : -1;
+    const tickAudioTime = Math.floor(position / state.tickDurationSeconds) * state.tickDurationSeconds;
+    const preparing = progress.status === 'preparing' || progress.status === 'starting' || (running && !!state.preparing);
+    if (running !== state.running || activeIndex !== state.activeIndex || tickAudioTime !== state.tickAudioTime || preparing !== !!state.preparing) {
+      this.stateSubject.next({ ...state, running, activeIndex, tickAudioTime, preparing, error: progress.error });
+    }
   }
-
-  private applyConfig(config: MetronomeConfig, startTransport: boolean): void {
-    const bpm = this.sanitizeBpm(config.bpm);
-    const timeSignature = parseTimeSignature(config.timeSignature);
-    const subdivision = normalizeSubdivision(timeSignature, config.subdivision);
-    const parts = getTimeSignatureParts(timeSignature);
-    const labels = buildMetronomeLabels(timeSignature, subdivision);
-    const tickDurationSeconds = this.computeTickDurationSeconds(bpm, parts.bottom, subdivision);
-    const previous = this.stateSubject.getValue();
-    const isBpmOnlyUpdate = startTransport &&
-      previous.running &&
-      previous.config.timeSignature === timeSignature &&
-      previous.config.subdivision === subdivision;
-
-    if (!isBpmOnlyUpdate) {
-      this.tickIndex = -1;
-    }
-
-    this.stateSubject.next({
-      running: startTransport,
-      config: { bpm, timeSignature, subdivision },
-      labels,
-      activeIndex: isBpmOnlyUpdate ? previous.activeIndex : (startTransport ? -1 : previous.activeIndex),
-      tickAudioTime: isBpmOnlyUpdate ? previous.tickAudioTime : 0,
-      tickDurationSeconds
-    });
-
-    if (!startTransport) {
-      if (previous.running) {
-        this.scheduler.stop();
-      }
-      return;
-    }
-
-    const transport = this.audioService.getTransport();
-    transport.bpm.value = bpm;
-    transport.timeSignature = [parts.top, parts.bottom];
-
-    if (isBpmOnlyUpdate) {
-      return;
-    }
-
-    const repeatStartTime = transport.seconds + 0.05;
-    this.scheduler.replaceSchedule(() => [
-      transport.scheduleRepeat((time) => {
-        this.onTick(time);
-      }, this.getRepeatInterval(parts.bottom, subdivision), repeatStartTime)
-    ], true);
+  private normalize(config: MetronomeConfig): Loop {
+    const bpm = Number.isFinite(config.bpm) ? Math.min(260, Math.max(20, Math.round(config.bpm))) : 80;
+    const timeSignature = parseTimeSignature(config.timeSignature), subdivision = normalizeSubdivision(timeSignature, config.subdivision);
+    const { bottom } = getTimeSignatureParts(timeSignature);
+    const tickDurationSeconds = (60 / bpm) / (subdivision === '16th' ? 4 : bottom === 8 || subdivision === '8th' ? 2 : 1);
+    return { config: { bpm, timeSignature, subdivision }, labels: buildMetronomeLabels(timeSignature, subdivision), tickDurationSeconds };
   }
-
-  private getRepeatInterval(bottom: 4 | 8, subdivision: MetronomeSubdivision): string {
-    if (bottom === 4) {
-      if (subdivision === '16th') return '16n';
-      if (subdivision === '8th') return '8n';
-      return '4n';
-    }
-
-    return subdivision === '16th' ? '16n' : '8n';
-  }
-
-  private computeTickDurationSeconds(bpm: number, bottom: 4 | 8, subdivision: MetronomeSubdivision): number {
-    const quarter = 60 / bpm;
-    if (bottom === 4) {
-      if (subdivision === '16th') return quarter / 4;
-      if (subdivision === '8th') return quarter / 2;
-      return quarter;
-    }
-
-    const eighth = quarter / 2;
-    return subdivision === '16th' ? eighth / 2 : eighth;
+  private renderLoop(loop: Loop, signal: AbortSignal): Promise<RenderedAudio> {
+    const measureDuration = loop.labels.length * loop.tickDurationSeconds;
+    // One pre-roll measure supplies the preceding tick's decay at the loop's start.
+    // Crop it after rendering: all four retained measures then meet at the same phase.
+    const preRoll = Math.max(1, Math.ceil(1 / measureDuration));
+    return this.rendered.render(`metronome:${JSON.stringify(loop.config)}`, measureDuration * (preRoll + 4), async (context, resources) => {
+      const sampler = await this.rendered.sampler(context, resources, {
+        C3: '/samples/metronome/snare-drum__025_mezzo-forte_with-snares.mp3',
+        'C#3': '/samples/metronome/snare-drum__025_fortissimo_with-snares.mp3',
+        D3: '/samples/metronome/djembe__05_forte_undamped.mp3'
+      }, 0.6);
+      const accented = getAccentedBeats(loop.config.timeSignature);
+      for (let measure = 0; measure < preRoll + 4; measure++) loop.labels.forEach((label, index) => {
+        const main = isMainBeatLabel(label), accent = main && accented.includes(Number(label));
+        sampler.triggerAttackRelease(main ? accent ? 'C#3' : 'C3' : 'D3', main ? 0.2 : 0.15,
+          (measure * loop.labels.length + index) * loop.tickDurationSeconds, main ? accent ? 1 : 0.85 : 0.8);
+      });
+    }, signal, measureDuration * preRoll);
   }
 }
