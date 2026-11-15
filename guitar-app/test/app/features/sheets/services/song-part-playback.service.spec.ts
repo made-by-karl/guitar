@@ -66,6 +66,8 @@ describe('SongPartPlaybackService', () => {
     ] };
     await service.playSong(song);
     expect(service.getSnapshot()).toMatchObject({ partId: verse.id, measureId: 'v-m', occurrenceId: 'v1', actionIndex: 0 });
+    const sequence = service.getSnapshot().sequence;
+    expect(sequence?.measures).toHaveLength(3);
     verse.section = 'Changed after playback';
     verse.measures[0].measure.actions[1] = null;
     harness.emit('finite:song-part-playback', { currentTime: 0.375 });
@@ -76,6 +78,8 @@ describe('SongPartPlaybackService', () => {
     expect(service.getSnapshot()).toMatchObject({ partId: verse.id, measureId: 'v-m', occurrenceId: 'v2', actionIndex: 0, presentation: { occurrenceNumber: 2 } });
     expect(service.getSnapshot().presentation?.part.measures[0].measure.actions[1]).not.toBeNull();
     expect(service.getSnapshot().presentation?.precedingMeasures).toHaveLength(2);
+    expect(service.getSnapshot().sequence).toBe(sequence);
+    expect(sequence?.measures[0].actions[1]).not.toBeNull();
     service.pauseSong();
     expect(service.getSnapshot()).toMatchObject({ status: 'paused', occurrenceId: 'v2', actionIndex: 0 });
     harness.finish('finite:song-part-playback');

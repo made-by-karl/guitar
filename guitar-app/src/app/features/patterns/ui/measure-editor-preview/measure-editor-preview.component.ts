@@ -1,5 +1,7 @@
+import { PlaybackHighlight, PlaybackHighlightView } from '@/app/core/services/playback-highlight';
+import { PlaybackHighlightDirective, PLAYBACK_HIGHLIGHT_VIEW } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 import {
-  afterRender, Component, DestroyRef, ElementRef, inject, input, NgZone, signal
+  afterRender, Component, forwardRef, DestroyRef, ElementRef, inject, input, NgZone, signal
 } from '@angular/core';
 import { Measure } from '@/app/features/patterns/services/playing-patterns.model';
 import {
@@ -16,11 +18,14 @@ export interface EditorPreviewMeasure {
 
 @Component({
   selector: 'app-measure-editor-preview',
-  imports: [PlayingActionsComponent],
+  providers: [{ provide: PLAYBACK_HIGHLIGHT_VIEW, useExisting: forwardRef(() => MeasureEditorPreviewComponent) }],
+  imports: [PlayingActionsComponent, PlaybackHighlightDirective],
   templateUrl: './measure-editor-preview.component.html',
   styleUrl: './measure-editor-preview.component.scss'
 })
-export class MeasureEditorPreviewComponent {
+export class MeasureEditorPreviewComponent implements PlaybackHighlightView {
+  readonly playbackPosition = signal<PlaybackHighlight | undefined>(undefined);
+  highlightPlayback(position: PlaybackHighlight | undefined): void { this.playbackPosition.set(position); }
   readonly measures = input.required<EditorPreviewMeasure[]>();
   // The forms scroll here, in a separate pane below this component.
   readonly content = input.required<HTMLElement>();

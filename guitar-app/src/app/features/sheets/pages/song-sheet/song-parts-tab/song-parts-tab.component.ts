@@ -1,3 +1,4 @@
+import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { Component, OnDestroy, computed, inject, input, output } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -25,7 +26,7 @@ import { getSongArrangement } from '@/app/features/sheets/services/song-arrangem
 @Component({
   selector: 'app-song-sheet-parts-tab',
   standalone: true,
-  imports: [DragDropModule, PlayingActionsComponent],
+  imports: [DragDropModule, PlayingActionsComponent, SongPlaybackComponent],
   templateUrl: './song-parts-tab.component.html',
   styleUrl: './song-parts-tab.component.scss'
 })
@@ -129,15 +130,7 @@ export class SongPartsTabComponent implements OnDestroy {
   }
 
   getPartMeasures(part: SongPart): ResolvedSongPartMeasure[] {
-    const snapshot = this.playbackState.source === 'parts' && this.playbackState.partId === part.id ? this.playbackState.presentation?.part : part;
-    return this.songSheetService.resolvePartMeasures(this.sheet(), snapshot ?? part);
-  }
-
-  getPlaybackPosition(part: SongPart) {
-    const state = this.playbackState;
-    return state.source === 'parts' && state.partId === part.id && state.actionIndex !== undefined &&
-      (state.status === 'playing' || state.status === 'paused')
-      ? { measureIndex: state.currentMeasureIndex ?? 0, actionIndex: state.actionIndex, status: state.status } : undefined;
+    return this.songSheetService.resolvePartMeasures(this.sheet(), part);
   }
 
   getNotationMeasures(measures: ResolvedSongPartMeasure[]): Measure[] {

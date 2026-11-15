@@ -1,3 +1,5 @@
+import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
+import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { Component, Inject, inject, OnDestroy } from '@angular/core';
@@ -43,7 +45,7 @@ export interface SongPartMeasureEditorResult {
 @Component({
   selector: 'app-song-part-measure-editor-modal',
   standalone: true,
-  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureEditorPreviewComponent],
+  imports: [PlaybackHighlightDirective,MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureEditorPreviewComponent],
   templateUrl: './song-part-measure-editor-modal.component.html',
   styleUrl: './song-part-measure-editor-modal.component.scss'
 })
@@ -67,16 +69,24 @@ export class SongPartMeasureEditorModalComponent implements
     this.editedActionGrips = this.data.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }));
   }
 
+  get playbackPosition() {
+    return songPlaybackHighlight(this.playbackState(), { source: 'editor', partId: this.data.part.id,
+      measureId: this.data.measureId, occurrenceId: this.data.occurrenceId });
+  }
+
   get previewMeasures(): EditorPreviewMeasure[] {
+    const state = this.playbackState();
+    const snapshot = this.playbackPosition ? state.presentation : undefined;
+    const measure = snapshot?.part.measures[snapshot.measureIndex].measure ?? this.editedMeasure;
     return [{
       label: this.data.measureLabel,
-      measure: this.editedMeasure,
+      measure,
       context: {
-        timeSignature: this.editedMeasure.timeSignature,
-        actionGrips: this.editedActionGrips,
+        timeSignature: measure.timeSignature,
+        actionGrips: snapshot ? measure.actionGrips : this.editedActionGrips,
         gripById: buildGripByIdMap(this.sheet)
       },
-      history: this.data.notationHistory ?? []
+      history: snapshot ? snapshot.precedingMeasures.map(measure => ({ measure, context: { actionGrips: measure.actionGrips } })) : this.data.notationHistory ?? []
     }];
   }
 

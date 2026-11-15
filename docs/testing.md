@@ -174,7 +174,9 @@ slot observation is excluded from boundary latency measurements.
 
 The remaining cases cover all song/occurrence/part/editor entry points at the documented
 viewports, later-measure preview, draft/selection/lock preservation, preparation cancellation,
-rejected startup, keyboard focus, reduced motion and tab teardown. Existing arrangement,
+rejected startup, keyboard focus, reduced motion and tab teardown. It also checks persistent stream DOM across
+measure/occurrence boundaries, no duplicate pane controls, reuse of the measure editor's live
+preview and manual page scrolling during playback without being pulled back. Existing arrangement,
 measure-editor and media playback specs remain useful regressions.
 
 Curated screenshots, the review record and timing JSON are under

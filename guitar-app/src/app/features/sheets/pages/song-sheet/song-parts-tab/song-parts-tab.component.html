@@ -9,10 +9,11 @@
     </button>
   </div>
 
+  <app-song-playback source="parts" [state]="playbackState" />
   @if (sheet().parts.length > 0) {
   <div cdkDropList (cdkDropListDropped)="dropPart($event)">
     @for (part of sheet().parts; track part.id; let partIndex = $index) {
-    <div class="card mb-3" cdkDrag [class.border-success]="getPlaybackPosition(part)" [class.border-2]="getPlaybackPosition(part)">
+    <div class="card mb-3" cdkDrag>
       <div class="card-body">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3" [class.part-playback-toolbar]="isPartPlaybackActive(part)">
           <div class="d-flex gap-2">
@@ -63,7 +64,7 @@
             <div class="small text-muted">Assign a grip or add playable notes to enable playback.</div>
             }
             @if (isPartPlaybackActive(part)) {
-            <div class="small text-muted">{{ playbackState.status === 'preparing' ? 'Preparing…' : playbackState.status === 'paused' ? 'Paused' : 'Playing' }} · {{ getPartMeasureCounter(part) }}@if (getPlaybackPosition(part); as position) { · Action {{ position.actionIndex + 1 }} }</div>
+            <div class="small text-muted">{{ playbackState.status === 'preparing' ? 'Preparing…' : playbackState.status === 'paused' ? 'Paused' : 'Playing' }} · {{ getPartMeasureCounter(part) }}</div>
             }
           </div>
         </div>
@@ -79,7 +80,6 @@
             <div class="part-measure-list">
               <app-playing-actions
                 [measures]="getNotationMeasures(measures)"
-                [playbackPosition]="getPlaybackPosition(part)"
                 [showActionIndex]="true"
                 [measureWidth]="'100%'"
                 [notationContexts]="getNotationContexts(measures)" />

@@ -66,80 +66,75 @@ async function seekPaused(page: Page, time: number) {
 }
 
 for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
-  test(`follows song/occurrence snapshots and keeps editing context at ${viewport.width}px`, async ({ page }) => {
+  test(`continuous playback reuses editor drawings and respects page scrolling at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport); await page.emulateMedia({ reducedMotion: 'reduce' });
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await seed(page);
     const song = page.locator('app-song-arrangement');
     const pane = song.getByRole('region', { name: 'Playback notation' });
     await song.getByRole('button', { name: 'Play song', exact: true }).click(); await started(page);
-    await expect(pane).toBeVisible();
+    await expect(pane.getByRole('button')).toHaveCount(0);
+    const firstSegment = await pane.locator('.action-svg').first().elementHandle();
+    const segmentCount = await pane.locator('.action-svg').count();
     await seekPaused(page, 0.25);
-    await expect(pane).toHaveAttribute('data-occurrence-id', 'v1');
-    await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
     await expect(pane.locator('.playback-position')).toHaveText('Paused · Measure 1 of 2 · Action 3');
-    await expect(song.locator('.occurrence-row.is-playing')).toHaveCount(1);
-    await expect(song.locator('app-song-part-editor')).toHaveCount(0);
-    for (const [time, occurrence, measure, slot] of [[2.5, 'v1', 'v-rest', '4'], [4.25, 'c1', 'c-m1', '2'], [6.25, 'v2', 'v-m1', '2']] as const) {
+    await song.getByRole('button', { name: 'Resume song', exact: true }).focus();
+    for (const [time, occurrence, measure, slot] of [[1.875, 'v1', 'v-m1', '15'], [2, 'v1', 'v-rest', '16'], [4.25, 'c1', 'c-m1', '34'], [6.25, 'v2', 'v-m1', '50']] as const) {
       await seekPaused(page, time);
       await expect(pane).toHaveAttribute('data-occurrence-id', occurrence);
       await expect(pane).toHaveAttribute('data-measure-id', measure);
       await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', slot);
       await expect(song.locator('.occurrence-row.is-playing')).toHaveCount(1);
+      expect(await firstSegment!.evaluate(element => element.isConnected)).toBe(true);
+      await expect(pane.locator('.action-svg')).toHaveCount(segmentCount);
+      await expect(song.getByRole('button', { name: 'Resume song', exact: true })).toBeFocused();
     }
-    const resume = pane.getByRole('button', { name: 'Resume playback', exact: true });
-    await resume.focus(); await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
     await expect(pane.locator('.playback-position')).toContainText('Playing');
-    await expect(pane.getByRole('button', { name: 'Pause playback', exact: true })).toBeFocused();
-    await pane.getByRole('button', { name: 'Pause playback', exact: true }).click();
-    const bounds = await pane.boundingBox();
-    expect(bounds!.y).toBeGreaterThanOrEqual(0); expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
-    await mkdir('../temp/ux/playback-highlighting', { recursive: true });
-    await page.screenshot({ path: `../temp/ux/playback-highlighting/song-paused-${viewport.width}.png`, fullPage: true });
-    await pane.getByRole('button', { name: 'Stop playback', exact: true }).click();
-    await expect(pane).toHaveCount(0); await expect(song.locator('.is-playing')).toHaveCount(0);
+    // Deliberately leave the playing view. Following may scroll only its own x viewport.
+    const scrollTop = await page.evaluate(() => {
+      const footer = document.createElement('div'); footer.style.height = '1600px';
+      const button = document.createElement('button'); button.textContent = 'Read below the song'; footer.append(button);
+      document.querySelector('app-song-arrangement')!.append(footer);
+      button.focus({ preventScroll: true });
+      const root = document.querySelector<HTMLElement>('.app-content-container')!;
+      root.scrollTop = 800;
+      const audio = window.highlightAudio.findLast(audio => !!audio.getAttribute('src'))!;
+      audio.currentTime = 2.01; audio.dispatchEvent(new Event('timeupdate'));
+      return root.scrollTop;
+    });
+    await expect(pane.locator('.playback-action-slot')).not.toHaveAttribute('data-slot-index', '50');
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 300)));
+    expect(await page.locator('.app-content-container').evaluate(element => element.scrollTop)).toBe(scrollTop);
+    await expect(page.getByRole('button', { name: 'Read below the song', exact: true })).toBeFocused();
+    await song.getByRole('button', { name: 'Pause song', exact: true }).click();
+    await page.screenshot({ path: `../temp/ux/playback-highlighting/continuous-${viewport.width}.png`, fullPage: true });
+    await song.getByRole('button', { name: 'Stop song', exact: true }).click();
+    await expect(pane).toHaveCount(0);
 
-    // An existing editor stays mounted, selected and locked while the independent pane follows playback.
     await song.getByRole('button', { name: 'Verse, occurrence 2', exact: true }).click();
     const editor = song.locator('app-song-part-editor');
     await expect(editor.getByLabel('Part name', { exact: true })).toBeDisabled();
     await editor.locator('.measure-row').first().click();
-    if (viewport.width >= 768) {
-      await song.getByRole('button', { name: 'Play song', exact: true }).click(); await started(page);
-      await seekPaused(page, 0.25);
-      await expect(pane).toHaveAttribute('data-occurrence-id', 'v1');
-      await expect(editor.locator('.measure-row.is-selected')).toHaveAttribute('aria-label', 'Select measure 1');
-      await expect(editor.getByLabel('Part name', { exact: true })).toBeDisabled();
-      await pane.getByRole('button', { name: 'Stop playback', exact: true }).click();
-    }
     await editor.getByRole('button', { name: 'Play', exact: true }).first().click(); await started(page);
-    const draftPane = editor.getByRole('region', { name: 'Playback notation' });
     await seekPaused(page, 2.25);
-    await expect(draftPane).toHaveAttribute('data-measure-id', 'v-rest');
+    await expect(editor.locator('app-song-playback')).toHaveCount(0);
+    await expect(editor.locator('.measure-row').nth(1).locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
     await expect(editor.locator('.measure-row.is-selected')).toHaveAttribute('aria-label', 'Select measure 1');
     await expect(editor.getByLabel('Part name', { exact: true })).toBeDisabled();
-    await draftPane.getByRole('button', { name: 'Stop playback', exact: true }).click();
+    await editor.getByRole('button', { name: 'Stop', exact: true }).first().click();
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Unsaved words stay here');
     await editor.getByRole('button', { name: 'Play', exact: true }).first().click(); await started(page);
     await seekPaused(page, 0.5);
     await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Unsaved words stay here');
     await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
-    await draftPane.getByRole('button', { name: 'Stop playback', exact: true }).click();
-    if (viewport.width >= 768) {
-      await song.getByRole('button', { name: 'Play song', exact: true }).click();
-      await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
-      await started(page); await seekPaused(page, 4.25);
-      await expect(pane).toHaveAttribute('data-occurrence-id', 'c1');
-      await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Unsaved words stay here');
-      await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
-      await expect(page.locator('app-song-sheet-choice-modal')).toHaveCount(0);
-      await pane.getByRole('button', { name: 'Stop playback', exact: true }).click();
-    }
+    await editor.getByRole('button', { name: 'Stop', exact: true }).first().click();
     await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
     await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
     await song.getByRole('button', { name: 'Play Verse, occurrence 2', exact: true }).click(); await started(page);
     await seekPaused(page, 0.25); await expect(pane).toHaveAttribute('data-occurrence-id', 'v2');
+    await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     await expect(page.locator('.playback-action-slot')).toHaveCount(0);
     expect(await page.evaluate(() => window.highlightAudio.every(audio => audio.paused && !audio.getAttribute('src')))).toBe(true);
@@ -148,24 +143,20 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
   });
 }
 
-test('Parts and later measure previews mark local slots, preserve drafts and seek without rerendering', async ({ page }) => {
+test('Parts keeps the playback component while a measure editor highlights its existing live preview', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 }); await seed(page);
   await page.getByRole('tab', { name: 'Parts', exact: true }).click();
   const parts = page.locator('app-song-sheet-parts-tab');
   await parts.getByRole('button', { name: 'Play', exact: true }).first().click(); await started(page);
   await seekPaused(page, 2.25);
-  await expect(parts.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '18');
-  for (const control of [parts.locator('.playback-action-slot'), parts.getByRole('button', { name: 'Back', exact: true })]) {
-    await expect.poll(async () => {
-      const bounds = await control.boundingBox();
-      return !!bounds && bounds.y >= 0 && bounds.y + bounds.height <= 667;
-    }).toBe(true);
-  }
-  await page.screenshot({ path: '../temp/ux/playback-highlighting/parts-paused-375.png', fullPage: true });
+  const pane = parts.getByRole('region', { name: 'Playback notation' });
+  await expect(pane.getByRole('button')).toHaveCount(0);
+  await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '18');
+  await expect(parts.locator('.part-measure-list .playback-action-slot')).toHaveCount(0);
   await parts.getByRole('button', { name: 'Back', exact: true }).click();
-  await expect(parts.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '0');
+  await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '0');
   await parts.getByRole('button', { name: 'Forward', exact: true }).click();
-  await expect(parts.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '16');
+  await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '16');
   await parts.getByRole('button', { name: 'Stop', exact: true }).click();
   await parts.getByRole('button', { name: 'Edit', exact: true }).first().click();
   const editor = page.locator('app-song-part-editor');
@@ -175,18 +166,19 @@ test('Parts and later measure previews mark local slots, preserve drafts and see
   await editor.locator('.measure-row').first().click();
   await editor.getByRole('button', { name: 'Duplicate selected measure', exact: true }).click();
   await expect(editor.locator('.measure-row')).toHaveCount(3);
-  await expect(editor.locator('.measure-row.is-selected')).toHaveAttribute('aria-label', 'Select measure 2');
-  await editor.getByRole('button', { name: 'Play', exact: true }).last().click(); await started(page);
-  const pane = editor.getByRole('region', { name: 'Playback notation' });
-  await expect(pane.locator('strong')).toHaveText('Unsaved Verse');
+  await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
+  const modal = page.locator('app-song-part-measure-editor-modal');
+  await modal.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
   await seekPaused(page, 0.25);
-  await expect(pane.locator('.playback-position')).toHaveText('Paused · Measure 2 of 3 · Action 3');
-  await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
+  const preview = modal.getByRole('region', { name: 'Live measure preview' });
+  await expect(preview.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
+  await expect(modal.locator('app-song-playback')).toHaveCount(0);
+  await expect(preview.locator('.playback-position')).toHaveText('Paused · Action 3');
+  await page.screenshot({ path: '../temp/ux/playback-highlighting/reused-measure-375.png', fullPage: true });
+  await modal.getByRole('button', { name: 'Close measure editor', exact: true }).click();
+  await expect(editor.locator('.playback-action-slot')).toHaveCount(0);
   await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
-  await page.screenshot({ path: '../temp/ux/playback-highlighting/draft-measure-375.png', fullPage: true });
-  await pane.getByRole('button', { name: 'Stop playback', exact: true }).click();
   await editor.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(editor).toHaveCount(0);
   await expect(parts.locator('.card h6').first()).toHaveText('Verse');
 });
 
@@ -203,9 +195,7 @@ test('three-minute foreground playback follows repeated sections and rests witho
       const pane = document.querySelector<HTMLElement>('.playback-pane');
       const marker = pane?.querySelector<SVGRectElement>('.playback-action-slot');
       if (pane && marker) {
-        const occurrence = Number(pane.dataset['occurrenceId']!.slice(1));
-        const measure = Math.floor(occurrence / 3) * 5 + [0, 2, 3][occurrence % 3] + (pane.dataset['measureId'] === 'v-rest' ? 1 : 0);
-        const slot = measure * 16 + Number(marker.dataset['slotIndex']);
+        const slot = Number(marker.dataset['slotIndex']);
         if (slot !== previous) {
           const isBoundary = previous !== -1;
           previous = slot;
@@ -243,7 +233,7 @@ test('preparation and rejected startup have no marker, and stopping pending work
   const pane = page.getByRole('region', { name: 'Playback notation' });
   await expect(pane.locator('.playback-position')).toContainText('Preparing');
   await expect(page.locator('.playback-action-slot')).toHaveCount(0);
-  await pane.getByRole('button', { name: 'Stop playback', exact: true }).click(); release();
+  await page.getByRole('button', { name: 'Stop song', exact: true }).click(); release();
   await page.unroute('**/samples/**');
   await expect(pane).toHaveCount(0);
   await page.evaluate(() => {
@@ -257,8 +247,8 @@ test('preparation and rejected startup have no marker, and stopping pending work
   await page.getByRole('button', { name: 'Play song', exact: true }).click();
   await expect(pane.locator('.playback-position')).toContainText('Ready to play');
   await expect(page.locator('.playback-action-slot')).toHaveCount(0);
-  await expect(pane.getByRole('button', { name: 'Play prepared audio', exact: true })).toBeVisible();
-  await pane.getByRole('button', { name: 'Resume playback', exact: true }).click(); await started(page);
+  await expect(page.getByRole('button', { name: 'Play prepared audio', exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Resume song', exact: true }).click(); await started(page);
   await expect(pane.locator('.playback-action-slot')).toHaveCount(1);
   await page.getByRole('tab', { name: 'Parts', exact: true }).click();
   await expect(page.locator('.playback-action-slot')).toHaveCount(0);
@@ -294,16 +284,16 @@ for (const tempo of [60, 180]) {
     expect(Math.max(...measurements)).toBeLessThanOrEqual(0.05);
     expect(Math.min(...measurements)).toBeGreaterThanOrEqual(0);
     const pane = page.getByRole('region', { name: 'Playback notation' });
-    await pane.getByRole('button', { name: 'Pause playback', exact: true }).click();
+    await page.getByRole('button', { name: 'Pause song', exact: true }).click();
     await expect(pane.locator('.playback-position')).toContainText('Paused');
     const frozen = await pane.locator('.playback-position').textContent();
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 200)));
     await expect(pane.locator('.playback-position')).toHaveText(frozen!);
     await seekPaused(page, 60 / tempo / 2);
     await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
-    await pane.getByRole('button', { name: 'Resume playback', exact: true }).click(); await started(page);
+    await page.getByRole('button', { name: 'Resume song', exact: true }).click(); await started(page);
     await expect(pane.locator('.playback-position')).toContainText('Playing');
-    await pane.getByRole('button', { name: 'Stop playback', exact: true }).click();
+    await page.getByRole('button', { name: 'Stop song', exact: true }).click();
     await expect(page.locator('.playback-action-slot')).toHaveCount(0);
   });
 }

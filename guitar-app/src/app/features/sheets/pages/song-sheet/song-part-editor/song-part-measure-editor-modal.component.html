@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <app-measure-editor-preview [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true" />
+  <app-measure-editor-preview [appPlaybackHighlight]="playbackPosition" [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true" />
   <div class="modal-body" #previewContent>
     <div data-preview-measure="0">
     <app-playing-measure-editor

@@ -9,7 +9,7 @@
       @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stopSong()">Stop song</button> }
     </div>
   </div>
-  <app-song-playback source="song" />
+  <app-song-playback source="song" [state]="playbackState()" />
   @if (occurrences().length === 0) {
     <div class="song-empty-state"><h3>Create your first part</h3><p>Add music or lyrics, then arrange your parts into a song.</p>
       <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="startWriting()">Start writing</button>

@@ -1,5 +1,5 @@
 import {
-  afterRenderEffect, Component, computed, ElementRef, input,
+  afterRenderEffect, ChangeDetectionStrategy, Component, computed, ElementRef, forwardRef, input,
   signal, viewChild, viewChildren
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -31,11 +31,8 @@ import {
 } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
 import { layoutGripLabels, MeasuredGripLabel } from './grip-label-layout';
 
-export interface NotationPlaybackPosition {
-  measureIndex: number;
-  actionIndex: number;
-  status: 'playing' | 'paused';
-}
+import { PlaybackHighlight, PlaybackHighlightView } from '@/app/core/services/playback-highlight';
+import { PLAYBACK_HIGHLIGHT_VIEW } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 
 export interface PlayingActionsNotationContext {
   timeSignature?: TimeSignature;
@@ -47,6 +44,15 @@ export interface PlayingActionsNotationContext {
 export interface PlayingActionsNotationHistoryEntry {
   measure: Measure;
   context?: PlayingActionsNotationContext;
+}
+
+interface NotationMeasureSlot {
+  measure: Measure;
+  measureIndex: number;
+  measureStartIndex: number;
+  measureEndIndex: number;
+  localActionIndex: number;
+  context: PlayingActionsNotationContext | undefined;
 }
 
 interface SlotPickMark {
@@ -116,11 +122,13 @@ interface ResolvedLegatoRender {
 
 @Component({
   selector: 'app-playing-actions',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: PLAYBACK_HIGHLIGHT_VIEW, useExisting: forwardRef(() => PlayingActionsComponent) }],
   imports: [CommonModule],
   templateUrl: './playing-actions.component.html',
   styleUrl: './playing-actions.component.scss'
 })
-export class PlayingActionsComponent {
+export class PlayingActionsComponent implements PlaybackHighlightView {
   readonly strings = [0, 1, 2, 3, 4, 5];
   readonly slotTop = 12;
   readonly gripLabelTopBand = 15;
@@ -130,10 +138,12 @@ export class PlayingActionsComponent {
   readonly legatoLineSourceGap = 8;
 
   measures = input.required<Measure[]>();
-  playbackPosition = input<NotationPlaybackPosition | undefined>();
+  readonly playbackPosition = signal<PlaybackHighlight | undefined>(undefined);
+
+  highlightPlayback(position: PlaybackHighlight | undefined): void { this.playbackPosition.set(position); }
   readonly playbackSlot = computed(() => {
     const position = this.playbackPosition();
-    return position ? this.measures().slice(0, position.measureIndex).reduce((count, measure) => count + measure.actions.length, 0) + position.actionIndex : undefined;
+    return position ? (this.measureStarts()[position.measureIndex] ?? 0) + position.actionIndex : undefined;
   });
   // Editor-only layout and orientation; independent of any playback position.
   compact = input(false);
@@ -143,6 +153,28 @@ export class PlayingActionsComponent {
   notationContexts = input<PlayingActionsNotationContext[] | undefined>(undefined);
   // Replay earlier measures for note/grip state without drawing them.
   notationHistory = input<PlayingActionsNotationHistoryEntry[]>([]);
+
+  // Continuous scores keep their notation data mounted. Index immutable inputs
+  // once so moving a marker does not flatten/search the full score per SVG mark.
+  private readonly timelineActions = computed(() => this.measures().flatMap(measure => measure.actions));
+  private readonly measureStarts = computed(() => {
+    let start = 0;
+    return this.measures().map(measure => { const current = start; start += measure.actions.length; return current; });
+  });
+  private readonly measureSlots = computed(() => this.measures().flatMap((measure, measureIndex) => {
+    const measureStartIndex = this.measureStarts()[measureIndex];
+    const context = this.getNotationContextForMeasure(measureIndex);
+    return measure.actions.map((_, localActionIndex): NotationMeasureSlot => ({
+      measure, measureIndex, measureStartIndex, measureEndIndex: measureStartIndex + measure.actions.length, localActionIndex, context
+    }));
+  }));
+  private readonly segmentBySlot = computed(() => {
+    const segments: RenderableActionSegment[] = [];
+    for (const segment of this.renderableActionSegments()) {
+      for (let index = segment.actionIndex; index < segment.actionIndex + segment.span; index++) segments[index] = segment;
+    }
+    return segments;
+  });
 
   private readonly notationElement = viewChild<ElementRef<HTMLDivElement>>('notation');
   private readonly segmentElements = viewChildren<ElementRef<SVGSVGElement>>('notationSegment');
@@ -209,7 +241,7 @@ export class PlayingActionsComponent {
   getPlaybackMeasureBand(segment: RenderableActionSegment): { x: number; width: number } | undefined {
     const position = this.playbackPosition();
     if (!position) return undefined;
-    const first = this.measures().slice(0, position.measureIndex).reduce((count, measure) => count + measure.actions.length, 0);
+    const first = this.measureStarts()[position.measureIndex] ?? 0;
     const end = first + (this.measures()[position.measureIndex]?.actions.length ?? 0);
     const left = Math.max(first, segment.actionIndex);
     const right = Math.min(end, segment.actionIndex + segment.span);
@@ -218,18 +250,22 @@ export class PlayingActionsComponent {
 
   private revealPlaybackPosition(): void {
     this.playbackSlot();
-    const element = this.notationElement()?.nativeElement;
-    const marker = element?.querySelector<SVGRectElement>('.playback-action-slot');
-    if (!marker) return;
+    if (!this.compact()) return;
+    const scroller = this.notationElement()?.nativeElement.parentElement;
+    const marker = scroller?.querySelector<SVGRectElement>('.playback-action-slot');
+    if (!scroller || !marker || scroller.clientWidth === 0) return;
     const bounds = marker.getBoundingClientRect();
-    const scroller = element?.parentElement?.getBoundingClientRect();
-    if (bounds.width && (bounds.top < 0 || bounds.bottom > window.innerHeight || bounds.left < Math.max(0, scroller?.left ?? 0) || bounds.right > Math.min(window.innerWidth, scroller?.right ?? window.innerWidth))) {
-      marker.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+    const viewport = scroller.getBoundingClientRect();
+    // Only move this drawing's horizontal viewport. Never scroll the page or an
+    // editor's forms, even when the user has moved away from the playing view.
+    if (bounds.left < viewport.left || bounds.right > viewport.right) {
+      scroller.scrollLeft += bounds.left - viewport.left - scroller.clientWidth * 0.6;
     }
   }
 
   private revealVisibleActions(): void {
     const indices = this.visibleActionIndices();
+    if (this.playbackPosition()) return;
     this.layoutRevision();
     this.renderableActionSegments();
     this.labelBandHeight();
@@ -808,9 +844,7 @@ export class PlayingActionsComponent {
   }
 
   private findSegmentForAction(actionIndex: number): RenderableActionSegment | undefined {
-    return this.renderableActionSegments().find(segment =>
-      actionIndex >= segment.actionIndex && actionIndex < segment.actionIndex + segment.span
-    );
+    return this.segmentBySlot()[actionIndex];
   }
 
   private getMinimumSegmentSpan(actionIndex: number): number {
@@ -897,41 +931,15 @@ export class PlayingActionsComponent {
   }
 
   private getTimelineActions(): (PlayingAction | null)[] {
-    return this.measures().flatMap(measure => measure.actions);
+    return this.timelineActions();
   }
 
   private getNotationContextForMeasure(measureIndex: number): PlayingActionsNotationContext | undefined {
     return this.notationContexts()?.[measureIndex];
   }
 
-  private getMeasureInfoForAction(actionIndex: number): {
-    measure: Measure;
-    measureIndex: number;
-    measureStartIndex: number;
-    measureEndIndex: number;
-    localActionIndex: number;
-    context: PlayingActionsNotationContext | undefined;
-  } | undefined {
-    let measureStartIndex = 0;
-
-    for (let measureIndex = 0; measureIndex < this.measures().length; measureIndex++) {
-      const measure = this.measures()[measureIndex];
-      const measureEndIndex = measureStartIndex + measure.actions.length;
-      if (actionIndex >= measureStartIndex && actionIndex < measureEndIndex) {
-        return {
-          measure,
-          measureIndex,
-          measureStartIndex,
-          measureEndIndex,
-          localActionIndex: actionIndex - measureStartIndex,
-          context: this.getNotationContextForMeasure(measureIndex)
-        };
-      }
-
-      measureStartIndex = measureEndIndex;
-    }
-
-    return undefined;
+  private getMeasureInfoForAction(actionIndex: number): NotationMeasureSlot | undefined {
+    return this.measureSlots()[actionIndex];
   }
 
   private getMeasureEndActionIndex(actionIndex: number): number {

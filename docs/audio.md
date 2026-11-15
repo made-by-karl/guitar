@@ -181,9 +181,17 @@ events and frame loops; pause also invalidates its frame loop before resuming.
 `SongPartPlaybackService` maps each segment to a copied musical snapshot with its part,
 measure, local measure index, occurrence identity/number and preceding notation history.
 The run ID changes on a new playback request. The source identifies Song, Parts or editor
-ownership so editor drafts and saved playback cannot accidentally share a presentation.
+ownership so editor drafts and saved playback cannot accidentally share a presentation. A stable
+`sequence` contains the full scheduled musical snapshot for continuous drawing. Timing is
+independent of presentation: `PlaybackHighlightView` accepts resolved notated positions,
+and the binding directive delivers/clears them without starting a timer or controlling audio.
 
 Controlled tests cover boundaries at 60/120/180 BPM and a three-minute plan. The browser
 fixture records foreground DOM boundaries against actual media time. These measurements do
 not establish the issue #5 target of visual boundaries within 50 ms of heard audio on a
 physical speaker/wired output; synchronized screen/audio capture and listening remain required.
+
+The continuous notation renderer indexes actions, measure coordinates and SVG segments from
+its immutable score inputs. Angular OnPush detection keeps media frame polling from repeatedly
+checking an unchanged score. Position updates reuse those indexes and preserve the drawing's
+DOM across boundaries; only the highlight and local horizontal viewport follow playback.

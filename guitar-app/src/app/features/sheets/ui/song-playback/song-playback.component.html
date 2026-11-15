@@ -1,14 +1,7 @@
 @if (row(); as current) {
-  <section #pane class="playback-pane" aria-label="Playback notation" [attr.data-occurrence-id]="current.occurrenceId" [attr.data-measure-id]="current.measureId">
-    <div class="playback-heading">
-      <strong>{{ current.part.section || 'Untitled part' }}@if (current.occurrenceNumber) { · occurrence {{ current.occurrenceNumber }} }</strong>
-      <div class="playback-controls">
-        <button class="btn btn-outline-primary btn-sm" type="button" [attr.aria-disabled]="state().status === 'preparing'" (click)="toggle()">{{ state().status === 'playing' ? 'Pause playback' : 'Resume playback' }}</button>
-        <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stop()">Stop playback</button>
-      </div>
-    </div>
+  <section class="playback-pane" aria-label="Playback notation" [attr.data-occurrence-id]="current.occurrenceId" [attr.data-measure-id]="current.measureId">
+    <strong>{{ current.part.section || 'Untitled part' }}@if (current.occurrenceNumber) { · occurrence {{ current.occurrenceNumber }} }</strong>
     <p class="playback-position mb-1">{{ state().status === 'preparing' ? 'Preparing…' : state().status === 'playing' ? 'Playing' : position() ? 'Paused' : 'Ready to play' }} · Measure {{ current.measureIndex + 1 }} of {{ current.part.measures.length }}@if (position(); as position) { · Action {{ position.actionIndex + 1 }} }</p>
-    <app-playing-actions [measures]="measures()" [notationContexts]="contexts()" [notationHistory]="history()" [compact]="true" [showActionIndex]="true" [playbackPosition]="position()" />
-    <app-media-playback-controls [channels]="['finite:song-part-playback']" />
+    <app-playing-actions [measures]="measures()" [notationContexts]="contexts()" [notationHistory]="history()" [compact]="true" [showActionIndex]="true" [appPlaybackHighlight]="position()" />
   </section>
 }

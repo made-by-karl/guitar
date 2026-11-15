@@ -26,6 +26,11 @@ export interface SongPlaybackMeasure {
   occurrenceNumber?: number;
   precedingMeasures: Measure[];
 }
+export interface SongPlaybackSequence {
+  measures: Measure[];
+  precedingMeasures: Measure[];
+}
+
 export type SongPlaybackSource = 'song' | 'parts' | 'editor';
 
 type SongSheetPlaybackSessionType = 'none' | 'measure' | 'part' | 'song';
@@ -35,6 +40,7 @@ export interface SongSheetPlaybackState {
   actionIndex?: number;
   source?: SongPlaybackSource;
   presentation?: SongPlaybackMeasure;
+  sequence?: SongPlaybackSequence;
   type: SongSheetPlaybackSessionType;
   status: PlaybackStatus;
   partId?: string;
@@ -56,6 +62,7 @@ export class SongPartPlaybackService {
   private activePlayback: {
     type: 'measure' | 'part' | 'song';
     rows: SongPlaybackMeasure[];
+    sequence: SongPlaybackSequence;
     source: SongPlaybackSource;
   } | null = null;
 
@@ -79,7 +86,7 @@ export class SongPartPlaybackService {
       const row = active.rows[state.cursor];
       this.stateSubject.next({
         type: active.type, status: state.status, runId: state.runId,
-        actionIndex: state.actionIndex, source: active.source, presentation: row,
+        actionIndex: state.actionIndex, source: active.source, presentation: row, sequence: active.sequence,
         partId: row?.part.id, measureId: row?.measureId, occurrenceId: row?.occurrenceId,
         currentMeasureIndex: state.cursor, totalMeasures: active.rows.length
       });
@@ -126,7 +133,7 @@ export class SongPartPlaybackService {
     for (const message of preview.diagnostics) console.warn(message);
     if (preview.instructions.length === 0) return;
 
-    this.activePlayback = { type: 'measure', rows: [this.rowsForPart(sheet, part, occurrenceId)[targetMeasureIndex]], source: 'editor' };
+    this.activate('measure', [this.rowsForPart(sheet, part, occurrenceId)[targetMeasureIndex]], 'editor');
 
     await this.session.play(preview, 0);
   }
@@ -160,7 +167,7 @@ export class SongPartPlaybackService {
     for (const message of plan.diagnostics) console.warn(message);
     if (plan.instructions.length === 0) return;
 
-    this.activePlayback = { type: 'part', rows: this.rowsForPart(sheet, part, occurrenceId), source };
+    this.activate('part', this.rowsForPart(sheet, part, occurrenceId), source);
 
     await this.session.play(plan, 0);
   }
@@ -252,13 +259,20 @@ export class SongPartPlaybackService {
     }
     const plan = this.planner.buildPlaybackPlan(measures, this.getTuningForSheet(sheet), sheet.tempo);
     for (const message of plan.diagnostics) console.warn(message);
-    this.activePlayback = { type: 'song', rows, source: 'song' };
+    this.activate('song', rows, 'song');
     await this.session.play(plan, 0);
   }
 
   pauseSong(): void { if (this.activePlayback?.type === 'song') this.session.pause(); }
   resumeSong(): void { if (this.activePlayback?.type === 'song') this.session.resume(); }
   stopSong(): void { if (this.activePlayback?.type === 'song') this.session.stop(); }
+
+  private activate(type: 'measure' | 'part' | 'song', rows: SongPlaybackMeasure[], source: SongPlaybackSource): void {
+    this.activePlayback = { type, rows, source, sequence: {
+      measures: rows.map(row => row.part.measures[row.measureIndex].measure),
+      precedingMeasures: rows[0]?.precedingMeasures ?? []
+    } };
+  }
 
   private copyPart(part: SongPart): SongPart {
     return JSON.parse(JSON.stringify(part)) as SongPart;
