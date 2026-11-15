@@ -1,4 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import {
+  afterRenderEffect, Component, computed, ElementRef, input,
+  signal, viewChild, viewChildren
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TimeSignature } from '@/app/core/music/rhythm/time-signature.model';
 import { Grip } from '@/app/features/grips/services/grips/grip.model';
@@ -26,6 +29,7 @@ import {
   resolveRelativeStringIndex,
   resolveRelativeStrumRange
 } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
+import { layoutGripLabels, MeasuredGripLabel } from './grip-label-layout';
 
 export interface PlayingActionsNotationContext {
   timeSignature?: TimeSignature;
@@ -71,6 +75,12 @@ interface ActionGripLabel {
   actionIndex: number;
   label: string;
   x: number;
+}
+
+interface ActionGripLabelPosition {
+  left: number;
+  top: number;
+  leader: string | null;
 }
 
 interface RenderableActionSlot {
@@ -119,6 +129,115 @@ export class PlayingActionsComponent {
   notationContexts = input<PlayingActionsNotationContext[] | undefined>(undefined);
   // Replay earlier measures for note/grip state without drawing them.
   notationHistory = input<PlayingActionsNotationHistoryEntry[]>([]);
+
+  private readonly notationElement = viewChild<ElementRef<HTMLDivElement>>('notation');
+  private readonly segmentElements = viewChildren<ElementRef<SVGSVGElement>>('notationSegment');
+  private readonly labelElements = viewChildren<ElementRef<HTMLSpanElement>>('gripLabel');
+  private readonly layoutRevision = signal(0);
+  private readonly labelBandHeight = signal(this.gripLabelTopBand);
+  private readonly gripLabelsPresent = computed(() => (this.notationContexts() ?? [])
+    .some(context => (context.actionGrips ?? []).some(grip => !!grip.name)));
+  readonly labelPositions = signal(new Map<number, ActionGripLabelPosition>(), {
+    // Parents can supply fresh context objects on each check. Identical geometry must
+    // not request another render (and another set of those objects).
+    equal: (previous, next) => previous.size === next.size && [...previous].every(([index, position]) => {
+      const candidate = next.get(index);
+      return candidate?.left === position.left && candidate.top === position.top && candidate.leader === position.leader;
+    })
+  });
+  readonly actionGripLabels = computed(() => this.renderableActionSegments()
+    .flatMap(segment => this.getSegmentActionGripLabels(segment)));
+
+  constructor() {
+    // Observe width, including changes caused by a sidebar/dialog rather than a window resize.
+    afterRenderEffect(onCleanup => {
+      if (!this.hasActionGripLabels()) return;
+      const element = this.notationElement()?.nativeElement;
+      if (!element || typeof ResizeObserver === 'undefined') return;
+      let previousWidth = -1;
+      const observer = new ResizeObserver(entries => {
+        const width = entries[0]?.contentRect.width ?? 0;
+        if (width !== previousWidth) {
+          previousWidth = width;
+          this.layoutRevision.update(revision => revision + 1);
+        }
+      });
+      observer.observe(element);
+      onCleanup(() => observer.disconnect());
+    });
+    afterRenderEffect({ read: () => this.measureGripLabels() });
+
+    // A newly loaded font can change text bounds without changing the container width.
+    afterRenderEffect(onCleanup => {
+      if (!this.hasActionGripLabels()) return;
+      const fontSet = this.notationElement()?.nativeElement.ownerDocument.fonts;
+      if (!fontSet) return;
+      let active = true;
+      const refresh = () => {
+        if (active) this.layoutRevision.update(revision => revision + 1);
+      };
+      void fontSet.ready.then(refresh);
+      fontSet.addEventListener('loadingdone', refresh);
+      onCleanup(() => {
+        active = false;
+        fontSet.removeEventListener('loadingdone', refresh);
+      });
+    });
+  }
+
+  private measureGripLabels(): void {
+    this.layoutRevision();
+    const bandHeight = this.labelBandHeight();
+    const labels = this.actionGripLabels();
+    const labelElements = this.labelElements();
+    const segments = this.renderableActionSegments();
+    const segmentElements = this.segmentElements();
+    const element = this.notationElement()?.nativeElement;
+    if (labels.length === 0) {
+      this.labelBandHeight.set(this.gripLabelTopBand);
+      this.labelPositions.set(new Map());
+      return;
+    }
+    if (!element || element.clientWidth === 0) return;
+
+    const container = element.getBoundingClientRect();
+    const segmentBounds = segmentElements.map(segment => segment.nativeElement.getBoundingClientRect());
+    const rowTops = [...new Set(segmentBounds.map(bounds => bounds.top))];
+    const measured: MeasuredGripLabel[] = [];
+    for (let index = 0; index < labels.length; index++) {
+      const label = labels[index];
+      const segmentIndex = segments.findIndex(segment => label.actionIndex >= segment.actionIndex
+        && label.actionIndex < segment.actionIndex + segment.span);
+      const bounds = segmentBounds[segmentIndex];
+      const text = labelElements[index]?.nativeElement.getBoundingClientRect();
+      if (!bounds || !text) continue;
+      measured.push({
+        actionIndex: label.actionIndex,
+        row: rowTops.indexOf(bounds.top),
+        anchorX: bounds.left - container.left - element.clientLeft + label.x,
+        width: text.width,
+        height: text.height
+      });
+    }
+
+    const layout = layoutGripLabels(measured, element.clientWidth);
+    const positions = new Map<number, ActionGripLabelPosition>();
+    for (const label of layout.placements) {
+      const rowTop = rowTops[label.row] - container.top - element.clientTop;
+      const bottom = rowTop + bandHeight - label.bottom;
+      const anchorY = rowTop + bandHeight + this.slotTop - 3;
+      positions.set(label.actionIndex, {
+        left: label.left,
+        top: bottom - label.height,
+        leader: label.leader
+          ? `${label.left + label.width / 2},${bottom + 1} ${label.anchorX},${anchorY - 3} ${label.anchorX},${anchorY}`
+          : null
+      });
+    }
+    // Re-measure after changing the band: wrapped rows will have new vertical positions.
+    this.labelBandHeight.set(layout.bandHeight);
+    this.labelPositions.set(positions);
+  }
 
   private readonly historySlotCount = computed(() =>
     this.notationHistory().reduce((count, entry) => count + entry.measure.actions.length, 0));
@@ -245,7 +364,7 @@ export class PlayingActionsComponent {
   }
 
   hasActionGripLabels(): boolean {
-    return (this.notationContexts() ?? []).some(context => (context.actionGrips ?? []).some(grip => !!grip.name));
+    return this.gripLabelsPresent();
   }
 
   getActionX(actionIndex: number): number {
@@ -289,10 +408,6 @@ export class PlayingActionsComponent {
 
   getRhythmMarkerY(): number {
     return this.stringY(0) + 14;
-  }
-
-  getActionGripLabelY(): number {
-    return this.stringY(5) - 13;
   }
 
   getRhythmMarker(actionIndex: number): string | null {
@@ -422,7 +537,7 @@ export class PlayingActionsComponent {
   }
 
   private getGripLabelTopOffset(): number {
-    return this.hasActionGripLabels() ? this.gripLabelTopBand : 0;
+    return this.hasActionGripLabels() ? this.labelBandHeight() : 0;
   }
 
   getStrumMinY(actionIndex: number, action: PlayingAction): number {

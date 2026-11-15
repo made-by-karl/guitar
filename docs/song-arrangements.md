@@ -22,6 +22,20 @@ Switching editor tabs preserves the current unlock. Saving, leaving the editor, 
 
 Unsaved changes are guarded when switching occurrences, closing the editor, changing sheet tabs, or navigating away. The writer can save and continue, discard changes, or keep editing. Reload/close uses the browser's unsaved-changes prompt. While a save is pending, the editor is inert and navigation remains on the current edit.
 
+## Measure notation
+
+Grip names remain complete above the notation. The shared renderer measures the text after
+segments wrap, keeps names within the notation container, and places colliding names in
+additional rows. Raised or horizontally shifted names have leader lines to their action
+positions. Names wider than the container wrap onto multiple lines. The label band grows
+without changing rhythmic spacing or reducing the text or notation size, and is recalculated
+on content changes, container resizing, and font loading. This is a display rule; stored grip
+names, action positions, and playback are unchanged.
+
+The importable two-measure example at `guitar-app/test/fixtures/long-grip-labels.json` covers
+edge names, consecutive sixteenth-note changes, and a measure boundary. The focused browser
+regression is `guitar-app/e2e/grip-label-layout.spec.ts`.
+
 ## Playback
 
 Full-song playback follows arrangement order, including repeated references. Isolated occurrence and measure previews rebuild the preceding grip and sounding-string state in that same order. Only the requested occurrence/measure is scheduled. Repeated part definitions therefore get the history of their particular occurrence, rather than the order of the Parts library.

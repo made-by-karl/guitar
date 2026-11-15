@@ -1,0 +1,76 @@
+{
+  "format": "guitar-song-sheet",
+  "formatVersion": 1,
+  "modelVersion": 1,
+  "exportedAt": 1,
+  "appVersion": "1.0.1",
+  "data": {
+    "id": "long-grip-labels",
+    "name": "Long grip labels",
+    "tuning": [
+      { "semitone": "E", "octave": 2 },
+      { "semitone": "A", "octave": 2 },
+      { "semitone": "D", "octave": 3 },
+      { "semitone": "G", "octave": 3 },
+      { "semitone": "B", "octave": 3 },
+      { "semitone": "E", "octave": 4 }
+    ],
+    "capodaster": 0,
+    "tempo": 70,
+    "links": [],
+    "grips": [
+      { "gripId": "o|8|7|x|x|x", "name": "087xxx" },
+      { "gripId": "o|10|10|x|x|x", "name": "01010xxx" },
+      { "gripId": "o|10|9|x|x|x", "name": "0109xxx" },
+      { "gripId": "o|o|o|x|x|x", "name": "000xxx" },
+      { "gripId": "o|2|2|o|o|o", "name": "Em" }
+    ],
+    "patterns": [],
+    "parts": [{
+      "id": "part",
+      "section": "Regression",
+      "notes": "Long names at the edges, adjacent sixteenths, and a measure boundary.",
+      "measures": [
+        {
+          "id": "measure-1",
+          "measure": {
+            "timeSignature": "4/4",
+            "actions": [
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } },
+              { "technique": "strum", "strum": { "direction": "U", "strings": "all" } },
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } },
+              { "technique": "strum", "strum": { "direction": "U", "strings": "all" } }
+            ],
+            "actionGrips": [
+              { "measureIndex": 0, "actionIndex": 0, "gripId": "o|8|7|x|x|x", "name": "087xxx" },
+              { "measureIndex": 0, "actionIndex": 13, "gripId": "o|10|10|x|x|x", "name": "01010xxx" },
+              { "measureIndex": 0, "actionIndex": 14, "gripId": "o|10|9|x|x|x", "name": "0109xxx" },
+              { "measureIndex": 0, "actionIndex": 15, "gripId": "o|o|o|x|x|x", "name": "000xxx" }
+            ]
+          }
+        },
+        {
+          "id": "measure-2",
+          "measure": {
+            "timeSignature": "4/4",
+            "actions": [
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null,
+              { "technique": "strum", "strum": { "direction": "D", "strings": "all" } }, null, null, null
+            ],
+            "actionGrips": [
+              { "measureIndex": 0, "actionIndex": 0, "gripId": "o|2|2|o|o|o", "name": "Em" }
+            ]
+          }
+        }
+      ]
+    }],
+    "arrangement": [{ "id": "occurrence", "partId": "part", "lyrics": "" }],
+    "created": 1,
+    "updated": 1
+  }
+}

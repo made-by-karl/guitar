@@ -1,10 +1,12 @@
 <div class="notation-measure" [style.width]="measureWidth()">
-  <div class="notation-scroll">
+  <div class="notation-scroll" #notation>
     @for (segment of getRenderableSegments(); track segment.actionIndex) {
       <svg
+        #notationSegment
         class="action-svg"
         [class.has-action-grips]="hasActionGripLabels()"
         [style.width.px]="getActionSvgPixelWidth(segment.actionIndex)"
+        [style.height.px]="hasActionGripLabels() ? getActionSvgHeight() : null"
         [attr.viewBox]="getActionSvgViewBox(segment.actionIndex)"
         role="img"
         aria-hidden="true">
@@ -22,10 +24,6 @@
 
       @for (divider of getSegmentMeasureDividers(segment); track divider.actionIndex) {
         <line [attr.x1]="divider.x" [attr.y1]="stringY(0) - 4" [attr.x2]="divider.x" [attr.y2]="stringY(5) + 4" class="measure-divider" />
-      }
-
-      @for (gripLabel of getSegmentActionGripLabels(segment); track gripLabel.actionIndex) {
-        <text [attr.x]="gripLabel.x" [attr.y]="getActionGripLabelY()" class="action-grip-label">{{ gripLabel.label }}</text>
       }
 
       @for (slotAction of segment.actions; track slotAction.actionIndex) {
@@ -83,6 +81,22 @@
         }
       }
       </svg>
+    }
+    @if (hasActionGripLabels()) {
+      <svg class="grip-label-leaders" aria-hidden="true">
+        @for (label of actionGripLabels(); track label.actionIndex) {
+          @if (labelPositions().get(label.actionIndex)?.leader; as points) {
+            <polyline [attr.points]="points" [attr.data-action-index]="label.actionIndex" />
+          }
+        }
+      </svg>
+      @for (label of actionGripLabels(); track label.actionIndex) {
+        <span #gripLabel class="action-grip-label"
+          [attr.data-action-index]="label.actionIndex"
+          [style.left.px]="labelPositions().get(label.actionIndex)?.left ?? 0"
+          [style.top.px]="labelPositions().get(label.actionIndex)?.top ?? 0"
+          [style.visibility]="labelPositions().has(label.actionIndex) ? 'visible' : 'hidden'">{{ label.label }}</span>
+      }
     }
   </div>
 </div>
