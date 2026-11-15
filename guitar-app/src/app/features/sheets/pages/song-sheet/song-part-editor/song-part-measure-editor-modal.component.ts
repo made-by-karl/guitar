@@ -20,7 +20,9 @@ import {
 import { GripSelectorModalComponent, GripSelectorModalData } from '@/app/features/grips/ui/grip-selector-modal/grip-selector-modal.component';
 import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/grip.model';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
-import { cloneMeasure } from '../song-sheet.helpers';
+import { MeasureEditorPreviewComponent, EditorPreviewMeasure } from '@/app/features/patterns/ui/measure-editor-preview/measure-editor-preview.component';
+import { PlayingActionsNotationHistoryEntry } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { buildGripByIdMap, cloneMeasure } from '../song-sheet.helpers';
 
 export interface SongPartMeasureEditorModalData {
   sheet: SongSheetWithData;
@@ -30,6 +32,7 @@ export interface SongPartMeasureEditorModalData {
   measure: Measure;
   actionGrips: SongPartActionGrip[];
   measureLabel: string;
+  notationHistory?: PlayingActionsNotationHistoryEntry[];
 }
 
 export interface SongPartMeasureEditorResult {
@@ -40,7 +43,7 @@ export interface SongPartMeasureEditorResult {
 @Component({
   selector: 'app-song-part-measure-editor-modal',
   standalone: true,
-  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureEditorPreviewComponent],
   templateUrl: './song-part-measure-editor-modal.component.html',
   styleUrl: './song-part-measure-editor-modal.component.scss'
 })
@@ -62,6 +65,19 @@ export class SongPartMeasureEditorModalComponent implements
     this.sheet = this.data.sheet;
     this.editedMeasure = cloneMeasure(this.data.measure);
     this.editedActionGrips = this.data.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }));
+  }
+
+  get previewMeasures(): EditorPreviewMeasure[] {
+    return [{
+      label: this.data.measureLabel,
+      measure: this.editedMeasure,
+      context: {
+        timeSignature: this.editedMeasure.timeSignature,
+        actionGrips: this.editedActionGrips,
+        gripById: buildGripByIdMap(this.sheet)
+      },
+      history: this.data.notationHistory ?? []
+    }];
   }
 
   get isPlaying(): boolean {
@@ -96,23 +112,30 @@ export class SongPartMeasureEditorModalComponent implements
   }
 
   async assignActionGrip(actionIndex: number): Promise<void> {
-    const effectiveGrip = this.editedActionGrips.find(grip => grip.actionIndex === actionIndex);
-    const selectedGrip = await this.selectGrip(effectiveGrip?.name);
-    if (selectedGrip === undefined) {
-      return;
-    }
+    const opener = document.activeElement;
+    try {
+      const effectiveGrip = this.editedActionGrips.find(grip => grip.actionIndex === actionIndex);
+      const selectedGrip = await this.selectGrip(effectiveGrip?.name);
+      if (selectedGrip === undefined) {
+        return;
+      }
 
-    this.editedActionGrips = this.editedActionGrips.filter(grip => grip.actionIndex !== actionIndex);
-    if (selectedGrip) {
-      this.editedActionGrips = [
-        ...this.editedActionGrips,
-        {
-          measureIndex: 0,
-          actionIndex,
-          gripId: selectedGrip.gripId,
-          name: selectedGrip.name
-        }
-      ];
+      this.editedActionGrips = this.editedActionGrips.filter(grip => grip.actionIndex !== actionIndex);
+      if (selectedGrip) {
+        this.editedActionGrips = [
+          ...this.editedActionGrips,
+          {
+            measureIndex: 0,
+            actionIndex,
+            gripId: selectedGrip.gripId,
+            name: selectedGrip.name
+          }
+        ];
+      }
+    } finally {
+      if (opener instanceof HTMLElement && opener.isConnected && document.activeElement === document.body) {
+        opener.focus({ preventScroll: true });
+      }
     }
   }
 

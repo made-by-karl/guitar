@@ -15,21 +15,24 @@
   </div>
 
   @if (pattern) {
-    <div class="row g-3 mb-3">
-      <div class="col-12 col-md-4">
-        <label class="form-label" for="patternEditorName">Name</label>
-        <input id="patternEditorName" name="patternEditorName" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.name" />
+    <app-measure-editor-preview [measures]="previewMeasures" [content]="previewContent" />
+    <div class="pattern-forms" #previewContent>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="patternEditorName">Name</label>
+          <input id="patternEditorName" name="patternEditorName" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.name" />
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="patternEditorCategory">Category</label>
+          <input id="patternEditorCategory" name="patternEditorCategory" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.category" />
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label" for="patternEditorDescription">Description</label>
+          <input id="patternEditorDescription" name="patternEditorDescription" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.description" />
+        </div>
       </div>
-      <div class="col-12 col-md-4">
-        <label class="form-label" for="patternEditorCategory">Category</label>
-        <input id="patternEditorCategory" name="patternEditorCategory" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.category" />
-      </div>
-      <div class="col-12 col-md-4">
-        <label class="form-label" for="patternEditorDescription">Description</label>
-        <input id="patternEditorDescription" name="patternEditorDescription" type="text" autocomplete="off" class="form-control" [(ngModel)]="pattern.description" />
-      </div>
-    </div>
 
-    <app-playing-pattern-editor [(pattern)]="pattern"></app-playing-pattern-editor>
+      <app-playing-pattern-editor [(pattern)]="pattern"></app-playing-pattern-editor>
+    </div>
   }
 </div>

@@ -124,6 +124,9 @@ export class PlayingActionsComponent {
   readonly legatoLineSourceGap = 8;
 
   measures = input.required<Measure[]>();
+  // Editor-only layout and orientation; independent of any playback position.
+  compact = input(false);
+  visibleActionIndices = input<readonly number[]>([]);
   showActionIndex = input<boolean>(false);
   measureWidth = input<string>('100%');
   notationContexts = input<PlayingActionsNotationContext[] | undefined>(undefined);
@@ -151,8 +154,9 @@ export class PlayingActionsComponent {
   constructor() {
     // Observe width, including changes caused by a sidebar/dialog rather than a window resize.
     afterRenderEffect(onCleanup => {
-      if (!this.hasActionGripLabels()) return;
-      const element = this.notationElement()?.nativeElement;
+      if (!this.hasActionGripLabels() && !this.compact()) return;
+      const notation = this.notationElement()?.nativeElement;
+      const element = this.compact() ? notation?.parentElement : notation;
       if (!element || typeof ResizeObserver === 'undefined') return;
       let previousWidth = -1;
       const observer = new ResizeObserver(entries => {
@@ -166,6 +170,7 @@ export class PlayingActionsComponent {
       onCleanup(() => observer.disconnect());
     });
     afterRenderEffect({ read: () => this.measureGripLabels() });
+    afterRenderEffect({ read: () => this.revealVisibleActions() });
 
     // A newly loaded font can change text bounds without changing the container width.
     afterRenderEffect(onCleanup => {
@@ -183,6 +188,31 @@ export class PlayingActionsComponent {
         fontSet.removeEventListener('loadingdone', refresh);
       });
     });
+  }
+
+  getSegmentSlotIndices(segment: RenderableActionSegment): number[] {
+    return Array.from({ length: segment.span }, (_, index) => segment.actionIndex + index);
+  }
+
+  private revealVisibleActions(): void {
+    const indices = this.visibleActionIndices();
+    this.layoutRevision();
+    this.renderableActionSegments();
+    this.labelBandHeight();
+    if (!this.compact() || indices.length === 0) return;
+    const element = this.notationElement()?.nativeElement.parentElement;
+    if (!element || element.clientWidth === 0) return;
+    const marks = Array.from(element.querySelectorAll<SVGRectElement>('.visible-action-slot.in-view'));
+    if (marks.length === 0) return;
+    const viewport = element.getBoundingClientRect();
+    const bounds = marks.map(mark => mark.getBoundingClientRect());
+    const left = Math.min(...bounds.map(bound => bound.left)) - viewport.left + element.scrollLeft;
+    const right = Math.max(...bounds.map(bound => bound.right)) - viewport.left + element.scrollLeft;
+    if (right - left > element.clientWidth || left < element.scrollLeft) {
+      element.scrollLeft = left;
+    } else if (right > element.scrollLeft + element.clientWidth) {
+      element.scrollLeft = right - element.clientWidth;
+    }
   }
 
   private measureGripLabels(): void {
@@ -255,7 +285,7 @@ export class PlayingActionsComponent {
       const rawSlotsPerBeat = measure.actions.length / beats;
       if (rawSlotsPerBeat < 1) continue;
 
-      const fitsEighthGrid = rawSlotsPerBeat >= 4 && rawSlotsPerBeat % 2 === 0
+      const fitsEighthGrid = !this.compact() && rawSlotsPerBeat >= 4 && rawSlotsPerBeat % 2 === 0
         && measure.actions.every((action, index) => !action || index % 2 === 0)
         && (context?.actionGrips ?? []).every(grip => grip.actionIndex % 2 === 0);
       slotsPerBeat = Math.max(slotsPerBeat, fitsEighthGrid ? rawSlotsPerBeat / 2 : rawSlotsPerBeat);
@@ -438,6 +468,10 @@ export class PlayingActionsComponent {
       return '&';
     }
 
+    if (this.compact()) {
+      const sixteenth = Math.round(beatPosition * 4) % 4;
+      return sixteenth === 1 ? 'e' : sixteenth === 3 ? 'a' : null;
+    }
     return null;
   }
 

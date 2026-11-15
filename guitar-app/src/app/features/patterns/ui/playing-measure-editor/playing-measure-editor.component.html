@@ -45,6 +45,7 @@
       @for (actionData of getActionsForDisplay(); track actionData.originalIndex) {
         <div
           class="action-position"
+          [attr.data-action-index]="actionData.originalIndex"
           [class.main-position]="actionData.isMainPosition"
           [class.quarter-position]="actionData.subdivision === 'quarter'"
           [class.eighth-position]="actionData.subdivision === 'eighth'"
@@ -445,7 +446,7 @@
   </div>
 
   @if (showGripControls()) {
-    <div class="d-flex justify-content-end mt-3">
+    <div class="d-flex justify-content-end mt-3" data-preview-controls>
       <button class="btn btn-outline-secondary btn-sm" type="button" (click)="clearMeasureGrips()">
         Clear Grips
       </button>

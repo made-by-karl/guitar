@@ -248,7 +248,8 @@ export class SongPartEditorComponent implements
         occurrenceId: this.data.occurrence?.id,
         measure: partMeasure.measure,
         actionGrips: partMeasure.measure.actionGrips ?? [],
-        measureLabel: `Measure ${measureIndex + 1}`
+        measureLabel: `Measure ${measureIndex + 1}`,
+        notationHistory: this.getPartMeasureNotationHistory(measureIndex)
       },
       width: '95vw',
       height: '90vh',

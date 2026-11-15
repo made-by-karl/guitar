@@ -1,0 +1,21 @@
+@if (selected; as current) {
+  <section class="editor-preview" aria-label="Live measure preview"
+    [attr.aria-description]="current.label + ', ' + current.measure.timeSignature"
+    [attr.data-measure-index]="selectedIndex() ?? 0">
+    @if (collapsed()) {
+      <span class="preview-collapsed-label small text-muted">Measure preview</span>
+    } @else {
+      <div class="preview-drawing">
+        <app-playing-actions [measures]="[current.measure]" [notationContexts]="[current.context]"
+          [notationHistory]="current.history" [showActionIndex]="true" [compact]="true"
+          [visibleActionIndices]="visibleActions()" />
+      </div>
+    }
+    <button type="button" class="btn btn-outline-secondary btn-sm preview-toggle"
+      [attr.aria-label]="collapsed() ? 'Expand preview' : 'Collapse preview'"
+      [title]="collapsed() ? 'Expand preview' : 'Collapse preview'"
+      [attr.aria-expanded]="!collapsed()" (click)="toggle()">
+      <i class="bi" [class.bi-chevron-down]="collapsed()" [class.bi-chevron-up]="!collapsed()" aria-hidden="true"></i>
+    </button>
+  </section>
+}

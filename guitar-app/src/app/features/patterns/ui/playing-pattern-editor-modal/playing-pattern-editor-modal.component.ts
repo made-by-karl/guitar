@@ -1,5 +1,6 @@
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
-import { Component, Inject, ViewChild, OnInit } from '@angular/core';
+import { MeasureEditorPreviewComponent } from '@/app/features/patterns/ui/measure-editor-preview/measure-editor-preview.component';
+import { Component, Inject, ViewChild, viewChild } from '@angular/core';
 import { Note } from '@/app/core/music/semitones';
 import { CommonModule } from '@angular/common';
 import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playing-pattern-editor/playing-pattern-editor.component';
@@ -9,11 +10,12 @@ import {MODAL_REF, ModalComponent, ModalRef} from '@/app/core/services/modal.ser
 @Component({
   selector: 'app-playing-pattern-editor-modal',
   standalone: true,
-  imports: [MediaPlaybackControlsComponent, CommonModule, PlayingPatternEditorComponent],
+  imports: [MediaPlaybackControlsComponent, CommonModule, PlayingPatternEditorComponent, MeasureEditorPreviewComponent],
   templateUrl: './playing-pattern-editor-modal.component.html',
   styleUrls: ['./playing-pattern-editor-modal.component.scss']
 })
 export class PlayingPatternEditorModalComponent implements ModalComponent<PlayingPattern> {
+  readonly previewEditor = viewChild(PlayingPatternEditorComponent);
   @ViewChild('editor', { static: false }) editor!: PlayingPatternEditorComponent;
 
   pattern?: PlayingPattern;
