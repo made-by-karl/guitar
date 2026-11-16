@@ -9,6 +9,7 @@
       @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stopSong()">Stop song</button> }
     </div>
   </div>
+  <app-song-playback source="song" [state]="playbackState()" />
   @if (occurrences().length === 0) {
     <div class="song-empty-state"><h3>Create your first part</h3><p>Add music or lyrics, then arrange your parts into a song.</p>
       <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="startWriting()">Start writing</button>
@@ -20,10 +21,10 @@
         <div class="occurrence-list" cdkDropList (cdkDropListDropped)="drop($event)" aria-label="Song order">
           @for (occurrence of occurrences(); track occurrence.id; let index = $index) {
             <div class="occurrence-entry" cdkDrag [cdkDragDisabled]="busy()" (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)">
-              <div class="occurrence-row" [class.is-selected]="selectedId() === occurrence.id" [class.is-playing]="playbackState().status === 'playing' && playbackState().occurrenceId === occurrence.id">
+              <div class="occurrence-row" [class.is-selected]="selectedId() === occurrence.id" [class.is-playing]="playbackState().actionIndex !== undefined && playbackState().source === 'song' && playbackState().occurrenceId === occurrence.id">
                 <span class="occurrence-drag" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
                 <button class="occurrence-select" type="button" [disabled]="busy() || !part(occurrence)" [attr.aria-label]="(part(occurrence)?.section || 'Missing part') + ', occurrence ' + number(occurrence)" [attr.aria-pressed]="selectedId() === occurrence.id" (click)="selectOccurrence(occurrence.id)">
-                  <span class="occurrence-title"><strong>{{ part(occurrence)?.section || 'Missing part' }}</strong><span class="occurrence-number">{{ number(occurrence) }}</span></span>
+                  <span class="occurrence-title">@if (playbackState().actionIndex !== undefined && playbackState().source === 'song' && playbackState().occurrenceId === occurrence.id) { <span class="small">{{ playbackState().status === 'paused' ? 'Paused' : 'Playing' }} ▸</span> }<strong>{{ part(occurrence)?.section || 'Missing part' }}</strong><span class="occurrence-number">{{ number(occurrence) }}</span></span>
                   <span class="occurrence-summary">{{ summary(occurrence) }}</span>
                   @if (occurrence.lyrics.trim()) { <span class="occurrence-lyric">{{ occurrence.lyrics.split('\n')[0] }}</span> }
                 </button>

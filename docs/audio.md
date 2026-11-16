@@ -160,3 +160,38 @@ retry, required sample failures, finite transport, metronome loop boundaries and
 Unit mocks preserve musical regressions but cannot establish audible quality. See
 [testing.md](testing.md#media-playback-and-iphone-verification) for the device procedure and
 remaining acceptance work.
+
+## Song notation position
+
+The pattern planner includes an ordered `slots` timeline (`time`, `segmentIndex`, local
+`actionIndex`) alongside its instructions. Every defined slot is included, even when its
+action is null or its measure is a rest. Internal strum attacks and legato voices do not
+create extra visual positions. Preceding preview history establishes musical state without
+adding time or positions to the requested scope.
+
+Finite sessions map `HTMLAudioElement.currentTime` to that timeline on animation frames and
+media events. Boundary comparisons allow one microsecond for media seek quantization
+(for example at 180 BPM). They emit only when the transport or notated position changes; no elapsed-time
+counter or queue of action callbacks drives the display. A delayed foreground frame catches
+up directly to media time. Preparation, rejected startup and errors have no action marker.
+Pause/seek use the media position, resume retains it, and the last slot remains through the
+rendered release until `ended`. Stop/replacement/destruction invalidate preparation, media
+events and frame loops; pause also invalidates its frame loop before resuming.
+
+`SongPartPlaybackService` maps each segment to a copied musical snapshot with its part,
+measure, local measure index, occurrence identity/number and preceding notation history.
+The run ID changes on a new playback request. The source identifies Song, Parts or editor
+ownership so editor drafts and saved playback cannot accidentally share a presentation. A stable
+`sequence` contains the full scheduled musical snapshot for continuous drawing. Timing is
+independent of presentation: `PlaybackHighlightView` accepts resolved notated positions,
+and the binding directive delivers/clears them without starting a timer or controlling audio.
+
+Controlled tests cover boundaries at 60/120/180 BPM and a three-minute plan. The browser
+fixture records foreground DOM boundaries against actual media time. These measurements do
+not establish the issue #5 target of visual boundaries within 50 ms of heard audio on a
+physical speaker/wired output; synchronized screen/audio capture and listening remain required.
+
+The continuous notation renderer indexes actions, measure coordinates and SVG segments from
+its immutable score inputs. Angular OnPush detection keeps media frame polling from repeatedly
+checking an unchanged score. Position updates reuse those indexes and preserve the drawing's
+DOM across boundaries; only the highlight and local horizontal viewport follow playback.

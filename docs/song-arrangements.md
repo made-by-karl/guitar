@@ -53,3 +53,31 @@ Single selection uses radio cards: choosing another item replaces the previous c
 ## Verification
 
 Jest covers migration/idempotency, per-part numbering, reference reuse, independent lyrics, independent copies, edit guards, and occurrence playback history. Chromium coverage includes a real upgrade from database version 7, the full arrangement workflow at 390/768/1280px, and starting an empty song with a pattern-library import. Existing sheet, grip, pattern and measure editor browser regressions remain covered.
+
+## Following playback
+
+Song and outline playback reveal a read-only notation pane without opening or switching the
+occurrence editor. Song and Parts draw the entire scheduled stream once, including subsequent
+measures and repeated occurrences. Position updates move the marker without replacing the
+drawing at measure boundaries. The pane displays part/occurrence, measure, action and
+Playing/Paused status. Transport and recovery controls stay with the owning workflow and the
+existing media UI. Parts keeps this pane independently of its standalone score.
+
+Part-editor notation and the nested measure editor's live preview reuse their existing drawings.
+They show the scheduled draft snapshot and its preceding notation history. Editing selection,
+lyrics, reuse locks and save/cancel boundaries stay independent of playback. Only the current
+occurrence gets the outline cue. Owner teardown clears playback, including retained completed
+media.
+
+`PlaybackHighlightView` is a clock-independent drawing contract; `appPlaybackHighlight` binds
+resolved positions to implementing views. `songPlaybackHighlight` projects playback identity
+into each view's local measure/action coordinates. An enclosing measure band and a solid slot
+outline distinguish playback from editor selection and focus; paused slots use a dashed
+outline. Blank slots and actions inside a connected SVG segment have their own marker.
+Consumers without a highlight binding retain their presentation.
+
+Following adjusts only a compact drawing's horizontal scroll position when needed. It never
+scrolls the page or forms, changes focus, or forces the user back after scrolling away. All
+following is immediate, including under reduced motion. The focused regression is
+`e2e/playback-highlighting.spec.ts`; curated evidence is kept under
+`temp/ux/playback-highlighting/`.

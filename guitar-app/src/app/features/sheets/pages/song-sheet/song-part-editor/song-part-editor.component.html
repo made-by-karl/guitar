@@ -125,18 +125,20 @@
                       </div>
                       <div class="measure-meta">
                         <div class="measure-number">{{ measureIndex + 1 }}</div>
-                        <div class="measure-time-signature">{{ partMeasure.measure.timeSignature }}</div>
+                        <div class="measure-time-signature">{{ getMeasurePreview(partMeasure).measure.timeSignature }}</div>
                       </div>
                     </div>
 
                     @if (!isDraggingMeasure()) {
                       <div class="rhythm-preview">
+                        @if (getMeasurePlaybackPosition(partMeasure); as position) { <span class="small playback-position">{{ position.status === 'playing' ? 'Playing' : 'Paused' }} · Action {{ position.actionIndex + 1 }}</span> }
                         <app-playing-actions
-                          [measures]="[partMeasure.measure]"
+                          [measures]="[getMeasurePreview(partMeasure).measure]"
+                          [appPlaybackHighlight]="getMeasurePlaybackPosition(partMeasure)"
                           [showActionIndex]="true"
                           [measureWidth]="'100%'"
                           [notationHistory]="getPartMeasureNotationHistory(measureIndex)"
-                          [notationContexts]="[getPartMeasureNotationContext(partMeasure)]" />
+                          [notationContexts]="[getPartMeasureNotationContext(getMeasurePreview(partMeasure))]" />
                       </div>
                     }
                   </div>
@@ -168,7 +170,7 @@
                         </div>
                         <div class="measure-meta">
                           <div class="measure-number">{{ measureIndex + 1 }}</div>
-                          <div class="measure-time-signature">{{ partMeasure.measure.timeSignature }}</div>
+                          <div class="measure-time-signature">{{ getMeasurePreview(partMeasure).measure.timeSignature }}</div>
                         </div>
                       </div>
                     </div>
@@ -182,7 +184,7 @@
                         </div>
                         <div class="measure-meta">
                           <div class="measure-number">{{ measureIndex + 1 }}</div>
-                          <div class="measure-time-signature">{{ partMeasure.measure.timeSignature }}</div>
+                          <div class="measure-time-signature">{{ getMeasurePreview(partMeasure).measure.timeSignature }}</div>
                         </div>
                       </div>
                     </div>

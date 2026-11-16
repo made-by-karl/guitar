@@ -1,4 +1,4 @@
-<div class="notation-measure" [class.compact]="compact()" [style.width]="measureWidth()">
+<div class="notation-measure" [class.playback-paused]="playbackPosition()?.status === 'paused'" [class.compact]="compact()" [style.width]="measureWidth()">
   <div class="notation-scroll" #notation>
     @for (segment of getRenderableSegments(); track segment.actionIndex) {
       <svg
@@ -10,6 +10,14 @@
         [attr.viewBox]="getActionSvgViewBox(segment.actionIndex)"
         role="img"
         aria-hidden="true">
+      @if (getPlaybackMeasureBand(segment); as band) {
+        <rect class="playback-measure-band" [attr.x]="band.x" y="2" [attr.width]="band.width" [attr.height]="getActionSvgHeight() - 4" />
+      }
+      @if (playbackSlot() !== undefined && playbackSlot()! >= segment.actionIndex && playbackSlot()! < segment.actionIndex + segment.span) {
+        <rect class="playback-action-slot" [attr.data-slot-index]="playbackSlot()"
+          [attr.x]="getActionSlotLeft(playbackSlot()!) + 1" y="3"
+          [attr.width]="slotSpacing / segment.compression - 2" [attr.height]="getActionSvgHeight() - 6" rx="3" />
+      }
       @if (compact() || visibleActionIndices().length > 0) {
         @for (slotIndex of getSegmentSlotIndices(segment); track slotIndex) {
           <rect class="visible-action-slot" [class.in-view]="visibleActionIndices().includes(slotIndex)"

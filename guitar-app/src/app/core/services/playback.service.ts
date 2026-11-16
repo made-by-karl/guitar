@@ -7,13 +7,19 @@ import { HtmlAudioPlaybackService, HtmlAudioProgress } from '@/app/core/services
 
 export type PlaybackStatus = 'idle' | 'preparing' | 'playing' | 'paused';
 
+export interface PlaybackSlot {
+  time: number; segmentIndex: number; actionIndex: number;
+}
+
 export interface PlaybackPlan {
+  slots?: PlaybackSlot[];
   instructions: MidiInstruction[];
   segmentStartTimes: number[];
   totalDuration: number;
   totalSegments: number;
 }
 export interface PlaybackSessionState {
+  runId?: number; actionIndex?: number;
   sessionId: string; scope: string; status: PlaybackStatus; cursor: number;
   total: number; canPause: boolean; canSeek: boolean; ended: boolean;
 }
@@ -34,6 +40,7 @@ class FinitePlaybackSession implements PlaybackSession {
   private plan: PlaybackPlan | null = null;
   private readonly progress: Subscription;
   private destroyed = false;
+  private runId = 0;
 
   constructor(
     private readonly sessionId: string,
@@ -53,6 +60,7 @@ class FinitePlaybackSession implements PlaybackSession {
     if (this.destroyed) return;
     if (!plan.instructions.length || !plan.totalSegments) { this.stop(); return; }
     this.beforePlay(this);
+    this.runId++;
     this.plan = plan;
     const startTime = plan.segmentStartTimes[this.clamp(startCursor)] ?? 0;
     await this.media.play(this.channel, signal => this.rendered.renderInstructions(plan.instructions, plan.totalDuration, signal),
@@ -69,7 +77,7 @@ class FinitePlaybackSession implements PlaybackSession {
     this.destroyed = true; this.stop(); this.progress.unsubscribe();
     this.media.release(this.channel); this.stateSubject.complete(); this.onDestroySession(this.sessionId);
   }
-  isActive(): boolean { return this.getSnapshot().status !== 'idle'; }
+  isActive(): boolean { return this.getSnapshot().status !== 'idle' || this.getSnapshot().ended; }
   hasScope(scope: string): boolean { return this.scope === scope; }
   private get channel(): string { return `finite:${this.sessionId}`; }
   private clamp(cursor: number): number { return Math.max(0, Math.min((this.plan?.totalSegments ?? 1) - 1, Math.round(cursor))); }
@@ -78,10 +86,28 @@ class FinitePlaybackSession implements PlaybackSession {
     if (!plan) return;
     const status: PlaybackStatus = progress.status === 'preparing' || progress.status === 'starting' ? 'preparing'
       : progress.status === 'ready' || progress.status === 'error' ? 'paused' : progress.status;
+    // Media seeks truncate to microseconds in some engines. A sub-microsecond
+    // difference at (for example) 180 BPM belongs to the requested boundary.
+    const presentationTime = progress.currentTime + 0.000001;
     let cursor = 0;
-    plan.segmentStartTimes.forEach((time, index) => { if (time <= progress.currentTime) cursor = index; });
-    this.stateSubject.next({ ...this.getSnapshot(), status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
-      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused', ended: progress.ended });
+    plan.segmentStartTimes.forEach((time, index) => { if (time <= presentationTime) cursor = index; });
+    // A frame samples media time directly: delayed frames skip stale slots. Retain the
+    // final slot through the rendered release tail, clearing it only on actual end.
+    const slots = plan.slots ?? [];
+    let low = 0, high = slots.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (slots[middle].time <= presentationTime) low = middle + 1;
+      else high = middle;
+    }
+    const slot = slots[low - 1];
+    const actionIndex = (status === 'playing' || progress.status === 'paused') && slot?.segmentIndex === cursor
+      ? slot.actionIndex : undefined;
+    const next: PlaybackSessionState = { ...this.getSnapshot(), runId: this.runId, actionIndex, status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
+      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused', ended: progress.ended };
+    if (Object.keys(next).some(key => next[key as keyof PlaybackSessionState] !== this.getSnapshot()[key as keyof PlaybackSessionState])) {
+      this.stateSubject.next(next);
+    }
     // Ended comes from the media element after its release tail, never from plan duration.
     // The system player can replay completed media. Keep its plan so cursor and
     // transport state follow that replay; explicit Stop/replacement still clear it.

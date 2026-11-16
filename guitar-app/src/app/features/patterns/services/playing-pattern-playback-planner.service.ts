@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PlaybackPlan } from '@/app/core/services/playback.service';
+import { PlaybackPlan, PlaybackSlot } from '@/app/core/services/playback.service';
 import { MidiInstruction, MidiNote, MidiTechnique, MidiLegato } from '@/app/core/services/midi.model';
 import { resolveSlideTargets } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
 import { Note, transpose } from '@/app/core/music/semitones';
@@ -57,6 +57,7 @@ export class PlayingPatternPlaybackPlannerService {
     const gripMap = this.createGripMap([...precedingMeasures, ...measures]);
     const flatEvents: FlatPlaybackEvent[] = [];
     const segmentStartTimes: number[] = [];
+    const slots: PlaybackSlot[] = [];
     const quarterNoteDuration = 60 / tempo;
     const actionDuration = quarterNoteDuration / 4;
 
@@ -74,11 +75,12 @@ export class PlayingPatternPlaybackPlannerService {
       }
     }
 
-    for (const measureConfig of measures) {
+    for (const [segmentIndex, measureConfig] of measures.entries()) {
       segmentStartTimes.push(currentTime);
 
       for (let actionIndex = 0; actionIndex < measureConfig.measure.actions.length; actionIndex++) {
         currentGrip = this.resolveGripForAction(measureConfig, actionIndex, gripMap, currentGrip);
+        slots.push({ time: currentTime + actionIndex * actionDuration, segmentIndex, actionIndex });
         const action = measureConfig.measure.actions[actionIndex];
         if (!action) {
           continue;
@@ -100,6 +102,7 @@ export class PlayingPatternPlaybackPlannerService {
       instructions,
       diagnostics,
       segmentStartTimes,
+      slots,
       totalDuration: this.resolveTotalDuration(currentTime, instructions),
       totalSegments: measures.length
     };

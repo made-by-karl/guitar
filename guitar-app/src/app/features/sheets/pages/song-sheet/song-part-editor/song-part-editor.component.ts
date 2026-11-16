@@ -1,3 +1,5 @@
+import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
+import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, computed, Inject, OnDestroy, inject, signal } from '@angular/core';
@@ -56,7 +58,7 @@ export interface SongPartEditorModalData {
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })
@@ -367,9 +369,27 @@ export class SongPartEditorComponent implements
     this.removeMeasure(selectedIndex);
   }
 
+  getMeasurePlaybackPosition(measure: SongPartMeasure) {
+    return songPlaybackHighlight(this.playbackState, { source: 'editor', partId: this.tempPart().id,
+      occurrenceId: this.data.occurrence?.id, measureId: measure.id });
+  }
+
+  getMeasurePreview(measure: SongPartMeasure): SongPartMeasure {
+    const state = this.playbackState;
+    return state.source === 'editor' && state.partId === this.tempPart().id && state.occurrenceId === this.data.occurrence?.id
+      ? state.presentation?.part.measures.find(item => item.id === measure.id) ?? measure : measure;
+  }
+
   getPartMeasureNotationHistory(measureIndex: number): PlayingActionsNotationHistoryEntry[] {
+    const measure = this.tempPart().measures[measureIndex];
+    if (measure && this.getMeasurePlaybackPosition(measure)) {
+      return (this.playbackState.presentation?.precedingMeasures ?? []).map(measure => ({
+        measure, context: { timeSignature: measure.timeSignature, actionGrips: measure.actionGrips,
+          gripById: buildGripByIdMap(this.sheet()) }
+      }));
+    }
     const history = this.data.occurrence ? getOccurrenceHistory(this.sheet(), this.data.occurrence.id, this.tempPart()).flatMap(part => part.measures) : [];
-    return [...history, ...this.tempPart().measures.slice(0, measureIndex)].map(partMeasure => ({
+    return [...history, ...this.tempPart().measures.slice(0, measureIndex).map(measure => this.getMeasurePreview(measure))].map(partMeasure => ({
       measure: partMeasure.measure,
       context: this.getPartMeasureNotationContext(partMeasure)
     }));
@@ -454,7 +474,7 @@ export class SongPartEditorComponent implements
   }
 
   async playPart(part: SongPart): Promise<void> {
-    await this.songPartPlayback.playSongPart(this.sheet(), part, this.data.occurrence?.id);
+    await this.songPartPlayback.playSongPart(this.sheet(), part, this.data.occurrence?.id, 'editor');
   }
 
   pausePart(): void {

@@ -4,6 +4,20 @@ import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/se
 import { PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
 
 describe('PlayingPatternPlaybackPlannerService', () => {
+  it.each([60, 120, 180])('plans every local slot, including leading/trailing silence and whole rests at %i BPM', tempo => {
+    const action: PlayingAction = { technique: 'percussive', percussive: { technique: 'body-knock' } };
+    const plan = new PlayingPatternPlaybackPlannerService().buildPlaybackPlan([
+      { measure: { timeSignature: '4/4', actions: [null, action, null, null] } },
+      { measure: { timeSignature: '4/4', actions: [null, null, null, null] } },
+      { measure: { timeSignature: '4/4', actions: [action, action] } }
+    ], [note('E', 2)], tempo);
+    const duration = 60 / tempo / 4;
+    expect(plan.slots).toEqual(Array.from({ length: 10 }, (_, index) => ({
+      time: index * duration, segmentIndex: index < 4 ? 0 : index < 8 ? 1 : 2, actionIndex: index < 4 ? index : index < 8 ? index - 4 : index - 8
+    })));
+    expect(plan.instructions.map(instruction => instruction.time)).toEqual([duration, 8 * duration, 9 * duration]);
+  });
+
   it('plays selected dead strings without a grip, overrides mute modifiers, and clears the old legato source', () => {
     const planner = new PlayingPatternPlaybackPlannerService();
     const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [

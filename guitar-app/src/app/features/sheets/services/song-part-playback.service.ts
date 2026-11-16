@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { PlaybackService, PlaybackStatus } from '@/app/core/services/playback.service';
 import { Note, transpose } from '@/app/core/music/semitones';
-import { getSongArrangement, getOccurrenceHistory } from './song-arrangement';
+import { getSongArrangement, getOccurrenceHistory, getOccurrenceNumber } from '@/app/features/sheets/services/song-arrangement';
 import {
   ResolvedSongPartMeasure,
   SongPart,
@@ -16,9 +16,31 @@ import {
   PlayingPatternPlaybackPlannerService
 } from '@/app/features/patterns/services/playing-pattern-playback-planner.service';
 
+import { Measure } from '@/app/features/patterns/services/playing-patterns.model';
+
+export interface SongPlaybackMeasure {
+  part: SongPart;
+  measureId: string;
+  measureIndex: number;
+  occurrenceId?: string;
+  occurrenceNumber?: number;
+  precedingMeasures: Measure[];
+}
+export interface SongPlaybackSequence {
+  measures: Measure[];
+  precedingMeasures: Measure[];
+}
+
+export type SongPlaybackSource = 'song' | 'parts' | 'editor';
+
 type SongSheetPlaybackSessionType = 'none' | 'measure' | 'part' | 'song';
 
 export interface SongSheetPlaybackState {
+  runId?: number;
+  actionIndex?: number;
+  source?: SongPlaybackSource;
+  presentation?: SongPlaybackMeasure;
+  sequence?: SongPlaybackSequence;
   type: SongSheetPlaybackSessionType;
   status: PlaybackStatus;
   partId?: string;
@@ -37,11 +59,12 @@ export class SongPartPlaybackService {
 
   readonly state$ = this.stateSubject.asObservable();
   private readonly session;
-  private activePlayback:
-    | { type: 'measure'; partId: string; measureId: string; totalMeasures: number; occurrenceId?: string; }
-    | { type: 'part'; partId: string; totalMeasures: number; occurrenceId?: string; }
-    | { type: 'song'; occurrenceIds: string[]; totalMeasures: number; }
-    | null = null;
+  private activePlayback: {
+    type: 'measure' | 'part' | 'song';
+    rows: SongPlaybackMeasure[];
+    sequence: SongPlaybackSequence;
+    source: SongPlaybackSource;
+  } | null = null;
 
   constructor(
     private playback: PlaybackService,
@@ -59,34 +82,20 @@ export class SongPartPlaybackService {
         return;
       }
 
-      if (this.activePlayback.type === 'song') {
-        this.stateSubject.next({ type: 'song', status: state.status, occurrenceId: this.activePlayback.occurrenceIds[state.cursor ?? 0],
-          currentMeasureIndex: state.cursor, totalMeasures: this.activePlayback.totalMeasures });
-        return;
-      }
-      if (this.activePlayback.type === 'measure') {
-        this.stateSubject.next({
-          type: 'measure',
-          status: state.status,
-          partId: this.activePlayback.partId,
-          measureId: this.activePlayback.measureId,
-          currentMeasureIndex: state.cursor,
-          totalMeasures: this.activePlayback.totalMeasures,
-          occurrenceId: this.activePlayback.occurrenceId
-        });
-        return;
-      }
-
+      const active = this.activePlayback;
+      const row = active.rows[state.cursor];
       this.stateSubject.next({
-        type: 'part',
-        status: state.status,
-        partId: this.activePlayback.partId,
-        currentMeasureIndex: state.cursor,
-        totalMeasures: this.activePlayback.totalMeasures,
-        occurrenceId: this.activePlayback.occurrenceId
+        type: active.type, status: state.status, runId: state.runId,
+        actionIndex: state.actionIndex, source: active.source, presentation: row, sequence: active.sequence,
+        partId: row?.part.id, measureId: row?.measureId, occurrenceId: row?.occurrenceId,
+        currentMeasureIndex: state.cursor, totalMeasures: active.rows.length
       });
     });
   }
+
+  pause(): void { this.session.pause(); }
+  resume(): void { this.session.resume(); }
+  stop(): void { this.session.stop(); }
 
   getSnapshot(): SongSheetPlaybackState {
     return this.stateSubject.getValue();
@@ -110,6 +119,7 @@ export class SongPartPlaybackService {
       return;
     }
 
+    part = this.copyPart(part);
     const resolvedMeasures = this.songSheetsService.resolvePartMeasures(sheet, part);
     const targetMeasureIndex = resolvedMeasures.findIndex(measure => measure.measureId === measureId);
 
@@ -123,22 +133,7 @@ export class SongPartPlaybackService {
     for (const message of preview.diagnostics) console.warn(message);
     if (preview.instructions.length === 0) return;
 
-    this.activePlayback = {
-      type: 'measure',
-      partId: part.id,
-      measureId,
-      occurrenceId,
-      totalMeasures: 1
-    };
-    this.stateSubject.next({
-      type: 'measure',
-      status: 'preparing',
-      partId: part.id,
-      measureId,
-      occurrenceId,
-      currentMeasureIndex: 0,
-      totalMeasures: 1
-    });
+    this.activate('measure', [this.rowsForPart(sheet, part, occurrenceId)[targetMeasureIndex]], 'editor');
 
     await this.session.play(preview, 0);
   }
@@ -166,25 +161,13 @@ export class SongPartPlaybackService {
     );
   }
 
-  async playSongPart(sheet: SongSheet | SongSheetWithData, part: SongPart, occurrenceId?: string): Promise<void> {
+  async playSongPart(sheet: SongSheet | SongSheetWithData, part: SongPart, occurrenceId?: string, source: SongPlaybackSource = 'parts'): Promise<void> {
+    part = this.copyPart(part);
     const plan = this.buildPartPlaybackPlan(sheet, part, occurrenceId);
     for (const message of plan.diagnostics) console.warn(message);
     if (plan.instructions.length === 0) return;
 
-    this.activePlayback = {
-      type: 'part',
-      partId: part.id,
-      occurrenceId,
-      totalMeasures: plan.totalSegments
-    };
-    this.stateSubject.next({
-      type: 'part',
-      status: 'preparing',
-      partId: part.id,
-      occurrenceId,
-      currentMeasureIndex: 0,
-      totalMeasures: plan.totalSegments
-    });
+    this.activate('part', this.rowsForPart(sheet, part, occurrenceId), source);
 
     await this.session.play(plan, 0);
   }
@@ -266,24 +249,45 @@ export class SongPartPlaybackService {
   async playSong(sheet: SongSheet): Promise<void> {
     if (!this.canPlaySong(sheet)) return;
     const measures: PlayingPatternPlaybackMeasure[] = [];
-    const occurrenceIds: string[] = [];
+    const rows: SongPlaybackMeasure[] = [];
     for (const occurrence of getSongArrangement(sheet)) {
-      const part = sheet.parts.find(item => item.id === occurrence.partId)!;
+      const part = this.copyPart(sheet.parts.find(item => item.id === occurrence.partId)!);
+      rows.push(...this.rowsForPart(sheet, part, occurrence.id));
       for (const item of part.measures) {
         measures.push({ measure: item.measure, actionGrips: item.measure.actionGrips ?? [] });
-        occurrenceIds.push(occurrence.id);
       }
     }
     const plan = this.planner.buildPlaybackPlan(measures, this.getTuningForSheet(sheet), sheet.tempo);
     for (const message of plan.diagnostics) console.warn(message);
-    this.activePlayback = { type: 'song', occurrenceIds, totalMeasures: measures.length };
-    this.stateSubject.next({ type: 'song', status: 'preparing', occurrenceId: occurrenceIds[0], currentMeasureIndex: 0, totalMeasures: measures.length });
+    this.activate('song', rows, 'song');
     await this.session.play(plan, 0);
   }
 
   pauseSong(): void { if (this.activePlayback?.type === 'song') this.session.pause(); }
   resumeSong(): void { if (this.activePlayback?.type === 'song') this.session.resume(); }
   stopSong(): void { if (this.activePlayback?.type === 'song') this.session.stop(); }
+
+  private activate(type: 'measure' | 'part' | 'song', rows: SongPlaybackMeasure[], source: SongPlaybackSource): void {
+    this.activePlayback = { type, rows, source, sequence: {
+      measures: rows.map(row => row.part.measures[row.measureIndex].measure),
+      precedingMeasures: rows[0]?.precedingMeasures ?? []
+    } };
+  }
+
+  private copyPart(part: SongPart): SongPart {
+    return JSON.parse(JSON.stringify(part)) as SongPart;
+  }
+
+  private rowsForPart(sheet: SongSheet, part: SongPart, occurrenceId?: string): SongPlaybackMeasure[] {
+    const arrangement = getSongArrangement(sheet);
+    const occurrence = arrangement.find(item => item.id === occurrenceId);
+    const preceding = this.precedingMeasures(sheet, part, occurrenceId).map(item => item.measure);
+    return part.measures.map((item, measureIndex) => ({
+      part, measureId: item.id, measureIndex, occurrenceId,
+      occurrenceNumber: occurrence ? getOccurrenceNumber(arrangement, occurrence) : undefined,
+      precedingMeasures: JSON.parse(JSON.stringify([...preceding, ...part.measures.slice(0, measureIndex).map(entry => entry.measure)])) as Measure[]
+    }));
+  }
 
   private toPlaybackMeasures(resolvedMeasures: ResolvedSongPartMeasure[]): PlayingPatternPlaybackMeasure[] {
     return resolvedMeasures.map((resolvedMeasure) => ({
