@@ -74,6 +74,10 @@ still compete with each other; the metronome and one-shot channels retain separa
 Finite sessions derive cursor/occurrence highlights from media `currentTime`, preserve the
 same rendered waveform during pause/resume/seek, and finish on the actual `ended` event.
 Rendering includes sequential spread and instrument release beyond the last musical event.
+Finite WAVs discard unused release padding after the final sample above the 16-bit PCM
+noise floor, retaining 20 ms of silence after the decay. Trimming never shortens the
+score duration (including final rests), and reported media duration matches the encoded
+buffer. Native metronome loops retain their exact duration and repeating phase.
 Stop cuts the release immediately. Input changes alter the render identity through complete
 instruction data; tuning, capo, ordered notes, dynamics and legato endpoints therefore travel
 with the plan rather than relying on a stale cached song/pattern ID.

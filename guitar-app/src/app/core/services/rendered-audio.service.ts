@@ -112,19 +112,19 @@ export class RenderedAudioService implements OnDestroy {
           slide: voice => this.slide(context, resources, buffers, voice, instruction.chokeAt)
         }, instruction, instruction.time);
       }
-    }, signal, 0, instructions.some(i => i.technique === 'palm-muted' || i.technique === 'dead-note') ? 0.95 : 1);
+    }, signal, 0, instructions.some(i => i.technique === 'palm-muted' || i.technique === 'dead-note') ? 0.95 : 1, duration);
   }
 
   render(
     identity: string, duration: number,
     schedule: (context: Tone.OfflineContext, resources: { dispose(): unknown }[], assertActive: () => void) => Promise<void>,
-    signal?: AbortSignal, trimStart = 0, peakCeiling = 1
+    signal?: AbortSignal, trimStart = 0, peakCeiling = 1, minimumDuration?: number
   ): Promise<RenderedAudio> {
     if (!Number.isFinite(duration) || duration <= 0 || duration > 603) {
       return Promise.reject(new Error('Audio is too long to prepare. Play a section of up to ten minutes.'));
     }
     if (this.destroyed || signal?.aborted) return Promise.reject(new DOMException('Playback canceled', 'AbortError'));
-    const key = JSON.stringify({ revision: MIDI_SAMPLE_SET_VERSION, identity, duration, trimStart, peakCeiling, sampleRate: RENDER_SAMPLE_RATE });
+    const key = JSON.stringify({ revision: MIDI_SAMPLE_SET_VERSION, identity, duration, trimStart, peakCeiling, minimumDuration, sampleRate: RENDER_SAMPLE_RATE });
     const cached = this.cache.get(key);
     if (cached) {
       this.cache.delete(key); this.cache.set(key, cached);
@@ -162,13 +162,28 @@ export class RenderedAudioService implements OnDestroy {
               for (let index = 0; index < samples.length; index++) samples[index] *= peakCeiling / peak;
             }
           }
-          if (trimStart > 0) {
-            const offset = Math.round(trimStart * RENDER_SAMPLE_RATE);
-            const cropped = context.createBuffer(audio.numberOfChannels, audio.length - offset, audio.sampleRate);
-            for (let channel = 0; channel < audio.numberOfChannels; channel++) cropped.copyToChannel(audio.getChannelData(channel).subarray(offset), channel);
+          const offset = Math.round(trimStart * audio.sampleRate);
+          let end = audio.length;
+          if (minimumDuration !== undefined) {
+            // Only remove unused release allowance. Preserve score rests and every
+            // channel's decay down to the PCM noise floor, plus 20 ms of padding.
+            const floor = Math.min(end, Math.ceil(minimumDuration * audio.sampleRate));
+            const padding = Math.round(0.02 * audio.sampleRate);
+            let last = Math.max(0, floor - padding) - 1;
+            for (let channel = 0; channel < audio.numberOfChannels; channel++) {
+              const samples = audio.getChannelData(channel);
+              for (let index = end - 1; index > last; index--) {
+                if (Math.abs(samples[index]) >= 0.5 / 0x8000) { last = index; break; }
+              }
+            }
+            end = Math.min(end, Math.max(floor, last + 1 + padding));
+          }
+          if (offset > 0 || end < audio.length) {
+            const cropped = context.createBuffer(audio.numberOfChannels, end - offset, audio.sampleRate);
+            for (let channel = 0; channel < audio.numberOfChannels; channel++) cropped.copyToChannel(audio.getChannelData(channel).subarray(offset, end), channel);
             audio = cropped;
           }
-          const result = { blob: this.encoder.encode(audio), durationSeconds: duration - trimStart };
+          const result = { blob: this.encoder.encode(audio), durationSeconds: audio.duration };
           if (result.blob.size <= RENDER_CACHE_BYTES) {
             while (this.bytes + result.blob.size > RENDER_CACHE_BYTES) {
               const oldest = this.cache.entries().next().value;

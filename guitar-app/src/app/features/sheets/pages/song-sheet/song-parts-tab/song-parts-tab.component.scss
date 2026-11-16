@@ -27,23 +27,6 @@
   gap: 1rem;
 }
 
-.part-pattern-detail {
-  min-width: 0;
-}
-
-.part-pattern-label {
-  margin-bottom: 0.4rem;
-  color: #5f5549;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.part-measure-list {
-  min-width: 0;
-}
-
 .part-notes,
 .part-lyrics {
   white-space: pre-wrap;
@@ -55,10 +38,6 @@
 
 .part-notes {
   font-weight: 600;
-}
-
-.measure-actions {
-  min-width: 0;
 }
 
 @media (max-width: 767px) {

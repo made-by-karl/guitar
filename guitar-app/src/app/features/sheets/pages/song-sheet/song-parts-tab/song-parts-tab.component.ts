@@ -4,14 +4,11 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { DialogService } from '@/app/core/services/dialog.service';
 import { ModalService } from '@/app/core/services/modal.service';
 import { NotificationService } from '@/app/core/services/notification.service';
-import { Measure, PlayingPatternActionGrip } from '@/app/features/patterns/services/playing-patterns.model';
-import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
-import { ResolvedSongPartMeasure, SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
+import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
 import { SongPartPlaybackService, SongSheetPlaybackState } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { Subscription } from 'rxjs';
 import {
-  buildGripByIdMap,
   canForwardPart,
   canRewindPart,
   cloneSongPart,
@@ -26,7 +23,7 @@ import { getSongArrangement } from '@/app/features/sheets/services/song-arrangem
 @Component({
   selector: 'app-song-sheet-parts-tab',
   standalone: true,
-  imports: [DragDropModule, PlayingActionsComponent, SongPlaybackComponent],
+  imports: [DragDropModule, SongPlaybackComponent],
   templateUrl: './song-parts-tab.component.html',
   styleUrl: './song-parts-tab.component.scss'
 })
@@ -129,26 +126,6 @@ export class SongPartsTabComponent implements OnDestroy {
     this.songPartPlayback.seekSongPartMeasure(1);
   }
 
-  getPartMeasures(part: SongPart): ResolvedSongPartMeasure[] {
-    return this.songSheetService.resolvePartMeasures(this.sheet(), part);
-  }
-
-  getNotationMeasures(measures: ResolvedSongPartMeasure[]): Measure[] {
-    return measures.map(measure => measure.measure);
-  }
-
-  getNotationContexts(measures: ResolvedSongPartMeasure[]): PlayingActionsNotationContext[] {
-    return measures.map(measure => this.getMeasureNotationContext(measure));
-  }
-
-  getMeasureNotationContext(measure: ResolvedSongPartMeasure): PlayingActionsNotationContext {
-    return {
-      timeSignature: measure.measure.timeSignature,
-      actionGrips: this.getEffectiveActionGrips(measure),
-      gripById: buildGripByIdMap(this.sheet())
-    };
-  }
-
   hasPartNotes(part: SongPart): boolean {
     return part.notes.trim().length > 0;
   }
@@ -176,12 +153,6 @@ export class SongPartsTabComponent implements OnDestroy {
 
   canForwardPart(part: SongPart): boolean {
     return canForwardPart(this.playbackState, part.id);
-  }
-
-  private getEffectiveActionGrips(measure: ResolvedSongPartMeasure): PlayingPatternActionGrip[] {
-    return (measure.measure.actionGrips ?? [])
-      .map(actionGrip => ({ ...actionGrip }))
-      .sort((left, right) => left.actionIndex - right.actionIndex);
   }
 
   private async openPartEditor(partIndex: number | null): Promise<void> {

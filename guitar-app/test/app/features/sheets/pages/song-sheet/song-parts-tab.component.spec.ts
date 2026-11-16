@@ -75,7 +75,7 @@ describe('SongPartsTabComponent', () => {
     expect(emitSpy).toHaveBeenCalled();
   });
 
-  it('renders part notes, actions with effective grip labels, and part lyrics', async () => {
+  it('renders notes, lyrics and measure counts without a measure preview', async () => {
     const actions = Array(16).fill(null) as (PlayingAction | null)[];
     actions[0] = { technique: 'strum', strum: { direction: 'D', strings: 'all' } };
     actions[4] = { technique: 'strum', strum: { direction: 'U', strings: 'treble' } };
@@ -162,16 +162,8 @@ describe('SongPartsTabComponent', () => {
     expect(text).toContain('1 measure(s)');
     expect(text).not.toContain('Country Boom-Chick');
 
-    const gripLabels = Array.from(fixture.nativeElement.querySelectorAll('.action-grip-label'))
-      .map((node: any) => node.textContent.trim());
-    expect(gripLabels).toEqual(['G', 'Em']);
-    songSheetsService.resolvePartMeasures.mockReturnValue([
-      resolvedMeasure,
-      { measureId: 'measure-2', measureIndex: 1, measure: { ...measure, actionGrips: [] } }
-    ]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('app-playing-actions')).toHaveLength(1);
-    expect(fixture.nativeElement.querySelectorAll('.measure-divider')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelectorAll('app-playing-actions')).toHaveLength(0);
+    expect(songSheetsService.resolvePartMeasures).not.toHaveBeenCalled();
 
   });
 

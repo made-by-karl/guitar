@@ -22,6 +22,12 @@
   // Keep clipping from becoming a scroll container for the sticky measure toolbar.
   overflow: clip !important;
   .modal-body { overflow: visible !important; }
+  .part-editor-header {
+    position: sticky;
+    top: var(--sheet-tabs-height);
+    z-index: 3;
+    background: white;
+  }
 }
 
 .part-music-fields { display: flex; align-items: flex-end; gap: .75rem; margin-bottom: 1rem; }
@@ -48,6 +54,7 @@
 
   .modal-title {
     min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -62,8 +69,13 @@
 .part-editor-header-actions {
   flex-shrink: 0;
 
+  .btn { min-height: 44px; }
+
   .btn-close {
     margin: 0;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
   }
 }
 

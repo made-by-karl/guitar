@@ -87,8 +87,7 @@ export class SongArrangementComponent implements OnDestroy {
   summary(occurrence: SongPartOccurrence): string {
     const part = this.part(occurrence);
     if (!part) return 'Part is missing';
-    const names = part.measures.flatMap(item => (item.measure.actionGrips ?? []).map(grip => grip.name));
-    return `${part.measures.length} ${part.measures.length === 1 ? 'measure' : 'measures'}${names.length ? ' · ' + names.slice(0, 5).join(' · ') : ''}`;
+    return `${part.measures.length} ${part.measures.length === 1 ? 'measure' : 'measures'}`;
   }
 
   async selectOccurrence(id: string): Promise<void> {
