@@ -85,3 +85,73 @@ scrolls the page or forms, changes focus, or forces the user back after scrollin
 following is immediate, including under reduced motion. The focused regression is
 `e2e/playback-highlighting.spec.ts`; curated evidence is kept under
 `temp/ux/playback-highlighting/`.
+
+## Play view
+
+The Song workflow offers a separate **Play view** action. It opens a viewport-sized overlay
+through `ModalService`, with the song context, continuous song notation and its current action, occurrence lyrics and
+compact Current grip / Next / After next diagrams. The exit control is an accessible × button.
+The part heading includes the song measure on the same line; detailed position text remains
+available to assistive technology. Grip change locations are accessible descriptions rather than
+visible subtitles, leaving more space for lyrics. Normal Play song keeps its inline presentation.
+Entry uses the existing unsaved-work guard. Canceling entry leaves playback and drafts alone;
+accepted entry never recreates the occurrence editor. The covered application is inert, CDK
+contains keyboard focus, Escape exits, and focus returns to the entry button.
+
+Opening during full-song playback or pause attaches to the existing run and its copied song
+snapshot. Opening while idle shows the first measure without starting audio; an unrelated
+sheet preview is stopped after entry is allowed. The transport uses the same player: Stop
+resets to the first measure, completion retains the final measure and lyrics with End of song,
+and Play starts again from the beginning. Exit changes presentation only; inline highlighting
+continues and the previous editor selection/draft remains. Leaving the playback owner closes
+the overlay and stops its audio.
+
+`SongSheetPlaybackState.songSnapshot` retains the full song data used for planning, including
+lyrics, tempo, tuning and capo. Natural completion exposes `ended` and the final presentation
+with `type: 'none'` and no active action marker. Explicit Stop clears that retained context.
+Existing inline consumers still hide their completed playback pane.
+
+`buildSongPlayViewTimeline` indexes occurrence order and action grip assignments once per
+snapshot. `projectSongPlayView` resolves the current assignment and the next two changes from
+the shared position, including after resume or media seek. Assignments on null slots count;
+grips carry across rests, measures and occurrences. Explicit notes, percussion and slides do
+not infer a new grip. Consecutive assignments of the same serialized ID are one continuing
+shape for look-ahead; a later return to that ID remains a change. Different shapes with the
+same name remain separate. Serialized IDs resolve outside the sheet library. Missing shapes
+keep their label/location and unavailable feedback; wide shapes use the shared diagram limit.
+Invalid serialized IDs cannot prevent otherwise playable explicit music from being planned.
+
+Lyrics preserve the current occurrence's entire block and line breaks, with no inferred timing.
+Their contained scroll position survives action and measure changes within that occurrence;
+a different occurrence starts at the top, including an empty block. Narrow layouts place the
+grip strip after notation and lyrics below it; each region can be reached within the scrolling
+content while header and transport stay fixed. The notation scroller opts into keyboard access
+through the shared renderer's `scrollLabel` input. No view-specific playback clock is created.
+
+The Next and After next cards each have a thin progress bar toward their upcoming shape
+change. Each interval begins when its target first appears in After next; the opening targets
+begin at song start. Moving from After next to Next preserves the target's fill and speed,
+and repeated aliases do not restart it. At the assignment boundary the diagrams/labels advance
+in their fixed cards and the new After next target begins its countdown. Current receives a
+brief background highlight derived from media time for that handoff. A delayed frame skips a
+past highlight instead of replaying it. Reduced motion removes the background transition.
+Empty Next and After next cards retain only their headings, with no explanatory placeholder.
+The Current card still explains when no grip has been assigned.
+
+A bar above the lyrics tracks the complete current arrangement occurrence, including
+rest measures. A grip change inside that occurrence leaves its progress and lyric scroll alone.
+The next occurrence changes the lyric block and resets the bar, even when it reuses the same
+part definition. These are section timing cues; lyric lines and words have no timestamps.
+Pause/seek/replay follow the shared media position. Idle/preparation/Stop show zero progress;
+completion retains the final lyric block with a full part bar, including after an audio release
+tail. No countdown or action instruction text accompanies these bars.
+
+The Play view drawing contains the complete arranged song, including repeated occurrences and
+rest measures, before playback and throughout the session. During a run it uses the scheduled
+sequence and global measure/action coordinates, keeping the SVG stream mounted across section
+boundaries. Ready and paused players can browse the contained horizontal score with touch,
+keyboard or scrolling. Browsing changes the viewport only. Play/Resume reveals the current
+audio position and resumes following; Stop resets the viewport to the beginning. Part labels,
+lyrics and grip cards continue to follow the shared transport position. The covered inline
+drawing is unmounted while Play view is open and recreated from the current shared state on
+exit, avoiding a second full-score drawing at audio startup.

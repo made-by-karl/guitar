@@ -1,0 +1,71 @@
+<div class="play-view" role="dialog" aria-modal="true" aria-labelledby="play-view-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+  <header class="play-header">
+    <div class="song-heading">
+      <h1 id="play-view-title">{{ sheet().name }}</h1>
+      <p class="context mb-0">{{ sheet().tempo }} BPM · Capo {{ sheet().capodaster }} · Tuning {{ tuning() }}</p>
+    </div>
+    <button type="button" class="btn-close exit-button" aria-label="Exit play view" title="Exit play view" cdkFocusInitial (click)="exit()"></button>
+  </header>
+
+  <main class="play-content" tabindex="0" aria-label="Song play content">
+    @if (row(); as row) {
+      <section class="notation-panel" aria-label="Song notation" [attr.data-occurrence-id]="row.occurrence.id" [attr.data-measure-id]="row.part.measures[row.measureIndex].id" [attr.data-song-measure-index]="attached() ? state().currentMeasureIndex ?? 0 : 0">
+        <div class="measure-heading">
+          <h2><span>{{ row.part.section || 'Untitled part' }}</span><span class="song-measure">Song measure {{ (attached() ? state().currentMeasureIndex ?? 0 : 0) + 1 }} / {{ timeline().measures.length }}</span></h2>
+          <p class="position visually-hidden">Measure {{ row.measureIndex + 1 }} of {{ row.part.measures.length }} · Song measure {{ (attached() ? state().currentMeasureIndex ?? 0 : 0) + 1 }} of {{ timeline().measures.length }}@if (position(); as position) { · Action {{ position.actionIndex + 1 }} }</p>
+        </div>
+        <div class="notation-frame" #notationFrame>
+          <app-playing-actions [measures]="measures()" [notationContexts]="contexts()" [notationHistory]="history()" [compact]="true" [showActionIndex]="true" scrollLabel="Scrollable song notation" [appPlaybackHighlight]="position()" />
+        </div>
+      </section>
+      <section class="lyrics-panel" aria-label="Section lyrics">
+        <h2>Lyrics</h2>
+        <div class="play-progress lyrics-progress" role="progressbar" aria-label="Current part progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progress().partPercent.toFixed(0)">
+          <div class="play-progress-fill" [style.width.%]="progress().partPercent"></div>
+        </div>
+        @for (occurrence of occurrence(); track occurrence.id) {
+          <div class="lyrics-scroll" tabindex="0" aria-label="Scrollable section lyrics">
+            @if (occurrence.lyrics.trim()) { <p class="lyrics mb-0">{{ occurrence.lyrics }}</p> }
+            @else { <p class="text-muted mb-0">No lyrics for this section</p> }
+          </div>
+        }
+      </section>
+      <section class="grips-panel" aria-label="Current and upcoming grips">
+        <div class="grip-strip" role="region" tabindex="0" aria-label="Scrollable grip changes">
+          @for (card of cards(); track card.title; let index = $index) {
+            <section class="grip-card" [class.current-grip]="index === 0" [class.grip-handoff]="index === 0 && progress().handoff" [attr.aria-label]="card.title" [attr.aria-description]="card.assignment?.location">
+              <h2>{{ card.title }}</h2>
+              @if (card.assignment; as assignment) {
+                <h3>{{ assignment.name || 'Unnamed grip' }}</h3>
+                @if (assignment.grip) {
+                  <div role="img" [attr.aria-label]="(assignment.name || 'Unnamed grip') + ' grip diagram'"><app-grip-diagram [grip]="assignment.grip" /></div>
+                } @else { <p class="text-muted diagram-unavailable">Grip diagram unavailable</p> }
+              } @else if (index === 0) {
+                <p class="text-muted">No grip assigned</p>
+              }
+              @if (index > 0 && card.assignment) {
+                @let percent = index === 1 ? progress().gripPercent : progress().afterNextPercent;
+                @if (percent !== undefined) {
+                  <div class="play-progress grip-progress" role="progressbar" [attr.aria-label]="card.title + ' grip progress'" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percent.toFixed(0)">
+                    <div class="play-progress-fill" [style.width.%]="percent"></div>
+                  </div>
+                }
+              }
+            </section>
+          }
+        </div>
+      </section>
+    } @else { <p>No measures in this song.</p> }
+  </main>
+
+  <footer class="play-transport">
+    <app-media-playback-controls [channels]="['finite:song-part-playback']" />
+    <div class="transport-row">
+      <p class="play-status mb-0" role="status">{{ status() }}</p>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="button" [disabled]="!canPlay() || (attached() && state().status === 'preparing')" (click)="togglePlayback()">{{ attached() && state().status === 'playing' ? 'Pause' : attached() && state().status === 'paused' ? 'Resume' : 'Play' }}</button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="!attached()" (click)="playback.stopSong()">Stop</button>
+      </div>
+    </div>
+  </footer>
+</div>

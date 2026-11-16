@@ -1,7 +1,8 @@
 <section class="song-arrangement" [class.has-editor]="editorInjector()">
   <div class="arrangement-header">
     <div><h2>Song</h2><p class="text-muted mb-0">{{ occurrences().length }} {{ occurrences().length === 1 ? 'section' : 'sections' }} in playback order</p></div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
+      <button #playViewOpener type="button" class="btn btn-primary btn-sm" [disabled]="busy() || enteringPlayView() || (playbackState().type !== 'song' && !canPlay())" (click)="openPlayView(playViewOpener)">Play view</button>
       <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="busy() || playbackState().status === 'preparing' || (playbackState().type !== 'song' && !canPlay())" [title]="canPlay() ? 'Play song' : 'Add playable content to every section'" (click)="toggleSong()">
         <i aria-hidden="true" class="bi" [class.bi-play-fill]="playbackState().type !== 'song' || playbackState().status === 'paused'" [class.bi-pause-fill]="playbackState().type === 'song' && playbackState().status === 'playing'"></i>
         {{ playbackState().type === 'song' && playbackState().status === 'preparing' ? 'Preparing…' : playbackState().type === 'song' ? (playbackState().status === 'paused' ? 'Resume song' : 'Pause song') : 'Play song' }}
@@ -9,7 +10,9 @@
       @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" (click)="playback.stopSong()">Stop song</button> }
     </div>
   </div>
-  <app-song-playback source="song" [state]="playbackState()" />
+  @if (!playViewOpen()) {
+    <app-song-playback source="song" [state]="playbackState()" />
+  }
   @if (occurrences().length === 0) {
     <div class="song-empty-state"><h3>Create your first part</h3><p>Add music or lyrics, then arrange your parts into a song.</p>
       <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="startWriting()">Start writing</button>

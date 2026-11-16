@@ -1,0 +1,45 @@
+:host { display: block; height: 100%; min-width: 0; }
+.play-view { height: 100%; display: flex; flex-direction: column; background: #faf7f1; color: #30291f; }
+.play-header, .play-transport { flex: 0 0 auto; padding: .75rem 1rem; background: #fff; }
+.play-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid #d8cdb8; }
+.song-heading { min-width: 0; h1 { font-size: 1.35rem; margin: 0 0 .25rem; overflow-wrap: anywhere; } }
+.context { color: #625744; font-size: .875rem; }
+.exit-button { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; font-size: 1rem; line-height: 1; }
+.play-content { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr) minmax(23rem, 1fr); grid-template-rows: auto minmax(15rem, 1fr); align-content: start; gap: 1rem; padding: 1rem; }
+h2 { font-size: 1rem; margin: 0 0 .5rem; font-weight: 600; }
+.notation-panel, .lyrics-panel, .grips-panel { min-width: 0; }
+.notation-panel { grid-column: 1 / -1; padding: 1rem; background: #fff; border: 2px solid #50776e; border-radius: .5rem; }
+.measure-heading { margin-bottom: .5rem; h2 { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; margin-bottom: 0; } }
+.song-measure { color: #625744; font-size: .875rem; font-weight: normal; white-space: nowrap; }
+.notation-frame { min-height: 0; display: flex; align-items: center; }
+.lyrics-panel { display: flex; flex-direction: column; min-height: 0; padding: 1rem; background: #fff; border: 1px solid #d8cdb8; border-radius: .5rem; }
+.lyrics-scroll { overflow: auto; min-height: 0; flex: 1; overscroll-behavior: contain; }
+.lyrics { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.15rem; line-height: 1.6; }
+.grip-strip { display: flex; align-items: stretch; gap: .5rem; overflow: auto; overscroll-behavior: contain; }
+.grip-card { flex: 1 0 6.5rem; min-width: 0; min-height: 13rem; background: #fff; padding: .4rem; border: 1px solid #d8cdb8; border-radius: .5rem; --grip-diagram-height: 140px; h2 { font-size: .8rem; margin-bottom: .2rem; } h3 { font-size: 1.15rem; margin-bottom: .1rem; overflow-wrap: anywhere; } }
+.current-grip { border: 2px solid #50776e; transition: background-color .15s ease-out; }
+.current-grip.grip-handoff { background: #fff0df; }
+.play-progress { flex-shrink: 0; height: 6px; overflow: hidden; background: #e8e0d5; border-radius: 3px; }
+.play-progress-fill { height: 100%; background: #a85014; }
+.grip-progress { margin-top: .25rem; }
+.lyrics-progress { margin-bottom: .6rem; }
+.diagram-unavailable { min-height: 8.75rem; display: flex; align-items: center; }
+.play-transport { border-top: 1px solid #d8cdb8; }
+.transport-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.play-status { font-weight: 600; }
+.btn { min-height: 44px; }
+:focus-visible { outline: 3px solid #885218; outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .current-grip { transition: none; } }
+@media (max-width: 1000px) {
+  .play-content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(17rem, 1fr); align-items: start; }
+  .grips-panel { grid-row: 2; }
+  .lyrics-panel { grid-row: 3; height: 100%; }
+  .grip-strip { height: auto; }
+}
+@media (max-width: 575px) {
+  .play-header, .play-transport { padding: .5rem .75rem; }
+  .song-heading h1 { font-size: 1.1rem; }
+  .context { font-size: .75rem; }
+  .play-content { padding: .5rem; gap: .5rem; }
+  .notation-panel, .lyrics-panel { padding: .5rem; }
+}

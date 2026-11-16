@@ -1,6 +1,7 @@
+import { SongPlayViewComponent } from '@/app/features/sheets/ui/song-play-view/song-play-view.component';
 import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { Component, HostListener, Injector, OnDestroy, ViewChild, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, HostListener, Injector, OnDestroy, ViewChild, afterNextRender, computed, effect, inject, input, output, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MODAL_DATA, MODAL_REF, ModalRef, ModalService } from '@/app/core/services/modal.service';
@@ -46,12 +47,18 @@ export class SongArrangementComponent implements OnDestroy {
     return part && this.playback.canPlaySongPart(this.currentSheet(), part, occurrence.id);
   }).map(occurrence => occurrence.id)));
   private refreshTask = Promise.resolve();
+  private playView?: ModalRef<void>;
+  private destroyed = false;
+  readonly enteringPlayView = signal(false);
+  readonly playViewOpen = signal(false);
 
   constructor() {
     effect(() => this.storedSheet.set(this.sheet()));
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.playView?.close();
     this.playback.stopSong();
     this.playback.stopSongPart();
   }
@@ -192,6 +199,33 @@ export class SongArrangementComponent implements OnDestroy {
     const current = this.occurrences().find(item => item.id === occurrence.id);
     const part = current && this.part(current);
     if (part) await this.playback.playSongPart(this.currentSheet(), part, occurrence.id, 'song');
+  }
+
+  async openPlayView(opener: HTMLElement): Promise<void> {
+    if (this.enteringPlayView() || this.playView) return;
+    this.enteringPlayView.set(true);
+    try {
+      if (!await this.confirmNavigation() || this.destroyed) return;
+      const state = this.playback.getSnapshot();
+      const attached = state.type === 'song' && state.songSnapshot?.id === this.currentSheet().id;
+      const sheet = attached ? state.songSnapshot! : JSON.parse(JSON.stringify(this.currentSheet())) as SongSheetWithData;
+      if (!attached) this.playback.stop();
+      const ref = this.modal.show(SongPlayViewComponent, {
+        data: { sheet }, width: '100vw', height: '100dvh', maxWidth: '100vw', maxHeight: '100dvh',
+        panelClass: 'modal-fullscreen', closeOnBackdropClick: false
+      });
+      this.playView = ref;
+      this.playViewOpen.set(true);
+      await ref.afterClosed();
+    } finally {
+      this.playView = undefined;
+      this.playViewOpen.set(false);
+      this.enteringPlayView.set(false);
+      if (!this.destroyed) afterNextRender(() => {
+        // Entry is re-enabled by this render before it can receive focus.
+        if (opener.isConnected) opener.focus({ preventScroll: true });
+      }, { injector: this.injector });
+    }
   }
 
   async toggleSong(): Promise<void> {
