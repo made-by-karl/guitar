@@ -2,7 +2,7 @@
   <div class="section-header">
     <div>
       <h5 class="mb-0">Song Parts</h5>
-      <p class="section-copy mb-0">Arrange measures into verses, choruses, and bridges.</p>
+      <p class="section-copy mb-0">A part is a reusable section of your song.</p>
     </div>
     <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPart()">
       <i aria-hidden="true" class="bi bi-plus-lg"></i> Add Part
@@ -73,18 +73,6 @@
         <div class="part-detail-list mt-3">
           @if (hasPartNotes(part)) {
           <div class="part-notes">{{ part.notes }}</div>
-          }
-
-          @if (getPartMeasures(part); as measures) {
-          @if (measures.length > 0) {
-            <div class="part-measure-list">
-              <app-playing-actions
-                [measures]="getNotationMeasures(measures)"
-                [showActionIndex]="true"
-                [measureWidth]="'100%'"
-                [notationContexts]="getNotationContexts(measures)" />
-            </div>
-          }
           }
 
           @if (hasPartLyrics(part)) {

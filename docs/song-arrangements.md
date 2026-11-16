@@ -61,7 +61,11 @@ occurrence editor. Song and Parts draw the entire scheduled stream once, includi
 measures and repeated occurrences. Position updates move the marker without replacing the
 drawing at measure boundaries. The pane displays part/occurrence, measure, action and
 Playing/Paused status. Transport and recovery controls stay with the owning workflow and the
-existing media UI. Parts keeps this pane independently of its standalone score.
+existing media UI. Parts cards show names, measure counts and notes without a static
+measure preview; their notation pane appears during playback. Song outline summaries
+show measure counts without enumerating chords. The embedded occurrence editor keeps
+its name, playback controls and close action visible below the sheet tabs while its
+content scrolls.
 
 Part-editor notation and the nested measure editor's live preview reuse their existing drawings.
 They show the scheduled draft snapshot and its preceding notation history. Editing selection,

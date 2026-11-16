@@ -7,16 +7,32 @@ import * as articulation from '@/app/core/services/guitar-articulation';
 
 const tone = Tone as typeof Tone & { __samplerInstances: { options: { urls: Record<string, string> }; dispose: jest.Mock; triggerAttackRelease: jest.Mock }[];
   __offlineContexts: { dispose: jest.Mock; close: jest.Mock; render: jest.Mock }[] };
+const OfflineContext = Tone.OfflineContext;
 const clean: MidiInstruction = { time: 0, playbackDuration: 0.5, actionDuration: 0.5, technique: 'normal', velocity: 0.7, notes: [{ note: note('E', 2) }] };
 
 describe('Offline rendering, sample isolation and bounded cache', () => {
   let service: RenderedAudioService;
   let encoder: { encode: jest.Mock };
+  let renderedBuffer: (context: Tone.OfflineContext) => AudioBuffer;
   beforeEach(() => {
     tone.__samplerInstances.length = 0; tone.__offlineContexts.length = 0;
     encoder = { encode: jest.fn(() => new Blob(['sound'])) };
     jest.mocked(Tone.ToneAudioBuffer.fromUrl).mockImplementation(async () => new Tone.ToneAudioBuffer());
     service = new RenderedAudioService(encoder as unknown as WavEncoderService);
+    renderedBuffer = context => {
+      const audio = context.createBuffer(1, Math.round(context.duration * 44100), 44100);
+      audio.getChannelData(0).fill(0.1);
+      return audio;
+    };
+    jest.spyOn(Tone, 'OfflineContext').mockImplementation((...args: ConstructorParameters<typeof Tone.OfflineContext>) => {
+      const context = new OfflineContext(...args);
+      jest.mocked(context.render).mockImplementation(async () => {
+        const buffer = new Tone.ToneAudioBuffer();
+        jest.spyOn(buffer, 'get').mockReturnValue(renderedBuffer(context));
+        return buffer;
+      });
+      return context;
+    });
     jest.spyOn(articulation, 'renderGuitarArticulation').mockImplementation(async original => original);
   });
   afterEach(() => { service.ngOnDestroy(); jest.restoreAllMocks(); });
@@ -41,6 +57,36 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
     await service.renderInstructions([clean], 1);
     expect(encoder.encode).toHaveBeenCalledTimes(2);
     expect(tone.__samplerInstances[0].options.urls['E2']).toBe('/samples/notes/guitar_E2.mp3');
+  });
+
+  it.each([
+    { soundEnd: 1800, minimum: 1, expected: 1.82 },
+    { soundEnd: 500, minimum: 2, expected: 2 },
+    { soundEnd: 1990, minimum: 2, expected: 2.01 },
+    { soundEnd: 0, minimum: 2, expected: 2 },
+    { soundEnd: 3500, minimum: 1, expected: 3.5 }
+  ])('crops unused release silence while preserving rests and quiet decay: %j', async ({ soundEnd, minimum, expected }) => {
+    renderedBuffer = context => {
+      const audio = context.createBuffer(2, 3500, 1000);
+      // A quiet tail on a later channel must survive even when channel zero is silent.
+      audio.getChannelData(1).fill(-0.0001, 0, soundEnd);
+      return audio;
+    };
+    const result = await service.renderInstructions([clean], minimum);
+    const encoded = encoder.encode.mock.calls[0][0] as AudioBuffer;
+    expect(encoded.duration).toBe(expected);
+    expect(result.durationSeconds).toBe(encoded.duration);
+    if (soundEnd) expect(encoded.getChannelData(1)[soundEnd - 1]).toBeCloseTo(-0.0001, 7);
+  });
+
+  it('keeps exact loop duration and separates loop and trimmed cache entries', async () => {
+    renderedBuffer = context => context.createBuffer(1, 3500, 1000);
+    const schedule = async () => {};
+    const loop = await service.render('same', 3.5, schedule);
+    const finite = await service.render('same', 3.5, schedule, undefined, 0, 1, 1);
+    expect(loop.durationSeconds).toBe(3.5);
+    expect(finite.durationSeconds).toBe(1);
+    expect(encoder.encode).toHaveBeenCalledTimes(2);
   });
 
   it('keeps queued sound and its cache identity detached from later plan edits', async () => {

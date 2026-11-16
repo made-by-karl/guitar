@@ -1,4 +1,5 @@
 .song-sheet-page {
+  --sheet-tabs-height: 2.75rem;
   .sheet-name-input {
     flex: 1 1 24rem;
     min-width: 0;
@@ -75,6 +76,7 @@
   }
 
   .sheet-tab-list {
+    height: var(--sheet-tabs-height);
     container-type: inline-size;
     container-name: sheet-tabs;
     position: sticky;
