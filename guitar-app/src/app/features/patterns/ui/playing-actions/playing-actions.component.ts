@@ -147,6 +147,8 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   });
   // Editor-only layout and orientation; independent of any playback position.
   compact = input(false);
+  /** Opt-in keyboard access to the contained notation scroller. */
+  scrollLabel = input<string | undefined>();
   visibleActionIndices = input<readonly number[]>([]);
   showActionIndex = input<boolean>(false);
   measureWidth = input<string>('100%');
@@ -249,6 +251,8 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   }
 
   private revealPlaybackPosition(): void {
+    // Resume reanchors a score browsed while paused, even within the same slot.
+    this.playbackPosition();
     this.playbackSlot();
     if (!this.compact()) return;
     const scroller = this.notationElement()?.nativeElement.parentElement;

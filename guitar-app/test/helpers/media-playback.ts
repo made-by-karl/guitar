@@ -26,7 +26,7 @@ export function playbackHarness(capture: { captureInstruction?: (instruction: Mi
     progress$: (channel: string) => state(channel).asObservable(),
     play: jest.fn(async (channel: string, prepare: (signal: AbortSignal) => Promise<{ durationSeconds: number }>, options = {} as { startTime?: number; loop?: boolean; autoStart?: boolean }) => {
       clearTimeout(timers.get(channel));
-      emit(channel, { status: 'preparing', ended: false });
+      emit(channel, { status: 'preparing', currentTime: 0, ended: false });
       const result = await prepare(new AbortController().signal);
       emit(channel, { status: options.autoStart === false ? 'ready' : 'playing', currentTime: options.startTime ?? 0, duration: result.durationSeconds });
       if (!options.loop && options.autoStart !== false) timers.set(channel, setTimeout(() => finish(channel), result.durationSeconds * 1000));
@@ -34,7 +34,7 @@ export function playbackHarness(capture: { captureInstruction?: (instruction: Mi
     pause: jest.fn((channel: string) => { clearTimeout(timers.get(channel)); emit(channel, { status: 'paused' }); }),
     resume: jest.fn(async (channel: string) => emit(channel, { status: 'playing' })),
     seek: jest.fn((channel: string, currentTime: number) => emit(channel, { currentTime })),
-    stop: jest.fn((channel: string) => { clearTimeout(timers.get(channel)); emit(channel, { status: 'idle', ended: false }); }),
+    stop: jest.fn((channel: string) => { clearTimeout(timers.get(channel)); emit(channel, { status: 'idle', currentTime: 0, ended: false }); }),
     release: jest.fn((channel: string) => { clearTimeout(timers.get(channel)); state(channel).complete(); }),
     getSnapshot: (channel: string) => state(channel).value,
     getCurrentTime: (channel: string) => state(channel).value.currentTime

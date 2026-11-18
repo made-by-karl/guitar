@@ -1,4 +1,4 @@
-<div class="notation-measure" [class.playback-paused]="playbackPosition()?.status === 'paused'" [class.compact]="compact()" [style.width]="measureWidth()">
+<div class="notation-measure" [class.playback-paused]="playbackPosition()?.status === 'paused'" [class.compact]="compact()" [style.width]="measureWidth()" [attr.tabindex]="scrollLabel() ? 0 : null" [attr.role]="scrollLabel() ? 'region' : null" [attr.aria-label]="scrollLabel()">
   <div class="notation-scroll" #notation>
     @for (segment of getRenderableSegments(); track segment.actionIndex) {
       <svg

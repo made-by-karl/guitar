@@ -68,6 +68,9 @@ describe('SongPartPlaybackService', () => {
     expect(service.getSnapshot()).toMatchObject({ partId: verse.id, measureId: 'v-m', occurrenceId: 'v1', actionIndex: 0 });
     const sequence = service.getSnapshot().sequence;
     expect(sequence?.measures).toHaveLength(3);
+    song.arrangement![0].lyrics = 'Changed lyrics';
+    song.tempo = 180;
+    expect(service.getSnapshot().songSnapshot).toMatchObject({ tempo: 120, arrangement: [{ lyrics: 'First' }, { lyrics: '' }, { lyrics: 'Second' }] });
     verse.section = 'Changed after playback';
     verse.measures[0].measure.actions[1] = null;
     harness.emit('finite:song-part-playback', { currentTime: 0.375 });
@@ -83,6 +86,10 @@ describe('SongPartPlaybackService', () => {
     service.pauseSong();
     expect(service.getSnapshot()).toMatchObject({ status: 'paused', occurrenceId: 'v2', actionIndex: 0 });
     harness.finish('finite:song-part-playback');
+    expect(service.getSnapshot()).toMatchObject({ type: 'none', status: 'idle', ended: true, occurrenceId: 'v2', currentMeasureIndex: 2 });
+    expect(service.getSnapshot().actionIndex).toBeUndefined();
+    expect(service.getSnapshot().songSnapshot?.tempo).toBe(120);
+    service.stopSong();
     expect(service.getSnapshot()).toEqual({ type: 'none', status: 'idle' });
     service.stopSong(); harness.service.ngOnDestroy(); jest.useRealTimers();
   });

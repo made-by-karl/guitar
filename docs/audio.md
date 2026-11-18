@@ -199,3 +199,13 @@ The continuous notation renderer indexes actions, measure coordinates and SVG se
 its immutable score inputs. Angular OnPush detection keeps media frame polling from repeatedly
 checking an unchanged score. Position updates reuse those indexes and preserve the drawing's
 DOM across boundaries; only the highlight and local horizontal viewport follow playback.
+
+Finite sessions also expose `clock$`, with run identity and continuous samples of the same
+media time. Discrete `state$` updates remain limited to transport/slot changes so continuous
+progress does not rebuild notation or musical snapshots on every frame. The song service
+forwards that clock and includes the planner's slot/start times and `notationDuration` in its
+full-song sequence. `notationDuration` ends at the final written slot, excluding audio release.
+The play view uses those values for grip/part progress; it adds no polling loop or timer.
+Each upcoming grip countdown starts when the target first enters After next and retains
+that same interval when it moves into Next. The two opening targets start at media time zero;
+seeking or reopening the view derives the same intervals from the scheduled grip changes.

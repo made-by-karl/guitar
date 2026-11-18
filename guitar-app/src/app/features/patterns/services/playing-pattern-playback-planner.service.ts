@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { PlaybackPlan, PlaybackSlot } from '@/app/core/services/playback.service';
 import { MidiInstruction, MidiNote, MidiTechnique, MidiLegato } from '@/app/core/services/midi.model';
-import { resolveSlideTargets } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
+import { resolveNotationGrip, resolveSlideTargets } from '@/app/features/patterns/services/playing-pattern-notation-resolver';
 import { Note, transpose } from '@/app/core/music/semitones';
-import { parseGrip, Grip } from '@/app/features/grips/services/grips/grip.model';
+import { Grip } from '@/app/features/grips/services/grips/grip.model';
 import {
   BaseRelativePickingNote,
   ExplicitLegatoNote,
@@ -41,6 +41,8 @@ export interface PlayingPatternPlaybackMeasure {
 }
 
 export interface PlayingPatternPlaybackPlan extends PlaybackPlan {
+  /** End of written slots, excluding the audio release tail. */
+  notationDuration: number;
   diagnostics: string[];
 }
 
@@ -103,6 +105,7 @@ export class PlayingPatternPlaybackPlannerService {
       diagnostics,
       segmentStartTimes,
       slots,
+      notationDuration: currentTime,
       totalDuration: this.resolveTotalDuration(currentTime, instructions),
       totalSegments: measures.length
     };
@@ -114,7 +117,8 @@ export class PlayingPatternPlaybackPlannerService {
     for (const measure of measures) {
       for (const grip of measure.actionGrips ?? []) {
         if (!gripMap.has(grip.gripId)) {
-          gripMap.set(grip.gripId, parseGrip(grip.gripId));
+          const resolved = resolveNotationGrip(grip.gripId);
+          if (resolved) gripMap.set(grip.gripId, resolved);
         }
       }
     }

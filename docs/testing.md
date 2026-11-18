@@ -185,3 +185,32 @@ screen/audio capture of physical output. The issue #5 target of 50 ms against he
 still needs built-in-speaker or wired-output measurements and listening at 60/120/180 BPM;
 record device, OS/browser and route. Bluetooth, background animation and manual calibration
 are outside this feature's scope.
+
+## Song play view
+
+Run `e2e/song-play-view.spec.ts` through the Docker workflow. It covers silent entry, attaching
+to playing/paused song media, unsaved-work cancellation, presentation-only exit, focus return,
+Stop, completion/replay, interruption/rejected startup, missing and limited diagrams, repeated
+occurrences, rest measures, lyric scroll preservation and wide notation following. Viewports
+are 375×667, 768×1024 and 1280×800, plus 667×375 landscape; keyboard and reduced motion are
+included. The three-minute foreground case runs without seeking or changing playback rate
+and records shared-media versus DOM position/lyric observations at the start, middle and end.
+
+Evidence belongs under `temp/ux/song-play-view/`. These browser observations establish software
+position mapping and layout, not heard-audio timing or real-device touch behavior. Recheck
+physical output with the view visible for the 50 ms target using screen/audio capture and
+built-in speakers or a wired route; record device/browser/route and listening results separately.
+
+The play-view suite also checks continuous progress inside one notation slot, pause freezing,
+fixed grip-card geometry, media-time handoff highlighting, empty upcoming cards, occurrence
+bar resets, and completion. Upcoming grip countdowns retain their fill and speed when moving
+from After next to Next, including on seeks. The three-minute case samples all three progress
+bars against media time as well as the notation/grip/occurrence/lyric mapping. Current evidence for these timing
+cues is under `temp/ux/song-play-view-progress/`.
+
+Continuous Play view coverage checks the full arrangement before Play, persistent SVG content
+across repeated occurrences and rests, manual idle/paused browsing, and immediate following
+on Resume. Screenshots and timing evidence for this presentation are kept under
+`temp/ux/song-play-view-continuous/`. The shared notation marker uses global score slot indexes.
+Both three-minute recorders attach before Play so asynchronous startup polling cannot skip
+the opening measurement window; they retain the same sample-count and 50 ms limits.

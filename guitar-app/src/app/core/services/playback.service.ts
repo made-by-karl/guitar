@@ -23,8 +23,15 @@ export interface PlaybackSessionState {
   sessionId: string; scope: string; status: PlaybackStatus; cursor: number;
   total: number; canPause: boolean; canSeek: boolean; ended: boolean;
 }
+/** Continuous samples of the same media clock used for discrete notation positions. */
+export interface PlaybackClockPosition {
+  runId?: number;
+  currentTime: number;
+}
+
 export interface PlaybackSession {
   readonly state$: Observable<PlaybackSessionState>;
+  readonly clock$: Observable<PlaybackClockPosition>;
   getSnapshot(): PlaybackSessionState;
   play(plan: PlaybackPlan, startCursor?: number): Promise<void>;
   pause(): void;
@@ -37,6 +44,8 @@ export interface PlaybackSession {
 class FinitePlaybackSession implements PlaybackSession {
   private readonly stateSubject: BehaviorSubject<PlaybackSessionState>;
   readonly state$: Observable<PlaybackSessionState>;
+  private readonly clockSubject = new BehaviorSubject<PlaybackClockPosition>({ currentTime: 0 });
+  readonly clock$ = this.clockSubject.asObservable();
   private plan: PlaybackPlan | null = null;
   private readonly progress: Subscription;
   private destroyed = false;
@@ -75,7 +84,7 @@ class FinitePlaybackSession implements PlaybackSession {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true; this.stop(); this.progress.unsubscribe();
-    this.media.release(this.channel); this.stateSubject.complete(); this.onDestroySession(this.sessionId);
+    this.media.release(this.channel); this.stateSubject.complete(); this.clockSubject.complete(); this.onDestroySession(this.sessionId);
   }
   isActive(): boolean { return this.getSnapshot().status !== 'idle' || this.getSnapshot().ended; }
   hasScope(scope: string): boolean { return this.scope === scope; }
@@ -83,6 +92,7 @@ class FinitePlaybackSession implements PlaybackSession {
   private clamp(cursor: number): number { return Math.max(0, Math.min((this.plan?.totalSegments ?? 1) - 1, Math.round(cursor))); }
   private onProgress(progress: HtmlAudioProgress): void {
     const plan = this.plan;
+    const runId = this.runId;
     if (!plan) return;
     const status: PlaybackStatus = progress.status === 'preparing' || progress.status === 'starting' ? 'preparing'
       : progress.status === 'ready' || progress.status === 'error' ? 'paused' : progress.status;
@@ -108,10 +118,13 @@ class FinitePlaybackSession implements PlaybackSession {
     if (Object.keys(next).some(key => next[key as keyof PlaybackSessionState] !== this.getSnapshot()[key as keyof PlaybackSessionState])) {
       this.stateSubject.next(next);
     }
+    // A state subscriber may synchronously stop or replace this run.
+    if (this.plan !== plan || this.runId !== runId || this.destroyed) return;
+    this.clockSubject.next({ runId, currentTime: progress.currentTime });
     // Ended comes from the media element after its release tail, never from plan duration.
     // The system player can replay completed media. Keep its plan so cursor and
     // transport state follow that replay; explicit Stop/replacement still clear it.
-    if (status === 'idle' && !progress.ended && this.plan === plan) this.plan = null;
+    if (status === 'idle' && !progress.ended && this.plan === plan && this.runId === runId) this.plan = null;
   }
 }
 

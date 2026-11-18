@@ -15,7 +15,7 @@ describe('SongArrangementComponent', () => {
   const playback = {
     canPlaySong: jest.fn(() => true),
     canPlaySongPart: jest.fn(() => true),
-    playSongPart: jest.fn(), pauseSongPart: jest.fn(), resumeSongPart: jest.fn(), stopSongPart: jest.fn(), stopSong: jest.fn()
+    stop: jest.fn(), playSongPart: jest.fn(), pauseSongPart: jest.fn(), resumeSongPart: jest.fn(), stopSongPart: jest.fn(), stopSong: jest.fn()
   };
   const service = {
     addOccurrence: jest.fn(), getByIdWithData: jest.fn(), removeOccurrence: jest.fn(), moveOccurrence: jest.fn()
@@ -138,6 +138,44 @@ describe('SongArrangementComponent', () => {
     dialogs.confirm.mockResolvedValueOnce(false);
     await fixture.componentInstance.remove(sheet.arrangement![0]);
     expect(service.removeOccurrence).not.toHaveBeenCalled();
+  });
+
+  it('cancels play-view entry before stopping playback or opening an overlay', async () => {
+    jest.spyOn(fixture.componentInstance, 'confirmNavigation').mockResolvedValue(false);
+    await fixture.componentInstance.openPlayView(document.createElement('button'));
+    expect(playback.stop).not.toHaveBeenCalled();
+    expect(modal.show).not.toHaveBeenCalled();
+  });
+
+  it.each(['playing', 'paused', 'preparing'] as const)('attaches the same %s song snapshot and preserves editor selection on exit', async status => {
+    fixture.componentInstance.selectedId.set('v2');
+    const snapshot = { ...sheet, name: 'Scheduled snapshot' };
+    state.next({ type: 'song', status, songSnapshot: snapshot });
+    let close!: () => void;
+    const closed = new Promise<void>(resolve => close = resolve);
+    modal.show.mockReturnValueOnce({ afterClosed: () => closed, close });
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    const opened = fixture.componentInstance.openPlayView(opener);
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    expect(modal.show).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { sheet: snapshot }, panelClass: 'modal-fullscreen' }));
+    expect(playback.stop).not.toHaveBeenCalled();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-song-playback')).toBeNull();
+    close(); await opened; fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-song-playback')).not.toBeNull();
+    expect(fixture.componentInstance.selectedId()).toBe('v2');
+    expect(document.activeElement).toBe(opener);
+    expect(playback.stopSong).not.toHaveBeenCalled();
+    opener.remove();
+  });
+
+  it('stops an unrelated preview only after entry is allowed and starts no audio', async () => {
+    state.next({ type: 'part', status: 'playing', source: 'song' });
+    modal.show.mockReturnValueOnce({ afterClosed: async () => undefined });
+    await fixture.componentInstance.openPlayView(document.createElement('button'));
+    expect(playback.stop).toHaveBeenCalledTimes(1);
+    expect(playback.playSongPart).not.toHaveBeenCalled();
   });
 
   it('stops section playback when leaving the arrangement', () => {

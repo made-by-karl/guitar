@@ -89,6 +89,43 @@ describe('Media-clock action positions', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
+  it('exposes continuous run-scoped media samples without adding discrete notation updates', async () => {
+    const { service, emit } = playbackHarness();
+    const session = service.getFiniteSession('clock');
+    await session.play({ ...plan, slots: [{ time: 0, segmentIndex: 0, actionIndex: 0 }, { time: 0.125, segmentIndex: 0, actionIndex: 1 }] });
+    const positions: unknown[] = [], samples: unknown[] = [];
+    const stateSubscription = session.state$.subscribe(value => positions.push(value));
+    const clockSubscription = session.clock$.subscribe(value => samples.push(value));
+    emit('finite:clock', { currentTime: 0.04 }); emit('finite:clock', { currentTime: 0.08 });
+    expect(positions).toHaveLength(1);
+    expect(samples).toEqual([{ runId: 1, currentTime: 0 }, { runId: 1, currentTime: 0.04 }, { runId: 1, currentTime: 0.08 }]);
+    session.pause(); session.seek(1);
+    expect(samples.at(-1)).toEqual({ runId: 1, currentTime: 1 });
+    session.stop();
+    expect(samples.at(-1)).toEqual({ runId: 1, currentTime: 0 });
+    const count = samples.length;
+    emit('finite:clock', { status: 'playing', currentTime: 2 });
+    expect(samples).toHaveLength(count);
+    await session.play(plan);
+    expect(samples.at(-1)).toEqual({ runId: 2, currentTime: 0 });
+    let completed = false; session.clock$.subscribe({ complete: () => completed = true });
+    session.destroy(); expect(completed).toBe(true);
+    stateSubscription.unsubscribe(); clockSubscription.unsubscribe(); service.ngOnDestroy();
+  });
+
+  it('cannot publish an old clock sample when a position subscriber stops the run synchronously', async () => {
+    const { service, emit } = playbackHarness();
+    const session = service.getFiniteSession('reentrant');
+    await session.play({ ...plan, slots: [{ time: 0, segmentIndex: 0, actionIndex: 0 }, { time: 0.125, segmentIndex: 0, actionIndex: 1 }] });
+    const samples: unknown[] = [];
+    const clock = session.clock$.subscribe(value => samples.push(value));
+    const state = session.state$.subscribe(value => { if (value.actionIndex === 1) session.stop(); });
+    emit('finite:reentrant', { currentTime: 0.125 });
+    expect(session.getSnapshot().status).toBe('idle');
+    expect(samples.at(-1)).toEqual({ runId: 1, currentTime: 0 });
+    state.unsubscribe(); clock.unsubscribe(); service.ngOnDestroy();
+  });
+
   it.each([60, 120, 180])('maps a three-minute sequence without drift at %i BPM and skips delayed frames', async tempo => {
     const { service, emit } = playbackHarness();
     const session = service.getFiniteSession('long-song');

@@ -4,6 +4,15 @@ import { PlayingPatternPlaybackPlannerService } from '@/app/features/patterns/se
 import { PlayingAction } from '@/app/features/patterns/services/playing-patterns.model';
 
 describe('PlayingPatternPlaybackPlannerService', () => {
+  it('keeps explicit music playable when a serialized grip cannot be resolved', () => {
+    const plan = new PlayingPatternPlaybackPlannerService().buildPlaybackPlan([{
+      measure: { timeSignature: '4/4', actions: [{ technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] }] },
+      actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'missing', name: 'Unavailable' }]
+    }], [note('E', 2)], 120);
+    expect(plan.instructions).toHaveLength(1);
+    expect(plan.instructions[0].notes).toEqual([{ note: note('G', 2) }]);
+  });
+
   it.each([60, 120, 180])('plans every local slot, including leading/trailing silence and whole rests at %i BPM', tempo => {
     const action: PlayingAction = { technique: 'percussive', percussive: { technique: 'body-knock' } };
     const plan = new PlayingPatternPlaybackPlannerService().buildPlaybackPlan([
@@ -662,7 +671,8 @@ describe('PlayingPatternPlaybackPlannerService', () => {
       measure: pattern!.measures[0]
     }], tuning, 120, grip as any);
 
-    expect(plan.totalDuration).toBeGreaterThan(2);
+    expect(plan.notationDuration).toBe(2);
+    expect(plan.totalDuration).toBeGreaterThan(plan.notationDuration);
     expect(plan.totalDuration).toBeCloseTo(3.75, 5);
     expect(plan.instructions.at(-1)).toMatchObject({
       time: 1.75,

@@ -186,12 +186,14 @@ test('three-minute foreground playback follows repeated sections and rests witho
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 1280, height: 800 });
   await seed(page, 120, true);
-  await page.getByRole('button', { name: 'Play song', exact: true }).click(); await started(page);
-  const measurements = await page.evaluate(() => new Promise<{ time: number; slot: number; lag: number }[]>(resolve => {
-    const audio = window.highlightAudio.find(audio => !audio.paused)!;
+  // Record before Play so startup polling cannot miss the opening boundary samples.
+  const recording = page.evaluate(() => new Promise<{ time: number; slot: number; lag: number }[]>(resolve => {
+    let audio: HTMLAudioElement | undefined;
     const samples: { time: number; slot: number; lag: number }[] = [];
     let previous = -1;
     const frame = () => {
+      audio ??= window.highlightAudio.find(audio => !audio.paused);
+      if (!audio) { requestAnimationFrame(frame); return; }
       const pane = document.querySelector<HTMLElement>('.playback-pane');
       const marker = pane?.querySelector<SVGRectElement>('.playback-action-slot');
       if (pane && marker) {
@@ -209,6 +211,8 @@ test('three-minute foreground playback follows repeated sections and rests witho
     };
     requestAnimationFrame(frame);
   }));
+  await page.getByRole('button', { name: 'Play song', exact: true }).click(); await started(page);
+  const measurements = await recording;
   await mkdir('../temp/ux/playback-highlighting', { recursive: true });
   await writeFile('../temp/ux/playback-highlighting/three-minute-chromium.json', JSON.stringify({
     browser: await page.evaluate(() => navigator.userAgent), tempo: 120, duration: 180,
