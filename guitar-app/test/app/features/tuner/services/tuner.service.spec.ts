@@ -82,7 +82,117 @@ describe('TunerService', () => {
     expect(service.getSnapshot().permission).toBe('denied');
     expect(service.getSnapshot().running).toBe(false);
     expect(service.getSnapshot().sessionStatus).toBe('idle');
-    expect(service.getSnapshot().errorMessage).toBe('Microphone permission was denied.');
+    expect(service.getSnapshot().errorMessage).toContain('Microphone access is blocked.');
+  });
+
+  describe('access checks and pending requests', () => {
+    const originalPermissions = navigator.permissions;
+    afterEach(() => Object.defineProperty(navigator, 'permissions', { configurable: true, value: originalPermissions }));
+
+    function setup(query?: jest.Mock) {
+      Object.defineProperty(window, 'AudioContext', { configurable: true, writable: true, value: jest.fn() });
+      const capture = jest.fn().mockRejectedValue({ name: 'NotAllowedError' });
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: capture } });
+      Object.defineProperty(navigator, 'permissions', { configurable: true, value: query ? { query } : undefined });
+      return capture;
+    }
+
+    it.each(['denied', 'prompt', 'granted'] as const)('queries %s without capture', async state => {
+      const capture = setup(jest.fn().mockResolvedValue({ state }));
+      const service = createService();
+      await service.checkAccess();
+      expect(capture).not.toHaveBeenCalled();
+      expect(service.getSnapshot().permission).toBe(state);
+      expect(service.getSnapshot().running).toBe(false);
+      expect(Boolean(service.getSnapshot().errorMessage)).toBe(state === 'denied');
+    });
+
+    it.each([undefined, jest.fn().mockRejectedValue(new Error()), jest.fn(() => { throw new Error(); })])('keeps query failure usable', async query => {
+      setup(query);
+      const service = createService();
+      await service.checkAccess();
+      expect(service.getSnapshot()).toMatchObject({ supported: true, permission: 'idle', errorMessage: null });
+    });
+
+    it('capture denial overrides a granted query', async () => {
+      setup(jest.fn().mockResolvedValue({ state: 'granted' }));
+      const service = createService();
+      await service.checkAccess();
+      await service.start();
+      expect(service.getSnapshot()).toMatchObject({ permission: 'denied', running: false, requesting: false });
+    });
+
+    it('explains insecure context without attempting capture', async () => {
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'isSecureContext');
+      const capture = setup();
+      Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false });
+      try {
+        const service = createService();
+        await service.checkAccess();
+        await service.start();
+        expect(service.getSnapshot().errorMessage).toContain('HTTPS');
+        expect(service.getSnapshot().permission).toBe('idle');
+        expect(capture).not.toHaveBeenCalled();
+      } finally {
+        if (descriptor) Object.defineProperty(window, 'isSecureContext', descriptor);
+        else Reflect.deleteProperty(window, 'isSecureContext');
+      }
+    });
+
+    it('ignores late queries and permits fresh retries after capture denial', async () => {
+      let finish!: (value: { state: string }) => void;
+      const capture = setup(jest.fn(() => new Promise(resolve => { finish = resolve; })));
+      const service = createService();
+      const query = service.checkAccess();
+      await service.start();
+      finish({ state: 'granted' });
+      await query;
+      expect(service.getSnapshot().permission).toBe('denied');
+      await service.start();
+      expect(capture).toHaveBeenCalledTimes(2);
+    });
+
+    it('prevents duplicate capture and releases a late stream after stop', async () => {
+      let finish!: (value: MediaStream) => void;
+      const capture = setup();
+      capture.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+      const service = createService();
+      const pending = service.start();
+      await service.start();
+      expect(service.getSnapshot().requesting).toBe(true);
+      service.stop();
+      const media = createMockMediaSession();
+      finish(media.stream);
+      await pending;
+      expect(capture).toHaveBeenCalledTimes(1);
+      expect(media.stopTrack).toHaveBeenCalled();
+      expect(service.getSnapshot()).toMatchObject({ requesting: false, running: false, sessionStatus: 'stopped' });
+    });
+
+    it('ignores a query after the page leaves', async () => {
+      let finish!: (value: { state: string }) => void;
+      setup(jest.fn(() => new Promise(resolve => { finish = resolve; })));
+      const service = createService();
+      const pending = service.checkAccess();
+      service.stop();
+      finish({ state: 'denied' });
+      await pending;
+      expect(service.getSnapshot().errorMessage).toBeNull();
+    });
+
+    it.each([
+      ['NotFoundError', 'No microphone'],
+      ['NotReadableError', 'could not be opened'],
+      ['SecurityError', 'disabled or restricted'],
+      ['UnknownError', 'Could not start']
+    ])('explains %s without claiming permission denial', async (name, message) => {
+      const capture = setup();
+      capture.mockRejectedValue({ name });
+      const service = createService();
+      await service.start();
+      expect(service.getSnapshot().permission).toBe('idle');
+      expect(service.getSnapshot().errorMessage).toContain(message);
+    });
   });
 
   it('starts and stops the microphone lifecycle cleanly', async () => {

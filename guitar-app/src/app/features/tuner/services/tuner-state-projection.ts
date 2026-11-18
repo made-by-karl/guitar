@@ -13,6 +13,7 @@ const DECAY_DISPLAY_SEMITONE_LIMIT = 0.35;
 export const INITIAL_TUNER_STATE: TunerState = {
   supported: false,
   permission: 'idle',
+  requesting: false,
   running: false,
   sessionStatus: 'idle',
   frequencyHz: null,
@@ -48,6 +49,7 @@ export interface TunerTrackingProjection {
 export function buildInactiveState(previous: TunerState, noiseFloor: number): TunerState {
   return {
     ...previous,
+    requesting: false,
     running: false,
     frequencyHz: null,
     rawFrequencyHz: null,
