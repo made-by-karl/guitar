@@ -1,4 +1,6 @@
 export class TunerAudioSession {
+  private generation = 0;
+  private pendingCleanup: (() => void) | null = null;
   private audioContext: AudioContext | null = null;
   private mediaStream: MediaStream | null = null;
   private analyser: AnalyserNode | null = null;
@@ -16,6 +18,7 @@ export class TunerAudioSession {
   }
 
   async startSession(fftSize: number): Promise<void> {
+    const generation = ++this.generation;
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         channelCount: 1,
@@ -25,25 +28,54 @@ export class TunerAudioSession {
       }
     });
 
-    const context = this.createAudioContext();
-    await context.resume();
+    if (generation !== this.generation) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    let context: AudioContext | null = null;
+    let sourceNode: MediaStreamAudioSourceNode | null = null;
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      try { sourceNode?.disconnect(); } catch { /* continue releasing capture */ }
+      stream.getTracks().forEach(track => track.stop());
+      if (context) void context.close().catch(() => undefined);
+    };
+    this.pendingCleanup = release;
+    try {
+      context = this.createAudioContext();
+      await context.resume();
+      if (generation !== this.generation) {
+        release();
+        return;
+      }
 
-    const analyser = context.createAnalyser();
-    analyser.fftSize = fftSize;
-    analyser.smoothingTimeConstant = 0;
+      const analyser = context.createAnalyser();
+      analyser.fftSize = fftSize;
+      analyser.smoothingTimeConstant = 0;
 
-    const sourceNode = context.createMediaStreamSource(stream);
-    sourceNode.connect(analyser);
+      sourceNode = context.createMediaStreamSource(stream);
+      sourceNode.connect(analyser);
 
-    this.audioContext = context;
-    this.mediaStream = stream;
-    this.analyser = analyser;
-    this.sourceNode = sourceNode;
-    this.sampleBuffer = new Float32Array(analyser.fftSize);
-    this.attachMediaSessionListeners(stream);
+      this.audioContext = context;
+      this.mediaStream = stream;
+      this.analyser = analyser;
+      this.sourceNode = sourceNode;
+      this.sampleBuffer = new Float32Array(analyser.fftSize);
+      this.attachMediaSessionListeners(stream);
+    } catch (error) {
+      release();
+      throw error;
+    } finally {
+      if (this.pendingCleanup === release) this.pendingCleanup = null;
+    }
   }
 
   stopSession(): void {
+    ++this.generation;
+    this.pendingCleanup?.();
+    this.pendingCleanup = null;
     this.detachMediaSessionListeners();
     this.cleanupAudioNodes();
   }

@@ -48,6 +48,7 @@ export class TunerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    void this.tunerService.checkAccess();
     this.subscription = this.tunerService.state$.subscribe(state => {
       this.state = state;
       this.trackMidiFloat = this.resolveTrackMidiFloat(state);
@@ -155,7 +156,8 @@ export class TunerComponent implements OnInit, OnDestroy {
   }
 
   toggleButtonLabel(): string {
-    return this.state.running ? 'Stop' : 'Start';
+    if (this.state.requesting) return 'Requesting…';
+    return this.state.running ? 'Stop' : this.state.errorMessage && this.state.supported ? 'Try again' : 'Start';
   }
 
   telemetryLabel(): string {

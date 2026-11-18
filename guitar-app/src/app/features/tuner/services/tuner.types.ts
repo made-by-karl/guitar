@@ -7,6 +7,7 @@ export type TunerSessionStatus = 'idle' | 'running' | 'stopped' | 'interrupted';
 export interface TunerState {
   supported: boolean;
   permission: 'idle' | 'prompt' | 'granted' | 'denied';
+  requesting: boolean;
   running: boolean;
   sessionStatus: TunerSessionStatus;
   frequencyHz: number | null;

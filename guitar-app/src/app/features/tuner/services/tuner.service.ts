@@ -20,12 +20,15 @@ import { PitchTrackingState, TunerSessionStatus, TunerState } from '@/app/featur
 
 export type { PitchTrackingState, TunerSessionStatus, TunerState } from '@/app/features/tuner/services/tuner.types';
 
+const BLOCKED_GUIDANCE = 'Microphone access is blocked. Allow microphone access for this website in your browser settings. Also check that your phone allows the browser to use the microphone, then try again.';
+
 const ANALYSER_FFT_SIZE = 4096;
 
 @Injectable({
   providedIn: 'root'
 })
 export class TunerService implements OnDestroy {
+  private accessGeneration = 0;
   private analysisFrameId: number | null = null;
   private readonly tracker = new TunerTracker();
   private readonly audioSession = new TunerAudioSession(() => this.handleMicrophoneInterruption());
@@ -81,24 +84,37 @@ export class TunerService implements OnDestroy {
     return true;
   }
 
-  async start(): Promise<void> {
-    if (this.getSnapshot().running) {
-      return;
+  async checkAccess(): Promise<void> {
+    const generation = ++this.accessGeneration;
+    const prerequisite = this.prerequisiteMessage();
+    this.patchState({ supported: !prerequisite, permission: 'idle', errorMessage: prerequisite });
+    if (prerequisite) return;
+    try {
+      const result = await navigator.permissions?.query({ name: 'microphone' as PermissionName });
+      if (generation !== this.accessGeneration || !result) return;
+      this.patchState({ permission: result.state, errorMessage: result.state === 'denied' ? BLOCKED_GUIDANCE : null });
+    } catch {
+      // Permission queries are optional and must never prevent a capture attempt.
     }
+  }
 
-    if (!this.audioSession.isSupported()) {
-      this.patchState({
-        supported: false,
-        permission: 'denied',
-        sessionStatus: 'idle',
-        interruptionMessage: null,
-        errorMessage: 'Microphone tuning is not supported in this browser.'
-      });
+  private prerequisiteMessage(): string | null {
+    if (window.isSecureContext === false) return 'Microphone tuning requires HTTPS. Open this page over a secure connection.';
+    return this.audioSession.isSupported() ? null : 'Microphone tuning is not supported in this browser.';
+  }
+
+  async start(): Promise<void> {
+    if (this.getSnapshot().running || this.getSnapshot().requesting) return;
+    const generation = ++this.accessGeneration;
+    const prerequisite = this.prerequisiteMessage();
+    if (prerequisite) {
+      this.patchState({ supported: false, permission: 'idle', errorMessage: prerequisite });
       return;
     }
 
     this.patchState({
       supported: true,
+      requesting: true,
       permission: 'prompt',
       sessionStatus: 'idle',
       interruptionMessage: null,
@@ -107,6 +123,7 @@ export class TunerService implements OnDestroy {
 
     try {
       await this.audioSession.startSession(ANALYSER_FFT_SIZE);
+      if (generation !== this.accessGeneration) return;
       this.tracker.reset();
       this.debugFrames = [];
       this.debugEnabled = this.debugSettings.isDebugEnabled('tuner');
@@ -114,6 +131,7 @@ export class TunerService implements OnDestroy {
       this.debugSessionStartMs = this.getNowMs();
 
       this.patchState({
+        requesting: false,
         permission: 'granted',
         running: true,
         sessionStatus: 'running',
@@ -130,16 +148,14 @@ export class TunerService implements OnDestroy {
 
       this.scheduleAnalysisFrame();
     } catch (error) {
+      if (generation !== this.accessGeneration) return;
       this.handleStartError(error);
       this.audioSession.stopSession();
     }
   }
 
   stop(): void {
-    if (!this.getSnapshot().running && !this.audioSession.hasActiveSession()) {
-      return;
-    }
-
+    ++this.accessGeneration;
     this.cancelAnalysisFrame();
     this.audioSession.stopSession();
     this.tracker.reset();
@@ -228,17 +244,22 @@ export class TunerService implements OnDestroy {
 
   private handleStartError(error: unknown): void {
     const name = typeof error === 'object' && error && 'name' in error ? String((error as { name?: string }).name) : '';
-    const denied = name === 'NotAllowedError' || name === 'SecurityError';
+    const denied = name === 'NotAllowedError';
+    const messages: Record<string, string> = {
+      NotAllowedError: BLOCKED_GUIDANCE,
+      NotFoundError: 'No microphone is available. Connect a microphone, then try again.',
+      NotReadableError: 'The microphone could not be opened. It may be busy or unavailable. Check it, then try again.',
+      SecurityError: 'Microphone access is disabled or restricted. Check browser and device restrictions, then try again.'
+    };
     this.tracker.reset();
 
     this.patchState({
+      requesting: false,
       running: false,
       sessionStatus: 'idle',
       permission: denied ? 'denied' : 'idle',
       interruptionMessage: null,
-      errorMessage: denied
-        ? 'Microphone permission was denied.'
-        : 'Could not start microphone input for tuning.'
+      errorMessage: messages[name] ?? 'Could not start microphone input for tuning. Try again.'
     });
   }
 

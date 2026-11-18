@@ -50,3 +50,19 @@ This distinction matters because most of the interesting tuner behavior is not i
   - `guitar-app/test/app/features/tuner/services/tuner-tracking-candidates.spec.ts`
   - `guitar-app/test/app/features/tuner/services/tuner-tracker.spec.ts`
   - `guitar-app/test/app/features/tuner/services/tuner.service.spec.ts`
+
+## Microphone access and recovery
+
+Entering the tuner makes an optional Permissions API microphone query, without opening capture
+or audio resources. Missing or rejected queries leave access unknown. A granted query is not an
+active microphone session. Start / Try again always makes a fresh capture attempt from the
+user action, without waiting for a permission query; pending requests disable duplicate starts.
+
+Blocked access guidance covers website permissions and the phone's browser microphone settings
+without identifying which layer denied access. Device, restriction, insecure-context and missing
+API failures have separate explanations. Guidance remains visible before any pitch is detected.
+Changing settings or returning to the page never automatically starts capture. Stop/navigation
+invalidates pending results and releases late or partially acquired resources.
+
+Browser tests use simulated APIs. Android and iPhone site/OS permission behavior and recovery
+require separate physical-device validation; desktop Chromium does not establish those results.

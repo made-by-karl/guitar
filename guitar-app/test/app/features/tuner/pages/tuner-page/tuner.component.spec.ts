@@ -21,6 +21,7 @@ describe('TunerComponent', () => {
     stateSubject = new BehaviorSubject<TunerState>({
       supported: true,
       permission: 'idle',
+      requesting: false,
       running: false,
       sessionStatus: 'idle',
       frequencyHz: null,
@@ -49,6 +50,7 @@ describe('TunerComponent', () => {
     mockTunerService = {
       state$: stateSubject.asObservable(),
       getSnapshot: jest.fn(() => stateSubject.getValue()),
+      checkAccess: jest.fn(),
       start: jest.fn(),
       stop: jest.fn(),
       hasDebugFrames: jest.fn(() => false),
@@ -94,6 +96,21 @@ describe('TunerComponent', () => {
     expect(compiled.textContent).not.toContain('Tap start and allow microphone access');
     expect(compiled.textContent).not.toContain('Start the microphone and play a steady note');
     expect(compiled.textContent).not.toContain('Download Debug Data');
+  });
+
+  it('exposes guidance without pitch and labels retry and pending states', () => {
+    stateSubject.next({ ...stateSubject.value, errorMessage: 'Microphone access is blocked. Check browser settings.' });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[role="status"]')?.textContent).toContain('Microphone access is blocked');
+    expect(root.querySelector('[role="status"]')?.closest('[aria-hidden="true"]')).toBeNull();
+    const button = root.querySelector('button') as HTMLButtonElement;
+    expect(button.textContent).toContain('Try again');
+    expect(button.disabled).toBe(false);
+    stateSubject.next({ ...stateSubject.value, requesting: true, errorMessage: null });
+    fixture.detectChanges();
+    expect(button.textContent).toContain('Requesting');
+    expect(button.disabled).toBe(true);
   });
 
   it('shows one toggle button that switches between Start and Stop', () => {
