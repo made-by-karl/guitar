@@ -16,7 +16,6 @@ import {
   LegatoNote,
   PickMode,
   PickingNote,
-  PlayingModifier,
   Measure,
   PlayingPatternActionGrip,
   PlayingPatternGripReference,
@@ -950,15 +949,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     });
   }
 
-  // Helper method to get available modifiers
-  getAvailableModifiers(): { value: PlayingModifier; label: string }[] {
-    return [
-      { value: 'mute', label: 'Mute' },
-      { value: 'palm-mute', label: 'Palm Mute' },
-      { value: 'accent', label: 'Accent' }
-    ];
-  }
-
   // Helper method to get available time signatures
   getAvailableTimeSignatures(): { value: TimeSignature; label: string }[] {
     return TIME_SIGNATURES.map(value => ({ value, label: timeSignatureLabel(value) }));
@@ -1013,53 +1003,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     this.measureDisplayStates.set(measureIndex, false);
     
     this.updatePattern(updatedPattern);
-  }
-
-  // Helper method to toggle modifier
-  toggleModifier(measureIndex: number, originalIndex: number, modifier: PlayingModifier): void {
-    const pattern = this.pattern()
-    if (!pattern || !pattern.measures[measureIndex] || originalIndex < 0 || originalIndex >= pattern.measures[measureIndex].actions.length) return;
-    const action = pattern.measures[measureIndex].actions[originalIndex];
-    if (!action) return;
-    
-    const currentModifiers = action.modifiers || [];
-    const index = currentModifiers.indexOf(modifier);
-    
-    let updatedModifiers: PlayingModifier[];
-    if (index > -1) {
-      updatedModifiers = currentModifiers.filter(m => m !== modifier);
-    } else {
-      updatedModifiers = [...currentModifiers, modifier];
-    }
-    
-    const updatedAction: PlayingAction = {
-      ...action,
-      modifiers: updatedModifiers
-    };
-    
-    const measure = pattern.measures[measureIndex];
-    const updatedActions = [...measure.actions];
-    updatedActions[originalIndex] = updatedAction;
-    
-    const updatedMeasure: Measure = {
-      ...measure,
-      actions: updatedActions
-    };
-    
-    const updatedMeasures = [...pattern.measures];
-    updatedMeasures[measureIndex] = updatedMeasure;
-    
-    const updatedPattern: PlayingPattern = {
-      ...pattern,
-      measures: updatedMeasures
-    };
-    
-    this.updatePattern(updatedPattern);
-  }
-
-  // Helper method to check if modifier is active
-  hasModifier(action: PlayingAction, modifier: PlayingModifier): boolean {
-    return action.modifiers?.includes(modifier) || false;
   }
 
   private updateLegato(measureIndex: number, originalIndex: number, patch: Partial<ExplicitLegatoNote>): void {

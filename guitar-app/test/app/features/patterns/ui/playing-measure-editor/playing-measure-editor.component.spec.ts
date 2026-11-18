@@ -4,18 +4,38 @@ import { Measure } from '@/app/features/patterns/services/playing-patterns.model
 import { PlayingMeasureEditorComponent } from '@/app/features/patterns/ui/playing-measure-editor/playing-measure-editor.component';
 
 describe('PlayingMeasureEditorComponent', () => {
-  it('stores dead note as a strum mode while retaining direction, range and accent', () => {
+  it.each(['D', 'U'] as const)('replaces and deselects articulation while preserving Accent and %s strum data', direction => {
     const previous: Measure = { timeSignature: '4/4', actions: [{ technique: 'strum',
-      strum: { direction: 'U', strings: 'bass' }, modifiers: ['mute', 'palm-mute', 'accent'] }] };
+      strum: { direction, strings: { from: 'bass', to: 'top' } }, articulation: 'mute', modifiers: ['accent'] }] };
+    const original = JSON.stringify(previous);
     component.measure.set(previous);
-    component.updateStrumMode(0, 'dead-note');
-    const action = component.measure().actions[0]!;
-    expect(action.strum).toEqual({ direction: 'U', strings: 'bass', mode: 'dead-note' });
-    expect(action.modifiers).toEqual(['accent']);
-    expect(component.getAvailableModifiers(action).map(m => m.value)).toEqual(['accent']);
-    expect(previous.actions[0]!.strum!.mode).toBeUndefined();
-    component.updateStrumMode(0, 'normal');
-    expect(component.measure().actions[0]!.strum!.mode).toBe('normal');
+    component.actionGrips.set([{ measureIndex: 0, actionIndex: 0, gripId: 'grip-c', name: 'C' }]);
+    for (const articulation of ['palm-mute', 'dead-note', 'mute'] as const) {
+      component.toggleArticulation(0, articulation);
+      expect(component.measure().actions[0]).toEqual({ ...previous.actions[0], articulation });
+    }
+    component.toggleArticulation(0, 'mute');
+    expect(component.measure().actions[0]!.articulation).toBe('normal');
+    component.toggleModifier(0, 'accent');
+    expect(component.measure().actions[0]!.modifiers).toEqual([]);
+    expect(component.actionGrips()[0].name).toBe('C');
+    expect(JSON.stringify(previous)).toBe(original);
+  });
+
+  it('offers dead note only on strums and uses the compact native checkbox controls', () => {
+    component.addAction(0, 'strum-up'); fixture.detectChanges();
+    const label = [...fixture.nativeElement.querySelectorAll('label')].find((el: unknown) => (el as HTMLElement).textContent?.trim() === 'Dead note') as HTMLLabelElement;
+    const checkbox = label.querySelector('input')!;
+    checkbox.click(); fixture.detectChanges();
+    expect(component.measure().actions[0]!.articulation).toBe('dead-note');
+    expect(checkbox.checked).toBe(true);
+    expect(fixture.nativeElement.querySelector('[id^="strumMode_"]')).toBeNull();
+    component.addAction(0, 'pick');
+    component.toggleArticulation(0, 'dead-note');
+    expect(component.measure().actions[0]!.articulation).toBeUndefined();
+    expect(component.getAvailableArticulations(component.measure().actions[0]!).map(o => o.value)).toEqual(['mute', 'palm-mute']);
+    component.addAction(0, 'slide');
+    expect(component.getAvailableArticulations(component.measure().actions[0]!)).toEqual([]);
   });
   let component: PlayingMeasureEditorComponent;
   let fixture: ComponentFixture<PlayingMeasureEditorComponent>;

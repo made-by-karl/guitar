@@ -8,15 +8,47 @@ import { richPattern, richSheet, transferEnvelope } from '../../../fixtures/data
 describe('Portable Guitar JSON', () => {
   const read = (format: 'guitar-song-sheet' | 'guitar-playing-pattern' | 'guitar-backup', data: unknown) => parseTransferFile(JSON.stringify(transferEnvelope(format, data)));
 
-  it('round trips strum modes and rejects unknown modes without changing legacy patterns', () => {
+  it.each(['normal', 'mute', 'palm-mute', 'dead-note'] as const)('round trips %s with Accent through every transfer kind', articulation => {
     const pattern = richPattern();
-    pattern.measures[0].actions[0]!.strum!.mode = 'dead-note';
+    pattern.measures[0].actions[0]!.articulation = articulation;
     expect(read('guitar-playing-pattern', pattern).data).toEqual(pattern);
     const sheet = richSheet(); sheet.patterns[0] = pattern;
+    sheet.parts[0].measures[0].measure = pattern.measures[0];
     expect(read('guitar-song-sheet', sheet).data).toEqual(sheet);
-    expect(read('guitar-backup', { playingPatterns: [pattern], songSheets: [sheet] }).data).toEqual({ playingPatterns: [pattern], songSheets: [sheet] });
-    Object.assign(pattern.measures[0].actions[0]!.strum!, { mode: 'future' });
-    expect(() => read('guitar-playing-pattern', pattern)).toThrow('mode');
+    const data = { playingPatterns: [pattern], songSheets: [sheet] };
+    expect(read('guitar-backup', data).data).toEqual(data);
+  });
+
+  it.each(['guitar-song-sheet', 'guitar-playing-pattern', 'guitar-backup'] as const)('converts released v1 flags in %s before returning canonical data', format => {
+    const pattern = richPattern(), sheet = richSheet();
+    const legacyAction = { technique: 'strum', modifiers: ['palm-mute', 'mute', 'accent'], strum: { direction: 'U', strings: [0, 5] } };
+    pattern.measures[0].actions[0] = legacyAction as never;
+    sheet.patterns[0] = pattern;
+    sheet.parts[0].measures[0].measure.actions[0] = legacyAction as never;
+    const data = format === 'guitar-song-sheet' ? sheet : format === 'guitar-playing-pattern' ? pattern : { songSheets: [sheet], playingPatterns: [pattern] };
+    const json = JSON.stringify({ ...transferEnvelope(format, data), modelVersion: 1 });
+    const converted = parseTransferFile(json);
+    expect(converted.modelVersion).toBe(2);
+    const result = converted.format === 'guitar-song-sheet' ? converted.data.patterns[0]
+      : converted.format === 'guitar-playing-pattern' ? converted.data : converted.data.playingPatterns[0];
+    expect(result.measures[0].actions[0]).toEqual({ technique: 'strum', articulation: 'mute', modifiers: ['accent'], strum: { direction: 'U', strings: [0, 5] } });
+    if (converted.format !== 'guitar-playing-pattern') {
+      const resultSheet = converted.format === 'guitar-song-sheet' ? converted.data : converted.data.songSheets[0];
+      expect(resultSheet.parts[0].measures[0].measure.actions[0]).toEqual(result.measures[0].actions[0]);
+      expect(resultSheet.arrangement).toEqual(sheet.arrangement);
+    }
+    expect(parseTransferFile(JSON.stringify(converted))).toEqual(converted);
+    expect(JSON.stringify(data)).toContain('palm-mute');
+  });
+
+  it.each([
+    { articulation: 'future' }, { modifiers: ['mute'] }, { modifiers: ['palm-mute'] },
+    { strum: { direction: 'D', strings: 'all', mode: 'dead-note' } },
+    { technique: 'pick', pick: [], articulation: 'dead-note' },
+    { technique: 'percussive', percussive: { technique: 'body-knock' }, articulation: 'mute' }
+  ])('rejects noncanonical or unsupported current articulation %j', patch => {
+    const pattern = richPattern(); Object.assign(pattern.measures[0].actions[0]!, patch);
+    expect(() => read('guitar-playing-pattern', pattern)).toThrow();
   });
 
   it('preserves the complete sheet aggregate and additional JSON fields', () => {
@@ -59,7 +91,7 @@ describe('Portable Guitar JSON', () => {
     ['old format', JSON.stringify({ ...transferEnvelope('guitar-playing-pattern', richPattern()), formatVersion: 0 })],
     ['future format', JSON.stringify({ ...transferEnvelope('guitar-playing-pattern', richPattern()), formatVersion: 2 })],
     ['old model', JSON.stringify({ ...transferEnvelope('guitar-playing-pattern', richPattern()), modelVersion: 0 })],
-    ['future model', JSON.stringify({ ...transferEnvelope('guitar-playing-pattern', richPattern()), modelVersion: 2 })]
+    ['future model', JSON.stringify({ ...transferEnvelope('guitar-playing-pattern', richPattern()), modelVersion: 3 })]
   ])('rejects %s', (_name, json) => expect(() => parseTransferFile(json)).toThrow());
 
   it('directs a backup selected in a library to Settings', () => {

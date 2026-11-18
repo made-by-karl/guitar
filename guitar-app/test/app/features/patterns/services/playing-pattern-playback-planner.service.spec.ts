@@ -31,7 +31,7 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     const planner = new PlayingPatternPlaybackPlannerService();
     const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
       { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] },
-      { technique: 'strum', strum: { mode: 'dead-note', direction: 'U', strings: [0, 1] }, modifiers: ['palm-mute', 'mute', 'accent'] },
+      { technique: 'strum', articulation: 'dead-note', strum: { direction: 'U', strings: [0, 1] }, modifiers: ['accent'] },
       { technique: 'pull-off', legato: { string: 0, toFret: 1 } },
       { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 2 }] }
     ] } }], [note('E', 2), note('A', 2)], 120);
@@ -42,10 +42,21 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     expect(plan.diagnostics[0]).toContain('no previous note');
   });
 
+  it('keeps ordinary Mute pitched and leaves sounding-string history and earlier tails intact', () => {
+    const plan = new PlayingPatternPlaybackPlannerService().buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] },
+      { technique: 'strum', articulation: 'mute', strum: { direction: 'D', strings: [0] } },
+      { technique: 'slide', slide: { fretOffset: 2 } }
+    ] }, actionGrips: [{ measureIndex: 0, actionIndex: 1, gripId: '3|x|x|x|x|x', name: 'G' }] }], [note('E', 2)], 120);
+    expect(plan.instructions.map(i => i.technique)).toEqual(['normal', 'muted', 'slide']);
+    expect(plan.instructions[0].chokeAt).toBeUndefined();
+    expect(plan.instructions[1].notes).toEqual([{ note: note('G', 2) }]);
+    expect(plan.instructions[2].legatos).toHaveLength(1);
+  });
   it('includes muted strings inside a relative dead-strum range without changing normal strums', () => {
     const planner = new PlayingPatternPlaybackPlannerService();
     const plan = planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4', actions: [
-      { technique: 'strum', strum: { mode: 'dead-note', direction: 'D', strings: { from: 'bass', to: 'top' } } }
+      { technique: 'strum', articulation: 'dead-note', strum: { direction: 'D', strings: { from: 'bass', to: 'top' } } }
     ] }, actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'o|x|x|x|x|o', name: 'Outer strings' }] }],
     [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4)], 120);
     expect(plan.instructions[0].notes).toHaveLength(6);
@@ -55,11 +66,19 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     const action: PlayingAction = technique === 'pick'
       ? { technique, pick: [{ mode: 'explicit', string: 0, fret: 3 }] }
       : { technique, strum: { direction: 'U', strings: 'all' } };
-    const variants: PlayingAction['modifiers'][] = [[], ['palm-mute'], ['palm-mute', 'accent'], ['mute', 'palm-mute', 'accent']];
-    const instructions = variants.map(modifiers => planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4',
-      actions: [{ ...action, modifiers }] }, actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'o|2|2|1|o|o', name: 'E' }]
+    const variants: Partial<PlayingAction>[] = [
+      {}, { articulation: 'palm-mute' }, { articulation: 'palm-mute', modifiers: ['accent'] },
+      { articulation: 'mute' }, { articulation: 'mute', modifiers: ['accent'] },
+      ...(technique === 'strum' ? [{ articulation: 'dead-note' as const }, { articulation: 'dead-note' as const, modifiers: ['accent' as const] }] : [])
+    ];
+    const instructions = variants.map(variant => planner.buildPlaybackPlan([{ measure: { timeSignature: '4/4',
+      actions: [{ ...action, ...variant }] }, actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'o|2|2|1|o|o', name: 'E' }]
     }], [note('E', 2), note('A', 2), note('D', 3), note('G', 3), note('B', 3), note('E', 4)], 120).instructions[0]);
-    expect(instructions.map(i => i.technique)).toEqual(['normal', 'palm-muted', 'palm-muted', 'muted']);
+    expect(instructions.map(i => i.technique)).toEqual([
+      'normal', 'palm-muted', 'palm-muted', 'muted', 'muted', ...(technique === 'strum' ? ['dead-note', 'dead-note'] : [])
+    ]);
+    expect(instructions[4].velocity).toBeGreaterThan(instructions[3].velocity);
+    if (technique === 'strum') expect(instructions[6].velocity).toBeGreaterThan(instructions[5].velocity);
     expect(instructions[2].velocity).toBeGreaterThan(instructions[1].velocity);
     expect(instructions[2].notes).toEqual(instructions[1].notes);
     expect(instructions[2].playNotes).toBe(technique === 'strum' ? 'reversed' : 'parallel');

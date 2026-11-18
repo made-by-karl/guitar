@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 import type { PlayingPattern } from '../src/app/features/patterns/services/playing-patterns.model';
 
-for (const version of [4, 7, 9]) {
+for (const version of [4, 7, 9, 10, 11]) {
   test(`opens a version-${version} database with the consolidated song migration`, async ({ page }) => {
     // Establish the application origin without starting Angular or Dexie.
     await page.goto('/app-icons/icon-96x96.png');
@@ -14,13 +14,19 @@ for (const version of [4, 7, 9]) {
           sheets.createIndex('created', 'created'); sheets.createIndex('updated', 'updated');
           const patterns = request.result.createObjectStore('playingPatterns', { keyPath: 'id' });
           patterns.createIndex('category', 'category'); patterns.createIndex('isCustom', 'isCustom');
+          if (version >= 10) request.result.createObjectStore('metadata', { keyPath: 'key' });
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
       const measure = {
         timeSignature: '4/4',
-        actions: [{ technique: 'slide', legatoMode: 'explicit', legato: { string: version === 9 ? 2 : '2', toFret: 7 } }, ...Array(15).fill(null)],
+        actions: [
+          { technique: 'slide', legatoMode: 'explicit', legato: { string: version >= 9 ? 2 : '2', toFret: 7 } },
+          { technique: 'strum', strum: { direction: 'U', strings: [0, 5] }, modifiers: version >= 11 ? ['accent'] : ['mute', 'palm-mute', 'accent'], ...(version >= 11 ? { articulation: 'mute' } : {}) },
+          { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }], modifiers: version >= 11 ? ['accent'] : ['palm-mute', 'accent'], ...(version >= 11 ? { articulation: 'palm-mute' } : {}) },
+          ...(version >= 11 ? [{ technique: 'strum', articulation: 'dead-note', strum: { direction: 'D', strings: 'bass' }, modifiers: ['accent'] }] : [null]),
+          ...Array(12).fill(null)],
         actionGrips: [{ measureIndex: 0, actionIndex: 0, gripId: 'x|x|o|2|3|2', name: 'D' }]
       };
       const pattern = {
@@ -35,13 +41,13 @@ for (const version of [4, 7, 9]) {
         }]
       }] : [{
         id: 'verse', section: 'Verse', notes: 'Keep these notes',
-        ...(version === 9 ? {} : { lyrics: 'First words' }),
+        ...(version >= 9 ? {} : { lyrics: 'First words' }),
         measures: [{ id: 'kept-measure-id', measure }]
       }];
       const sheet = {
         id: 'upgrade-song', name: 'Migration test', tuning: [], capodaster: 0, tempo: 90,
         links: [], grips: [], patterns: [pattern], parts, created: 1, updated: 2,
-        ...(version === 9 ? { arrangement: [
+        ...(version >= 9 ? { arrangement: [
           { id: 'kept-first', partId: 'verse', lyrics: 'First words' },
           { id: 'kept-second', partId: 'verse', lyrics: 'Second words' }
         ] } : {})
@@ -56,8 +62,8 @@ for (const version of [4, 7, 9]) {
       database.close();
     }, version);
     await page.goto('/sheets/upgrade-song');
-    await expect(page.locator('app-song-arrangement .occurrence-row')).toHaveCount(version === 9 ? 2 : 1);
-    const snapshot = await page.evaluate(async () => {
+    await expect(page.locator('app-song-arrangement .occurrence-row')).toHaveCount(version >= 9 ? 2 : 1);
+    const readSnapshot = async () => page.evaluate(async () => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open('GuitarAppDatabase');
         request.onsuccess = () => resolve(request.result);
@@ -74,7 +80,14 @@ for (const version of [4, 7, 9]) {
       database.close();
       return snapshot;
     });
-    expect(snapshot.version).toBe(100);
+    const snapshot = await readSnapshot();
+    expect(snapshot.version).toBe(110);
+    const measures = [snapshot.pattern.measures[0], snapshot.sheet.patterns[0].measures[0], snapshot.sheet.parts[0].measures[0].measure];
+    for (const measure of measures) {
+      expect(measure.actions[1]).toMatchObject({ articulation: 'mute', modifiers: ['accent'], strum: { direction: 'U', strings: [0, 5] } });
+      expect(measure.actions[2]).toMatchObject({ articulation: 'palm-mute', modifiers: ['accent'] });
+      if (version >= 11) expect(measure.actions[3]).toMatchObject({ articulation: 'dead-note', modifiers: ['accent'] });
+    }
     expect(snapshot.sheet.parts[0]).not.toHaveProperty('items');
     expect(snapshot.sheet.parts[0].lyrics).toBeUndefined();
     expect(snapshot.sheet.parts[0].notes).toBe('Keep these notes');
@@ -82,12 +95,13 @@ for (const version of [4, 7, 9]) {
     expect(snapshot.sheet.patterns[0].measures[0].actions[0]?.legato?.string).toBe(2);
     expect(snapshot.pattern.measures[0].actions[0]?.legato?.string).toBe(2);
     expect(snapshot.sheet.arrangement!.map((item: { lyrics: string }) => item.lyrics)).toEqual(
-      version === 9 ? ['First words', 'Second words'] : ['First words']
+      version >= 9 ? ['First words', 'Second words'] : ['First words']
     );
     expect(snapshot.sheet.updated).toBe(2);
     if (version !== 4) expect(snapshot.sheet.parts[0].measures[0].id).toBe('kept-measure-id');
-    if (version === 9) expect(snapshot.sheet.arrangement!.map((item: { id: string }) => item.id)).toEqual(['kept-first', 'kept-second']);
+    if (version >= 9) expect(snapshot.sheet.arrangement!.map((item: { id: string }) => item.id)).toEqual(['kept-first', 'kept-second']);
     await page.reload();
-    await expect(page.locator('app-song-arrangement .occurrence-row')).toHaveCount(version === 9 ? 2 : 1);
+    await expect(page.locator('app-song-arrangement .occurrence-row')).toHaveCount(version >= 9 ? 2 : 1);
+    expect(await readSnapshot()).toEqual(snapshot);
   });
 }

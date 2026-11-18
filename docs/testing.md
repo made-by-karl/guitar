@@ -139,8 +139,8 @@ preparation time, rendered sizes, memory/resource observations and cleanup after
 
 Compare processed palm-muted and dead-note strums against their accepted A/C sounds, with
 accent combinations, both directions, string ranges, alternate tuning/capo and low/high pitches.
-`e2e/dead-note-strum.spec.ts` covers mode editing, persistence, cross notation and actual rendered
-WAV decay; device listening remains separate. `e2e/media-service-worker.spec.ts` serves the
+`e2e/dead-note-strum.spec.ts` covers compact articulation selection, keyboard toggling,
+cancel/save persistence, cross notation and actual rendered WAV decay; device listening remains separate. `e2e/media-service-worker.spec.ts` serves the
 production build on a disposable local origin and verifies source sample caching, offline
 retrieval and activation of a changed source revision. Run the build first; that spec skips
 without generated production files. It changes only in-memory test responses. These checks
@@ -214,3 +214,13 @@ on Resume. Screenshots and timing evidence for this presentation are kept under
 `temp/ux/song-play-view-continuous/`. The shared notation marker uses global score slot indexes.
 Both three-minute recorders attach before Play so asynchronous startup polling cannot skip
 the opening measurement window; they retain the same sample-count and 50 ms limits.
+
+## Articulation model compatibility
+
+Run `e2e/dead-note-strum.spec.ts`, `e2e/database-upgrade.spec.ts` and
+`e2e/json-import-export.spec.ts` through Docker after articulation changes. Upgrade checks
+cover old databases through current version 11 and compare stored aggregates after reopening.
+Jest covers legacy flag precedence, idempotency, all three portable file kinds, current-model
+validation, independent Accent, distinct playback instructions and notation. UI evidence at
+375×667, 768×1024 and 1280×800 belongs under `temp/ux/song-sheet-editing-consistency/`.
+These checks do not establish real-device audible quality.

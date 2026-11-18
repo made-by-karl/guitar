@@ -245,3 +245,20 @@
     }
   }
 }
+
+// The entire label is a touch target; native checkboxes retain keyboard/focus behavior.
+.articulation-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #6c757d;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: #495057;
+
+  .form-check-input { margin: 0; }
+  &:has(:checked) { background: #f5e3d3; border-color: #7a3a0d; color: #62300d; }
+  &:focus-within { outline: 2px solid #7a3a0d; outline-offset: 2px; }
+}

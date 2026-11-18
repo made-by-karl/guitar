@@ -82,10 +82,24 @@ describe('PlayingActionsComponent', () => {
     expect(labels()).toEqual(['087xxx extended', '01010xxx extended', '0109xxx extended', '000xxx extended', 'Em extended']);
     expect(fixture.componentInstance.getRenderableSegments().map(segment => segment.width)).toEqual(widths);
   });
+  it.each(['D', 'U'] as const)('draws each articulation distinctly with independent Accent for %s strums', async direction => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    for (const articulation of ['normal', 'mute', 'palm-mute', 'dead-note'] as const) {
+      for (const accent of [false, true]) {
+        const action: PlayingAction = { technique: 'strum', strum: { direction, strings: 'bass' }, articulation, modifiers: accent ? ['accent'] : [] };
+        fixture.componentRef.setInput('measures', [createMeasure([action])]); fixture.detectChanges();
+        const marks = fixture.componentInstance.getModifierMarks(0, action).map(mark => mark.label);
+        if (articulation !== 'normal') expect(fixture.componentInstance.getActionTitle(action, 0)).toContain(articulation);
+        expect(marks).toEqual([...(articulation === 'mute' ? ['M'] : articulation === 'palm-mute' ? ['PM'] : []), ...(accent ? ['A'] : [])]);
+        expect(fixture.nativeElement.querySelectorAll('.dead-note-mark')).toHaveLength(articulation === 'dead-note' ? 3 : 0);
+      }
+    }
+  });
   it('marks dead strums with crosses including grip-muted strings, and clears slide history', async () => {
     await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
     const fixture = TestBed.createComponent(PlayingActionsComponent);
-    const action: PlayingAction = { technique: 'strum', strum: { direction: 'U', strings: 'all', mode: 'dead-note' } };
+    const action: PlayingAction = { technique: 'strum', strum: { direction: 'U', strings: 'all' }, articulation: 'dead-note' };
     fixture.componentRef.setInput('measures', [createMeasure([action])]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.dead-note-mark')).toHaveLength(6);

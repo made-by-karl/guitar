@@ -2,11 +2,12 @@ import { isTimeSignature, getTimeSignatureParts } from '@/app/core/music/rhythm/
 import { SEMITONES } from '@/app/core/music/semitones';
 import { parseGrip } from '@/app/features/grips/services/grips/grip.model';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
+import { migratePatternArticulations, migrateSheetArticulations } from '@/app/features/patterns/services/playing-articulation-migration';
 import { SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 
 export const FORMAT_VERSION = 1;
 /** Portable record version, independent of Dexie's schema/upgrade history. */
-export const MODEL_VERSION = 1;
+export const MODEL_VERSION = 2;
 export type TransferKind = 'guitar-song-sheet' | 'guitar-playing-pattern' | 'guitar-backup';
 export interface PracticeData { songSheets: SongSheet[]; playingPatterns: PlayingPattern[]; }
 interface Metadata {
@@ -75,16 +76,23 @@ function endpoint(value: unknown, path: string): void {
   choice(o['anchor'], ['base-note', 'grip-note'], `${path}.anchor`);
   if (o['anchor'] === 'grip-note') number(o['fretOffset'], `${path}.fretOffset`);
 }
-function action(value: unknown, path: string): void {
+function action(value: unknown, path: string, modelVersion: number): void {
   if (value === null) return;
   const o = object(value, path), technique = o['technique'];
   choice(technique, ['strum', 'pick', 'hammer-on', 'pull-off', 'slide', 'percussive'], `${path}.technique`);
-  optional(o, 'modifiers', (v, p) => array(v, p).forEach((m, i) => choice(m, ['mute', 'palm-mute', 'accent'], `${p}[${i}]`)), path);
+  optional(o, 'modifiers', (v, p) => array(v, p).forEach((m, i) => choice(m, modelVersion === 1 ? ['mute', 'palm-mute', 'accent'] : ['accent'], `${p}[${i}]`)), path);
+  if (modelVersion === 1 && o['articulation'] !== undefined) fail(`${path}.articulation`, 'requires model version 2');
+  optional(o, 'articulation', (v, p) => {
+    const supported = technique === 'strum' ? ['normal', 'mute', 'palm-mute', 'dead-note']
+      : technique === 'pick' ? ['normal', 'mute', 'palm-mute'] : ['normal'];
+    choice(v, supported, p);
+  }, path);
   optional(o, 'legatoMode', (v, p) => choice(v, ['explicit', 'relative'], p), path);
   if (technique === 'strum' && o['strum'] === undefined) fail(path, 'strum technique needs strum data');
   optional(o, 'strum', (v, p) => {
     const s = object(v, p);
     choice(s['direction'], ['D', 'U'], `${p}.direction`);
+    if (modelVersion === 2 && 'mode' in s) fail(`${p}.mode`, 'obsolete field; use action.articulation');
     optional(s, 'mode', (v, p) => choice(v, ['normal', 'dead-note'], p), p);
     const range = s['strings'];
     if (Array.isArray(range)) range.forEach((n, i) => number(n, `${p}.strings[${i}]`, 0, 5));
@@ -126,26 +134,26 @@ function actionGrips(value: unknown, path: string, measures: RecordValue[]): voi
     positions.add(position);
   });
 }
-function measure(value: unknown, path: string): void {
+function measure(value: unknown, path: string, modelVersion: number): void {
   const o = object(value, path), signature = o['timeSignature'];
   if (!isTimeSignature(signature)) fail(`${path}.timeSignature`, 'unsupported time signature');
   const actions = array(o['actions'], `${path}.actions`);
   const { top, bottom } = getTimeSignatureParts(signature);
   if (actions.length !== top * (bottom === 4 ? 4 : 2)) fail(`${path}.actions`, 'slot count does not match time signature');
-  actions.forEach((v, i) => action(v, `${path}.actions[${i}]`));
+  actions.forEach((v, i) => action(v, `${path}.actions[${i}]`, modelVersion));
   optional(o, 'actionGrips', (v, p) => actionGrips(v, p, [o]), path);
 }
-function pattern(value: unknown, path: string): void {
+function pattern(value: unknown, path: string, modelVersion: number): void {
   const o = object(value, path);
   id(o['id'], `${path}.id`);
   for (const key of ['name', 'description', 'category', 'suggestedGenre', 'exampleSong']) text(o[key], `${path}.${key}`);
   for (const key of ['createdAt', 'updatedAt']) number(o[key], `${path}.${key}`, 0);
   optional(o, 'isCustom', (v, p) => { if (typeof v !== 'boolean') fail(p, 'expected a boolean'); }, path);
   const measures = array(o['measures'], `${path}.measures`);
-  measures.forEach((v, i) => measure(v, `${path}.measures[${i}]`));
+  measures.forEach((v, i) => measure(v, `${path}.measures[${i}]`, modelVersion));
   optional(o, 'actionGrips', (v, p) => actionGrips(v, p, measures.map((m, i) => object(m, `${path}.measures[${i}]`))), path);
 }
-function sheet(value: unknown, path: string): void {
+function sheet(value: unknown, path: string, modelVersion: number): void {
   const o = object(value, path);
   id(o['id'], `${path}.id`); text(o['name'], `${path}.name`);
   for (const key of ['created', 'updated']) number(o[key], `${path}.${key}`, 0);
@@ -167,11 +175,11 @@ function sheet(value: unknown, path: string): void {
     if (gripIds.has(g['gripId'] as string)) fail(p, 'duplicate grip ID');
     gripIds.add(g['gripId'] as string);
   });
-  records(o['patterns'], `${path}.patterns`, pattern);
+  records(o['patterns'], `${path}.patterns`, (v, p) => pattern(v, p, modelVersion));
   const parts = records(o['parts'], `${path}.parts`, (v, p) => {
     const part = object(v, p); text(part['section'], `${p}.section`); text(part['notes'], `${p}.notes`);
     optional(part, 'lyrics', text, p);
-    records(part['measures'], `${p}.measures`, (m, mp) => measure(object(m, mp)['measure'], `${mp}.measure`));
+    records(part['measures'], `${p}.measures`, (m, mp) => measure(object(m, mp)['measure'], `${mp}.measure`, modelVersion));
   });
   optional(o, 'arrangement', (v, p) => records(v, p, (occurrence, op) => {
     const a = object(occurrence, op); id(a['partId'], `${op}.partId`); text(a['lyrics'], `${op}.lyrics`);
@@ -179,7 +187,7 @@ function sheet(value: unknown, path: string): void {
   }), path);
 }
 
-/** Validate unknown JSON without normalizing, dropping fields, or writing storage. */
+/** Validate the complete versioned payload, then convert supported legacy data without writing storage. */
 export function parseTransferFile(json: string, expected?: TransferKind): TransferFile {
   let value: unknown;
   try { value = JSON.parse(json); } catch { throw new Error('The file is not readable JSON. It may be truncated. Choose a complete Guitar JSON file.'); }
@@ -189,17 +197,28 @@ export function parseTransferFile(json: string, expected?: TransferKind): Transf
     throw new Error(o['format'] === 'guitar-backup' ? 'This is a backup. Restore it in Settings → Data Management.' : `Choose a ${expected === 'guitar-backup' ? 'backup from Settings' : expected === 'guitar-song-sheet' ? 'song sheet' : 'playing pattern'} JSON file.`);
   }
   if (o['formatVersion'] !== FORMAT_VERSION) fail('File.formatVersion', 'unsupported format version. Use a file with format version 1; update Guitar if this file is newer.');
-  if (o['modelVersion'] !== MODEL_VERSION) fail('File.modelVersion', 'unsupported model version. Use a file with model version 1; update Guitar if this file is newer.');
+  const modelVersion = o['modelVersion'];
+  if (modelVersion !== 1 && modelVersion !== MODEL_VERSION) fail('File.modelVersion', 'unsupported model version. Supported model versions: 1 and 2; update Guitar if this file is newer.');
   number(o['exportedAt'], 'File.exportedAt', 0); text(o['appVersion'], 'File.appVersion');
-  if (o['format'] === 'guitar-song-sheet') sheet(o['data'], 'Song sheet');
-  else if (o['format'] === 'guitar-playing-pattern') pattern(o['data'], 'Playing pattern');
+  if (o['format'] === 'guitar-song-sheet') sheet(o['data'], 'Song sheet', modelVersion);
+  else if (o['format'] === 'guitar-playing-pattern') pattern(o['data'], 'Playing pattern', modelVersion);
   else {
     const data = object(o['data'], 'Backup.data');
-    records(data['songSheets'], 'Backup.songSheets', sheet);
-    records(data['playingPatterns'], 'Backup.playingPatterns', pattern);
+    records(data['songSheets'], 'Backup.songSheets', (v, p) => sheet(v, p, modelVersion));
+    records(data['playingPatterns'], 'Backup.playingPatterns', (v, p) => pattern(v, p, modelVersion));
   }
   // The validators above establish the discriminated record shape; keep every additional JSON field.
-  return value as TransferFile;
+  const file = value as TransferFile;
+  if (modelVersion === 1) {
+    if (file.format === 'guitar-song-sheet') migrateSheetArticulations(file.data);
+    else if (file.format === 'guitar-playing-pattern') migratePatternArticulations(file.data);
+    else {
+      file.data.songSheets.forEach(migrateSheetArticulations);
+      file.data.playingPatterns.forEach(migratePatternArticulations);
+    }
+    file.modelVersion = MODEL_VERSION;
+  }
+  return file;
 }
 
 export function importedName(name: string, names: readonly string[]): string {

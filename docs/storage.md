@@ -6,7 +6,7 @@ Client-side persistence is handled with Dexie/IndexedDB in `guitar-app/src/app/c
 
 ## Tables
 
-Current schema version is `10` with three tables:
+Current schema version is `11` with three tables:
 
 - `songSheets`: keyed by `id`, indexed by `created` and `updated`
 - `playingPatterns`: keyed by `id`, indexed by `category` and `isCustom`
@@ -15,6 +15,13 @@ Current schema version is `10` with three tables:
 Version 2 clears `playingPatterns` during upgrade so defaults can be rebuilt cleanly. Versions 2–4 retain their previously released upgrade behavior.
 
 Version 9 combines the song-sheet changes developed on this branch into one upgrade. It copies legacy part pattern items into measures, folds grip and text overlays into their current locations, creates reusable-part occurrences with independent lyrics, and repairs explicit legato string indices in both song sheets and library patterns. Versions 5–8 were development-only steps and are no longer registered separately. The conversion helpers tolerate those intermediate shapes and preserve existing occurrence and measure identities. Databases already at version 9 open without rerunning that upgrade. Version 10 adds initialization metadata without modifying practice records. Existing installations receive the marker, preserving their current library, including an empty one.
+
+Version 11 converts released Mute/Palm Mute modifier flags into `PlayingAction.articulation`
+in library patterns, sheet-local pattern snapshots, and part measures. Mute takes precedence
+when both legacy flags are present; Accent remains independent in `modifiers`. The upgrade
+preserves identities, timestamps, order, arrangement lyrics, grips and ranges, and does not
+reset or reseed content. It is idempotent; reopening version 11 does not rerun it.
+The development-only `strum.mode` field is discarded without sound conversion.
 
 ## Ownership Model
 

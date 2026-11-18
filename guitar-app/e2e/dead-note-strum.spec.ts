@@ -75,38 +75,49 @@ test('dead strum removes earlier guitar tails while subsequent notes remain audi
 });
 
 for (const width of [375, 768, 1280]) {
-  test(`strum mode edits and reopens with direction, range and cross notation at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: width === 375 ? 667 : 1024 });
+  test(`articulation edits and reopens with direction, range and cross notation at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 375 ? 667 : width === 768 ? 1024 : 800 });
     await page.goto('/patterns/editor');
     await page.locator('#patternEditorName').fill(`Dead strum ${width}`);
     const editor = page.locator('app-playing-measure-editor').first();
     await editor.getByTitle('Add Technique', { exact: true }).first().click();
     await editor.getByRole('link', { name: /Strum Up$/ }).first().click();
-    const mode = editor.getByLabel('Mode', { exact: true });
-    await expect(mode).toHaveValue('normal');
-    await mode.selectOption('dead-note');
+    await expect(editor.getByLabel('Mode', { exact: true })).toHaveCount(0);
+    const dead = editor.getByLabel('Dead note', { exact: true });
+    const mute = editor.getByLabel('Mute', { exact: true });
+    const palm = editor.getByLabel('Palm Mute', { exact: true });
+    await mute.check(); await palm.check(); await expect(mute).not.toBeChecked();
+    await dead.focus(); await page.keyboard.press('Space');
+    await expect(dead).toBeChecked(); await expect(palm).not.toBeChecked();
+    await page.keyboard.press('Space'); await expect(dead).not.toBeChecked();
+    await expect(mute).not.toBeChecked(); await expect(palm).not.toBeChecked();
+    await page.keyboard.press('Space');
     await editor.getByLabel('Strings', { exact: true }).selectOption('bass');
     await expect(editor.getByLabel('Direction', { exact: true }).locator('option:checked')).toHaveText('Up');
-    await expect(editor.getByLabel('Palm Mute', { exact: true })).toHaveCount(0);
+    await expect(palm).not.toBeChecked();
     await editor.getByLabel('Accent', { exact: true }).check();
-    await mode.focus();
-    await mkdir('../temp/ux/dead-note-strum', { recursive: true });
-    await page.screenshot({ path: `../temp/ux/dead-note-strum/mode-${width}.png`, fullPage: true });
+    await dead.focus();
+    await expect(dead).toBeFocused();
+    const hitArea = await dead.locator('..').boundingBox();
+    expect(hitArea!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await mkdir('../temp/ux/song-sheet-editing-consistency', { recursive: true });
+    await page.screenshot({ path: `../temp/ux/song-sheet-editing-consistency/articulation-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: /Save$/ }).click();
     await expect(page).toHaveURL(/\/patterns$/);
     await page.reload();
     const card = page.locator('.card').filter({ has: page.getByRole('heading', { name: `Dead strum ${width}`, exact: true }) });
     await expect(card.locator('.dead-note-mark')).toHaveCount(3);
-    await card.screenshot({ path: `../temp/ux/dead-note-strum/notation-${width}.png` });
+    await card.screenshot({ path: `../temp/ux/song-sheet-editing-consistency/notation-${width}.png` });
     await card.getByRole('button', { name: /Edit$/ }).click();
-    await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('dead-note');
+    await expect(page.getByLabel('Dead note', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Direction', { exact: true }).locator('option:checked')).toHaveText('Up');
     await expect(page.getByLabel('Strings', { exact: true })).toHaveValue('bass');
     await expect(page.getByLabel('Accent', { exact: true })).toBeChecked();
   });
 }
 
-test('the sheet measure editor offers the same strum mode and applies it to the part', async ({ page }) => {
+test('the sheet measure editor offers the same compact articulation controls and applies it to the part', async ({ page }) => {
   await page.goto('/sheets');
   await page.getByPlaceholder('New Song Sheet Name').fill('Dead-note sheet');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
@@ -119,7 +130,16 @@ test('the sheet measure editor offers the same strum mode and applies it to the 
   const modal = page.locator('app-song-part-measure-editor-modal');
   await modal.getByTitle('Add Technique', { exact: true }).first().click();
   await modal.getByRole('link', { name: /Strum Down$/ }).first().click();
-  await modal.getByLabel('Mode', { exact: true }).selectOption('dead-note');
+  await modal.getByLabel('Dead note', { exact: true }).check();
+  await modal.getByLabel('Accent', { exact: true }).check();
+  await modal.getByRole('button', { name: /Cancel$/ }).click();
+  await expect(part.locator('.dead-note-mark')).toHaveCount(0);
+  await part.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
+  await modal.getByTitle('Add Technique', { exact: true }).first().click();
+  await modal.getByRole('link', { name: /Strum Down$/ }).first().click();
+  await expect(modal.getByLabel('Dead note', { exact: true })).not.toBeChecked();
+  await modal.getByLabel('Dead note', { exact: true }).check();
+  await modal.getByLabel('Accent', { exact: true }).check();
   await modal.getByRole('button', { name: /Apply to part$/ }).click();
   await expect(part.locator('.dead-note-mark')).toHaveCount(6);
   await part.getByRole('button', { name: 'Save changes', exact: true }).click();

@@ -3,6 +3,20 @@
 Playback renders Tone.js instruments into WAV media, then plays through `HTMLAudioElement`.
 The tuner retains its independent microphone pipeline.
 
+## Action articulation
+
+`PlayingAction.articulation` is the single sound choice for strums and picks. Missing or
+`normal` maps to the existing normal instructions; `mute` maps to `muted`, `palm-mute`
+to `palm-muted`, and strum-only `dead-note` to `dead-note`. Accent remains independent
+and changes velocity through the existing rule. Direction and range stay on the strum.
+The planner and notation read only the canonical field. Legacy flags are converted at
+versioned database/import boundaries, never interpreted as a second runtime sound choice.
+
+Dead strums retain unpitched cross notation, no-grip playability, chosen range/direction,
+and damping of prior guitar tails and sounding-string history. Ordinary Mute remains
+pitched and does not acquire that damping behavior. This model/UI change does not alter
+samples, processing profiles, gains, timing or rendered instruction meanings.
+
 ## Playback pipeline
 
 `RenderedAudioService` prepares a mono 44.1 kHz, PCM 16-bit WAV with `WavEncoderService`.

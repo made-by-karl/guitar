@@ -6,8 +6,9 @@ export type LegatoMode = 'explicit' | 'relative';
 export type RelativeNoteAnchor = 'base-note' | 'grip-note';
 export type RelativeString = 'bass' | 'second-from-bass' | 'lower-middle' | 'upper-middle' | 'second-from-top' | 'top';
 
-// Style modifiers that can be applied to strum and pick techniques
-export type PlayingModifier = 'mute' | 'palm-mute' | 'accent';
+export type PlayingArticulation = 'normal' | 'mute' | 'palm-mute' | 'dead-note';
+// Accent is independent of the mutually exclusive articulation.
+export type PlayingModifier = 'accent';
 
 export interface ExplicitPickingNote {
   mode: 'explicit';
@@ -74,12 +75,10 @@ export type StrumRange =
   | number[];       // Specific string indices
 
 export type StrumDirection = 'D' | 'U';
-export type StrumMode = 'normal' | 'dead-note';
 
 export interface StrumPattern {
   strings: StrumRange;
   direction: StrumDirection;
-  mode?: StrumMode; // Missing on older patterns means normal.
 }
 
 export interface Percussive {
@@ -105,7 +104,10 @@ export interface PlayingPatternActionGrip extends PlayingPatternGripReference {
 export interface PlayingAction {
   technique: PlayingTechnique;
   
-  // Style modifiers that can be applied to strum and pick techniques
+  // Missing articulation means normal; dead note is supported only for strums.
+  articulation?: PlayingArticulation;
+
+  // Independent emphasis for strum and pick techniques
   modifiers?: PlayingModifier[];
   
   // For strumming patterns
