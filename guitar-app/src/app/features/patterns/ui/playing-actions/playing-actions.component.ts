@@ -159,6 +159,12 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   // Continuous scores keep their notation data mounted. Index immutable inputs
   // once so moving a marker does not flatten/search the full score per SVG mark.
   private readonly timelineActions = computed(() => this.measures().flatMap(measure => measure.actions));
+  // Chord names, articulation marks and the staff each own a vertical band.
+  readonly modifierBandHeight = computed(() => {
+    const count = this.timelineActions().reduce((max, action) =>
+      Math.max(max, action ? this.getModifierLabels(action).length : 0), 0);
+    return count ? count * 12 + 4 : 0;
+  });
   private readonly measureStarts = computed(() => {
     let start = 0;
     return this.measures().map(measure => { const current = start; start += measure.actions.length; return current; });
@@ -329,7 +335,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     for (const label of layout.placements) {
       const rowTop = rowTops[label.row] - container.top - element.clientTop;
       const bottom = rowTop + bandHeight - label.bottom;
-      const anchorY = rowTop + bandHeight + this.slotTop - 3;
+      const anchorY = rowTop + bandHeight + this.modifierBandHeight() + this.slotTop - 3;
       positions.set(label.actionIndex, {
         left: label.left,
         top: bottom - label.height,
@@ -460,7 +466,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   }
 
   getActionSvgHeight(): number {
-    return this.baseSvgHeight + this.getGripLabelTopOffset();
+    return this.baseSvgHeight + this.getGripLabelTopOffset() + this.modifierBandHeight();
   }
 
   getActionSvgPixelWidth(actionIndex: number): number {
@@ -612,13 +618,14 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
       return `Action ${actionIndex + 1}: rest`;
     }
 
+    const articulation = action.articulation && action.articulation !== 'normal' ? `${action.articulation} ` : '';
     if (action.technique === 'strum') {
       const direction = action.strum?.direction === 'D' ? 'down' : 'up';
-      return `Action ${actionIndex + 1}: ${action.strum?.mode === 'dead-note' ? 'dead-note ' : ''}strum ${direction}`;
+      return `Action ${actionIndex + 1}: ${articulation}strum ${direction}`;
     }
 
     if (action.technique === 'pick') {
-      return `Action ${actionIndex + 1}: pick`;
+      return `Action ${actionIndex + 1}: ${articulation}pick`;
     }
 
     if (action.technique === 'percussive') {
@@ -641,7 +648,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   }
 
   stringY(stringIndex: number): number {
-    return this.slotTop + this.getGripLabelTopOffset() + (5 - stringIndex) * this.stringSpacing;
+    return this.slotTop + this.getGripLabelTopOffset() + this.modifierBandHeight() + (5 - stringIndex) * this.stringSpacing;
   }
 
   private getGripLabelTopOffset(): number {
@@ -769,45 +776,20 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     return previousActionIndex !== null && this.findSegmentForAction(previousActionIndex) === this.findSegmentForAction(actionIndex);
   }
 
-  hasModifier(action: PlayingAction | null, modifier: 'accent' | 'mute' | 'palm-mute'): boolean {
-    return !!action?.modifiers?.includes(modifier);
+  private getModifierLabels(action: PlayingAction): string[] {
+    const labels: string[] = [];
+    if (action.articulation === 'mute') labels.push('M');
+    if (action.articulation === 'palm-mute') labels.push('PM');
+    if (action.modifiers?.includes('accent')) labels.push('A');
+
+    return labels;
   }
 
   getModifierMarks(actionIndex: number, action: PlayingAction): ModifierMark[] {
-    const modifiers = (action.modifiers ?? []).filter(modifier => action.strum?.mode !== 'dead-note' || modifier === 'accent');
-    const labels = modifiers.map(modifier => {
-      switch (modifier) {
-        case 'accent':
-          return 'A';
-        case 'mute':
-          return 'M';
-        case 'palm-mute':
-          return 'PM';
-      }
-    });
-
-    if (action.technique === 'strum' && action.strum) {
-      const baseX = this.getActionX(actionIndex);
-      const arrowStartY = action.strum.direction === 'U'
-        ? this.getStrumMaxY(actionIndex, action)
-        : this.getStrumMinY(actionIndex, action);
-
-      return labels.map((label, index) => ({
-        label,
-        x: baseX,
-        y: action.strum!.direction === 'U'
-          ? arrowStartY + 9 + (index * 8)
-          : arrowStartY - 4 - ((labels.length - 1 - index) * 8)
-      }));
-    }
-
-    const baseX = this.getActionX(actionIndex) + 8;
-    const baseY = this.stringY(0) + 8;
-
-    return labels.map((label, index) => ({
+    return this.getModifierLabels(action).map((label, index) => ({
       label,
-      x: baseX,
-      y: baseY + ((index - ((labels.length - 1) / 2)) * 8)
+      x: this.getActionX(actionIndex),
+      y: this.getGripLabelTopOffset() + 10 + index * 12
     }));
   }
 
@@ -978,11 +960,11 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     }
 
     if (isRelativeStrumRange(action.strum.strings)) {
-      return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings, action.strum.mode === 'dead-note');
+      return resolveRelativeStrumRange(this.resolvedGripTimeline().get(actionIndex), action.strum.strings, action.articulation === 'dead-note');
     }
 
     const grip = this.resolvedGripTimeline().get(actionIndex);
-    return getStringsForStrum(action.strum.strings).filter(index => action.strum?.mode === 'dead-note' || !grip || (grip.strings[index] !== undefined && grip.strings[index] !== 'x'));
+    return getStringsForStrum(action.strum.strings).filter(index => action.articulation === 'dead-note' || !grip || (grip.strings[index] !== undefined && grip.strings[index] !== 'x'));
   }
 
   private spreadPickMarksOnSameString(marks: SlotPickMark[], baseX: number): SlotPickMark[] {
@@ -1021,7 +1003,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     stringState: Map<number, NotationStringState>
   ): void {
     if (action.technique === 'strum' && action.strum) {
-      if (action.strum.mode === 'dead-note') { stringState.clear(); return; }
+      if (action.articulation === 'dead-note') { stringState.clear(); return; }
       const grip = this.resolvedGripTimeline().get(actionIndex);
       if (!grip) {
         return;

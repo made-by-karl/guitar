@@ -34,19 +34,29 @@ Existing unsaved-work navigation guards still apply when navigating to Settings.
 
 All files are readable UTF-8 JSON (`application/json`) with these fields:
 
-| Field | Version 1 contract |
+| Field | Current contract |
 | --- | --- |
 | `format` | `guitar-song-sheet`, `guitar-playing-pattern`, or `guitar-backup` |
 | `formatVersion` | `1` (envelope layout) |
-| `modelVersion` | `1` (portable record shape, independent of Dexie schema version) |
+| `modelVersion` | `2` (portable record shape, independent of Dexie schema version) |
 | `exportedAt` | Nonnegative epoch milliseconds |
 | `appVersion` | Generated application version, diagnostic only |
 | `data` | A `SongSheet`, a `PlayingPattern`, or `{ songSheets: [], playingPatterns: [] }` |
 
-The implementation supports only format/model version 1. Older and newer versions are
-rejected with guidance before writing. No unversioned Guitar import format predates this one.
-Future supported model upgrades must use explicit content migrations; importing a file must
-never replay destructive historical database upgrades.
+The implementation supports envelope format 1 with model versions 1 and 2. New downloads
+use model 2 so older apps reject them explicitly. Model 1 is fully validated before its
+released Mute/Palm Mute flags are converted to the action-level `articulation`, with Mute
+winning conflicts and Accent retained in `modifiers`. Conversion includes library patterns,
+sheet snapshots and part measures, including backup restores that bypass editor services.
+The returned inspection payload declares model 2 and is revalidated before transactional writes.
+Development-only `strum.mode` data is discarded without sound conversion.
+
+Model 2 accepts `normal`, `mute`, `palm-mute` and `dead-note` on strums; picks support all
+except Dead note. Missing articulation means Normal. Other techniques cannot select a
+non-normal articulation. Only Accent belongs in `modifiers`; legacy articulation flags and
+`strum.mode` are rejected in model 2. All supported models retain the existing sounds and
+notation for the released articulations. Unsupported versions are rejected before writing;
+imports never replay historical database upgrade steps.
 
 Sheets travel as complete aggregates: metadata, tuning, capo, tempo, described links, labeled
 grip encodings, local patterns, all parts (including unused parts), and ordered occurrences

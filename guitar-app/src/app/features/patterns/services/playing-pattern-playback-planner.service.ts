@@ -270,11 +270,11 @@ export class PlayingPatternPlaybackPlannerService {
     let technique: MidiTechnique = 'normal';
     let velocity = 0.7;
 
-    if (action.technique === 'strum' && action.strum?.mode === 'dead-note') {
+    if (action.technique === 'strum' && action.articulation === 'dead-note') {
       technique = 'dead-note';
-    } else if (action.modifiers?.includes('mute')) {
+    } else if (action.articulation === 'mute') {
       technique = 'muted';
-    } else if (action.modifiers?.includes('palm-mute')) {
+    } else if (action.articulation === 'palm-mute') {
       technique = 'palm-muted';
     } else if (action.technique === 'percussive') {
       technique = 'percussive';
@@ -316,7 +316,7 @@ export class PlayingPatternPlaybackPlannerService {
     } | undefined;
 
     if (action.technique === 'strum' && action.strum) {
-      const deadNote = action.strum.mode === 'dead-note';
+      const deadNote = action.articulation === 'dead-note';
       if (!grip && !deadNote) {
         return undefined;
       }

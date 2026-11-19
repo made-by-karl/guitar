@@ -4,6 +4,7 @@ import { migrateSongArrangement } from '@/app/features/sheets/services/song-arra
 import { SongPartActionGrip, SongPartMeasure, SongSheet } from '@/app/features/sheets/services/song-sheets.model';
 import { Measure, PickingNote, PlayingAction, PlayingPattern, RelativeString } from '@/app/features/patterns/services/playing-patterns.model';
 import { createDefaultPlayingPatterns } from '@/app/features/patterns/services/playing-pattern-defaults';
+import { migratePatternArticulations, migrateSheetArticulations } from '@/app/features/patterns/services/playing-articulation-migration';
 import type { PracticeData } from '@/app/core/services/data-transfer-format';
 
 export const PATTERNS_INITIALIZED = 'patternsInitialized';
@@ -70,6 +71,11 @@ export class DatabaseService extends Dexie {
     }).upgrade(async tx => {
       // Existing installations own their current library, including an empty one.
       await tx.table('metadata').put({ key: PATTERNS_INITIALIZED, value: true });
+    });
+
+    this.version(11).stores({}).upgrade(async tx => {
+      await tx.table<PlayingPattern>('playingPatterns').toCollection().modify(migratePatternArticulations);
+      await tx.table<SongSheet>('songSheets').toCollection().modify(migrateSheetArticulations);
     });
   }
 

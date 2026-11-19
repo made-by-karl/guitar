@@ -245,3 +245,26 @@
     }
   }
 }
+
+.articulation-choices {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+}
+
+// Keep native checkbox labels compact in the dense action editor.
+.articulation-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 28px;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: #495057;
+
+  .form-check-input { margin: 0; }
+  &:has(:checked) { color: #62300d; }
+  &:focus-within { outline: 2px solid #7a3a0d; outline-offset: 2px; }
+}

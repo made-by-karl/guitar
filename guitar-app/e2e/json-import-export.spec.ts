@@ -173,6 +173,41 @@ test('exports exact stored payloads, creates independent sheet/pattern copies an
   expect(saved.measures).toEqual(sheet.patterns[0].measures);
 });
 
+test('converts a version-1 backup before restore, rolls back on failure, then exports canonical version 2', async ({ page }) => {
+  await page.goto(settings);
+  const local = { songSheets: [richSheet('local')], playingPatterns: [richPattern('local')] };
+  const expected = { songSheets: [richSheet('legacy')], playingPatterns: [richPattern('legacy')] };
+  const legacy = JSON.parse(JSON.stringify({ ...transferEnvelope('guitar-backup', expected), modelVersion: 1 }));
+  const measures = [legacy.data.playingPatterns[0].measures[0], legacy.data.songSheets[0].patterns[0].measures[0], legacy.data.songSheets[0].parts[0].measures[0].measure];
+  for (const measure of measures) {
+    delete measure.actions[0].articulation;
+    measure.actions[0].modifiers = ['palm-mute', 'mute', 'accent'];
+  }
+  await seed(page, local);
+  await page.locator('app-json-import input[type=file]').setInputFiles({ name: 'version-1.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
+  await expect(page.getByRole('region', { name: 'JSON import preview' })).toBeVisible();
+  await page.evaluate(() => {
+    const ng = (window as unknown as { ng: { getComponent(el: Element): { transfer: DataTransferService } } }).ng;
+    const db = (ng.getComponent(document.querySelector('app-settings')!).transfer as unknown as { db: { playingPatterns: { bulkPut: (...args: unknown[]) => Promise<unknown> } } }).db;
+    const original = db.playingPatterns.bulkPut.bind(db.playingPatterns);
+    db.playingPatterns.bulkPut = async () => {
+      db.playingPatterns.bulkPut = original;
+      throw new Error('Legacy restore write failure');
+    };
+  });
+  await page.getByRole('radio', { name: 'Replace everything', exact: true }).check();
+  await page.getByRole('checkbox', { name: /I confirm replacing/ }).check();
+  await page.getByRole('button', { name: 'Replace all practice content', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Legacy restore write failure');
+  expect(await readData(page)).toEqual(local);
+  await page.getByRole('button', { name: 'Replace all practice content', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'JSON import preview' })).toHaveCount(0);
+  expect(await readData(page)).toEqual(expected);
+  const backup = await downloadJSON(page, () => page.getByRole('button', { name: 'Download backup', exact: true }).click());
+  expect(backup.json.modelVersion).toBe(2);
+  expect(backup.json.data).toEqual(expected);
+});
+
 test('merges with file winning, replaces exactly and preserves deleted defaults across reload', async ({ page }) => {
   await page.goto(settings);
   const local: PracticeData = { songSheets: [richSheet('A', 'Same'), { ...richSheet('B', 'Same'), updated: 9999 }], playingPatterns: [richPattern('A'), { ...richPattern('B'), updatedAt: 9999 }] };

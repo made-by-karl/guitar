@@ -154,6 +154,8 @@
     fill: none;
     stroke: #1f5f64;
     stroke-width: 0.8;
+    // Leaders cross the modifier band; let the marks show through the line.
+    stroke-opacity: 0.55;
   }
 }
 

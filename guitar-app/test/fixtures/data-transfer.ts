@@ -6,7 +6,7 @@ export function richPattern(id = 'pattern', name = 'Fingerpicking'): PlayingPatt
     id, name, description: 'All supported actions', category: 'Custom', suggestedGenre: '', exampleSong: '',
     createdAt: 100, updatedAt: 200, isCustom: false,
     measures: [{ timeSignature: '4/4', actions: [
-      { technique: 'strum', modifiers: ['mute', 'palm-mute', 'accent'], strum: { direction: 'D', strings: [0, 2, 5] } },
+      { technique: 'strum', articulation: 'mute', modifiers: ['accent'], strum: { direction: 'D', strings: [0, 2, 5] } },
       { technique: 'strum', strum: { direction: 'U', strings: { from: 'top', to: 'second-from-bass' } } },
       { technique: 'pick', pick: [
         { mode: 'explicit', string: 1, fret: -1 },
@@ -46,5 +46,5 @@ export function richSheet(id = 'sheet', name = 'My song'): SongSheet {
 }
 
 export function transferEnvelope(format: 'guitar-song-sheet' | 'guitar-playing-pattern' | 'guitar-backup', data: unknown) {
-  return { format, formatVersion: 1, modelVersion: 1, exportedAt: 123456789, appVersion: '1.0.1', data };
+  return { format, formatVersion: 1, modelVersion: 2, exportedAt: 123456789, appVersion: '1.0.1', data };
 }
