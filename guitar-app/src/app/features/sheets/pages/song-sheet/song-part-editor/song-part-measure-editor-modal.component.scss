@@ -19,13 +19,26 @@
 .modal-header { gap: 1rem; }
 button { min-height: 44px; }
 .btn-close { width: 44px; height: 44px; margin: 0; box-sizing: border-box; }
-.modal-footer { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
+.modal-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-bottom: max(.5rem, env(safe-area-inset-bottom));
+}
+.measure-editor-hint,
+.measure-editor-actions { margin: 0; }
+.measure-editor-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: .5rem;
+  button { white-space: nowrap; }
+}
 
 @media (max-height: 600px) {
   .modal-header {
     padding: .5rem 1rem;
     .small { display: none; }
   }
-  .modal-footer > span { flex-basis: 100%; font-size: .75rem; }
+  .measure-editor-hint { font-size: .75rem; }
   .modal-footer { padding: .5rem 1rem max(.5rem, env(safe-area-inset-bottom)); }
 }

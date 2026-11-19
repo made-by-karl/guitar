@@ -27,10 +27,12 @@
   </div>
 
   <div class="modal-footer">
-    <span class="small text-muted me-auto">Apply this measure, then save the part.</span>
-    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
-    <button class="btn btn-success" type="button" (click)="save()">
-      <i class="bi bi-check-lg"></i> Apply to part
-    </button>
+    <span class="small text-muted measure-editor-hint">Apply this measure, then save the part.</span>
+    <div class="measure-editor-actions" role="group" aria-label="Measure editing actions">
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
+      <button class="btn btn-success" type="button" (click)="save()">
+        <i class="bi bi-check-lg"></i> Apply to part
+      </button>
+    </div>
   </div>
 </div>

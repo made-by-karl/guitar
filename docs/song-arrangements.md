@@ -70,6 +70,7 @@ keeps Save changes, save status and Back to song reachable inside the occurrence
 Selected-measure actions share that area above Save, with layout space reserved below the
 last form fields. Nested measure editing hides the parent's actions, keeps Apply/Cancel
 outside its scrolling body, and returns keyboard focus to the measure's Edit action.
+The measure footer puts its hint above a single Cancel/Apply row, including on narrow screens.
 
 Part previews in both the editor and Parts cards use the same ordered transport: Play/Pause/
 Resume, Previous measure, Next measure, Stop. Close and part editing actions are separate.

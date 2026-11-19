@@ -103,6 +103,15 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     const apply = measure.getByRole('button', { name: 'Apply to part', exact: false });
     await expect(apply).toBeInViewport({ ratio: 1 });
     await expect(measure.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 });
+    const cancelBox = (await measure.getByRole('button', { name: 'Cancel', exact: true }).boundingBox())!;
+    const applyBox = (await apply.boundingBox())!;
+    const hintBox = (await measure.locator('.measure-editor-hint').boundingBox())!;
+    expect(Math.abs(cancelBox.y - applyBox.y)).toBeLessThan(1);
+    expect(cancelBox.height).toBeGreaterThanOrEqual(44);
+    expect(applyBox.height).toBeGreaterThanOrEqual(44);
+    expect(cancelBox.y).toBeGreaterThanOrEqual(hintBox.y + hintBox.height);
+    expect(applyBox.x).toBeGreaterThanOrEqual(cancelBox.x + cancelBox.width);
+    await expect(measure.getByRole('group', { name: 'Measure editing actions' }).getByRole('button')).toHaveCount(2);
     await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button')).toHaveCount(1);
     await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button', { name: 'Close measure editor', exact: true })).toHaveCount(0);
     await measure.locator('.modal-body').evaluate(element => { element.scrollTop = element.scrollHeight; });
