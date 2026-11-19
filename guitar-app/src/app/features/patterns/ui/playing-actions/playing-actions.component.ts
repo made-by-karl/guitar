@@ -159,6 +159,12 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   // Continuous scores keep their notation data mounted. Index immutable inputs
   // once so moving a marker does not flatten/search the full score per SVG mark.
   private readonly timelineActions = computed(() => this.measures().flatMap(measure => measure.actions));
+  // Chord names, articulation marks and the staff each own a vertical band.
+  readonly modifierBandHeight = computed(() => {
+    const count = this.timelineActions().reduce((max, action) =>
+      Math.max(max, action ? this.getModifierLabels(action).length : 0), 0);
+    return count ? count * 12 + 4 : 0;
+  });
   private readonly measureStarts = computed(() => {
     let start = 0;
     return this.measures().map(measure => { const current = start; start += measure.actions.length; return current; });
@@ -329,7 +335,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     for (const label of layout.placements) {
       const rowTop = rowTops[label.row] - container.top - element.clientTop;
       const bottom = rowTop + bandHeight - label.bottom;
-      const anchorY = rowTop + bandHeight + this.slotTop - 3;
+      const anchorY = rowTop + bandHeight + this.modifierBandHeight() + this.slotTop - 3;
       positions.set(label.actionIndex, {
         left: label.left,
         top: bottom - label.height,
@@ -460,7 +466,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   }
 
   getActionSvgHeight(): number {
-    return this.baseSvgHeight + this.getGripLabelTopOffset();
+    return this.baseSvgHeight + this.getGripLabelTopOffset() + this.modifierBandHeight();
   }
 
   getActionSvgPixelWidth(actionIndex: number): number {
@@ -642,7 +648,7 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
   }
 
   stringY(stringIndex: number): number {
-    return this.slotTop + this.getGripLabelTopOffset() + (5 - stringIndex) * this.stringSpacing;
+    return this.slotTop + this.getGripLabelTopOffset() + this.modifierBandHeight() + (5 - stringIndex) * this.stringSpacing;
   }
 
   private getGripLabelTopOffset(): number {
@@ -770,34 +776,20 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     return previousActionIndex !== null && this.findSegmentForAction(previousActionIndex) === this.findSegmentForAction(actionIndex);
   }
 
-  getModifierMarks(actionIndex: number, action: PlayingAction): ModifierMark[] {
+  private getModifierLabels(action: PlayingAction): string[] {
     const labels: string[] = [];
     if (action.articulation === 'mute') labels.push('M');
     if (action.articulation === 'palm-mute') labels.push('PM');
     if (action.modifiers?.includes('accent')) labels.push('A');
 
-    if (action.technique === 'strum' && action.strum) {
-      const baseX = this.getActionX(actionIndex);
-      const arrowStartY = action.strum.direction === 'U'
-        ? this.getStrumMaxY(actionIndex, action)
-        : this.getStrumMinY(actionIndex, action);
+    return labels;
+  }
 
-      return labels.map((label, index) => ({
-        label,
-        x: baseX,
-        y: action.strum!.direction === 'U'
-          ? arrowStartY + 9 + (index * 8)
-          : arrowStartY - 4 - ((labels.length - 1 - index) * 8)
-      }));
-    }
-
-    const baseX = this.getActionX(actionIndex) + 8;
-    const baseY = this.stringY(0) + 8;
-
-    return labels.map((label, index) => ({
+  getModifierMarks(actionIndex: number, action: PlayingAction): ModifierMark[] {
+    return this.getModifierLabels(action).map((label, index) => ({
       label,
-      x: baseX,
-      y: baseY + ((index - ((labels.length - 1) / 2)) * 8)
+      x: this.getActionX(actionIndex),
+      y: this.getGripLabelTopOffset() + 10 + index * 12
     }));
   }
 

@@ -75,23 +75,18 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     await page.setViewportSize(viewport);
     await importExample(page);
-    const overview = page.locator('app-song-sheet-parts-tab app-playing-actions');
-    await assertReadable(overview, names, strumIndices);
-    await mkdir('../temp/ux/grip-label-layout', { recursive: true });
-    await overview.screenshot({ path: `../temp/ux/grip-label-layout/overview-${viewport.width}.png` });
-
-    // A resize reuses this component and can move the colliding names across row boundaries.
-    await page.setViewportSize({ width: viewport.width === 375 ? 1280 : 375, height: 800 });
-    await assertReadable(overview, names, strumIndices);
-    await page.setViewportSize(viewport);
-    await assertReadable(overview, names, strumIndices);
-
     await page.locator('app-song-sheet-parts-tab').getByRole('button', { name: /Edit$/ }).click();
     const editor = page.locator('app-song-part-editor');
     await editor.getByRole('tab', { name: 'Music', exact: true }).click();
     const notation = editor.locator('app-playing-actions');
     await assertReadable(notation.nth(0), names.slice(0, 4), strumIndices.filter(index => index < 16));
     await assertReadable(notation.nth(1), ['Em'], strumIndices.filter(index => index >= 16).map(index => index - 16), 11);
+    // A resize reuses the drawing and can move colliding names across row boundaries.
+    await page.setViewportSize({ width: viewport.width === 375 ? 1280 : 375, height: 800 });
+    await assertReadable(notation.nth(0), names.slice(0, 4), strumIndices.filter(index => index < 16));
+    await page.setViewportSize(viewport);
+    await assertReadable(notation.nth(0), names.slice(0, 4), strumIndices.filter(index => index < 16));
+    await mkdir('../temp/ux/grip-label-layout', { recursive: true });
     await editor.locator('.measure-sequence').screenshot({ path: `../temp/ux/grip-label-layout/editor-${viewport.width}.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);

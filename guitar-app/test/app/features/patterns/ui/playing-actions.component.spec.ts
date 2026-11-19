@@ -96,6 +96,30 @@ describe('PlayingActionsComponent', () => {
       }
     }
   });
+  it.each(['D', 'U', 'pick'] as const)('reserves a separate modifier band for %s and releases it after editing', async technique => {
+    await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(PlayingActionsComponent);
+    const action: PlayingAction = {
+      technique: technique === 'pick' ? 'pick' : 'strum',
+      ...(technique === 'pick' ? { pick: [{ mode: 'explicit' as const, string: 0, fret: 2 }] }
+        : { strum: { direction: technique, strings: 'all' as const } }),
+      articulation: 'palm-mute', modifiers: ['accent']
+    };
+    fixture.componentRef.setInput('measures', [createMeasure([action])]);
+    fixture.componentRef.setInput('notationContexts', [{ actionGrips: [{ actionIndex: 0, measureIndex: 0, gripId: 'o|2|2|o|o|o', name: 'Em' }] }]);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    const marks = component.getModifierMarks(0, action);
+    expect(marks[0].y - 5).toBeGreaterThan(component.gripLabelTopBand);
+    expect(marks[1].y - marks[0].y).toBeGreaterThanOrEqual(12);
+    expect(marks[1].y + 5).toBeLessThan(component.stringY(5) - 4);
+    const height = component.getActionSvgHeight();
+    fixture.componentRef.setInput('measures', [createMeasure([{ ...action, articulation: 'normal', modifiers: [] }])]);
+    fixture.detectChanges();
+    expect(component.modifierBandHeight()).toBe(0);
+    expect(component.getActionSvgHeight()).toBeLessThan(height);
+  });
+
   it('marks dead strums with crosses including grip-muted strings, and clears slide history', async () => {
     await TestBed.configureTestingModule({ imports: [PlayingActionsComponent] }).compileComponents();
     const fixture = TestBed.createComponent(PlayingActionsComponent);

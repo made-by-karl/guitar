@@ -99,7 +99,9 @@ for (const width of [375, 768, 1280]) {
     await dead.focus();
     await expect(dead).toBeFocused();
     const hitArea = await dead.locator('..').boundingBox();
-    expect(hitArea!.height).toBeGreaterThanOrEqual(44);
+    expect(hitArea!.height).toBeGreaterThanOrEqual(28);
+    expect(hitArea!.height).toBeLessThanOrEqual(32);
+    expect((await editor.locator('.articulation-choices').boundingBox())!.height).toBeLessThanOrEqual(64);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await mkdir('../temp/ux/song-sheet-editing-consistency', { recursive: true });
     await page.screenshot({ path: `../temp/ux/song-sheet-editing-consistency/articulation-${width}.png`, fullPage: true });

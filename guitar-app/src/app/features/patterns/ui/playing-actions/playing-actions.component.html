@@ -6,7 +6,7 @@
         class="action-svg"
         [class.has-action-grips]="hasActionGripLabels()"
         [style.width.px]="getActionSvgPixelWidth(segment.actionIndex)"
-        [style.height.px]="hasActionGripLabels() ? getActionSvgHeight() : null"
+        [style.height.px]="hasActionGripLabels() || modifierBandHeight() > 0 ? getActionSvgHeight() : null"
         [attr.viewBox]="getActionSvgViewBox(segment.actionIndex)"
         role="img"
         aria-hidden="true">
@@ -81,8 +81,8 @@
         }
 
         @if (currentAction.technique === 'percussive') {
-          <text [attr.x]="getActionX(slotAction.actionIndex)" y="48" class="percussive-mark">X</text>
-          <text [attr.x]="getActionX(slotAction.actionIndex)" y="60" class="percussive-submark">{{ getPercussiveLabel(currentAction) }}</text>
+          <text [attr.x]="getActionX(slotAction.actionIndex)" [attr.y]="stringY(3) + 10" class="percussive-mark">X</text>
+          <text [attr.x]="getActionX(slotAction.actionIndex)" [attr.y]="stringY(3) + 22" class="percussive-submark">{{ getPercussiveLabel(currentAction) }}</text>
         }
 
         @for (modifier of getModifierMarks(slotAction.actionIndex, currentAction); track $index) {

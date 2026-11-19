@@ -224,3 +224,10 @@ Jest covers legacy flag precedence, idempotency, all three portable file kinds, 
 validation, independent Accent, distinct playback instructions and notation. UI evidence at
 375×667, 768×1024 and 1280×800 belongs under `temp/ux/song-sheet-editing-consistency/`.
 These checks do not establish real-device audible quality.
+
+`e2e/articulation-layout.spec.ts` checks separate chord-name, modifier and staff bands in
+wrapped scores and the live measure preview, including Palm Mute with Accent, upward
+strums and chord leaders reaching the action through the modifier band. Compact checkbox labels,
+keyboard toggling and screenshots at the standard viewports
+are covered alongside `e2e/dead-note-strum.spec.ts`. Layout evidence is kept under
+`temp/ux/mobile-articulations/`.
