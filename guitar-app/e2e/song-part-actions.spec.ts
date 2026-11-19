@@ -102,8 +102,8 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(measure.getByRole('button', { name: 'Close measure editor', exact: true })).toBeFocused();
     const apply = measure.getByRole('button', { name: 'Apply to part', exact: false });
     await expect(apply).toBeInViewport({ ratio: 1 });
-    await expect(measure.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 });
-    const cancelBox = (await measure.getByRole('button', { name: 'Cancel', exact: true }).boundingBox())!;
+    await expect(measure.getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
+    const cancelBox = (await measure.getByRole('button', { name: 'Back to part', exact: true }).boundingBox())!;
     const applyBox = (await apply.boundingBox())!;
     const hintBox = (await measure.locator('.measure-editor-hint').boundingBox())!;
     expect(Math.abs(cancelBox.y - applyBox.y)).toBeLessThan(1);
@@ -119,7 +119,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await apply.focus(); await apply.press('Tab');
     await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button')).toBeFocused();
     await page.screenshot({ path: `${evidence}/measure-${viewport.width}x${viewport.height}.png` });
-    await measure.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await measure.getByRole('button', { name: 'Back to part', exact: true }).click();
     await expect(edit).toBeFocused();
     await expect(footer).toBeInViewport({ ratio: 1 });
     await save.click();
@@ -237,7 +237,7 @@ test('recovery notices leave part Save and measure Apply reachable at constraine
   await measure.getByRole('button', { name: 'Play measure', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play prepared audio', exact: true })).toBeVisible({ timeout: 45000 });
   await expect(measure.getByRole('button', { name: 'Apply to part' })).toBeInViewport({ ratio: 1 });
-  await expect(measure.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(measure.getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Stop playback', exact: true }).click();
-  await measure.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await measure.getByRole('button', { name: 'Back to part', exact: true }).click();
 });

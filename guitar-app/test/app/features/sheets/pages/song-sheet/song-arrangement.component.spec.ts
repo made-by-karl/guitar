@@ -13,6 +13,7 @@ describe('SongArrangementComponent', () => {
   let sheet: SongSheetWithData;
   let state: BehaviorSubject<SongSheetPlaybackState>;
   const playback = {
+    seekSongOccurrence: jest.fn(),
     canPlaySong: jest.fn(() => true),
     canPlaySongPart: jest.fn(() => true),
     stop: jest.fn(), playSongPart: jest.fn(), pauseSongPart: jest.fn(), resumeSongPart: jest.fn(), stopSongPart: jest.fn(), stopSong: jest.fn()
@@ -81,6 +82,24 @@ describe('SongArrangementComponent', () => {
     fixture.detectChanges();
     button('Resume Verse, occurrence 2').click();
     expect(playback.resumeSongPart).toHaveBeenCalled();
+  });
+
+  it('seeks sections without navigating the selected editor or its draft', () => {
+    const component = fixture.componentInstance;
+    component.selectedId.set('v2');
+    const confirm = jest.spyOn(component, 'confirmNavigation');
+    expect(button('Previous part').disabled).toBe(true);
+    expect(button('Next part').disabled).toBe(true);
+    state.next({ type: 'song', status: 'paused', canPreviousPart: false, canNextPart: true }); fixture.detectChanges();
+    button('Next part').click();
+    expect(playback.seekSongOccurrence).toHaveBeenLastCalledWith(1);
+    state.next({ ...state.value, canPreviousPart: true, canNextPart: false }); fixture.detectChanges();
+    button('Previous part').click();
+    expect(playback.seekSongOccurrence).toHaveBeenLastCalledWith(-1);
+    expect(button('Next part').disabled).toBe(true);
+    expect(component.selectedId()).toBe('v2');
+    expect(confirm).not.toHaveBeenCalled();
+    expect(modal.show).not.toHaveBeenCalled();
   });
 
   it('disables playback for sections without playable content', () => {

@@ -27,6 +27,7 @@ describe('SongPartTransportComponent', () => {
     const { fixture, component, buttons } = await setup();
     const events = [component.play, component.pause, component.resume, component.previous, component.next, component.stop].map(event => jest.spyOn(event, 'emit'));
     expect(buttons().map(button => button.getAttribute('aria-label') ?? button.textContent?.trim())).toEqual(['Play', 'Previous measure', 'Next measure', 'Stop']);
+    expect(buttons().map(button => button.textContent?.trim())).toEqual(['', '', '', '']);
     expect(buttons().map(button => button.disabled)).toEqual([false, true, true, true]);
     buttons()[0].click();
     expect(events[0]).toHaveBeenCalledTimes(1);
@@ -36,7 +37,7 @@ describe('SongPartTransportComponent', () => {
     buttons()[0].click(); buttons()[1].click(); buttons()[2].click(); buttons()[3].click();
     for (const index of [1, 3, 4, 5]) expect(events[index]).toHaveBeenCalledTimes(1);
     fixture.componentRef.setInput('state', { ...state, status: 'paused' }); fixture.detectChanges();
-    expect(buttons()[0].textContent).toContain('Resume');
+    expect(buttons()[0].getAttribute('aria-label')).toBe('Resume');
     buttons()[0].click(); expect(events[2]).toHaveBeenCalledTimes(1);
     expect(fixture.nativeElement.textContent).toContain('Paused · Measure 2 / 3');
   });
@@ -64,7 +65,7 @@ describe('SongPartTransportComponent', () => {
     fixture.componentRef.setInput('state', { ...state, currentMeasureIndex: 2 }); fixture.detectChanges();
     expect(buttons()[1].disabled).toBe(false); expect(buttons()[2].disabled).toBe(true);
     fixture.componentRef.setInput('occurrenceId', 'second'); fixture.detectChanges();
-    expect(buttons()[0].textContent).toContain('Play');
+    expect(buttons()[0].getAttribute('aria-label')).toBe('Play');
     expect(buttons().map(button => button.disabled)).toEqual([false, true, true, true]);
     fixture.componentRef.setInput('playable', false); fixture.detectChanges();
     expect(buttons()[0].disabled).toBe(true);

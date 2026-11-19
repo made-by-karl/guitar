@@ -94,6 +94,86 @@ describe('SongPartPlaybackService', () => {
     service.stopSong(); harness.service.ngOnDestroy(); jest.useRealTimers();
   });
 
+  it.each(['playing', 'paused'] as const)('seeks occurrence boundaries in order while %s using the same snapshot and media', async status => {
+    jest.useFakeTimers();
+    const harness = playbackHarness();
+    const service = new SongPartPlaybackService(harness.service, new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    const verse: SongPart = { ...part, measures: ['v-a', 'v-b'].map(id => ({ id, measure: { timeSignature: '4/4', actions: [
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] }, null, null, null
+    ] } })) };
+    const chorus: SongPart = { ...verse, id: 'chorus', section: 'Chorus', measures: [verse.measures[0]] };
+    const rest: SongPart = { id: 'rest', section: 'Break', notes: '', measures: [{ id: 'r', measure: { timeSignature: '4/4', actions: [null, null, null, null] } }] };
+    const song: SongSheetWithData = { ...sheet, parts: [rest, chorus, verse], arrangement: [
+      { id: 'v1', partId: verse.id, lyrics: 'First' }, { id: 'c', partId: chorus.id, lyrics: 'Chorus' },
+      { id: 'v2', partId: verse.id, lyrics: 'Second' }, { id: 'v3', partId: verse.id, lyrics: 'Third' },
+      { id: 'r', partId: rest.id, lyrics: 'Breathe' }
+    ] };
+    try {
+      await service.playSong(song);
+      if (status === 'paused') service.pauseSong();
+      const snapshot = service.getSnapshot().songSnapshot;
+      const sequence = service.getSnapshot().sequence;
+      const runId = service.getSnapshot().runId;
+      expect(service.getSnapshot()).toMatchObject({ canPreviousPart: false, canNextPart: true });
+      service.seekSongOccurrence(-1);
+      expect(harness.media.seek).not.toHaveBeenCalled();
+      song.arrangement!.reverse(); song.parts = [];
+      harness.emit('finite:song-part-playback', { currentTime: 0.875 });
+      service.seekSongOccurrence(1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'c', currentMeasureIndex: 2, actionIndex: 0 });
+      service.seekSongOccurrence(1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'v2', currentMeasureIndex: 3 });
+      harness.emit('finite:song-part-playback', { currentTime: 2.375 });
+      service.seekSongOccurrence(-1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'c', currentMeasureIndex: 2 });
+      service.seekSongOccurrence(1); service.seekSongOccurrence(1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'v3', currentMeasureIndex: 5 });
+      service.seekSongOccurrence(1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'r', currentMeasureIndex: 7, actionIndex: 0, canPreviousPart: true, canNextPart: false });
+      expect(harness.media.getCurrentTime('finite:song-part-playback')).toBe(3.5);
+      expect(sequence?.timing?.notationDuration).toBe(4);
+      service.seekSongOccurrence(1);
+      expect(service.getSnapshot().occurrenceId).toBe('r');
+      service.seekSongOccurrence(-1);
+      expect(service.getSnapshot()).toMatchObject({ status, occurrenceId: 'v3', currentMeasureIndex: 5 });
+      expect(service.getSnapshot().songSnapshot).toBe(snapshot);
+      expect(service.getSnapshot().sequence).toBe(sequence);
+      expect(service.getSnapshot().runId).toBe(runId);
+      expect(harness.rendered.renderInstructions).toHaveBeenCalledTimes(1);
+      expect(harness.media.play).toHaveBeenCalledTimes(1);
+    } finally { service.stop(); harness.service.ngOnDestroy(); }
+  });
+
+  it('does not navigate idle, preparing, rejected, errored, completed or non-song sessions', async () => {
+    jest.useFakeTimers();
+    const harness = playbackHarness();
+    const service = new SongPartPlaybackService(harness.service, new SongSheetsService({} as never), new PlayingPatternPlaybackPlannerService());
+    const playable: SongPart = { ...part, measures: [{ id: 'm', measure: { timeSignature: '4/4', actions: [
+      { technique: 'pick', pick: [{ mode: 'explicit', string: 0, fret: 3 }] }
+    ] } }] };
+    const song = { ...sheet, parts: [playable], arrangement: [
+      { id: 'a', partId: playable.id, lyrics: '' }, { id: 'b', partId: playable.id, lyrics: '' }
+    ] };
+    const unavailable = () => {
+      expect(service.getSnapshot().canPreviousPart).toBeFalsy();
+      expect(service.getSnapshot().canNextPart).toBeFalsy();
+      service.seekSongOccurrence(-1); service.seekSongOccurrence(1);
+      expect(harness.media.seek).not.toHaveBeenCalled();
+    };
+    try {
+      unavailable();
+      const pending = service.playSong(song); unavailable(); await pending;
+      for (const status of ['preparing', 'starting', 'ready', 'error'] as const) {
+        harness.emit('finite:song-part-playback', { status }); unavailable();
+      }
+      harness.finish('finite:song-part-playback'); unavailable();
+      await service.playSongPart(song, playable); unavailable();
+      service.stop(); unavailable();
+      await service.playSong({ ...song, arrangement: [song.arrangement[0]] }); unavailable();
+      expect(service.getSnapshot().type).toBe('song');
+    } finally { service.stop(); harness.service.ngOnDestroy(); }
+  });
+
   it('starts a later draft-measure preview at its local slot zero, preserving unsounded history', async () => {
     jest.useFakeTimers();
     const harness = playbackHarness();

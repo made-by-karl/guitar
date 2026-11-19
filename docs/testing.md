@@ -244,3 +244,11 @@ ready/play/pause/seek/resume/error/retry/stop with the same media owner. They co
 card, content and text colors across states and retain evidence under
 `temp/ux/song-sheet-editing-consistency/`. Browser audio and resized viewports do not establish
 real-device listening or virtual-keyboard/safe-area behavior.
+
+## Full-song section navigation
+
+`e2e/song-play-view.spec.ts` covers Previous/Next part in both transports at the standard
+phone/tablet/desktop sizes, including repeated/adjacent occurrences, a rest-only section,
+playing/paused seeks, rapid requests, boundaries, media reuse and an unrelated editor draft.
+Jest covers snapshot targets, single-occurrence songs and unavailable session states.
+Section-navigation screenshots are under `temp/ux/song-sheet-editing-consistency/`.

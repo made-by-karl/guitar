@@ -54,6 +54,8 @@ export interface SongSheetPlaybackState {
   currentMeasureIndex?: number;
   totalMeasures?: number;
   occurrenceId?: string;
+  canPreviousPart?: boolean;
+  canNextPart?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -102,7 +104,11 @@ export class SongPartPlaybackService {
         type: active.type, status: state.status, runId: state.runId, songSnapshot: active.songSnapshot,
         actionIndex: state.actionIndex, source: active.source, presentation: row, sequence: active.sequence,
         partId: row?.part.id, measureId: row?.measureId, occurrenceId: row?.occurrenceId,
-        currentMeasureIndex: state.cursor, totalMeasures: active.rows.length
+        currentMeasureIndex: state.cursor, totalMeasures: active.rows.length,
+        ...(active.type === 'song' ? {
+          canPreviousPart: state.canSeek && this.occurrenceTarget(state.cursor, -1) !== undefined,
+          canNextPart: state.canSeek && this.occurrenceTarget(state.cursor, 1) !== undefined
+        } : {})
       });
     });
   }
@@ -278,6 +284,22 @@ export class SongPartPlaybackService {
       slots: plan.slots, segmentStartTimes: plan.segmentStartTimes, notationDuration: plan.notationDuration
     });
     await this.session.play(plan, 0);
+  }
+
+  /** Seek by arrangement occurrence, always to its first scheduled measure. */
+  seekSongOccurrence(delta: -1 | 1): void {
+    const state = this.getSnapshot();
+    if (state.type !== 'song' || !this.session.getSnapshot().canSeek) return;
+    const target = this.occurrenceTarget(state.currentMeasureIndex ?? 0, delta);
+    if (target !== undefined) this.session.seek(target);
+  }
+
+  private occurrenceTarget(cursor: number, delta: -1 | 1): number | undefined {
+    if (this.activePlayback?.type !== 'song') return undefined;
+    const rows = this.activePlayback.rows;
+    const starts = rows.flatMap((row, index) => index === 0 || row.occurrenceId !== rows[index - 1].occurrenceId ? [index] : []);
+    const occurrenceIndex = starts.findIndex((start, index) => start <= cursor && (starts[index + 1] ?? rows.length) > cursor);
+    return occurrenceIndex < 0 ? undefined : starts[occurrenceIndex + delta];
   }
 
   pauseSong(): void { if (this.activePlayback?.type === 'song') this.session.pause(); }

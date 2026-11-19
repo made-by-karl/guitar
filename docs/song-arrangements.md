@@ -167,3 +167,21 @@ audio position and resumes following; Stop resets the viewport to the beginning.
 lyrics and grip cards continue to follow the shared transport position. The covered inline
 drawing is unmounted while Play view is open and recreated from the current shared state on
 exit, avoiding a second full-score drawing at audio startup.
+
+## Full-song section navigation
+
+Previous part and Next part in Song and Play view seek to the first measure of the
+preceding/following arrangement occurrence. Previous always leaves the current occurrence,
+even midway through its first measure. Repeated and adjacent references to the same part
+remain distinct targets; Parts-library order has no effect. There is no wraparound.
+
+The scheduled snapshot supplies targets and preserves rest-only sections and their duration.
+Navigation preserves playing/paused state and updates notation, occurrence, lyrics, grips and
+progress from the existing media position. It does not select an editor or replace a draft.
+Controls are disabled before playback, during preparation/recovery/error, after completion and
+at the corresponding first/last boundary. Play keeps its restart behavior. Part-editor
+Previous measure and Next measure continue to move within the part by measure.
+
+Playback actions use icon buttons consistently in the Song transport, Play view, part
+cards/editor and shared media recovery controls. Accessible names and tooltips identify
+Play/Pause/Resume/Stop and navigation; preparation and playback status remain separate text.

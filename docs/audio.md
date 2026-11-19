@@ -223,3 +223,10 @@ The play view uses those values for grip/part progress; it adds no polling loop 
 Each upcoming grip countdown starts when the target first enters After next and retains
 that same interval when it moves into Next. The two opening targets start at media time zero;
 seeking or reopening the view derives the same intervals from the scheduled grip changes.
+
+Full-song section seeks use the existing finite session's measure segment start times.
+`SongPartPlaybackService` derives occurrence boundaries and navigation availability from
+its scheduled rows, distinguishing repeated part IDs by occurrence identity. Each seek
+synchronously publishes the accepted media position, so rapid requests use the preceding
+request's target. No new render, media element, session or clock is created. Only actual
+playing/paused media is seekable; prepared/rejected/error media awaits its recovery action.

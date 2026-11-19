@@ -114,7 +114,7 @@ class FinitePlaybackSession implements PlaybackSession {
     const actionIndex = (status === 'playing' || progress.status === 'paused') && slot?.segmentIndex === cursor
       ? slot.actionIndex : undefined;
     const next: PlaybackSessionState = { ...this.getSnapshot(), runId: this.runId, actionIndex, status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
-      total: plan.totalSegments, canPause: status === 'playing', canSeek: status === 'playing' || status === 'paused', ended: progress.ended };
+      total: plan.totalSegments, canPause: status === 'playing', canSeek: progress.status === 'playing' || progress.status === 'paused', ended: progress.ended };
     if (Object.keys(next).some(key => next[key as keyof PlaybackSessionState] !== this.getSnapshot()[key as keyof PlaybackSessionState])) {
       this.stateSubject.next(next);
     }

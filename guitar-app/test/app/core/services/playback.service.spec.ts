@@ -78,7 +78,11 @@ describe('Media-backed playback sessions', () => {
     emit('finite:song', { status: 'preparing' });
     expect(session.getSnapshot()).toMatchObject({ status: 'preparing', canSeek: false, canPause: false });
     emit('finite:song', { status: 'ready' });
-    expect(session.getSnapshot().status).toBe('paused');
+    expect(session.getSnapshot()).toMatchObject({ status: 'paused', canSeek: false });
+    session.seek(1);
+    expect(session.getSnapshot().cursor).toBe(0);
+    emit('finite:song', { status: 'error' });
+    expect(session.getSnapshot()).toMatchObject({ status: 'paused', canSeek: false });
     emit('finite:song', { status: 'playing' });
     expect(session.getSnapshot().status).toBe('playing');
     service.ngOnDestroy();

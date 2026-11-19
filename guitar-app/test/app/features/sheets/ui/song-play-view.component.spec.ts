@@ -17,7 +17,7 @@ describe('SongPlayViewComponent', () => {
   let state: BehaviorSubject<SongSheetPlaybackState>;
   let clock: BehaviorSubject<PlaybackClockPosition>;
   let sheet: SongSheet;
-  const playback = { playSong: jest.fn(), pauseSong: jest.fn(), resumeSong: jest.fn(), stopSong: jest.fn(), canPlaySong: () => true };
+  const playback = { seekSongOccurrence: jest.fn(), playSong: jest.fn(), pauseSong: jest.fn(), resumeSong: jest.fn(), stopSong: jest.fn(), canPlaySong: () => true };
   const modalRef = { close: jest.fn() };
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -45,6 +45,21 @@ describe('SongPlayViewComponent', () => {
     expect(playback.playSong).not.toHaveBeenCalled();
     await fixture.componentInstance.togglePlayback();
     expect(playback.playSong).toHaveBeenCalledWith(sheet);
+  });
+
+  it('exposes section seeks through the shared transport and scheduled availability', () => {
+    const previous = fixture.nativeElement.querySelector('[aria-label="Previous part"]') as HTMLButtonElement;
+    const next = fixture.nativeElement.querySelector('[aria-label="Next part"]') as HTMLButtonElement;
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(true);
+    state.next({ type: 'song', status: 'paused', songSnapshot: sheet, canPreviousPart: false, canNextPart: true });
+    fixture.detectChanges();
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(false);
+    next.click(); expect(playback.seekSongOccurrence).toHaveBeenLastCalledWith(1);
+    state.next({ ...state.value, canPreviousPart: true, canNextPart: false }); fixture.detectChanges();
+    previous.click(); expect(playback.seekSongOccurrence).toHaveBeenLastCalledWith(-1);
+    expect(next.disabled).toBe(true);
+    expect(next.getAttribute('aria-description')).toContain('section in song order');
+    expect(playback.playSong).not.toHaveBeenCalled();
   });
 
   it('updates snapshot, lyrics and grips together on seek, pauses/resumes the same run, and retains the final occurrence', async () => {
