@@ -63,8 +63,14 @@
     <div class="transport-row">
       <p class="play-status mb-0" role="status">{{ status() }}</p>
       <div class="d-flex gap-2">
-        <button class="btn btn-primary" type="button" [disabled]="!canPlay() || (attached() && state().status === 'preparing')" (click)="togglePlayback()">{{ attached() && state().status === 'playing' ? 'Pause' : attached() && state().status === 'paused' ? 'Resume' : 'Play' }}</button>
-        <button class="btn btn-outline-danger" type="button" [disabled]="!attached()" (click)="playback.stopSong()">Stop</button>
+        <button class="btn btn-primary" type="button" [attr.aria-label]="primaryLabel()" [title]="primaryLabel()" [disabled]="!canPlay() || (attached() && state().status === 'preparing')" (click)="togglePlayback()"><i aria-hidden="true" class="bi" [class.bi-play-fill]="primaryLabel() === 'Play' || primaryLabel() === 'Resume'" [class.bi-pause-fill]="primaryLabel() === 'Pause'" [class.bi-hourglass-split]="primaryLabel() === 'Preparing…'"></i></button>
+        <button class="btn btn-outline-secondary btn-sm song-part-navigation" type="button" aria-label="Previous part" title="First measure of the preceding section in song order" aria-description="Seek to the first measure of the preceding section in song order." [disabled]="!state().canPreviousPart" (click)="playback.seekSongOccurrence(-1)">
+          <i aria-hidden="true" class="bi bi-skip-backward-fill"></i>
+        </button>
+        <button class="btn btn-outline-secondary btn-sm song-part-navigation" type="button" aria-label="Next part" title="First measure of the following section in song order" aria-description="Seek to the first measure of the following section in song order." [disabled]="!state().canNextPart" (click)="playback.seekSongOccurrence(1)">
+          <i aria-hidden="true" class="bi bi-skip-forward-fill"></i>
+        </button>
+        <button class="btn btn-outline-danger" type="button" [disabled]="!attached()" aria-label="Stop" title="Stop" (click)="playback.stopSong()"><i aria-hidden="true" class="bi bi-stop-fill"></i></button>
       </div>
     </div>
   </footer>

@@ -24,7 +24,8 @@ describe('MediaPlaybackControlsComponent presentation', () => {
     media.notices.set([notice('chord-preview', 'ready'), notice('other', 'error')]);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    expect(button.textContent).toContain('Play prepared audio');
+    expect(button.getAttribute('aria-label')).toBe('Play prepared audio');
+    expect(button.textContent?.trim()).toBe('');
     button.click();
     expect(media.resume).toHaveBeenCalledWith('chord-preview');
     expect(fixture.nativeElement.querySelectorAll('section')).toHaveLength(1);

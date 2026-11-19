@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 
 declare global { interface Window { playViewAudio: HTMLAudioElement[]; } }
-async function seed(page: Page, options: { wide?: boolean; long?: boolean; unavailable?: boolean; noInitial?: boolean; beatGrips?: boolean } = {}) {
+async function seed(page: Page, options: { wide?: boolean; long?: boolean; unavailable?: boolean; noInitial?: boolean; beatGrips?: boolean; navigation?: boolean } = {}) {
   await page.addInitScript(() => {
     window.playViewAudio = [];
     window.Audio = new Proxy(window.Audio, { construct(Target, args) {
@@ -49,6 +49,13 @@ async function seed(page: Page, options: { wide?: boolean; long?: boolean; unava
     sheet.arrangement = options.long
       ? Array.from({ length: 54 }, (_, index) => ({ id: `o${index}`, partId: index % 3 === 1 ? 'chorus' : 'verse', lyrics: `Words ${index}` }))
       : [{ id: 'v1', partId: 'verse', lyrics: words }, { id: 'c1', partId: 'chorus', lyrics: '' }, { id: 'v2', partId: 'verse', lyrics: 'Second verse\nDifferent words' }];
+    if (options.navigation) {
+      sheet.parts.reverse(); // Parts-library order deliberately differs from the arrangement.
+      sheet.parts.push({ id: 'rest', section: 'Break', notes: '', measures: [
+        { id: 'rest-m', measure: { timeSignature: '4/4', actions: Array(16).fill(null) } }
+      ] });
+      sheet.arrangement.push({ id: 'v3', partId: 'verse', lyrics: 'Adjacent verse' }, { id: 'break', partId: 'rest', lyrics: 'Breathe' });
+    }
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction('songSheets', 'readwrite'); transaction.objectStore('songSheets').put(sheet);
       transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error);
@@ -196,6 +203,8 @@ test('attaches playing and paused media without a restart, exits to inline highl
     const audio = window.playViewAudio.findLast(audio => !!audio.getAttribute('src'))!; audio.currentTime = audio.duration - 0.1;
   });
   await expect(view(page).getByRole('status')).toHaveText('End of song', { timeout: 10_000 });
+  await expect(view(page).getByRole('button', { name: 'Previous part', exact: true })).toBeDisabled();
+  await expect(view(page).getByRole('button', { name: 'Next part', exact: true })).toBeDisabled();
   await expect(view(page).getByRole('progressbar', { name: 'Current part progress' })).toHaveAttribute('aria-valuenow', '100');
   await expect(view(page).getByRole('region', { name: 'Song notation', exact: true })).toHaveAttribute('data-occurrence-id', 'v2');
   await expect(view(page).getByLabel('Scrollable section lyrics', { exact: true })).toHaveText('Second verse\nDifferent words');
@@ -206,6 +215,110 @@ test('attaches playing and paused media without a restart, exits to inline highl
   await expect(page.locator('app-song-play-view')).toHaveCount(0);
   expect(await page.evaluate(() => window.playViewAudio.every(audio => audio.paused && !audio.getAttribute('src')))).toBe(true);
 });
+
+for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
+  test(`section navigation shares media, position and boundaries at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize(viewport);
+    const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+    await seed(page, { navigation: true });
+    const song = page.locator('app-song-arrangement');
+    const previous = song.getByRole('button', { name: 'Previous part', exact: true });
+    const next = song.getByRole('button', { name: 'Next part', exact: true });
+    await expect(previous).toBeDisabled(); await expect(next).toBeDisabled();
+    expect((await song.locator('.song-transport button:not(:first-child)').allTextContents()).every(text => !text.trim())).toBe(true);
+    await page.getByRole('button', { name: 'Play song', exact: true }).click();
+    await page.getByRole('button', { name: 'Play view', exact: true }).click(); await started(page);
+    const mode = view(page);
+    const viewPrevious = mode.getByRole('button', { name: 'Previous part', exact: true });
+    const viewNext = mode.getByRole('button', { name: 'Next part', exact: true });
+    expect((await mode.locator('.transport-row button').allTextContents()).every(text => !text.trim())).toBe(true);
+    await expect(viewPrevious).toBeDisabled(); await expect(viewNext).toBeEnabled();
+    const identity = await page.evaluate(() => {
+      const audio = window.playViewAudio.findLast(audio => !!audio.getAttribute('src'))!;
+      return { count: window.playViewAudio.length, src: audio.src, duration: audio.duration };
+    });
+    const position = mode.getByRole('region', { name: 'Song notation', exact: true });
+    await viewNext.click();
+    await expect(position).toHaveAttribute('data-occurrence-id', 'c1');
+    await expect(mode.getByRole('status')).toHaveText('Playing');
+    await expect.poll(() => page.evaluate(() => window.playViewAudio.findLast(audio => !!audio.getAttribute('src'))!.currentTime)).toBeGreaterThanOrEqual(4);
+    await seekPaused(page, 7.25); // Midway through Verse (2), after entering from the same media.
+    await viewPrevious.click();
+    await expect(position).toHaveAttribute('data-occurrence-id', 'c1');
+    await expect(mode.getByRole('status')).toHaveText('Paused');
+    await expect(mode.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '32');
+    await expect(mode.getByLabel('Scrollable section lyrics', { exact: true })).toHaveText('No lyrics for this section');
+    await expect(mode.getByRole('progressbar', { name: 'Current part progress' })).toHaveAttribute('aria-valuenow', '0');
+    await expect(mode.getByRole('region', { name: 'Current grip', exact: true })).toContainText('C');
+    await expect(mode.getByRole('region', { name: 'Next', exact: true })).toContainText('G');
+    await viewNext.click();
+    await expect(position).toHaveAttribute('data-occurrence-id', 'v2');
+    await expect(mode.getByLabel('Scrollable section lyrics', { exact: true })).toHaveText('Second verse\nDifferent words');
+    // Multiple requests in one browser task must each use the accepted target.
+    await viewNext.evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+    await expect(position).toHaveAttribute('data-occurrence-id', 'break');
+    await expect(viewNext).toBeDisabled();
+    await expect(mode.getByRole('status')).toHaveText('Paused');
+    await expect(mode.getByLabel('Scrollable section lyrics', { exact: true })).toHaveText('Breathe');
+    await expect(mode.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '112');
+    expect(await page.evaluate(() => window.playViewAudio.findLast(audio => !!audio.getAttribute('src'))!.currentTime)).toBe(14);
+    expect(identity.duration).toBeGreaterThanOrEqual(16); // Includes the final rest's full duration.
+    await viewPrevious.focus(); await page.keyboard.press('Enter');
+    await expect(position).toHaveAttribute('data-occurrence-id', 'v3');
+    await expect(viewPrevious).toBeFocused();
+    expect(await viewPrevious.evaluate(element => getComputedStyle(element).outlineStyle)).not.toBe('none');
+    const evidence = '../temp/ux/song-sheet-editing-consistency';
+    await mkdir(evidence, { recursive: true });
+    for (const button of [viewPrevious, viewNext]) {
+      const bounds = (await button.boundingBox())!;
+      expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
+      await expect(button).toBeInViewport();
+    }
+    expect(await mode.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ animations: 'disabled', path: `${evidence}/section-seek-play-view-${viewport.width}.png` });
+    await page.keyboard.press('Escape');
+    const inline = song.getByRole('region', { name: 'Playback notation', exact: true });
+    await expect(inline).toHaveAttribute('data-occurrence-id', 'v3');
+    await previous.click();
+    await expect(inline).toHaveAttribute('data-occurrence-id', 'v2');
+    await previous.click();
+    await expect(inline).toHaveAttribute('data-occurrence-id', 'c1');
+    await previous.click();
+    await expect(inline).toHaveAttribute('data-occurrence-id', 'v1');
+    await expect(previous).toBeDisabled();
+    await next.focus(); await page.keyboard.press('Enter');
+    await expect(inline).toHaveAttribute('data-occurrence-id', 'c1');
+    if (viewport.width === 1280) {
+      // A different selected editor can contain unsaved work while song navigation proceeds.
+      await song.getByRole('button', { name: 'Verse, occurrence 3', exact: true }).click();
+      const editor = page.locator('app-song-part-editor');
+      await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
+      await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Unrelated draft');
+      await next.click();
+      await expect(inline).toHaveAttribute('data-occurrence-id', 'v2');
+      await expect(song.locator('.occurrence-row.is-playing')).toContainText('Second verse');
+      await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Unrelated draft');
+      await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
+      await expect(song.getByRole('button', { name: 'Verse, occurrence 3', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByRole('button', { name: 'Keep editing', exact: true })).toHaveCount(0);
+    }
+    for (const button of [previous, next]) {
+      const bounds = (await button.boundingBox())!;
+      expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await next.focus();
+    await page.screenshot({ animations: 'disabled', path: `${evidence}/section-seek-inline-${viewport.width}.png` });
+    expect(await page.evaluate(() => {
+      const audio = window.playViewAudio.findLast(audio => !!audio.getAttribute('src'))!;
+      return { count: window.playViewAudio.length, src: audio.src, duration: audio.duration };
+    })).toEqual(identity);
+    await song.getByRole('button', { name: 'Stop song', exact: true }).click();
+    await expect(previous).toBeDisabled(); await expect(next).toBeDisabled();
+    expect(errors).toEqual([]);
+  });
+}
 
 test('entry guard preserves unsaved lyrics, music and preview on cancellation; accepted entry uses saved music', async ({ page }) => {
   await seed(page);
@@ -250,6 +363,8 @@ test('preparation, rejected startup, interruption and stop have no stale marker 
   await page.route('**/samples/**', async route => { await held; await route.continue().catch(() => {}); });
   await view(page).getByRole('button', { name: 'Play', exact: true }).click();
   await expect(view(page).getByRole('status')).toHaveText('Preparing…');
+  await expect(view(page).getByRole('button', { name: 'Previous part', exact: true })).toBeDisabled();
+  await expect(view(page).getByRole('button', { name: 'Next part', exact: true })).toBeDisabled();
   await expect(view(page).locator('.playback-action-slot')).toHaveCount(0);
   await view(page).getByRole('button', { name: 'Stop', exact: true }).click(); release(); await page.unroute('**/samples/**');
   await expect(view(page).getByRole('status')).toHaveText('Ready to play');
@@ -262,6 +377,7 @@ test('preparation, rejected startup, interruption and stop have no stale marker 
   });
   await view(page).getByRole('button', { name: 'Play', exact: true }).click();
   await expect(view(page).getByRole('button', { name: 'Play prepared audio', exact: true })).toBeVisible();
+  await expect(view(page).getByRole('button', { name: 'Next part', exact: true })).toBeDisabled();
   await expect(view(page).locator('.playback-action-slot')).toHaveCount(0);
   await view(page).getByRole('button', { name: 'Resume', exact: true }).click(); await started(page);
   await page.evaluate(() => {
@@ -466,6 +582,8 @@ test('three-minute play view derives markers, lyrics and grips from the shared m
     expect(Math.max(...samples.map(sample => sample.afterNextError))).toBeLessThanOrEqual(3);
   }
   await expect(view(page).getByRole('status')).toHaveText('End of song', { timeout: 10_000 });
+  await expect(view(page).getByRole('button', { name: 'Previous part', exact: true })).toBeDisabled();
+  await expect(view(page).getByRole('button', { name: 'Next part', exact: true })).toBeDisabled();
   await expect(view(page).getByRole('progressbar', { name: 'Current part progress' })).toHaveAttribute('aria-valuenow', '100');
 });
 

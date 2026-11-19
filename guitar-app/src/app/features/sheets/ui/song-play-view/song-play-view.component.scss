@@ -27,7 +27,7 @@ h2 { font-size: 1rem; margin: 0 0 .5rem; font-weight: 600; }
 .play-transport { border-top: 1px solid #d8cdb8; }
 .transport-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .play-status { font-weight: 600; }
-.btn { min-height: 44px; }
+.btn { min-width: 44px; min-height: 44px; }
 :focus-visible { outline: 3px solid #885218; outline-offset: -3px; }
 @media (prefers-reduced-motion: reduce) { .current-grip { transition: none; } }
 @media (max-width: 1000px) {

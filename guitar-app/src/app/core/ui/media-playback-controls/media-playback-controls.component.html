@@ -15,11 +15,12 @@
       @if (notice.error) { <p class="text-danger mb-2" role="alert">{{ notice.error }}</p> }
       <div class="d-flex gap-2">
         @if (notice.status === 'ready' || notice.status === 'paused' || notice.status === 'error') {
-          <button class="btn btn-primary btn-sm" type="button" (click)="media.resume(notice.channel)">
-            {{ notice.status === 'error' ? 'Retry playback' : notice.status === 'paused' ? 'Resume playback' : 'Play prepared audio' }}
+          @let label = notice.status === 'error' ? 'Retry playback' : notice.status === 'paused' ? 'Resume playback' : 'Play prepared audio';
+          <button class="btn btn-primary btn-sm" type="button" [attr.aria-label]="label" [title]="label" (click)="media.resume(notice.channel)">
+            <i aria-hidden="true" class="bi" [class.bi-arrow-clockwise]="notice.status === 'error'" [class.bi-play-fill]="notice.status !== 'error'"></i>
           </button>
         }
-        <button class="btn btn-outline-danger btn-sm" type="button" (click)="media.stop(notice.channel)">Stop playback</button>
+        <button class="btn btn-outline-danger btn-sm" type="button" aria-label="Stop playback" title="Stop playback" (click)="media.stop(notice.channel)"><i aria-hidden="true" class="bi bi-stop-fill"></i></button>
       </div>
     </div>
   </section>
