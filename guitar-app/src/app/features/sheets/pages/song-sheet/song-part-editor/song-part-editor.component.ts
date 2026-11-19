@@ -1,3 +1,4 @@
+import { SongPartTransportComponent } from '@/app/features/sheets/ui/song-part-transport/song-part-transport.component';
 import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
@@ -23,16 +24,11 @@ import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.se
 import { Subscription } from 'rxjs';
 import {
   buildGripByIdMap,
-  canForwardPart,
-  canRewindPart,
   cloneSongPart,
   cloneSongPartMeasure,
   cloneSongSheetPattern,
   createEmptySongSheetPattern,
   createSongSheetEntityId,
-  getPartMeasureCounter,
-  isPartPlaybackActive,
-  isPartPlaybackPaused,
   toSongSheetPattern
 } from '../song-sheet.helpers';
 import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalData } from '../song-sheet-choice-modal.component';
@@ -58,7 +54,7 @@ export interface SongPartEditorModalData {
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [SongPartTransportComponent, PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })
@@ -72,6 +68,7 @@ export class SongPartEditorComponent implements
   readonly activeTab = signal<SongPartEditorTab>('music');
   readonly musicUnlocked = signal(false);
   readonly saving = signal(false);
+  readonly childEditorOpen = signal(false);
   readonly saveError = signal('');
   readonly tempLyrics;
   private savedPart = '';
@@ -242,43 +239,53 @@ export class SongPartEditorComponent implements
       return;
     }
 
-    const modalRef = this.modalService.show(SongPartMeasureEditorModalComponent, {
-      data: {
-        sheet: this.sheet(),
-        part,
-        measureId: partMeasure.id,
-        occurrenceId: this.data.occurrence?.id,
-        measure: partMeasure.measure,
-        actionGrips: partMeasure.measure.actionGrips ?? [],
-        measureLabel: `Measure ${measureIndex + 1}`,
-        notationHistory: this.getPartMeasureNotationHistory(measureIndex)
-      },
-      width: '95vw',
-      height: '90vh',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      panelClass: 'modal-xl',
-      closeOnBackdropClick: false
-    });
+    const opener = document.activeElement;
+    this.childEditorOpen.set(true);
+    try {
+      const modalRef = this.modalService.show(SongPartMeasureEditorModalComponent, {
+        data: {
+          sheet: this.sheet(),
+          part,
+          measureId: partMeasure.id,
+          occurrenceId: this.data.occurrence?.id,
+          measure: partMeasure.measure,
+          actionGrips: partMeasure.measure.actionGrips ?? [],
+          measureLabel: `Measure ${measureIndex + 1}`,
+          notationHistory: this.getPartMeasureNotationHistory(measureIndex)
+        },
+        width: '95vw',
+        height: '90vh',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        panelClass: 'modal-xl',
+        closeOnBackdropClick: false
+      });
 
-    const result: SongPartMeasureEditorResult | undefined = await modalRef.afterClosed();
-    if (!result) {
-      return;
-    }
-
-    const nextMeasures = [...this.tempPart().measures];
-    nextMeasures[measureIndex] = {
-      ...nextMeasures[measureIndex],
-      measure: {
-        ...result.measure,
-        actionGrips: result.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }))
+      const result: SongPartMeasureEditorResult | undefined = await modalRef.afterClosed();
+      if (!result) {
+        return;
       }
-    };
-    this.tempPart.update(current => ({
-      ...current,
-      measures: nextMeasures
-    }));
-    await this.refreshSheet();
+
+      const nextMeasures = [...this.tempPart().measures];
+      nextMeasures[measureIndex] = {
+        ...nextMeasures[measureIndex],
+        measure: {
+          ...result.measure,
+          actionGrips: result.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }))
+        }
+      };
+      this.tempPart.update(current => ({
+        ...current,
+        measures: nextMeasures
+      }));
+      await this.refreshSheet();
+    } finally {
+      this.childEditorOpen.set(false);
+      if (opener instanceof HTMLElement && opener.isConnected) {
+        this.changeDetector.detectChanges();
+        opener.focus({ preventScroll: true });
+      }
+    }
   }
 
   startMeasureDrag(): void {
@@ -411,26 +418,6 @@ export class SongPartEditorComponent implements
       this.playbackState.measureId === measure.id && this.playbackState.occurrenceId === this.data.occurrence?.id;
   }
 
-  isPartPlaybackActive(part: SongPart): boolean {
-    return isPartPlaybackActive(this.playbackState, part.id) && this.playbackState.occurrenceId === this.data.occurrence?.id;
-  }
-
-  isPartPlaybackPaused(part: SongPart): boolean {
-    return isPartPlaybackPaused(this.playbackState, part.id);
-  }
-
-  getPartMeasureCounter(part: SongPart): string {
-    return getPartMeasureCounter(this.playbackState, part.id, this.getPartMeasureCount(part));
-  }
-
-  canRewindPart(part: SongPart): boolean {
-    return canRewindPart(this.playbackState, part.id);
-  }
-
-  canForwardPart(part: SongPart): boolean {
-    return canForwardPart(this.playbackState, part.id);
-  }
-
   async addContent(insertionIndex: number): Promise<void> {
     if (this.musicLocked()) return;
     const choices: SongSheetChoice[] = [
@@ -548,10 +535,6 @@ export class SongPartEditorComponent implements
       ]
     }));
     this.selectFirstAddedMeasure(insertionIndex);
-  }
-
-  private getPartMeasureCount(part: SongPart): number {
-    return part.measures.length;
   }
 
   private selectNearestMeasureAfterRemoval(removedIndex: number, previousMeasureCount: number): void {

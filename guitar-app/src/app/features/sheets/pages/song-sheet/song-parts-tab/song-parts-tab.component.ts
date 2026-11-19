@@ -1,3 +1,4 @@
+import { SongPartTransportComponent } from '@/app/features/sheets/ui/song-part-transport/song-part-transport.component';
 import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { Component, OnDestroy, computed, inject, input, output } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -8,22 +9,14 @@ import { SongPart, SongSheetWithData } from '@/app/features/sheets/services/song
 import { SongPartPlaybackService, SongSheetPlaybackState } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { Subscription } from 'rxjs';
-import {
-  canForwardPart,
-  canRewindPart,
-  cloneSongPart,
-  createEmptySongPart,
-  getPartMeasureCounter,
-  isPartPlaybackActive,
-  isPartPlaybackPaused
-} from '../song-sheet.helpers';
+import { cloneSongPart, createEmptySongPart } from '../song-sheet.helpers';
 import { SongPartEditorComponent } from '../song-part-editor/song-part-editor.component';
 import { getSongArrangement } from '@/app/features/sheets/services/song-arrangement';
 
 @Component({
   selector: 'app-song-sheet-parts-tab',
   standalone: true,
-  imports: [DragDropModule, SongPlaybackComponent],
+  imports: [SongPartTransportComponent, DragDropModule, SongPlaybackComponent],
   templateUrl: './song-parts-tab.component.html',
   styleUrl: './song-parts-tab.component.scss'
 })
@@ -132,27 +125,6 @@ export class SongPartsTabComponent implements OnDestroy {
 
   hasPartLyrics(part: SongPart): boolean {
     return (part.lyrics ?? '').trim().length > 0;
-  }
-
-  isPartPlaybackActive(part: SongPart): boolean {
-    return isPartPlaybackActive(this.playbackState, part.id);
-  }
-
-  isPartPlaybackPaused(part: SongPart): boolean {
-    return isPartPlaybackPaused(this.playbackState, part.id);
-  }
-
-  getPartMeasureCounter(part: SongPart): string {
-    const totalMeasures = this.songSheetService.resolvePartMeasures(this.sheet(), part).length;
-    return getPartMeasureCounter(this.playbackState, part.id, totalMeasures);
-  }
-
-  canRewindPart(part: SongPart): boolean {
-    return canRewindPart(this.playbackState, part.id);
-  }
-
-  canForwardPart(part: SongPart): boolean {
-    return canForwardPart(this.playbackState, part.id);
   }
 
   private async openPartEditor(partIndex: number | null): Promise<void> {

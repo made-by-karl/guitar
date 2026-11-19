@@ -46,10 +46,11 @@ for (const width of [1280, 390]) {
     await page.getByRole('button', { name: /\bEdit$/ }).click();
     const editor = page.locator('app-song-part-editor');
     const title = editor.getByRole('heading', { name: 'Edit Song Part' });
-    const play = editor.locator('.part-editor-title-row').getByRole('button', { name: /\bPlay$/ });
+    const transport = editor.getByRole('group', { name: 'Part playback', exact: true });
+    await expect(transport.getByRole('button')).toHaveCount(4);
     const close = editor.getByRole('button', { name: 'Close song part editor' });
     const titleBox = (await title.boundingBox())!;
-    for (const button of [play, close]) {
+    for (const button of [close]) {
       const box = (await button.boundingBox())!;
       expect(Math.abs((box.y + box.height / 2) - (titleBox.y + titleBox.height / 2))).toBeLessThan(2);
       expect(box.x).toBeGreaterThan(titleBox.x + titleBox.width);

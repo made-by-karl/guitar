@@ -231,3 +231,16 @@ strums and chord leaders reaching the action through the modifier band. Compact 
 keyboard toggling and screenshots at the standard viewports
 are covered alongside `e2e/dead-note-strum.spec.ts`. Layout evidence is kept under
 `temp/ux/mobile-articulations/`.
+
+## Reachable part actions and compact transport
+
+Run `e2e/song-part-actions.spec.ts`, `e2e/song-part-editor.spec.ts`,
+`e2e/song-measure-toolbar.spec.ts`, `e2e/song-sheet-review.spec.ts` and
+`e2e/playback-highlighting.spec.ts` through Docker after part action or transport changes.
+The action suite checks 20-measure parts at the top, middle and end at 375×667, 768×1024,
+1280×800 and 375×400, reserved action space, nested measure Apply/Cancel, focus return,
+save status and modal entry. Card checks hold preparation and reject startup before exercising
+ready/play/pause/seek/resume/error/retry/stop with the same media owner. They compare computed
+card, content and text colors across states and retain evidence under
+`temp/ux/song-sheet-editing-consistency/`. Browser audio and resized viewports do not establish
+real-device listening or virtual-keyboard/safe-area behavior.

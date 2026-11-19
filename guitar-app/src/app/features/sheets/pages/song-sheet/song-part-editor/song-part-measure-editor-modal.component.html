@@ -1,25 +1,22 @@
-<div class="part-measure-editor-modal">
+<div class="part-measure-editor-modal" role="dialog" aria-modal="true" aria-labelledby="measure-editor-title" [cdkTrapFocus]="!selectingGrip()" [cdkTrapFocusAutoCapture]="true">
   <div class="modal-header">
     <div>
       <div class="small text-uppercase text-muted">Editing Measure</div>
-      <h5 class="modal-title mb-0">{{ data.measureLabel }}</h5>
+      <h5 id="measure-editor-title" class="modal-title mb-0">{{ data.measureLabel }}</h5>
     </div>
-    <div class="d-flex align-items-center gap-3">
-      <button
-        type="button"
-        class="btn btn-outline-primary btn-sm"
-        [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'"
-        [disabled]="!isPlaying && !canPlay"
-        (click)="togglePlayback()">
-        <i class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying"></i>
+    <div class="measure-transport" role="group" aria-label="Measure playback">
+      <button type="button" class="btn btn-outline-primary btn-sm"
+        [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'" [disabled]="!isPlaying && !canPlay" (click)="togglePlayback()">
+        <i aria-hidden="true" class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying"></i>
         {{ isPlaying ? 'Stop' : 'Play' }}
       </button>
-      <button type="button" class="btn-close" aria-label="Close measure editor" (click)="cancel()"></button>
     </div>
+    <button type="button" class="btn-close" aria-label="Close measure editor" cdkFocusInitial (click)="cancel()"></button>
   </div>
 
   <app-measure-editor-preview [appPlaybackHighlight]="playbackPosition" [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true" />
   <div class="modal-body" #previewContent>
+    <app-media-playback-controls [channels]="['finite:song-part-playback']" />
     <div data-preview-measure="0">
     <app-playing-measure-editor
       [(measure)]="editedMeasure"
@@ -30,11 +27,12 @@
   </div>
 
   <div class="modal-footer">
-    <app-media-playback-controls class="w-100" [channels]="['finite:song-part-playback']" />
-    <span class="small text-muted me-auto">Apply this measure, then save the part to keep your changes.</span>
-    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Cancel</button>
-    <button class="btn btn-success" type="button" (click)="save()">
-      <i class="bi bi-check-lg"></i> Apply to part
-    </button>
+    <span class="small text-muted measure-editor-hint">Apply this measure, then save the part.</span>
+    <div class="measure-editor-actions" role="group" aria-label="Measure editing actions">
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Back to part</button>
+      <button class="btn btn-success" type="button" (click)="save()">
+        <i class="bi bi-check-lg"></i> Apply to part
+      </button>
+    </div>
   </div>
 </div>

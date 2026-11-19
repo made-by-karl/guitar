@@ -29,6 +29,21 @@ describe('SongPartEditorComponent', () => {
     expect(TestBed.inject(SongSheetsService).saveOccurrence).toHaveBeenCalledWith('sheet-1', 'occurrence-1', 'Local words', undefined);
   });
 
+  it('makes the parent inert during nested measure editing and restores it on cancel', async () => {
+    let close!: (result: undefined) => void;
+    const afterClosed = new Promise<undefined>(resolve => { close = resolve; });
+    const part = createPart([createMeasure('m', '4/4')]);
+    await configureComponent({ part, modalService: { show: jest.fn(() => ({ afterClosed: () => afterClosed })) } });
+    const fixture = TestBed.createComponent(SongPartEditorComponent);
+    fixture.detectChanges();
+    const editing = fixture.componentInstance.editMeasure(0);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.part-editor-modal').hasAttribute('inert')).toBe(true);
+    close(undefined); await editing; fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.part-editor-modal').hasAttribute('inert')).toBe(false);
+    expect(fixture.componentInstance.tempPart()).toEqual(part);
+  });
+
   it('makes a deep independent musical copy with new identities while preserving local lyrics', async () => {
     const part = createPart([createMeasure('m', '4/4')]);
     const sheet = { ...createSheet(), parts: [part], arrangement: [
@@ -545,14 +560,15 @@ describe('SongPartEditorComponent', () => {
     expect(tabs[end].tabIndex).toBe(0);
   });
 
-  it('places playback and close alongside the title and removes the introduction', async () => {
+  it('separates playback from title navigation and removes the introduction', async () => {
     await configureComponent();
     const fixture = TestBed.createComponent(SongPartEditorComponent);
     fixture.detectChanges();
 
     const header = fixture.nativeElement.querySelector('.part-editor-title-row');
     expect(header.textContent).toContain('Edit Song Part');
-    expect(header.textContent).toContain('Play');
+    expect(header.querySelector('app-song-part-transport')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-song-part-transport')).not.toBeNull();
     expect(header.querySelector('button[aria-label="Close song part editor"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Build the part measure by measure');
     expect(fixture.nativeElement.textContent).not.toContain('Add Measure');

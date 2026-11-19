@@ -1,25 +1,8 @@
-<div class="part-editor-modal song-sheet-page" [class.is-embedded]="data.embedded" [attr.inert]="saving() ? '' : null" [attr.aria-busy]="saving()">
+<div class="part-editor-modal song-sheet-page" [class.is-embedded]="data.embedded" [class.has-child-editor]="childEditorOpen()" [attr.inert]="saving() || childEditorOpen() ? '' : null" [attr.aria-busy]="saving()">
   <div class="modal-header part-editor-header">
     <div class="part-editor-title-row">
       <h5 class="modal-title">{{ data.embedded ? (tempPart().section || 'Untitled part') : (editingPartIndex === null ? 'Create Song Part' : 'Edit Song Part') }} @if (data.occurrenceNumber) { <span class="occurrence-number">{{ data.occurrenceNumber }}</span> }</h5>
       <div class="part-editor-header-actions">
-        @if (tempPart(); as part) {
-          @if (part.measures.length > 0) {
-            @if (isPartPlaybackActive(part)) {
-              <button
-                class="btn btn-outline-primary btn-sm"
-                type="button"
-                (click)="isPartPlaybackPaused(part) ? resumePart() : pausePart()">
-                <i aria-hidden="true" class="bi" [class.bi-play-fill]="isPartPlaybackPaused(part)" [class.bi-pause-fill]="!isPartPlaybackPaused(part)"></i>
-                {{ isPartPlaybackPaused(part) ? 'Resume' : 'Pause' }}
-              </button>
-            } @else {
-              <button class="btn btn-outline-primary btn-sm" type="button" [disabled]="!canPlayPart()" (click)="playPart(part)">
-                <i aria-hidden="true" class="bi bi-play-fill"></i> Play
-              </button>
-            }
-          }
-        }
         <button type="button" class="btn-close" aria-label="Close song part editor" (click)="cancel()"></button>
       </div>
     </div>
@@ -27,22 +10,8 @@
     @if (!canPlayPart()) {
       <div class="small text-muted">Assign a grip or add playable notes to enable playback.</div>
     }
-    @if (tempPart(); as part) {
-      @if (isPartPlaybackActive(part)) {
-        <div class="part-editor-playback-actions">
-          <span class="small text-muted part-editor-counter">{{ getPartMeasureCounter(part) }}</span>
-          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="rewindPart()" [disabled]="!canRewindPart(part)">
-            <i aria-hidden="true" class="bi bi-skip-backward-fill"></i> Back
-          </button>
-          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="forwardPart()" [disabled]="!canForwardPart(part)">
-            <i aria-hidden="true" class="bi bi-skip-forward-fill"></i> Forward
-          </button>
-          <button class="btn btn-outline-danger btn-sm" type="button" (click)="stopPart()">
-            <i aria-hidden="true" class="bi bi-stop-fill"></i> Stop
-          </button>
-        </div>
-      }
-    }
+    <app-song-part-transport [state]="playbackState" [partId]="tempPart().id" [occurrenceId]="data.occurrence?.id" [measureCount]="tempPart().measures.length" [playable]="canPlayPart()"
+      (play)="playPart(tempPart())" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
   </div>
 
   <div class="part-editor-tabs" role="tablist" aria-label="Song part sections">
@@ -65,6 +34,10 @@
   </div>
 
   <div class="modal-body">
+    @if (!data.embedded && !childEditorOpen()) {
+      <app-media-playback-controls class="w-100" [channels]="['finite:song-part-playback']" />
+    }
+
     @if (tempPart(); as part) {
       @if (activeTab() === 'lyrics') {
         <div class="part-editor-fields" role="tabpanel" id="part-editor-panel-lyrics" aria-labelledby="part-editor-tab-lyrics" tabindex="0">
@@ -193,63 +166,7 @@
               }
             </div>
 
-            @if (getSelectedMeasure(); as selectedMeasure) {
-              <div class="selected-measure-toolbar" aria-label="Selected measure actions">
-                <div class="selected-measure-label">
-                  <span class="small text-uppercase text-muted">Selected</span>
-                  <strong>{{ getSelectedMeasureLabel() }}</strong>
-                </div>
 
-                <div class="selected-measure-actions">
-                  <button
-                    class="btn btn-sm"
-                    type="button"
-                    [class.btn-danger]="isMeasurePlaybackActive(selectedMeasure)"
-                    [class.btn-outline-primary]="!isMeasurePlaybackActive(selectedMeasure)"
-                    [disabled]="!isMeasurePlaybackActive(selectedMeasure) && !canPlaySelectedMeasure()"
-                    [title]="canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
-                    (click)="toggleSelectedMeasurePlayback(part)">
-                    <i aria-hidden="true" class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(selectedMeasure)" [class.bi-play-fill]="!isMeasurePlaybackActive(selectedMeasure)"></i>
-                    {{ isMeasurePlaybackActive(selectedMeasure) ? 'Stop' : 'Play' }}
-                  </button>
-                  <button
-                    class="btn btn-outline-secondary btn-sm"
-                    type="button"
-                    title="Edit measure"
-                    aria-label="Edit selected measure" [disabled]="musicLocked()"
-                    (click)="editSelectedMeasure()">
-                    <i aria-hidden="true" class="bi bi-pencil"></i>
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    class="btn btn-outline-secondary btn-sm"
-                    type="button"
-                    title="Duplicate measure"
-                    aria-label="Duplicate selected measure" [disabled]="musicLocked()"
-                    (click)="duplicateSelectedMeasure()">
-                    <i aria-hidden="true" class="bi bi-copy"></i>
-                    <span>Duplicate</span>
-                  </button>
-                  <button
-                    class="btn btn-outline-danger btn-sm"
-                    type="button"
-                    title="Remove measure"
-                    aria-label="Remove selected measure" [disabled]="musicLocked()"
-                    (click)="removeSelectedMeasure()">
-                    <i aria-hidden="true" class="bi bi-trash"></i>
-                    <span>Delete</span>
-                  </button>
-                  <button
-                    class="btn btn-outline-secondary btn-sm"
-                    type="button"
-                    title="Clear selection"
-                    aria-label="Clear measure selection"
-                    (click)="clearMeasureSelection()">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </div>
-            }
           } @else {
             <div class="empty-part-state">
               <p class="mb-2">No measures yet.</p>
@@ -263,24 +180,83 @@
     }
   </div>
 
-  <div class="modal-footer">
-    @if (!data.embedded) {
-      <app-media-playback-controls class="w-100" [channels]="['finite:song-part-playback']" />
-    }
-    <div class="part-save-status" role="status" [class.text-danger]="saveError()">
-      @if (saving()) {
-        Saving…
-      } @else if (saveError()) {
-        {{ saveError() }}
-      } @else if (hasUnsavedChanges()) {
-        Unsaved changes
-      } @else {
-        All changes saved
+  <div class="part-editor-actions">
+    @if (activeTab() === 'music') {
+      @if (getSelectedMeasure(); as selectedMeasure) {
+        <div class="selected-measure-toolbar" aria-label="Selected measure actions">
+          <div class="selected-measure-label">
+            <span class="small text-uppercase text-muted">Selected</span>
+            <strong>{{ getSelectedMeasureLabel() }}</strong>
+          </div>
+
+          <div class="selected-measure-actions">
+            <button
+              class="btn btn-sm"
+              type="button"
+              [class.btn-danger]="isMeasurePlaybackActive(selectedMeasure)"
+              [class.btn-outline-primary]="!isMeasurePlaybackActive(selectedMeasure)"
+              [disabled]="!isMeasurePlaybackActive(selectedMeasure) && !canPlaySelectedMeasure()"
+              [attr.aria-label]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : 'Play measure'"
+              [title]="canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
+              (click)="toggleSelectedMeasurePlayback(tempPart())">
+              <i aria-hidden="true" class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(selectedMeasure)" [class.bi-play-fill]="!isMeasurePlaybackActive(selectedMeasure)"></i>
+              <span>{{ isMeasurePlaybackActive(selectedMeasure) ? 'Stop' : 'Play' }}</span>
+            </button>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              title="Edit measure"
+              aria-label="Edit selected measure" [disabled]="musicLocked()"
+              (click)="editSelectedMeasure()">
+              <i aria-hidden="true" class="bi bi-pencil"></i>
+              <span>Edit</span>
+            </button>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              title="Duplicate measure"
+              aria-label="Duplicate selected measure" [disabled]="musicLocked()"
+              (click)="duplicateSelectedMeasure()">
+              <i aria-hidden="true" class="bi bi-copy"></i>
+              <span>Duplicate</span>
+            </button>
+            <button
+              class="btn btn-outline-danger btn-sm"
+              type="button"
+              title="Remove measure"
+              aria-label="Remove selected measure" [disabled]="musicLocked()"
+              (click)="removeSelectedMeasure()">
+              <i aria-hidden="true" class="bi bi-trash"></i>
+              <span>Delete</span>
+            </button>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              title="Clear selection"
+              aria-label="Clear measure selection"
+              (click)="clearMeasureSelection()">
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
       }
+    }
+    <div class="modal-footer">
+      <div class="part-save-status" role="status" [class.text-danger]="saveError()">
+        @if (saving()) {
+          Saving…
+        } @else if (saveError()) {
+          {{ saveError() }}
+        } @else if (hasUnsavedChanges()) {
+          Unsaved changes
+        } @else {
+          All changes saved
+        }
+      </div>
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">{{ data.embedded ? 'Back to song' : 'Cancel' }}</button>
+      <button class="btn btn-success" type="button" (click)="save()" [disabled]="saving() || !hasUnsavedChanges()" [title]="data.embedded ? 'Save your changes and keep editing' : 'Save your changes and close this dialog'">
+        <i aria-hidden="true" class="bi bi-check-lg"></i> {{ saving() ? 'Saving…' : (data.embedded ? 'Save changes' : 'Save and close') }}
+      </button>
     </div>
-    <button class="btn btn-outline-secondary" type="button" (click)="cancel()">{{ data.embedded ? 'Back to song' : 'Cancel' }}</button>
-    <button class="btn btn-success" type="button" (click)="save()" [disabled]="saving() || !hasUnsavedChanges()" [title]="data.embedded ? 'Save your changes and keep editing' : 'Save your changes and close this dialog'">
-      <i aria-hidden="true" class="bi bi-check-lg"></i> {{ saving() ? 'Saving…' : (data.embedded ? 'Save changes' : 'Save and close') }}
-    </button>
   </div>
 </div>

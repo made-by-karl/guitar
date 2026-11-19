@@ -1,0 +1,19 @@
+<div class="part-transport" role="group" aria-label="Part playback">
+  <button class="btn btn-outline-primary btn-sm" type="button"
+    [disabled]="preparing() || needsRecovery() || (!active() && !playable())" (click)="toggle()">
+    <i aria-hidden="true" class="bi" [class.bi-pause-fill]="active() && state().status === 'playing'" [class.bi-play-fill]="!active() || state().status !== 'playing'"></i>
+    {{ primaryLabel() }}
+  </button>
+  <button class="btn btn-outline-secondary btn-sm" type="button" aria-label="Previous measure" title="Previous measure" [disabled]="!canPrevious()" (click)="previous.emit()">
+    <i aria-hidden="true" class="bi bi-skip-backward-fill"></i>
+  </button>
+  <button class="btn btn-outline-secondary btn-sm" type="button" aria-label="Next measure" title="Next measure" [disabled]="!canNext()" (click)="next.emit()">
+    <i aria-hidden="true" class="bi bi-skip-forward-fill"></i>
+  </button>
+  <button class="btn btn-outline-danger btn-sm" type="button" [disabled]="!active()" (click)="stop.emit()">
+    <i aria-hidden="true" class="bi bi-stop-fill"></i> Stop
+  </button>
+</div>
+@if (active()) {
+  <div class="small text-muted part-transport-status">{{ status() }} · {{ counter() }}</div>
+}
