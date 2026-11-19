@@ -46,6 +46,8 @@
   }
 }
 
-.part-playback-toolbar { position: sticky; top: 0; z-index: 2; background: white; padding-bottom: .5rem; }
-
-.part-playback-toolbar button { min-height: 44px; }
+[aria-label='Part actions'] .btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+[aria-label='Part actions'] .btn-outline-secondary { --bs-btn-color: var(--bs-secondary-text-emphasis); }

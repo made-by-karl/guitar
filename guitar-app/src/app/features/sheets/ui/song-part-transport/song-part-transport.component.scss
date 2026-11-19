@@ -1,0 +1,15 @@
+:host { display: block; min-width: 0; }
+.part-transport {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .5rem;
+  button { min-width: 44px; min-height: 44px; white-space: nowrap; }
+}
+.part-transport-status { margin-top: .25rem; }
+
+// Bootstrap's warm primary needs its emphasis shade for small outline text.
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-primary-text-emphasis);
+  --bs-btn-border-color: var(--bs-primary-text-emphasis);
+}
+.btn-outline-danger { --bs-btn-color: var(--bs-danger-text-emphasis); }

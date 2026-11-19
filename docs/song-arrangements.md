@@ -65,7 +65,18 @@ existing media UI. Parts cards show names, measure counts and notes without a st
 measure preview; their notation pane appears during playback. Song outline summaries
 show measure counts without enumerating chords. The embedded occurrence editor keeps
 its name, playback controls and close action visible below the sheet tabs while its
-content scrolls.
+content scrolls (the header scrolls normally at constrained heights). Its sticky action area
+keeps Save changes, save status and Back to song reachable inside the occurrence workspace.
+Selected-measure actions share that area above Save, with layout space reserved below the
+last form fields. Nested measure editing hides the parent's actions, keeps Apply/Cancel
+outside its scrolling body, and returns keyboard focus to the measure's Edit action.
+
+Part previews in both the editor and Parts cards use the same ordered transport: Play/Pause/
+Resume, Previous measure, Next measure, Stop. Close and part editing actions are separate.
+Preparation disables play/seek while retaining Stop; ready/error recovery stays with the
+existing shell or modal media controls and the existing audio session. Modal recovery notices
+live in the scrolling body so ready/retry feedback cannot push Save or Apply off screen. Parts card surfaces
+inherit their idle Bootstrap card color throughout preview; playback adds no white surface.
 
 Part-editor notation and the nested measure editor's live preview reuse their existing drawings.
 They show the scheduled draft snapshot and its preceding notation history. Editing selection,

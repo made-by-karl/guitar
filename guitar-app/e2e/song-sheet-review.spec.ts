@@ -1,8 +1,27 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
+
+declare global { interface Window { reviewAudio: HTMLAudioElement[]; } }
+async function trackAudio(page: Page) {
+  await page.addInitScript(() => {
+    window.reviewAudio = [];
+    window.Audio = new Proxy(window.Audio, { construct(Target, args) {
+      const audio = new Target(...args); window.reviewAudio.push(audio); return audio;
+    } });
+  });
+}
+async function started(page: Page) {
+  await expect.poll(async () => {
+    if (await page.evaluate(() => window.reviewAudio.some(audio => !audio.paused && audio.currentTime > 0))) return true;
+    const play = page.getByRole('button', { name: 'Play prepared audio', exact: true }).first();
+    if (await play.isVisible()) await play.click({ timeout: 500 }).catch(() => {});
+    return false;
+  }, { timeout: 45000 }).toBe(true);
+}
 
 for (const width of [390, 1280]) {
   test(`renders inherited single and group slides in both part views at ${width}px`, async ({ page }, testInfo) => {
+    await trackAudio(page);
     const warnings: string[] = [];
     page.on('console', message => {
       if (message.type() === 'warning' && message.text().includes('slide skipped')) warnings.push(message.text());
@@ -53,6 +72,10 @@ for (const width of [390, 1280]) {
     await page.getByRole('link', { name: 'Slide notation', exact: true }).click();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const overview = page.locator('app-song-sheet-parts-tab');
+    await expect(overview.locator('.slide-line')).toHaveCount(0);
+    const transport = overview.getByRole('group', { name: 'Part playback', exact: true });
+    await transport.getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
+    await transport.getByRole('button', { name: 'Pause', exact: true }).click();
     await expect(overview.locator('.slide-line')).toHaveCount(8);
     await expect(overview.locator('.pick-label')).toHaveText(['4', '4', '5', '4', '5', '4', '3', '4']);
     const markerPositions = await overview.locator('.rhythm-marker').evaluateAll(markers => markers.map(marker => {
@@ -62,10 +85,15 @@ for (const width of [390, 1280]) {
     for (let index = 1; index < markerPositions.length; index++) {
       const previous = markerPositions[index - 1];
       const current = markerPositions[index];
-      if (Math.abs(current.y - previous.y) < 1) expect(current.x - previous.x).toBeCloseTo(22, 0);
+      if (Math.abs(current.y - previous.y) < 1) {
+        const steps = (current.x - previous.x) / 22;
+        expect(steps).toBeGreaterThan(.95);
+        expect(steps).toBeCloseTo(Math.round(steps), 0);
+      }
     }
-    expect(await overview.locator('.notation-scroll').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await overview.screenshot({ path: testInfo.outputPath(`slide-overview-${width}.png`) });
+    await transport.getByRole('button', { name: 'Stop', exact: true }).click();
     await overview.getByRole('button', { name: /Edit$/ }).click();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
     const rows = page.locator('.measure-row');
@@ -80,35 +108,22 @@ for (const width of [390, 1280]) {
     await page.locator('.measure-sequence').screenshot({ path: testInfo.outputPath(`slide-editor-${width}.png`) });
     await rows.nth(1).click();
     const toolbar = page.locator('.selected-measure-toolbar');
-    await expect(toolbar.getByRole('button', { name: /Play$/ })).toBeEnabled();
-    await toolbar.getByRole('button', { name: /Play$/ }).click();
-    await toolbar.getByRole('button', { name: /Stop$/ }).click();
+    await expect(toolbar.getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
+    await toolbar.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
+    await toolbar.getByRole('button', { name: 'Stop measure', exact: true }).click();
     await page.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
     const editor = page.locator('app-song-part-measure-editor-modal');
-    await editor.getByRole('button', { name: 'Play measure', exact: true }).click();
+    await editor.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
     await expect(editor.getByRole('button', { name: 'Stop measure', exact: true })).toBeEnabled();
     await editor.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await expect(toolbar.getByRole('button', { name: /Play$/ })).toBeEnabled();
+    await expect(toolbar.getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
     expect(warnings).toEqual([]);
   });
 }
 
 for (const width of [390, 768, 1280]) {
-  test(`wraps part notation and prevents silent playback at ${width}px`, async ({ page }, testInfo) => {
-    await page.addInitScript(() => {
-      const target = window as Window & { slideRamps: { value: number; time: number }[] };
-      target.slideRamps = [];
-      const create = BaseAudioContext.prototype.createBufferSource;
-      BaseAudioContext.prototype.createBufferSource = function () {
-        const source = create.call(this);
-        const ramp = source.playbackRate.exponentialRampToValueAtTime.bind(source.playbackRate);
-        source.playbackRate.exponentialRampToValueAtTime = (value, time) => {
-          target.slideRamps.push({ value, time });
-          return ramp(value, time);
-        };
-        return source;
-      };
-    });
+  test(`keeps continuous part notation and prevents silent playback at ${width}px`, async ({ page }, testInfo) => {
+    await trackAudio(page);
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/sheets');
     await page.getByPlaceholder('New Song Sheet Name').fill('Review fixes');
@@ -154,29 +169,27 @@ for (const width of [390, 768, 1280]) {
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const parts = page.locator('app-song-sheet-parts-tab');
     const flow = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Flow', exact: true }) });
-    await expect(flow.locator('.notation-scroll')).toHaveCount(1);
-    await expect(flow.locator('.measure-divider')).toHaveCount(3);
-    const segments = flow.locator('.action-svg');
+    await expect(flow.locator('.notation-scroll')).toHaveCount(0);
+    await flow.getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
+    await flow.getByRole('button', { name: 'Pause', exact: true }).click();
+    const pane = parts.getByRole('region', { name: 'Playback notation' });
+    await expect(pane.locator('.notation-scroll')).toHaveCount(1);
+    await expect(pane.locator('.measure-divider')).toHaveCount(3);
+    const segments = pane.locator('.action-svg');
     if (width >= 768) {
       expect((await segments.nth(4).boundingBox())!.y).toBeCloseTo((await segments.first().boundingBox())!.y, 0);
     }
-    expect(await flow.locator('.notation-scroll').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-    await expect(flow.getByRole('button', { name: /Play$/ })).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(flow.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
     const silent = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Needs grip', exact: true }) });
     await expect(silent.getByRole('button', { name: /Play$/ })).toBeDisabled();
     await expect(silent).toContainText('Assign a grip');
     const pick = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Picking', exact: true }) });
     await expect(pick.getByRole('button', { name: /Play$/ })).toBeEnabled();
     await page.screenshot({ path: testInfo.outputPath(`part-flow-${width}.png`), fullPage: true });
-    await expect(flow.locator('.legato-line')).toHaveCount(12);
-    if (width === 1280) {
-      await flow.getByRole('button', { name: /Play$/ }).click();
-      await expect.poll(() => page.evaluate(() => (window as Window & { slideRamps: unknown[] }).slideRamps.length)).toBeGreaterThanOrEqual(3);
-      const ramps = await page.evaluate(() => (window as Window & { slideRamps: { value: number; time: number }[] }).slideRamps.slice(0, 3));
-      expect(new Set(ramps.map(ramp => ramp.time)).size).toBe(1);
-      expect(ramps.every(ramp => ramp.value > 0)).toBe(true);
-      await flow.getByRole('button', { name: /Stop$/ }).click();
-    }
+    await expect(pane.locator('.legato-line')).toHaveCount(12);
+    expect(await page.evaluate(() => window.reviewAudio.filter(audio => !!audio.getAttribute('src')).length)).toBe(1);
+    await flow.getByRole('button', { name: 'Stop', exact: true }).click();
 
     await flow.getByRole('button', { name: /Edit$/ }).click();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
@@ -184,7 +197,7 @@ for (const width of [390, 768, 1280]) {
     await page.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
     const measure = page.locator('app-song-part-measure-editor-modal');
     await expect(measure.getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
-    await measure.getByRole('button', { name: 'Play measure', exact: true }).click();
+    await measure.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
     await expect(measure.getByRole('button', { name: 'Stop measure', exact: true })).toBeEnabled();
     await measure.getByRole('button', { name: 'Stop measure', exact: true }).click();
     await expect(measure.getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
@@ -193,15 +206,15 @@ for (const width of [390, 768, 1280]) {
     await expect(measure.getByLabel('Fret shift', { exact: true })).toHaveCount(0);
     await measure.getByLabel('Slide scope', { exact: true }).selectOption('grip');
     await measure.getByLabel('Fret shift', { exact: true }).fill('-1');
-    await measure.getByRole('button', { name: 'Play measure', exact: true }).click();
+    await measure.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
     await measure.getByRole('button', { name: /Apply to part$/ }).click();
-    await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: /Play$/ })).toBeEnabled();
+    await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: /Save and close$/ }).click();
     await silent.getByRole('button', { name: /Edit$/ }).click();
-    await expect(page.locator('.part-editor-title-row').getByRole('button', { name: /Play$/ })).toBeDisabled();
+    await expect(page.locator('app-song-part-editor').getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
     await page.locator('.measure-row').click();
-    await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: /Play$/ })).toBeDisabled();
+    await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: 'Play measure', exact: true })).toBeDisabled();
     await page.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
     await expect(page.locator('app-song-part-measure-editor-modal').getByRole('button', { name: 'Play measure', exact: true })).toBeDisabled();
   });
@@ -263,21 +276,7 @@ test('passes song tuning and saved grips through the pattern editor', async ({ p
 });
 
 test('edits and plays a part with legato diagnostics without signal errors', async ({ page }) => {
-  await page.addInitScript(() => {
-    const target = window as Window & { playbackStates: AudioContextState[] };
-    target.playbackStates = [];
-    const create = BaseAudioContext.prototype.createBufferSource;
-    BaseAudioContext.prototype.createBufferSource = function () {
-      const source = create.call(this);
-      const context = this;
-      const start = source.start.bind(source);
-      source.start = (...args: Parameters<AudioBufferSourceNode['start']>) => {
-        start(...args);
-        target.playbackStates.push(context.state);
-      };
-      return source;
-    };
-  });
+  await trackAudio(page);
   const errors: string[] = [];
   const diagnostics: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -321,7 +320,7 @@ test('edits and plays a part with legato diagnostics without signal errors', asy
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
   await page.getByRole('button', { name: /Edit$/ }).click();
   const editor = page.locator('app-song-part-editor');
-  const play = editor.locator('.part-editor-title-row').getByRole('button', { name: /Play$/ });
+  const play = editor.getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Play', exact: true });
   await expect(play).toBeEnabled();
   await editor.getByRole('tab', { name: 'Music', exact: true }).click();
   await editor.locator('.measure-row').click();
@@ -331,16 +330,13 @@ test('edits and plays a part with legato diagnostics without signal errors', asy
   await expect(play).toBeEnabled();
   expect(diagnostics).toEqual([]);
   expect(errors).toEqual([]);
-  const starts = await page.evaluate(() => (window as Window & { playbackStates: AudioContextState[] }).playbackStates.length);
-  await play.click();
-  await expect(editor.locator('.part-editor-playback-actions').getByRole('button', { name: /Stop$/ })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => (window as Window & { playbackStates: AudioContextState[] }).playbackStates.length))
-    .toBeGreaterThan(starts);
-  expect(await page.evaluate(() => (window as Window & { playbackStates: AudioContextState[] }).playbackStates.at(-1))).toBe('running');
+  await play.click(); await started(page);
+  await expect(editor.getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.reviewAudio.some(audio => !audio.paused && audio.currentTime > 0))).toBe(true);
   expect(diagnostics).toHaveLength(3);
   expect(diagnostics[0]).toContain('slide skipped: no previous note');
   expect(diagnostics[1]).toContain('hammer-on warning');
   expect(diagnostics[2]).toContain('slide warning');
-  await editor.locator('.part-editor-playback-actions').getByRole('button', { name: /Stop$/ }).click();
+  await editor.getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Stop', exact: true }).click();
   expect(errors).toEqual([]);
 });

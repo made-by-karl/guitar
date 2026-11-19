@@ -1,8 +1,9 @@
+import { A11yModule } from '@angular/cdk/a11y';
 import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, OnDestroy } from '@angular/core';
+import { Component, Inject, inject, OnDestroy, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { chordToString } from '@/app/core/music/chords';
@@ -45,7 +46,7 @@ export interface SongPartMeasureEditorResult {
 @Component({
   selector: 'app-song-part-measure-editor-modal',
   standalone: true,
-  imports: [PlaybackHighlightDirective,MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureEditorPreviewComponent],
+  imports: [A11yModule, PlaybackHighlightDirective,MediaPlaybackControlsComponent, CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureEditorPreviewComponent],
   templateUrl: './song-part-measure-editor-modal.component.html',
   styleUrl: './song-part-measure-editor-modal.component.scss'
 })
@@ -54,6 +55,7 @@ export class SongPartMeasureEditorModalComponent implements
   ModalDataComponent<SongPartMeasureEditorModalData>, OnDestroy {
   private readonly playback = inject(SongPartPlaybackService);
   private readonly playbackState = toSignal(this.playback.state$, { initialValue: this.playback.getSnapshot() });
+  readonly selectingGrip = signal(false);
   editedMeasure: Measure;
   editedActionGrips: PlayingPatternActionGrip[];
   sheet: SongSheetWithData;
@@ -123,6 +125,7 @@ export class SongPartMeasureEditorModalComponent implements
 
   async assignActionGrip(actionIndex: number): Promise<void> {
     const opener = document.activeElement;
+    this.selectingGrip.set(true);
     try {
       const effectiveGrip = this.editedActionGrips.find(grip => grip.actionIndex === actionIndex);
       const selectedGrip = await this.selectGrip(effectiveGrip?.name);
@@ -143,6 +146,7 @@ export class SongPartMeasureEditorModalComponent implements
         ];
       }
     } finally {
+      this.selectingGrip.set(false);
       if (opener instanceof HTMLElement && opener.isConnected && document.activeElement === document.body) {
         opener.focus({ preventScroll: true });
       }

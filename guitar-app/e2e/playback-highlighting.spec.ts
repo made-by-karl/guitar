@@ -153,11 +153,11 @@ test('Parts keeps the playback component while a measure editor highlights its e
   await expect(pane.getByRole('button')).toHaveCount(0);
   await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '18');
   await expect(parts.locator('.part-measure-list .playback-action-slot')).toHaveCount(0);
-  await parts.getByRole('button', { name: 'Back', exact: true }).click();
+  await parts.getByRole('group', { name: 'Part playback', exact: true }).first().getByRole('button', { name: 'Previous measure', exact: true }).click();
   await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '0');
-  await parts.getByRole('button', { name: 'Forward', exact: true }).click();
+  await parts.getByRole('group', { name: 'Part playback', exact: true }).first().getByRole('button', { name: 'Next measure', exact: true }).click();
   await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '16');
-  await parts.getByRole('button', { name: 'Stop', exact: true }).click();
+  await parts.getByRole('group', { name: 'Part playback', exact: true }).first().getByRole('button', { name: 'Stop', exact: true }).click();
   await parts.getByRole('button', { name: 'Edit', exact: true }).first().click();
   const editor = page.locator('app-song-part-editor');
   await editor.getByRole('button', { name: 'Unlock editing…', exact: true }).click();

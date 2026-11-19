@@ -1,5 +1,16 @@
-import { expect, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
+
+async function scrollWorkspaceToEnd(page: Page, row: Locator, toolbar: Locator) {
+  // Selection changes the reserved footer height. Finish scrolling after the
+  // browser has applied that layout and its scroll anchoring adjustment.
+  await expect(async () => {
+    await page.locator('.app-content-container').evaluate(element => { element.scrollTop = element.scrollHeight; });
+    const rowBox = (await row.boundingBox())!;
+    expect((await toolbar.boundingBox())!.y).toBeGreaterThanOrEqual(rowBox.y + rowBox.height);
+    await expect(row).toBeInViewport({ ratio: 1 });
+  }).toPass({ timeout: 5000 });
+}
 
 for (const viewport of [{ width: 390, height: 568 }, { width: 390, height: 900 }, { width: 1280, height: 900 }]) {
   test(`overlays long measure lists and leaves a single measure clear at ${viewport.width}x${viewport.height}`, async ({ page }) => {
@@ -50,18 +61,12 @@ for (const viewport of [{ width: 390, height: 568 }, { width: 390, height: 900 }
     // be scrolled above it rather than remaining hidden behind the controls.
     await rows.last().scrollIntoViewIfNeeded();
     await expect(toolbar).toBeInViewport({ ratio: 1 });
-    await editor.locator('.modal-footer').scrollIntoViewIfNeeded();
-    const lastRowBox = (await rows.last().boundingBox())!;
-    expect((await toolbar.boundingBox())!.y).toBeGreaterThanOrEqual(lastRowBox.y + lastRowBox.height);
-    await expect(rows.last()).toBeInViewport({ ratio: 1 });
+    await scrollWorkspaceToEnd(page, rows.last(), toolbar);
     await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
     await page.getByRole('button', { name: 'Part 1, occurrence 1', exact: true }).click();
     await rows.first().click();
-    await editor.locator('.modal-footer').scrollIntoViewIfNeeded();
+    await scrollWorkspaceToEnd(page, rows.first(), toolbar);
     await expect(toolbar).toBeInViewport({ ratio: 1 });
-    const rowBox = (await rows.first().boundingBox())!;
-    expect((await toolbar.boundingBox())!.y).toBeGreaterThanOrEqual(rowBox.y + rowBox.height);
-    await expect(rows.first()).toBeInViewport({ ratio: 1 });
     await toolbar.getByRole('button', { name: 'Clear measure selection', exact: true }).click();
     await expect(toolbar).toHaveCount(0);
 

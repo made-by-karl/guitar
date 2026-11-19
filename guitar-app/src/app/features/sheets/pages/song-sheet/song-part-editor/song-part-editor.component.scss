@@ -22,6 +22,7 @@
   // Keep clipping from becoming a scroll container for the sticky measure toolbar.
   overflow: clip !important;
   .modal-body { overflow: visible !important; }
+  .part-editor-actions { position: sticky; bottom: 0; z-index: 4; }
   .part-editor-header {
     position: sticky;
     top: var(--sheet-tabs-height);
@@ -58,36 +59,30 @@
   }
 }
 
-.part-editor-header-actions,
-.part-editor-playback-actions {
+.part-editor-header-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  flex-shrink: 0;
+  .btn-close { margin: 0; width: 44px; height: 44px; box-sizing: border-box; }
 }
 
-.part-editor-header-actions {
-  flex-shrink: 0;
-
-  .btn { min-height: 44px; }
-
-  .btn-close {
-    margin: 0;
-    min-width: 44px;
-    min-height: 44px;
-    box-sizing: border-box;
+.part-editor-actions {
+  // Adding selection controls must not anchor the page to the moving footer.
+  overflow-anchor: none;
+  flex: 0 0 auto;
+  background: var(--bs-body-bg);
+  .modal-footer {
+    padding-bottom: max(.5rem, env(safe-area-inset-bottom));
+    .btn { min-height: 44px; }
   }
 }
 
-.part-editor-playback-actions {
-  flex-wrap: wrap;
-}
-
-.part-editor-counter {
-  white-space: nowrap;
-}
+// Keep the underlying editor's actions out of nested modal workflows.
+.has-child-editor .part-editor-actions,
+:host-context(.modal-open) .is-embedded .part-editor-actions { visibility: hidden; }
 
 .part-editor-tabs {
+  scroll-margin-top: var(--sheet-tabs-height);
   display: flex;
   flex-shrink: 0;
   width: 100%;
@@ -95,6 +90,7 @@
 }
 
 .part-editor-tab {
+  scroll-margin-top: calc(var(--sheet-tabs-height) + .5rem);
   flex: 1 1 0;
   min-width: 0;
   padding: 0.625rem 0.5rem;
@@ -280,20 +276,16 @@
 }
 
 .selected-measure-toolbar {
-  position: sticky;
-  z-index: 2;
-  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin: .5rem;
   padding: 0.625rem 0.75rem;
   border: 1px solid #ced4da;
   border-radius: 0.5rem;
   background: #e9ecef;
-  opacity: 0.9;
   box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.12);
 }
 
@@ -304,6 +296,7 @@
 }
 
 .selected-measure-actions {
+  .btn { min-width: 44px; min-height: 44px; }
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -405,15 +398,25 @@
   }
 
   .selected-measure-toolbar {
-    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: .25rem;
+    padding: .5rem .25rem;
   }
-
+  .selected-measure-label {
+    min-width: 0;
+    font-size: .75rem;
+    .small { display: none; }
+  }
   .selected-measure-actions {
-    flex: 1 1 auto;
-
-    .btn {
-      flex: 1 1 auto;
-    }
+    flex-wrap: nowrap;
+    gap: .25rem;
+    margin-left: auto;
+    .btn { width: 44px; min-height: 44px; padding: .25rem; }
+    span { display: none; }
   }
 
+}
+
+@media (max-height: 600px) {
+  .part-editor-modal.is-embedded .part-editor-header { position: static; }
 }

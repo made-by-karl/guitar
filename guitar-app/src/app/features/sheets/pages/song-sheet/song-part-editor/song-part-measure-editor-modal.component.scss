@@ -14,3 +14,18 @@
     overflow: auto;
   }
 }
+
+.measure-transport { flex: 0 0 auto; margin-left: auto; padding-right: 1rem; border-right: 1px solid var(--bs-border-color); }
+.modal-header { gap: 1rem; }
+button { min-height: 44px; }
+.btn-close { width: 44px; height: 44px; margin: 0; box-sizing: border-box; }
+.modal-footer { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
+
+@media (max-height: 600px) {
+  .modal-header {
+    padding: .5rem 1rem;
+    .small { display: none; }
+  }
+  .modal-footer > span { flex-basis: 100%; font-size: .75rem; }
+  .modal-footer { padding: .5rem 1rem max(.5rem, env(safe-area-inset-bottom)); }
+}
