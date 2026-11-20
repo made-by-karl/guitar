@@ -238,8 +238,8 @@ Run `e2e/song-part-actions.spec.ts`, `e2e/song-part-editor.spec.ts`,
 `e2e/song-measure-toolbar.spec.ts`, `e2e/song-sheet-review.spec.ts` and
 `e2e/playback-highlighting.spec.ts` through Docker after part action or transport changes.
 The action suite checks 20-measure parts at the top, middle and end at 375×667, 768×1024,
-1280×800 and 375×400, reserved action space, nested measure Apply/Cancel, focus return,
-save status and modal entry. Card checks hold preparation and reject startup before exercising
+1280×800 and 375×400, icon-only Save/Apply in the breadcrumb, reserved contextual action space,
+guarded return, focus restoration and accessible save status. Card checks hold preparation and reject startup before exercising
 ready/play/pause/seek/resume/error/retry/stop with the same media owner. They compare computed
 card, content and text colors across states and retain evidence under
 `temp/ux/song-sheet-editing-consistency/`. Browser audio and resized viewports do not establish
@@ -252,3 +252,23 @@ phone/tablet/desktop sizes, including repeated/adjacent occurrences, a rest-only
 playing/paused seeks, rapid requests, boundaries, media reuse and an unrelated editor draft.
 Jest covers snapshot targets, single-occurrence songs and unavailable session states.
 Section-navigation screenshots are under `temp/ux/song-sheet-editing-consistency/`.
+
+
+## Song-sheet editor workspace
+
+Run `e2e/song-workspace.spec.ts` together with the updated arrangement, selection, part-editor,
+measure-toolbar, part-actions and sheet-tab suites through Docker. The workspace suite covers
+selection before editing, no editor dialog, one-line ancestry, retained parent drafts, measure
+Apply and guarded discard, save/reload, shared locks, in-page Notes and local pattern drafts. It checks
+375×667, 768×1024, 1280×800, both sides of the 700/701px breakpoint and 375×400. Browser console
+errors fail the workspace suite. Jest covers nested guard ordering, pending and failed saves,
+source isolation, active-level save ownership and pattern navigation decisions. The breadcrumb
+uses a single 44px save icon and guarded Back; no bottom editor action row is present. Measured
+text-contrast artifacts are retained as `workspace-contrast-*.json` beside the screenshots.
+
+Use `measure-editor-preview.spec.ts`, `playback-highlighting.spec.ts`, `song-part-actions.spec.ts`
+and `song-play-view.spec.ts` for notation/grip-dialog return, transport recovery and the separate
+Play view. Retain workspace screenshots and review captions under
+`temp/ux/song-sheet-editing-consistency/`. Resized Chromium viewports do not establish physical
+touch, virtual-keyboard or device safe-area behavior; browser playback does not establish
+heard-audio quality.

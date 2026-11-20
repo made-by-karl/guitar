@@ -50,8 +50,9 @@ for (const width of [390, 768, 1280]) {
     await page.getByRole('link', { name: 'Arrangement', exact: true }).click();
     const song = page.locator('app-song-arrangement'), editor = page.locator('app-song-part-editor');
     const select = async (name: string) => {
-      if (width === 390 && await editor.count()) await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+      if (width === 390 && await editor.count()) await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
       await song.getByRole('button', { name, exact: true }).click();
+      await song.getByRole('region', { name: 'Selected occurrence actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
     };
     await expect(song.locator('.occurrence-row')).toHaveCount(3);
     await expect(song.locator('app-playing-actions')).toHaveCount(0);
@@ -67,9 +68,9 @@ for (const width of [390, 768, 1280]) {
     }
     await page.screenshot({ path: testInfo.outputPath(`arrangement-music-${width}.png`), fullPage: true });
     await editor.getByRole('button', { name: 'Notes, contains notes', exact: true }).click();
-    const notes = page.locator('app-song-part-notes-modal');
+    const notes = editor.locator('.notes-workspace');
     await expect(notes.getByLabel('Notes', { exact: true })).toHaveJSProperty('readOnly', true);
-    await notes.getByRole('button', { name: 'Close notes', exact: true }).click();
+    await editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true }).click();
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Evening words changed');
     await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
@@ -89,7 +90,7 @@ for (const width of [390, 768, 1280]) {
     await expect(notes.getByLabel('Notes', { exact: true })).toHaveValue('Play softly');
     await expect(notes.getByLabel('Notes', { exact: true })).toBeEditable();
     await notes.getByLabel('Notes', { exact: true }).fill('Cue used in both verses');
-    await notes.getByRole('button', { name: 'Apply notes', exact: true }).click();
+    await editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true }).click();
     await editor.locator('.measure-row').first().click();
     await editor.getByRole('button', { name: 'Duplicate selected measure', exact: true }).click();
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
@@ -99,7 +100,7 @@ for (const width of [390, 768, 1280]) {
     await expect(name).toBeDisabled();
     await editor.getByRole('button', { name: 'Notes, contains notes', exact: true }).click();
     await expect(notes.getByLabel('Notes', { exact: true })).toHaveValue('Cue used in both verses');
-    await notes.getByRole('button', { name: 'Close notes', exact: true }).click();
+    await editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true }).click();
     await editor.getByRole('button', { name: 'Unlock editing…', exact: true }).click();
     await unlock.getByRole('button', { name: 'Edit all 2 occurrences', exact: true }).click();
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
@@ -113,7 +114,7 @@ for (const width of [390, 768, 1280]) {
     await name.fill('Verse 2');
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect.poll(async () => (await readSheet(page)).parts.length).toBe(3);
-    await expect(editor.locator('.modal-title .occurrence-number')).toHaveText('1');
+    await expect(editor.locator('.path-current')).toHaveText('Verse 2 (1)');
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Evening words changed');
     await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Unsaved words');
@@ -123,7 +124,7 @@ for (const width of [390, 768, 1280]) {
     expect((await choice.boundingBox())!.height).toBeLessThan(500);
     await choice.getByRole('button', { name: 'Keep editing', exact: true }).click();
     await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Unsaved words');
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await choice.getByRole('button', { name: 'Save and continue', exact: true }).click();
     await expect(editor).toHaveCount(0);
     expect((await readSheet(page)).arrangement?.[2].lyrics).toBe('Unsaved words');
@@ -143,7 +144,7 @@ for (const width of [390, 768, 1280]) {
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('');
     expect((await readSheet(page)).parts).toHaveLength(3);
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await song.getByRole('button', { name: 'Play song', exact: true }).click();
     await expect(song.getByRole('button', { name: 'Pause song', exact: true })).toBeVisible();
     await song.getByRole('button', { name: 'Stop song', exact: true }).click();

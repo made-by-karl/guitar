@@ -182,6 +182,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
 test('attaches playing and paused media without a restart, exits to inline highlighting, completes and replays', async ({ page }) => {
   await seed(page);
   await page.getByRole('button', { name: 'Verse, occurrence 2', exact: true }).click();
+  await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
   const selected = page.locator('.occurrence-row.is-selected');
   await page.getByRole('button', { name: 'Play song', exact: true }).click();
   await page.getByRole('button', { name: 'Play view', exact: true }).click(); await started(page);
@@ -292,6 +293,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     if (viewport.width === 1280) {
       // A different selected editor can contain unsaved work while song navigation proceeds.
       await song.getByRole('button', { name: 'Verse, occurrence 3', exact: true }).click();
+      await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
       const editor = page.locator('app-song-part-editor');
       await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
       await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Unrelated draft');
@@ -323,6 +325,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
 test('entry guard preserves unsaved lyrics, music and preview on cancellation; accepted entry uses saved music', async ({ page }) => {
   await seed(page);
   await page.getByRole('button', { name: 'Verse, occurrence 2', exact: true }).click();
+  await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.locator('app-song-part-editor');
   await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
   await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Unsaved words');

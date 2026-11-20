@@ -32,3 +32,11 @@
     flex-direction: column;
   }
 }
+
+.workspace-path { display: flex; align-items: center; gap: .35rem; padding: .4rem; min-width: 0; background: var(--bs-body-bg); }
+.workspace-path button { min-height: 44px; }
+.workspace-path .btn-link { color: var(--bs-primary-text-emphasis); }
+.path-current { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+[hidden] { display: none !important; }
+
+.workspace-save { flex: 0 0 44px; width: 44px; margin-left: auto; }

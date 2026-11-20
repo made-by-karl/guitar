@@ -65,12 +65,14 @@ for (const width of [390, 1280]) {
     await expect(song.getByRole('button', { name: /^Options for/ })).toHaveCount(0);
     await expect(song.getByRole('button', { name: 'Add section', exact: true })).toHaveCount(0);
 
-    await song.getByRole('button', { name: 'Play Part 2, occurrence 1', exact: true }).click();
-    await expect(song.getByRole('button', { name: 'Pause Part 2, occurrence 1', exact: true })).toBeVisible();
+    await song.getByRole('button', { name: 'Part 2, occurrence 1', exact: true }).click();
+    const selected = song.getByRole('region', { name: 'Selected occurrence actions' });
+    await selected.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect(selected.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
     await expect(editor).toHaveCount(0);
-    await song.getByRole('button', { name: 'Pause Part 2, occurrence 1', exact: true }).click();
-    await song.getByRole('button', { name: 'Resume Part 2, occurrence 1', exact: true }).click();
-    await expect(song.getByRole('button', { name: 'Pause Part 2, occurrence 1', exact: true })).toBeVisible();
+    await selected.getByRole('button', { name: 'Pause', exact: true }).click();
+    await selected.getByRole('button', { name: 'Resume', exact: true }).click();
+    await expect(selected.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
     await song.getByRole('button', { name: 'Play song', exact: true }).click();
     await song.getByRole('button', { name: 'Stop song', exact: true }).click();
 
@@ -100,7 +102,7 @@ for (const width of [390, 1280]) {
     await page.screenshot({ path: testInfo.outputPath(`part-chooser-scrolled-${width}.png`), fullPage: true });
     await lastChoice.click();
     await expect(editor).toBeVisible();
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await expect(titles).toHaveText(['Part 20', 'Part 1', 'Part 2', 'Part 3']);
 
     await song.getByRole('button', { name: 'Add after section 2', exact: true }).click();
@@ -108,19 +110,21 @@ for (const width of [390, 1280]) {
     await editor.getByRole('textbox', { name: 'Part name', exact: true }).fill('Bridge');
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect.poll(async () => (await readSheet(page)).parts.at(-1)?.section).toBe('Bridge');
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await expect(titles).toHaveText(['Part 20', 'Part 1', 'Bridge', 'Part 2', 'Part 3']);
-    await expect(song.getByRole('button', { name: 'Play Bridge, occurrence 1', exact: true })).toBeDisabled();
+    await song.getByRole('button', { name: 'Bridge, occurrence 1', exact: true }).click();
+    await expect(selected.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
 
     await song.getByRole('button', { name: 'Add after section 5', exact: true }).click();
     await choice.getByRole('button', { name: 'Use Part 1 · 1 measures', exact: true }).click();
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await expect(titles).toHaveText(['Part 20', 'Part 1', 'Bridge', 'Part 2', 'Part 3', 'Part 1']);
     await page.reload();
     await expect(titles).toHaveText(['Part 20', 'Part 1', 'Bridge', 'Part 2', 'Part 3', 'Part 1']);
     await expect(song.locator('.occurrence-add-button')).toHaveCount(7);
 
-    const remove = song.getByRole('button', { name: 'Delete Part 1, occurrence 2', exact: true });
+    await song.getByRole('button', { name: 'Part 1, occurrence 2', exact: true }).click();
+    const remove = selected.getByRole('button', { name: 'Remove occurrence', exact: true });
     await remove.click();
     const confirmation = page.locator('app-confirm-dialog');
     await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click();

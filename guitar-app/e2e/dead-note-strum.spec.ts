@@ -1,3 +1,4 @@
+import { cancelMeasure } from './song-workspace-actions';
 import { expect, Page, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import type { RenderedAudioService } from '../src/app/core/services/rendered-audio.service';
@@ -128,13 +129,14 @@ test('the sheet measure editor offers the same compact articulation controls and
   const part = page.locator('app-song-part-editor');
   await part.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByRole('button', { name: 'New measure', exact: true }).click();
+  await page.getByRole('button', { name: 'Apply to part', exact: true }).click();
   await part.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
   const modal = page.locator('app-song-part-measure-editor-modal');
   await modal.getByTitle('Add Technique', { exact: true }).first().click();
   await modal.getByRole('link', { name: /Strum Down$/ }).first().click();
   await modal.getByLabel('Dead note', { exact: true }).check();
   await modal.getByLabel('Accent', { exact: true }).check();
-  await modal.getByRole('button', { name: /Cancel$/ }).click();
+  await cancelMeasure(page);
   await expect(part.locator('.dead-note-mark')).toHaveCount(0);
   await part.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
   await modal.getByTitle('Add Technique', { exact: true }).first().click();
@@ -142,11 +144,12 @@ test('the sheet measure editor offers the same compact articulation controls and
   await expect(modal.getByLabel('Dead note', { exact: true })).not.toBeChecked();
   await modal.getByLabel('Dead note', { exact: true }).check();
   await modal.getByLabel('Accent', { exact: true }).check();
-  await modal.getByRole('button', { name: /Apply to part$/ }).click();
+  await page.getByRole('button', { name: /Apply to part$/ }).click();
   await expect(part.locator('.dead-note-mark')).toHaveCount(6);
   await part.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(part.locator('.part-save-status')).toHaveText('All changes saved');
   await page.reload();
   await page.getByRole('button', { name: 'Untitled part, occurrence 1', exact: true }).click();
+  await page.getByRole('region', { name: 'Selected occurrence actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
   await expect(page.locator('.dead-note-mark').first()).toBeAttached();
 });

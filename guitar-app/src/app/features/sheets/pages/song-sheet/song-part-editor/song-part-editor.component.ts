@@ -2,8 +2,8 @@ import { SongPartTransportComponent } from '@/app/features/sheets/ui/song-part-t
 import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, computed, Inject, OnDestroy, inject, signal } from '@angular/core';
+import { CommonModule, NgComponentOutlet } from '@angular/common';
+import { afterNextRender, ChangeDetectorRef, Component, computed, ElementRef, HostListener, Inject, Injector, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MODAL_DATA, MODAL_REF, ModalComponent, ModalDataComponent, ModalRef, ModalService } from '@/app/core/services/modal.service';
@@ -11,7 +11,7 @@ import { NotificationService } from '@/app/core/services/notification.service';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
 import { PlayingActionsComponent, PlayingActionsNotationContext, PlayingActionsNotationHistoryEntry } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
-import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
+import { SongPatternWorkspaceComponent, SongPatternWorkspaceData } from '../song-pattern-workspace/song-pattern-workspace.component';
 import {
   SongPart,
   SongPartOccurrence,
@@ -32,8 +32,7 @@ import {
   toSongSheetPattern
 } from '../song-sheet.helpers';
 import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalData } from '../song-sheet-choice-modal.component';
-import { getSongArrangement, getOccurrenceHistory } from '@/app/features/sheets/services/song-arrangement';
-import { SongPartNotesModalComponent } from './song-part-notes-modal.component';
+import { getSongArrangement, getOccurrenceHistory, getOccurrenceNumber } from '@/app/features/sheets/services/song-arrangement';
 import { SongPartUnlockModalComponent } from './song-part-unlock-modal.component';
 import {
   SongPartMeasureEditorModalComponent,
@@ -49,12 +48,13 @@ export interface SongPartEditorModalData {
   occurrence?: SongPartOccurrence;
   occurrenceNumber?: number;
   embedded?: boolean;
+  origin?: 'Song' | 'Parts';
 }
 
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [SongPartTransportComponent, PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [NgComponentOutlet, SongPartTransportComponent, PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })
@@ -69,6 +69,26 @@ export class SongPartEditorComponent implements
   readonly musicUnlocked = signal(false);
   readonly saving = signal(false);
   readonly childEditorOpen = signal(false);
+  readonly childInjector = signal<Injector | undefined>(undefined);
+  readonly childComponent = signal<typeof SongPartMeasureEditorModalComponent | typeof SongPatternWorkspaceComponent>(SongPartMeasureEditorModalComponent);
+  readonly childLabel = signal('');
+  readonly notesOpen = signal(false);
+  private readonly injector = inject(Injector);
+  @ViewChild(NgComponentOutlet) private childOutlet?: NgComponentOutlet;
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private get scroller(): HTMLElement | null { return this.element.nativeElement.closest('.app-content-container'); }
+  readonly workspaceHeight = signal(0);
+  private parentScroll = 0;
+  private parentFocus: Element | null = null;
+  private deciding = false;
+  private isNewPart = true;
+  get origin(): string { return this.data.origin ?? (this.data.occurrence ? 'Song' : 'Parts'); }
+  get partLabel(): string { return (this.tempPart().section || 'Untitled part') + (this.data.occurrenceNumber ? ` (${this.data.occurrenceNumber})` : ''); }
+  private child(): SongPartMeasureEditorModalComponent | SongPatternWorkspaceComponent | undefined {
+    const child: unknown = this.childOutlet?.componentInstance;
+    return child instanceof SongPartMeasureEditorModalComponent || child instanceof SongPatternWorkspaceComponent ? child : undefined;
+  }
+
   readonly saveError = signal('');
   readonly tempLyrics;
   private savedPart = '';
@@ -102,23 +122,78 @@ export class SongPartEditorComponent implements
     });
   }
 
+  get activeSaveLabel(): string {
+    if (this.childEditorOpen()) return this.childComponent() === SongPartMeasureEditorModalComponent ? 'Apply to part' : 'Save Pattern';
+    return this.data.embedded ? 'Save changes' : 'Save and close';
+  }
+
+  get activeSaveTitle(): string {
+    if (this.activeError()) return this.activeError();
+    return this.childEditorOpen() && this.childComponent() === SongPartMeasureEditorModalComponent
+      ? 'Apply this measure to the part draft; save the part to persist it'
+      : this.activeSaveLabel;
+  }
+
+  activeError(): string {
+    const child = this.childEditorOpen() ? this.child() : undefined;
+    return child instanceof SongPatternWorkspaceComponent ? child.error() : this.childEditorOpen() ? '' : this.saveError();
+  }
+
+  activeSaving(): boolean {
+    const child = this.childEditorOpen() ? this.child() : undefined;
+    return this.saving() || (child instanceof SongPatternWorkspaceComponent && child.saving());
+  }
+
+  async saveActive(): Promise<void> {
+    if (this.activeSaving()) return;
+    const child = this.childEditorOpen() ? this.child() : undefined;
+    if (child) await child.save();
+    else if (!this.childEditorOpen()) await this.save();
+  }
+
+  updateSheet(sheet: SongSheetWithData): void {
+    this.sheet.set(sheet);
+    if (this.data.occurrence) this.data.occurrenceNumber = getOccurrenceNumber(getSongArrangement(sheet), this.data.occurrence);
+  }
+
   readonly musicLocked = computed(() => !this.musicUnlocked() &&
     getSongArrangement(this.sheet()).filter(occurrence => occurrence.partId === this.tempPart().id).length > 1);
 
-  hasUnsavedChanges(): boolean {
-    return (!this.data.occurrence && this.editingPartIndex === null)
+  hasPartChanges(): boolean {
+    return (!this.data.occurrence && this.editingPartIndex === null && this.isNewPart)
       || JSON.stringify(this.tempPart()) !== this.savedPart || this.tempLyrics() !== this.savedLyrics;
   }
 
+  hasUnsavedChanges(): boolean {
+    return (this.childEditorOpen() && !!this.child()?.hasUnsavedChanges()) || this.hasPartChanges();
+  }
+
+  async returnToPart(): Promise<boolean> {
+    if (this.saving()) return false;
+    const child = this.child();
+    if (child && !await child.canLeave()) return false;
+    // Apply/Save may already have returned to the parent.
+    if (this.childEditorOpen() || this.notesOpen()) this.finishChild();
+    this.notesOpen.set(false);
+    return true;
+  }
+
   async canLeave(): Promise<boolean> {
-    if (!this.hasUnsavedChanges()) return true;
-    const choice = await this.openChoiceDialog({ title: 'Keep your changes?', choices: [
-      { value: 'save', text: 'Save and continue' },
-      { value: 'discard', text: 'Discard changes' },
-      { value: 'stay', text: 'Keep editing' }
-    ] });
-    if (choice === 'save') return await this.save();
-    return choice === 'discard';
+    if (this.saving() || this.deciding) return false;
+    this.deciding = true;
+    try {
+      if (!this.notesOpen() && !await this.returnToPart()) return false;
+      if (!this.hasUnsavedChanges()) return true;
+      const choice = await this.openChoiceDialog({ title: 'Keep your changes?', choices: [
+        { value: 'save', text: 'Save and continue' },
+        { value: 'discard', text: 'Discard changes' },
+        { value: 'stay', text: 'Keep editing' }
+      ] });
+      if (choice === 'save') return await this.save();
+      // The navigation owner discards by unmounting. Presentation-only actions
+      // (such as Play view) keep the current draft when returning to the editor.
+      return choice === 'discard';
+    } finally { this.deciding = false; }
   }
 
   async unlockMusic(): Promise<void> {
@@ -138,13 +213,45 @@ export class SongPartEditorComponent implements
     }
   }
 
-  async editNotes(): Promise<void> {
-    const ref = this.modalService.show(SongPartNotesModalComponent, {
-      data: { notes: this.tempPart().notes, readOnly: this.musicLocked() }, width: '560px', maxWidth: '95vw', closeOnBackdropClick: false
-    });
-    const notes = await ref.afterClosed();
-    if (notes !== undefined) this.updateNotes(notes);
+  editNotes(): void {
+    this.captureParent();
+    this.notesOpen.set(true);
+    this.revealWorkspace();
   }
+
+  private captureParent(): void {
+    this.parentScroll = this.scroller?.scrollTop ?? window.scrollY;
+    this.parentFocus = document.activeElement;
+    this.sizeWorkspace();
+  }
+
+  @HostListener('window:resize')
+  sizeWorkspace(): void {
+    const scroller = this.scroller;
+    if (scroller) this.workspaceHeight.set(Math.max(0, scroller.clientHeight - 44 - 12));
+  }
+
+  private revealWorkspace(): void {
+    afterNextRender(() => {
+      const workspace = this.element.nativeElement.querySelector<HTMLElement>('.part-editor-modal');
+      const scroller = this.scroller;
+      if (workspace && scroller) scroller.scrollTop += workspace.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 44;
+      const focusTarget = this.notesOpen() ? '.notes-workspace textarea' : '.workspace-path .path-current';
+      this.element.nativeElement.querySelector<HTMLElement>(focusTarget)?.focus({ preventScroll: true });
+    }, { injector: this.injector });
+  }
+
+  private finishChild(): void {
+    this.childEditorOpen.set(false);
+    this.childInjector.set(undefined);
+    this.notesOpen.set(false);
+    this.changeDetector.detectChanges();
+    if (this.scroller) this.scroller.scrollTop = this.parentScroll;
+    else window.scrollTo({ top: this.parentScroll });
+    if (this.parentFocus instanceof HTMLElement && this.parentFocus.isConnected) this.parentFocus.focus({ preventScroll: true });
+  }
+
+  closeNotes(): void { this.finishChild(); }
 
   private rememberSavedState(): void {
     this.savedPart = JSON.stringify(this.tempPart());
@@ -159,8 +266,10 @@ export class SongPartEditorComponent implements
 
   ngOnDestroy(): void {
     this.playbackStateSubscription.unsubscribe();
-    this.songPartPlayback.stopMeasurePreview();
-    this.songPartPlayback.stopSongPart();
+    if (this.playbackState.source === 'editor') {
+      this.songPartPlayback.stopMeasurePreview();
+      this.songPartPlayback.stopSongPart();
+    }
   }
 
   onTabKeydown(event: KeyboardEvent, tabIndex: number): void {
@@ -231,61 +340,37 @@ export class SongPartEditorComponent implements
     this.notificationService.success(`Copied measure ${measureIndex + 1}`);
   }
 
-  async editMeasure(measureIndex: number): Promise<void> {
-    if (this.musicLocked()) return;
+  async editMeasure(measureIndex: number, newMeasure?: SongPartMeasure): Promise<void> {
+    if (this.musicLocked() || this.childEditorOpen()) return;
     const part = this.tempPart();
-    const partMeasure = part.measures[measureIndex];
-    if (!partMeasure) {
-      return;
-    }
-
-    const opener = document.activeElement;
-    this.childEditorOpen.set(true);
-    try {
-      const modalRef = this.modalService.show(SongPartMeasureEditorModalComponent, {
-        data: {
-          sheet: this.sheet(),
-          part,
-          measureId: partMeasure.id,
-          occurrenceId: this.data.occurrence?.id,
-          measure: partMeasure.measure,
-          actionGrips: partMeasure.measure.actionGrips ?? [],
-          measureLabel: `Measure ${measureIndex + 1}`,
-          notationHistory: this.getPartMeasureNotationHistory(measureIndex)
-        },
-        width: '95vw',
-        height: '90vh',
-        maxWidth: '95vw',
-        maxHeight: '90vh',
-        panelClass: 'modal-xl',
-        closeOnBackdropClick: false
-      });
-
-      const result: SongPartMeasureEditorResult | undefined = await modalRef.afterClosed();
-      if (!result) {
-        return;
-      }
-
-      const nextMeasures = [...this.tempPart().measures];
-      nextMeasures[measureIndex] = {
-        ...nextMeasures[measureIndex],
-        measure: {
-          ...result.measure,
-          actionGrips: result.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }))
+    const partMeasure = newMeasure ?? part.measures[measureIndex];
+    if (!partMeasure) return;
+    this.captureParent();
+    const label = `Measure ${measureIndex + 1}`;
+    const ref: ModalRef<SongPartMeasureEditorResult | undefined> = {
+      close: result => {
+        if (result) {
+          const updated = { ...partMeasure, measure: { ...result.measure, actionGrips: result.actionGrips.map(grip => ({ ...grip, measureIndex: 0 })) } };
+          if (newMeasure) this.insertMeasures(measureIndex, [updated]);
+          else this.tempPart.update(part => ({ ...part, measures: part.measures.map(item => item.id === partMeasure.id ? updated : item) }));
         }
-      };
-      this.tempPart.update(current => ({
-        ...current,
-        measures: nextMeasures
-      }));
-      await this.refreshSheet();
-    } finally {
-      this.childEditorOpen.set(false);
-      if (opener instanceof HTMLElement && opener.isConnected) {
-        this.changeDetector.detectChanges();
-        opener.focus({ preventScroll: true });
-      }
-    }
+        this.finishChild();
+        void this.refreshSheet().catch(() => this.notificationService.error('Could not refresh sheet data. Your draft is still here.'));
+      }, afterClosed: async () => undefined
+    };
+    this.childLabel.set(label);
+    this.childComponent.set(SongPartMeasureEditorModalComponent);
+    this.childInjector.set(Injector.create({ parent: this.injector, providers: [
+      { provide: MODAL_REF, useValue: ref },
+      { provide: MODAL_DATA, useValue: {
+        sheet: this.sheet(), part: newMeasure ? { ...part, measures: [...part.measures.slice(0, measureIndex), newMeasure, ...part.measures.slice(measureIndex)] } : part,
+        measureId: partMeasure.id, occurrenceId: this.data.occurrence?.id,
+        measure: partMeasure.measure, actionGrips: partMeasure.measure.actionGrips ?? [], measureLabel: label,
+        notationHistory: this.getPartMeasureNotationHistory(measureIndex), embedded: true
+      } }
+    ] }));
+    this.childEditorOpen.set(true);
+    this.revealWorkspace();
   }
 
   startMeasureDrag(): void {
@@ -438,7 +523,7 @@ export class SongPartEditorComponent implements
 
     if (source === 'new-measure') {
       const timeSignature = this.tempPart().measures[insertionIndex - 1]?.measure.timeSignature ?? '4/4';
-      this.insertMeasures(insertionIndex, [this.songSheetService.createEmptyPartMeasure(timeSignature)]);
+      await this.editMeasure(insertionIndex, this.songSheetService.createEmptyPartMeasure(timeSignature));
       return;
     }
 
@@ -449,8 +534,8 @@ export class SongPartEditorComponent implements
     } else if (source === 'from-library') {
       patterns = await this.importPatternsFromLibrary();
     } else if (source === 'create-new') {
-      const createdPattern = await this.createPatternAndAddToSheet();
-      patterns = createdPattern ? [createdPattern] : [];
+      this.openPatternWorkspace(insertionIndex);
+      return;
     }
 
     this.insertMeasures(insertionIndex, patterns.flatMap(pattern => this.songSheetService.createMeasuresFromPattern(pattern)));
@@ -489,7 +574,7 @@ export class SongPartEditorComponent implements
   }
 
   async save(): Promise<boolean> {
-    if (this.saving()) return false;
+    if (this.saving() || this.childEditorOpen()) return false;
     const part = this.tempPart();
     const cleanPart = cloneSongPart({
       ...part,
@@ -502,14 +587,18 @@ export class SongPartEditorComponent implements
       if (this.data.occurrence) {
         await this.songSheetService.saveOccurrence(this.sheet().id, this.data.occurrence.id, this.tempLyrics(), this.musicLocked() ? undefined : cleanPart);
         this.data.occurrence = { ...this.data.occurrence, partId: cleanPart.id, lyrics: this.tempLyrics() };
-      } else if (this.editingPartIndex === null) {
+      } else if (this.editingPartIndex === null && this.isNewPart) {
         await this.songSheetService.addPart(this.sheet().id, cleanPart);
       } else if (!this.musicLocked()) {
-        await this.songSheetService.updatePart(this.sheet().id, this.editingPartIndex, cleanPart);
+        const latest = await this.songSheetService.getByIdWithData(this.sheet().id);
+        const partIndex = latest?.parts.findIndex(item => item.id === cleanPart.id) ?? -1;
+        if (partIndex < 0) throw new Error('Part is no longer available');
+        await this.songSheetService.updatePart(this.sheet().id, partIndex, cleanPart);
       }
       this.tempPart.set(cleanPart);
       await this.refreshSheet();
       this.musicUnlocked.set(false);
+      this.isNewPart = false;
       this.rememberSavedState();
       this.modalRef.close(true);
       return true;
@@ -658,37 +747,27 @@ export class SongPartEditorComponent implements
     return importedPatterns;
   }
 
-  private async createPatternAndAddToSheet(): Promise<SongSheetPattern | undefined> {
-    const createdPattern = createEmptySongSheetPattern();
-    const result = await this.openPatternEditor(createdPattern);
-    if (!result) {
-      return undefined;
-    }
-
-    const localPattern = toSongSheetPattern(result);
-    await this.songSheetService.addPattern(localPattern, this.sheet().id);
-    await this.refreshSheet();
-    return localPattern;
-  }
-
-  private async openPatternEditor(pattern: SongSheetPattern): Promise<SongSheetPattern | undefined> {
-    const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
-      width: '95vw',
-      height: '90vh',
-      maxHeight: '90vh',
-      panelClass: 'modal-xl',
-      closeOnBackdropClick: false
-    });
-
-    if (modalRef.componentInstance) {
-      modalRef.componentInstance.pattern = cloneSongSheetPattern(pattern);
-      modalRef.componentInstance.savedGrips = this.sheet().grips;
-      modalRef.componentInstance.tuning = this.sheet().tuning;
-      modalRef.componentInstance.capodaster = this.sheet().capodaster;
-      modalRef.componentInstance.tempo = this.sheet().tempo;
-    }
-
-    const result = await modalRef.afterClosed();
-    return result ? cloneSongSheetPattern(result) : undefined;
+  private openPatternWorkspace(insertionIndex: number): void {
+    this.captureParent();
+    const data: SongPatternWorkspaceData = {
+      sheet: this.sheet(), pattern: createEmptySongSheetPattern(), create: true,
+      save: async pattern => {
+        await this.songSheetService.addPattern(cloneSongSheetPattern(pattern), this.sheet().id);
+        await this.refreshSheet();
+      }
+    };
+    const ref: ModalRef<SongSheetPattern | undefined> = {
+      close: pattern => {
+        if (pattern) this.insertMeasures(insertionIndex, this.songSheetService.createMeasuresFromPattern(pattern));
+        this.finishChild();
+      }, afterClosed: async () => undefined
+    };
+    this.childLabel.set('New pattern');
+    this.childComponent.set(SongPatternWorkspaceComponent);
+    this.childInjector.set(Injector.create({ parent: this.injector, providers: [
+      { provide: MODAL_DATA, useValue: data }, { provide: MODAL_REF, useValue: ref }
+    ] }));
+    this.childEditorOpen.set(true);
+    this.revealWorkspace();
   }
 }

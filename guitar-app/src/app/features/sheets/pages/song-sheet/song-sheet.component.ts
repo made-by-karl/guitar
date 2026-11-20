@@ -1,3 +1,4 @@
+import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { Component, HostListener, OnDestroy, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +22,7 @@ type SongSheetTab = 'song' | 'parts' | 'grips' | 'patterns' | 'tuning' | 'links'
   selector: 'app-song-sheet',
   standalone: true,
   imports: [
+    MediaPlaybackControlsComponent,
     CommonModule,
     FormsModule,
     SongPartsTabComponent,
@@ -53,6 +55,12 @@ export class SongSheetComponent implements OnDestroy {
   private tuningSaveTask = Promise.resolve();
   private tuningRevision = 0;
   @ViewChild(SongArrangementComponent) private arrangement?: SongArrangementComponent;
+  @ViewChild(SongPartsTabComponent) private parts?: SongPartsTabComponent;
+  @ViewChild(SongPatternsTabComponent) private patterns?: SongPatternsTabComponent;
+
+  get workspaceEditing(): boolean {
+    return !!(this.arrangement?.editorInjector() || this.parts?.editorInjector() || this.patterns?.editorInjector());
+  }
 
   readonly semitones: Semitone[] = [...SEMITONES];
   readonly octaves = [1, 2, 3, 4, 5, 6];
@@ -157,6 +165,8 @@ export class SongSheetComponent implements OnDestroy {
       await pending;
     } while (pending !== this.tuningSaveTask);
     if (this.tuningSaveState() === 'error' || this.tuningSaveState() === 'invalid') return false;
+    if (this.activeTab === 'parts') return await this.parts?.confirmNavigation() ?? true;
+    if (this.activeTab === 'patterns') return await this.patterns?.confirmNavigation() ?? true;
     return await this.arrangement?.confirmNavigation() ?? true;
   }
 

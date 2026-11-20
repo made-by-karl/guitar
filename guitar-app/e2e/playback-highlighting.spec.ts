@@ -1,3 +1,4 @@
+import { cancelMeasure } from './song-workspace-actions';
 import { expect, Page, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
@@ -113,6 +114,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(pane).toHaveCount(0);
 
     await song.getByRole('button', { name: 'Verse, occurrence 2', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
     const editor = song.locator('app-song-part-editor');
     await expect(editor.getByLabel('Part name', { exact: true })).toBeDisabled();
     await editor.locator('.measure-row').first().click();
@@ -130,9 +132,9 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(editor.getByRole('textbox', { name: 'Lyrics', exact: true })).toHaveValue('Unsaved words stay here');
     await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
     await editor.getByRole('button', { name: 'Stop', exact: true }).first().click();
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
-    await song.getByRole('button', { name: 'Play Verse, occurrence 2', exact: true }).click(); await started(page);
+    await song.getByRole('region', { name: 'Selected occurrence actions' }).getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
     await seekPaused(page, 0.25); await expect(pane).toHaveAttribute('data-occurrence-id', 'v2');
     await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '2');
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
@@ -147,7 +149,8 @@ test('Parts keeps the playback component while a measure editor highlights its e
   await page.setViewportSize({ width: 375, height: 667 }); await seed(page);
   await page.getByRole('tab', { name: 'Parts', exact: true }).click();
   const parts = page.locator('app-song-sheet-parts-tab');
-  await parts.getByRole('button', { name: 'Play', exact: true }).first().click(); await started(page);
+  await parts.locator('.part-select').first().click();
+  await parts.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
   await seekPaused(page, 2.25);
   const pane = parts.getByRole('region', { name: 'Playback notation' });
   await expect(pane.getByRole('button')).toHaveCount(0);
@@ -158,7 +161,8 @@ test('Parts keeps the playback component while a measure editor highlights its e
   await parts.getByRole('group', { name: 'Part playback', exact: true }).first().getByRole('button', { name: 'Next measure', exact: true }).click();
   await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', '16');
   await parts.getByRole('group', { name: 'Part playback', exact: true }).first().getByRole('button', { name: 'Stop', exact: true }).click();
-  await parts.getByRole('button', { name: 'Edit', exact: true }).first().click();
+  await parts.locator('.part-select').first().click();
+  await parts.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.locator('app-song-part-editor');
   await editor.getByRole('button', { name: 'Unlock editing…', exact: true }).click();
   await page.getByRole('button', { name: 'Edit all 2 occurrences', exact: true }).click();
@@ -175,10 +179,11 @@ test('Parts keeps the playback component while a measure editor highlights its e
   await expect(modal.locator('app-song-playback')).toHaveCount(0);
   await expect(preview.locator('.playback-position')).toHaveText('Paused · Action 3');
   await page.screenshot({ path: '../temp/ux/playback-highlighting/reused-measure-375.png', fullPage: true });
-  await modal.getByRole('button', { name: 'Close measure editor', exact: true }).click();
+  await cancelMeasure(page);
   await expect(editor.locator('.playback-action-slot')).toHaveCount(0);
   await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
-  await editor.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await editor.getByRole('button', { name: 'Back to parts', exact: true }).click();
+  await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
   await expect(parts.locator('.card h6').first()).toHaveText('Verse');
 });
 

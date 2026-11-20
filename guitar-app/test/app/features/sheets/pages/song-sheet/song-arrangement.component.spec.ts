@@ -16,7 +16,7 @@ describe('SongArrangementComponent', () => {
     seekSongOccurrence: jest.fn(),
     canPlaySong: jest.fn(() => true),
     canPlaySongPart: jest.fn(() => true),
-    stop: jest.fn(), playSongPart: jest.fn(), pauseSongPart: jest.fn(), resumeSongPart: jest.fn(), stopSongPart: jest.fn(), stopSong: jest.fn()
+    stop: jest.fn(), playSong: jest.fn(), playSongPart: jest.fn(), pauseSongPart: jest.fn(), resumeSongPart: jest.fn(), stopSongPart: jest.fn(), stopSong: jest.fn()
   };
   const service = {
     addOccurrence: jest.fn(), getByIdWithData: jest.fn(), removeOccurrence: jest.fn(), moveOccurrence: jest.fn()
@@ -68,20 +68,36 @@ describe('SongArrangementComponent', () => {
   it('plays each occurrence with its own history and toggles pause and resume', async () => {
     const component = fixture.componentInstance;
     const toggle = jest.spyOn(component, 'toggleOccurrence');
-    button('Play Verse, occurrence 2').click();
+    component.selectOccurrence('v2'); fixture.detectChanges();
+    button('Play').click();
     await toggle.mock.results[0].value;
     expect(playback.playSongPart).toHaveBeenCalledWith(sheet, sheet.parts[0], 'v2', 'song');
-    expect(component.selectedId()).toBeUndefined();
+    expect(component.selectedId()).toBe('v2');
+    expect(component.editorInjector()).toBeUndefined();
 
     state.next({ type: 'part', status: 'playing', partId: 'verse', occurrenceId: 'v2' });
     fixture.detectChanges();
-    button('Pause Verse, occurrence 2').click();
+    button('Pause').click();
     expect(playback.pauseSongPart).toHaveBeenCalled();
-    expect(button('Play Verse, occurrence 1')).toBeTruthy();
+
     state.next({ type: 'part', status: 'paused', partId: 'verse', occurrenceId: 'v2' });
     fixture.detectChanges();
-    button('Resume Verse, occurrence 2').click();
+    button('Resume').click();
     expect(playback.resumeSongPart).toHaveBeenCalled();
+  });
+
+  it('selects one item without editing or audio, replaces and clears selection', () => {
+    const component = fixture.componentInstance;
+    button('Verse, occurrence 1').click(); fixture.detectChanges();
+    expect(component.selectedId()).toBe('v1');
+    expect(component.editorInjector()).toBeUndefined();
+    expect(playback.playSongPart).not.toHaveBeenCalled();
+    button('Verse, occurrence 2').click(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.selection-actions')).toHaveLength(1);
+    expect(component.selectedId()).toBe('v2');
+    component.selectedId.set(undefined); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.selection-actions')).toBeNull();
+    expect(service.removeOccurrence).not.toHaveBeenCalled();
   });
 
   it('seeks sections without navigating the selected editor or its draft', () => {
@@ -106,8 +122,10 @@ describe('SongArrangementComponent', () => {
     playback.canPlaySongPart.mockReturnValue(false);
     fixture.componentRef.setInput('sheet', { ...sheet });
     fixture.detectChanges();
-    expect(button('Play Verse, occurrence 1').disabled).toBe(true);
-    expect(button('Play Verse, occurrence 2').disabled).toBe(true);
+    fixture.componentInstance.selectOccurrence('v1'); fixture.detectChanges();
+    expect(button('Play').disabled).toBe(true);
+    fixture.componentInstance.selectOccurrence('v2'); fixture.detectChanges();
+    expect(button('Play').disabled).toBe(true);
   });
 
   it.each([
@@ -115,7 +133,7 @@ describe('SongArrangementComponent', () => {
     ['Add after section 1', 'v1'],
     ['Add after section 2', 'v2']
   ])('adds existing music at the chosen boundary: %s', async (label, afterId) => {
-    const select = jest.spyOn(fixture.componentInstance, 'selectOccurrence').mockResolvedValue();
+    const select = jest.spyOn(fixture.componentInstance, 'editOccurrence').mockResolvedValue();
     const choose = jest.spyOn(fixture.componentInstance, 'chooseSection');
     expect(fixture.nativeElement.querySelectorAll('.occurrence-add-button')).toHaveLength(3);
     expect(fixture.nativeElement.querySelector('.occurrence-menu')).toBeNull();
@@ -126,7 +144,7 @@ describe('SongArrangementComponent', () => {
   });
 
   it('adds new music at the chosen boundary and leaves cancellation unchanged', async () => {
-    jest.spyOn(fixture.componentInstance, 'selectOccurrence').mockResolvedValue();
+    jest.spyOn(fixture.componentInstance, 'editOccurrence').mockResolvedValue();
     modal.show.mockReturnValueOnce({ afterClosed: async () => 'new' });
     await fixture.componentInstance.chooseSection(null);
     expect(service.addOccurrence).toHaveBeenCalledWith('song', undefined, null);
@@ -137,11 +155,17 @@ describe('SongArrangementComponent', () => {
     expect(service.addOccurrence).not.toHaveBeenCalled();
   });
 
-  it('keeps unsaved edits when navigation is declined before playing or adding', async () => {
-    jest.spyOn(fixture.componentInstance, 'confirmNavigation').mockResolvedValue(false);
+  it('previews saved music without navigating the editor, while adding still requires permission to leave', async () => {
+    const confirm = jest.spyOn(fixture.componentInstance, 'confirmNavigation').mockResolvedValue(false);
+    fixture.componentInstance.editingId.set('v1');
     await fixture.componentInstance.toggleOccurrence(sheet.arrangement![1]);
+    await fixture.componentInstance.toggleSong();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.editingId()).toBe('v1');
+    expect(playback.playSongPart).toHaveBeenCalledWith(sheet, sheet.parts[0], 'v2', 'song');
+    expect(playback.playSong).toHaveBeenCalledWith(sheet);
     await fixture.componentInstance.chooseSection(null);
-    expect(playback.playSongPart).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledTimes(1);
     expect(modal.show).not.toHaveBeenCalled();
     expect(service.addOccurrence).not.toHaveBeenCalled();
   });
@@ -149,7 +173,9 @@ describe('SongArrangementComponent', () => {
   it('deletes an occurrence directly after confirmation, preserving the cancellation path', async () => {
     state.next({ type: 'part', status: 'playing', partId: 'verse', occurrenceId: 'v2' });
     const remove = jest.spyOn(fixture.componentInstance, 'remove');
-    button('Delete Verse, occurrence 2').click();
+    fixture.componentInstance.selectOccurrence('v2'); fixture.detectChanges();
+    const removeButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(button => button.textContent?.trim() === 'Remove occurrence')!;
+    removeButton.click();
     await remove.mock.results[0].value;
     expect(service.removeOccurrence).toHaveBeenCalledWith('song', 'v2');
     expect(playback.stopSongPart).toHaveBeenCalled();

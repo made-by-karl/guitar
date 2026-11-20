@@ -1,3 +1,4 @@
+import { cancelMeasure } from './song-workspace-actions';
 import { expect, Locator, Page, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
@@ -65,33 +66,31 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
   test(`part and measure actions stay reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport); await seed(page); await mkdir(evidence, { recursive: true });
     await page.getByRole('button', { name: 'Long verse, occurrence 1', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
     const editor = page.locator('app-song-part-editor');
-    const footer = editor.locator('.modal-footer');
+    const path = editor.getByRole('navigation', { name: 'Editor navigation' });
+    const status = editor.locator('.part-save-status');
     const rows = editor.locator('.measure-row');
     const save = editor.getByRole('button', { name: 'Save changes', exact: true });
     await editor.getByRole('textbox', { name: 'Part name', exact: true }).fill('Edited long verse');
     await orderedTransport(editor.getByRole('group', { name: 'Part playback', exact: true }));
-    await expect(editor.locator('.part-editor-title-row app-song-part-transport')).toHaveCount(0);
+    await expect(editor.locator('.modal-footer')).toHaveCount(0);
+    await expect(save).toHaveText('');
     for (const index of [0, 10, 19]) {
-      // Scroll the workspace, without Playwright scrolling the action into view.
       await rows.nth(index).scrollIntoViewIfNeeded();
       await expect(save).toBeInViewport({ ratio: 1 });
-      await expect(editor.getByRole('button', { name: 'Back to song', exact: true })).toBeInViewport({ ratio: 1 });
-      await expect(footer.getByRole('status')).toHaveText('Unsaved changes');
-      await expect(footer).toBeInViewport({ ratio: 1 });
-      const box = (await footer.boundingBox())!;
-      const editorBox = (await editor.boundingBox())!;
-      expect(box.x).toBeGreaterThanOrEqual(editorBox.x); expect(box.x + box.width).toBeLessThanOrEqual(editorBox.x + editorBox.width + 1);
+      await expect(path.getByRole('button', { name: 'Back to song', exact: true })).toBeInViewport({ ratio: 1 });
+      await expect(status).toHaveText('Unsaved changes');
+      const hit = (await save.boundingBox())!;
+      expect(hit.width).toBeGreaterThanOrEqual(44); expect(hit.height).toBeGreaterThanOrEqual(44);
       await page.screenshot({ path: `${evidence}/part-${viewport.width}x${viewport.height}-${index}.png` });
     }
-    // Selection and save share one reserved area, including at the last measure.
     await rows.last().click();
     const toolbar = editor.locator('.selected-measure-toolbar');
     await expect(toolbar).toBeInViewport({ ratio: 1 });
     for (const button of await toolbar.getByRole('button').all()) {
       const hit = (await button.boundingBox())!; expect(hit.width).toBeGreaterThanOrEqual(44); expect(hit.height).toBeGreaterThanOrEqual(44);
     }
-    expect((await toolbar.boundingBox())!.y + (await toolbar.boundingBox())!.height).toBeLessThanOrEqual((await footer.boundingBox())!.y);
     await page.locator('.app-content-container').evaluate(element => { element.scrollTop = element.scrollHeight; });
     const lastRow = (await rows.last().boundingBox())!;
     expect(lastRow.y + lastRow.height).toBeLessThanOrEqual((await toolbar.boundingBox())!.y + 1);
@@ -99,44 +98,35 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await edit.focus(); await edit.press('Enter');
     const measure = page.locator('app-song-part-measure-editor-modal');
     await expect(editor.locator('.part-editor-actions')).toBeHidden();
-    await expect(measure.getByRole('button', { name: 'Close measure editor', exact: true })).toBeFocused();
-    const apply = measure.getByRole('button', { name: 'Apply to part', exact: false });
+    await expect(path.locator('.path-current')).toBeFocused();
+    const apply = path.getByRole('button', { name: 'Apply to part', exact: true });
     await expect(apply).toBeInViewport({ ratio: 1 });
-    await expect(measure.getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
-    const cancelBox = (await measure.getByRole('button', { name: 'Back to part', exact: true }).boundingBox())!;
-    const applyBox = (await apply.boundingBox())!;
-    const hintBox = (await measure.locator('.measure-editor-hint').boundingBox())!;
-    expect(Math.abs(cancelBox.y - applyBox.y)).toBeLessThan(1);
-    expect(cancelBox.height).toBeGreaterThanOrEqual(44);
-    expect(applyBox.height).toBeGreaterThanOrEqual(44);
-    expect(cancelBox.y).toBeGreaterThanOrEqual(hintBox.y + hintBox.height);
-    expect(applyBox.x).toBeGreaterThanOrEqual(cancelBox.x + cancelBox.width);
-    await expect(measure.getByRole('group', { name: 'Measure editing actions' }).getByRole('button')).toHaveCount(2);
+    await expect(apply).toHaveText('');
+    await expect(path.getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(measure.locator('.modal-footer')).toHaveCount(0);
     await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button')).toHaveCount(1);
-    await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button', { name: 'Close measure editor', exact: true })).toHaveCount(0);
     await measure.locator('.modal-body').evaluate(element => { element.scrollTop = element.scrollHeight; });
     await expect(apply).toBeInViewport({ ratio: 1 });
-    await apply.focus(); await apply.press('Tab');
-    await expect(measure.getByRole('group', { name: 'Measure playback', exact: true }).getByRole('button')).toBeFocused();
     await page.screenshot({ path: `${evidence}/measure-${viewport.width}x${viewport.height}.png` });
-    await measure.getByRole('button', { name: 'Back to part', exact: true }).click();
+    await cancelMeasure(page);
     await expect(edit).toBeFocused();
-    await expect(footer).toBeInViewport({ ratio: 1 });
+    await expect(save).toBeInViewport({ ratio: 1 });
     await save.click();
-    await expect(footer.getByRole('status')).toHaveText('All changes saved');
+    await expect(status).toHaveText('All changes saved');
     await expect(save).toBeDisabled();
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).evaluate(element => element.scrollIntoView({ block: 'start' }));
     await editor.getByRole('tab', { name: 'Lyrics', exact: true }).click();
     await editor.getByRole('textbox', { name: 'Lyrics', exact: true }).fill('Updated last field');
     await save.click();
-    await expect(footer.getByRole('status')).toHaveText('All changes saved');
+    await expect(status).toHaveText('All changes saved');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await path.getByRole('button', { name: 'Back to song', exact: true }).click();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-    await page.getByRole('group', { name: 'Part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
-    await expect(editor.getByRole('button', { name: 'Save and close', exact: true })).toBeInViewport({ ratio: 1 });
+    await page.locator('app-song-sheet-parts-tab .part-select').first().click();
+    await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
     await rows.last().scrollIntoViewIfNeeded();
-    await expect(editor.getByRole('button', { name: 'Save and close', exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(save).toBeInViewport({ ratio: 1 });
+
   });
 }
 
@@ -146,7 +136,9 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const parts = page.locator('app-song-sheet-parts-tab');
     const card = parts.locator('.card').first();
-    const transport = card.getByRole('group', { name: 'Part playback', exact: true });
+    await card.locator('.part-select').click();
+    const selected = parts.getByRole('region', { name: 'Selected part actions' });
+    const transport = selected.getByRole('group', { name: 'Part playback', exact: true });
     const surface = () => card.locator('.card-body').evaluate(element => {
       const body = getComputedStyle(element); const card = getComputedStyle(element.parentElement!);
       const heading = element.querySelector('h6')!;
@@ -187,7 +179,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     release();
     const prepared = page.getByRole('button', { name: 'Play prepared audio', exact: true });
     await expect(prepared).toHaveCount(1); await expect(prepared).toBeVisible({ timeout: 45000 });
-    await expect(card).toContainText('Ready to play');
+    await expect(selected).toContainText('Ready to play');
     await expect(transport.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
     expect(await surface()).toEqual(idle);
     await page.evaluate(() => { window.blockPartAudio = false; });
@@ -198,17 +190,17 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await card.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${evidence}/parts-playing-${viewport.width}.png` });
     await transport.getByRole('button', { name: 'Pause', exact: true }).click();
-    await expect(card).toContainText('Paused'); expect(await surface()).toEqual(idle);
+    await expect(selected).toContainText('Paused'); expect(await surface()).toEqual(idle);
     await transport.getByRole('button', { name: 'Next measure', exact: true }).click();
-    await expect(card).toContainText('Measure 2 / 20');
+    await expect(selected).toContainText('Measure 2 / 20');
     await transport.getByRole('button', { name: 'Previous measure', exact: true }).click();
-    await expect(card).toContainText('Measure 1 / 20');
+    await expect(selected).toContainText('Measure 1 / 20');
     await transport.getByRole('button', { name: 'Resume', exact: true }).click();
     await expect(transport.getByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
     expect(await page.evaluate(() => window.partAudio.filter(audio => !!audio.getAttribute('src')).length)).toBe(1);
     await page.evaluate(() => window.partAudio.find(audio => !!audio.getAttribute('src'))!.dispatchEvent(new Event('error')));
     await expect(page.getByRole('button', { name: 'Retry playback', exact: true })).toHaveCount(1);
-    await expect(card).toContainText('Playback needs attention'); expect(await surface()).toEqual(idle);
+    await expect(selected).toContainText('Playback needs attention'); expect(await surface()).toEqual(idle);
     await page.getByRole('button', { name: 'Retry playback', exact: true }).click();
     await expect(transport.getByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
     await transport.getByRole('button', { name: 'Stop', exact: true }).click();
@@ -223,21 +215,22 @@ test('recovery notices leave part Save and measure Apply reachable at constraine
   await page.setViewportSize({ width: 375, height: 400 }); await seed(page);
   await page.evaluate(() => { window.blockPartAudio = true; });
   await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-  await page.getByRole('group', { name: 'Part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.locator('app-song-sheet-parts-tab .part-select').first().click();
+    await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.locator('app-song-part-editor');
   await editor.getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play prepared audio', exact: true })).toBeVisible({ timeout: 45000 });
-  await expect(editor.getByRole('button', { name: 'Save and close', exact: true })).toBeInViewport({ ratio: 1 });
-  await expect(editor.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(editor.getByRole('button', { name: 'Save changes', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(editor.getByRole('button', { name: 'Back to parts', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Stop playback', exact: true }).click();
   await editor.locator('.measure-row').first().click();
   await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
   const measure = page.locator('app-song-part-measure-editor-modal');
-  await measure.getByRole('button', { name: 'Collapse preview', exact: true }).click();
+  await expect(measure.getByRole('button', { name: 'Expand preview', exact: true })).toBeVisible();
   await measure.getByRole('button', { name: 'Play measure', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Play prepared audio', exact: true })).toBeVisible({ timeout: 45000 });
-  await expect(measure.getByRole('button', { name: 'Apply to part' })).toBeInViewport({ ratio: 1 });
-  await expect(measure.getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('button', { name: 'Apply to part' })).toBeInViewport({ ratio: 1 });
+  await expect(editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true })).toBeInViewport({ ratio: 1 });
   await page.getByRole('button', { name: 'Stop playback', exact: true }).click();
-  await measure.getByRole('button', { name: 'Back to part', exact: true }).click();
+  await cancelMeasure(page);
 });

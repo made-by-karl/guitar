@@ -1,5 +1,8 @@
+import { NgComponentOutlet } from '@angular/common';
+import { MODAL_DATA, MODAL_REF, ModalRef } from '@/app/core/services/modal.service';
+import { SongPatternWorkspaceComponent, SongPatternWorkspaceData } from '../song-pattern-workspace/song-pattern-workspace.component';
 import { ExportButtonComponent } from '@/app/core/ui/export-button/export-button.component';
-import { Component, OnDestroy, inject, input, output } from '@angular/core';
+import { afterNextRender, Component, ElementRef, HostListener, Injector, OnDestroy, ViewChild, inject, input, output, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ModalService } from '@/app/core/services/modal.service';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -8,7 +11,6 @@ import { transpose } from '@/app/core/music/semitones';
 import { PatternPlaybackService, PatternPlaybackState } from '@/app/features/patterns/services/pattern-playback.service';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
 import { PatternLibrarySelectorModalComponent } from '@/app/features/patterns/ui/pattern-library-selector-modal/pattern-library-selector-modal.component';
-import { PlayingPatternEditorModalComponent } from '@/app/features/patterns/ui/playing-pattern-editor-modal/playing-pattern-editor-modal.component';
 import { PlayingActionsComponent, PlayingActionsNotationContext } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
 import { SongPartPlaybackService } from '@/app/features/sheets/services/song-part-playback.service';
 import { SongSheetPattern, SongSheetWithData } from '@/app/features/sheets/services/song-sheets.model';
@@ -24,14 +26,58 @@ import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalDat
 
 @Component({
   selector: 'app-song-sheet-patterns-tab',
+  host: { '[style.--pattern-workspace-height]': "workspaceHeight() === null ? null : workspaceHeight() + 'px'" },
   standalone: true,
-  imports: [DragDropModule, PlayingActionsComponent, ExportButtonComponent],
+  imports: [NgComponentOutlet, DragDropModule, PlayingActionsComponent, ExportButtonComponent],
   templateUrl: './song-patterns-tab.component.html',
   styleUrl: './song-patterns-tab.component.scss'
 })
 export class SongPatternsTabComponent implements OnDestroy {
   readonly sheet = input.required<SongSheetWithData>();
   readonly changed = output<void>();
+  readonly editorInjector = signal<Injector | undefined>(undefined);
+  readonly editorComponent = SongPatternWorkspaceComponent;
+  readonly editingName = signal('');
+  readonly workspaceHeight = signal<number | null>(null);
+  private parentFocus: Element | null = null;
+  private readonly injector = inject(Injector);
+  @ViewChild(NgComponentOutlet) private outlet?: NgComponentOutlet;
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private get scroller(): HTMLElement | null { return this.element.nativeElement.closest('.app-content-container'); }
+  private parentScroll = 0;
+  private editor(): SongPatternWorkspaceComponent | undefined {
+    const instance: unknown = this.outlet?.componentInstance;
+    return instance instanceof SongPatternWorkspaceComponent ? instance : undefined;
+  }
+  async confirmNavigation(): Promise<boolean> { return await this.editor()?.canLeave() ?? true; }
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.editor()?.hasUnsavedChanges()) { event.preventDefault(); event.returnValue = ''; }
+  }
+  async closeEditor(): Promise<void> {
+    if (!await this.confirmNavigation()) return;
+    this.finishEditor();
+  }
+  private finishEditor(): void {
+    this.editorInjector.set(undefined);
+    afterNextRender(() => {
+      if (this.scroller) this.scroller.scrollTop = this.parentScroll;
+      if (this.parentFocus instanceof HTMLElement && this.parentFocus.isConnected) this.parentFocus.focus({ preventScroll: true });
+    }, { injector: this.injector });
+  }
+  @HostListener('window:resize')
+  sizeWorkspace(): void {
+    const scroller = this.scroller;
+    const path = this.element.nativeElement.querySelector<HTMLElement>('.workspace-path');
+    if (scroller && path) this.workspaceHeight.set(Math.max(0, scroller.clientHeight - 44 - path.offsetHeight - 12));
+  }
+
+  patternError(): string { return this.editor()?.error() ?? ''; }
+  patternSaving(): boolean { return this.editor()?.saving() ?? false; }
+  async savePattern(): Promise<void> { await this.editor()?.save(); }
+
+  async editPattern(pattern: SongSheetPattern): Promise<void> { await this.openPatternEditor(pattern, false); }
+
 
   patternPlaybackState = { status: 'idle' } as PatternPlaybackState;
   private readonly patternPlayback = inject(PatternPlaybackService);
@@ -76,10 +122,7 @@ export class SongPatternsTabComponent implements OnDestroy {
     }
 
     if (choice === 'create-new') {
-      const createdPattern = await this.createPatternAndAddToSheet();
-      if (createdPattern) {
-        this.changed.emit();
-      }
+      await this.openPatternEditor(createEmptySongSheetPattern(), true);
     }
   }
 
@@ -171,36 +214,28 @@ export class SongPatternsTabComponent implements OnDestroy {
     return importedPatterns;
   }
 
-  private async createPatternAndAddToSheet(): Promise<SongSheetPattern | undefined> {
-    const createdPattern = createEmptySongSheetPattern();
-    const result = await this.openPatternEditor(createdPattern);
-    if (!result) {
-      return undefined;
-    }
-
-    const localPattern = toSongSheetPattern(result);
-    await this.songSheetService.addPattern(localPattern, this.sheet().id);
-    return localPattern;
-  }
-
-  private async openPatternEditor(pattern: SongSheetPattern): Promise<SongSheetPattern | undefined> {
-    const modalRef = this.modalService.show(PlayingPatternEditorModalComponent, {
-      width: '95vw',
-      height: '90vh',
-      maxHeight: '90vh',
-      panelClass: 'modal-xl',
-      closeOnBackdropClick: false
-    });
-
-    if (modalRef.componentInstance) {
-      modalRef.componentInstance.pattern = cloneSongSheetPattern(pattern);
-      modalRef.componentInstance.savedGrips = this.sheet().grips;
-      modalRef.componentInstance.tuning = this.sheet().tuning;
-      modalRef.componentInstance.capodaster = this.sheet().capodaster;
-      modalRef.componentInstance.tempo = this.sheet().tempo;
-    }
-
-    const result = await modalRef.afterClosed();
-    return result ? cloneSongSheetPattern(result) : undefined;
+  private async openPatternEditor(pattern: SongSheetPattern, create: boolean): Promise<void> {
+    if (!await this.confirmNavigation()) return;
+    this.parentScroll = this.scroller?.scrollTop ?? window.scrollY;
+    this.parentFocus = document.activeElement;
+    this.editingName.set(create ? 'New pattern' : pattern.name || 'Untitled Pattern');
+    const data: SongPatternWorkspaceData = {
+      sheet: this.sheet(), pattern: cloneSongSheetPattern(pattern), create,
+      save: async result => {
+        if (create) await this.songSheetService.addPattern(cloneSongSheetPattern(result), this.sheet().id);
+        else await this.songSheetService.updatePattern(this.sheet().id, result);
+        this.changed.emit();
+      }
+    };
+    const ref: ModalRef<SongSheetPattern | undefined> = { close: () => this.finishEditor(), afterClosed: async () => undefined };
+    this.editorInjector.set(Injector.create({ parent: this.injector, providers: [
+      { provide: MODAL_DATA, useValue: data }, { provide: MODAL_REF, useValue: ref }
+    ] }));
+    afterNextRender(() => {
+      this.sizeWorkspace();
+      const scroller = this.scroller;
+      if (scroller) scroller.scrollTop += this.element.nativeElement.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 44;
+      this.element.nativeElement.querySelector<HTMLInputElement>('#playingPatternName')?.focus({ preventScroll: true });
+    }, { injector: this.injector });
   }
 }
