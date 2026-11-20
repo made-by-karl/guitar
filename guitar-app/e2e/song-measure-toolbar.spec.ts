@@ -47,6 +47,7 @@ for (const viewport of [{ width: 390, height: 568 }, { width: 390, height: 900 }
     });
     await page.getByRole('link', { name: 'Measure toolbar', exact: true }).click();
     await page.getByRole('button', { name: 'Part 12, occurrence 1', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
     const editor = page.locator('app-song-part-editor');
     const rows = editor.locator('.measure-row');
     const toolbar = editor.locator('.selected-measure-toolbar');
@@ -62,8 +63,9 @@ for (const viewport of [{ width: 390, height: 568 }, { width: 390, height: 900 }
     await rows.last().scrollIntoViewIfNeeded();
     await expect(toolbar).toBeInViewport({ ratio: 1 });
     await scrollWorkspaceToEnd(page, rows.last(), toolbar);
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await page.getByRole('button', { name: 'Part 1, occurrence 1', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
     await rows.first().click();
     await scrollWorkspaceToEnd(page, rows.first(), toolbar);
     await expect(toolbar).toBeInViewport({ ratio: 1 });
@@ -71,9 +73,10 @@ for (const viewport of [{ width: 390, height: 568 }, { width: 390, height: 900 }
     await expect(toolbar).toHaveCount(0);
 
     // The same controls also float inside the scrolling part-editor modal.
-    await editor.getByRole('button', { name: 'Back to song', exact: true }).click();
+    await editor.getByRole('button', { name: 'Back to song', exact: true }).last().click();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-    await page.locator('app-song-sheet-parts-tab').getByRole('button', { name: /Edit$/ }).last().click();
+    await page.locator('app-song-sheet-parts-tab .part-select').last().click();
+    await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
     await rows.first().click();
     await expect(toolbar).toBeInViewport({ ratio: 1 });
   });

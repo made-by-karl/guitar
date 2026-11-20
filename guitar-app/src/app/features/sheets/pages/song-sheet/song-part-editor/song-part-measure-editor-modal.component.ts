@@ -3,7 +3,7 @@ import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/pla
 import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
 import { MediaPlaybackControlsComponent } from '@/app/core/ui/media-playback-controls/media-playback-controls.component';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, OnDestroy, signal } from '@angular/core';
+import { afterNextRender, Component, HostListener, Inject, inject, OnDestroy, signal, ViewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { chordToString } from '@/app/core/music/chords';
@@ -25,6 +25,7 @@ import { serializeGrip, TunedGrip } from '@/app/features/grips/services/grips/gr
 import { SongSheetsService } from '@/app/features/sheets/services/song-sheets.service';
 import { MeasureEditorPreviewComponent, EditorPreviewMeasure } from '@/app/features/patterns/ui/measure-editor-preview/measure-editor-preview.component';
 import { PlayingActionsNotationHistoryEntry } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { SongSheetChoiceModalComponent } from '../song-sheet-choice-modal.component';
 import { buildGripByIdMap, cloneMeasure } from '../song-sheet.helpers';
 
 export interface SongPartMeasureEditorModalData {
@@ -35,6 +36,7 @@ export interface SongPartMeasureEditorModalData {
   measure: Measure;
   actionGrips: SongPartActionGrip[];
   measureLabel: string;
+  embedded?: boolean;
   notationHistory?: PlayingActionsNotationHistoryEntry[];
 }
 
@@ -56,6 +58,9 @@ export class SongPartMeasureEditorModalComponent implements
   private readonly playback = inject(SongPartPlaybackService);
   private readonly playbackState = toSignal(this.playback.state$, { initialValue: this.playback.getSnapshot() });
   readonly selectingGrip = signal(false);
+  @ViewChild(MeasureEditorPreviewComponent) private preview?: MeasureEditorPreviewComponent;
+  private readonly initial: string;
+  private deciding = false;
   editedMeasure: Measure;
   editedActionGrips: PlayingPatternActionGrip[];
   sheet: SongSheetWithData;
@@ -69,6 +74,33 @@ export class SongPartMeasureEditorModalComponent implements
     this.sheet = this.data.sheet;
     this.editedMeasure = cloneMeasure(this.data.measure);
     this.editedActionGrips = this.data.actionGrips.map(grip => ({ ...grip, measureIndex: 0 }));
+    this.initial = this.draftState();
+    afterNextRender(() => this.onViewportResize());
+  }
+
+  @HostListener('window:resize')
+  onViewportResize(): void {
+    if (this.data.embedded && window.innerHeight <= 480) this.preview?.collapsed.set(true);
+  }
+
+  private draftState(): string { return JSON.stringify([this.editedMeasure, this.editedActionGrips]); }
+
+  hasUnsavedChanges(): boolean { return this.draftState() !== this.initial; }
+
+  async canLeave(): Promise<boolean> {
+    if (this.selectingGrip() || this.deciding) return false;
+    if (!this.hasUnsavedChanges()) return true;
+    this.deciding = true;
+    try {
+      const ref = this.modalService.show(SongSheetChoiceModalComponent, { data: { title: 'Keep your measure changes?', choices: [
+        { value: 'apply', text: 'Apply and continue' },
+        { value: 'discard', text: 'Discard measure changes' },
+        { value: 'stay', text: 'Keep editing' }
+      ] }, width: '420px', maxWidth: '95vw', closeOnBackdropClick: false });
+      const choice = await ref.afterClosed();
+      if (choice === 'apply') { this.save(); return true; }
+      return choice === 'discard';
+    } finally { this.deciding = false; }
   }
 
   get playbackPosition() {

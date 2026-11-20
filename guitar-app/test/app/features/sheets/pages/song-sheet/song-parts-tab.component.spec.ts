@@ -158,7 +158,7 @@ describe('SongPartsTabComponent', () => {
 
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Let the bass ring');
-    expect(text).toContain('Walk down slow');
+    expect(text).not.toContain('Walk down slow'); // Lyrics belong to occurrences.
     expect(text).toContain('1 measure(s)');
     expect(text).not.toContain('Country Boom-Chick');
 

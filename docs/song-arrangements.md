@@ -1,6 +1,16 @@
 # Song arrangements
 
-The Song tab is the default song-sheet view. It shows a compact ordered outline, with one occurrence editor beside it at desktop and tablet widths. Below 701px the selected editor replaces the outline, with Back to song returning to the list.
+The Song tab is the default song-sheet view. Song and Parts select one occurrence or reusable
+part by ID before offering actions. Selecting a row with a pointer, Enter or Space opens no
+editor and starts no audio. The selected-item bar provides playback, Edit, Remove and Clear
+selection; Parts also offers Copy. Insertion buttons and drag handles remain separate. Clearing
+selection leaves any active preview's transport in its owning playback area.
+
+Edit opens the part in the page. Above 700px the outline remains on the left and one workspace
+on the right holds the active editing level. At 700px and below the active editor replaces the
+outline. A compact, single-line ancestor row identifies Song/Parts, the part (including its
+occurrence number), and the active measure, Notes or local pattern. Long names shorten visually
+while keeping their accessible text. Back/ancestor actions return through draft guards.
 
 ## Storage
 
@@ -14,13 +24,28 @@ Database version 9 migrates each existing part into one occurrence, in its exist
 
 Start writing creates an untitled musical part and its first occurrence together, then opens the empty part editor. It does not open a measure modal or add a measure automatically. Add offers a new measure, a sheet pattern when available, a pattern-library import, or a new pattern. Naming and preparing reusable content are optional.
 
-Music combines the name and measures. Notes open through a button whose filled/empty indicator reflects whether notes exist. Lyrics is a separate occurrence-specific tab. The Parts library edits musical definitions and has no Lyrics tab.
+Music combines the name and measures. Notes open in the workspace through a button whose filled/empty indicator reflects whether notes exist. They update the retained part draft; use the breadcrumb Save action to persist them. Lyrics is a separate occurrence-specific tab. The Parts library edits musical definitions and has no Lyrics tab.
 
 When multiple occurrences reference a musical part, Music starts read-only and its tab displays a lock. Unlock editing opens a dialog with two choices: edit all occurrences for this editing session, or make the current occurrence independent. Independent music gets a new part ID and new measure IDs, with deep copies of its musical data and notes; the occurrence keeps its identity and lyrics. No independent-copy button or shared badges appear in the editor footer, outline, or input labels.
 
-Switching editor tabs preserves the current unlock. Saving, leaving the editor, or selecting another occurrence locks reused music again. Occurrence numbers count references per part identity and are displayed in separate circular badges, so a part named `Verse 2` is distinct from occurrence 2 of `Verse`.
+Switching editor tabs preserves the current unlock. Saving, leaving the editor, or opening another occurrence for editing locks reused music again. Occurrence numbers count references per part identity and appear in circular outline badges and the compact editor path, so a part named `Verse 2` is distinct from occurrence 2 of `Verse`.
 
-Unsaved changes are guarded when switching occurrences, closing the editor, changing sheet tabs, or navigating away. The writer can save and continue, discard changes, or keep editing. Reload/close uses the browser's unsaved-changes prompt. While a save is pending, the editor is inert and navigation remains on the current edit.
+Measure Edit and New measure replace the part form in the same workspace. Apply to part
+updates only the retained parent draft; returning through the breadcrumb offers Discard measure changes to cancel without applying. Saving the
+part persists applied measures, notes and occurrence lyrics. Only the active level's actions
+are shown. Returning restores the parent's editor tab, measure selection, scroll position and
+focus. Grip and source selectors remain dialogs and retain the draft/navigation path.
+
+Leaving a dirty measure through an ancestor offers Apply and continue, Discard measure changes,
+or Keep editing. Leaving the part resolves that decision before its own unsaved-work decision.
+Unsaved changes are guarded when switching editors, closing the editor, changing sheet tabs, or navigating away. The writer can save and continue, discard changes, or keep editing. Reload/close uses the browser's unsaved-changes prompt. While a save is pending, the editor is inert and navigation remains on the current edit.
+Failures retain the draft and expose retryable status.
+
+Song-local patterns use the workspace both from Add content and from the sheet Patterns tab.
+The existing multiple-measure pattern form keeps its own Save Pattern boundary; breadcrumb Back offers Save, Discard or Keep editing.
+Saving a pattern created from a part adds a song-local snapshot and inserts its measures into
+the parent draft, which still needs a part save. Pattern cancellation cannot mutate stored
+patterns or the global library. Standalone pattern-library editors retain their existing layout.
 
 ## Measure notation
 
@@ -41,6 +66,10 @@ regression is `guitar-app/e2e/grip-label-layout.spec.ts`.
 Full-song playback follows arrangement order, including repeated references. Isolated occurrence and measure previews rebuild the preceding grip and sounding-string state in that same order. Only the requested occurrence/measure is scheduled. Repeated part definitions therefore get the history of their particular occurrence, rather than the order of the Parts library.
 
 The song player highlights the currently playing occurrence and supports pause, resume, and stop. Empty parts, missing part definitions, and sections whose actions cannot produce audio disable full-song playback; defined rest measures keep their duration. Playback requires at least one audible event. Previewing completed sections remains available while other sections are unfinished.
+
+Song and list previews use saved music without navigating the active editor or resolving its
+pending drafts. Editor-level previews use that editor's draft. Play view keeps its separate
+entry guard and presentation-only exit behavior.
 
 The sheet uses the music-note-list icon for Song, the navigation's up/down arrows for Patterns, and the overview's grid icon for Grips.
 
@@ -63,20 +92,25 @@ drawing at measure boundaries. The pane displays part/occurrence, measure, actio
 Playing/Paused status. Transport and recovery controls stay with the owning workflow and the
 existing media UI. Parts cards show names, measure counts and notes without a static
 measure preview; their notation pane appears during playback. Song outline summaries
-show measure counts without enumerating chords. The embedded occurrence editor keeps
-its name, playback controls and close action visible below the sheet tabs while its
-content scrolls (the header scrolls normally at constrained heights). Its sticky action area
-keeps Save changes, save status and Back to song reachable inside the occurrence workspace.
-Selected-measure actions share that area above Save, with layout space reserved below the
-last form fields. Nested measure editing hides the parent's actions, keeps Apply/Cancel
-outside its scrolling body, and returns keyboard focus to the measure's Edit action.
-The measure footer puts its hint above a single Cancel/Apply row, including on narrow screens.
+show measure counts without enumerating chords. The embedded occurrence editor keeps its compact breadcrumb and active-level save icon visible
+below the sheet tabs while content scrolls. The icon's accessible name and tooltip identify
+Save changes, Apply to part or Save Pattern. Pending saves disable the action and show a waiting
+icon; failures keep the draft and offer a retry with an error icon and message. Save status
+remains available to assistive technology. The breadcrumb Back action handles guarded return;
+there are no duplicate bottom Back or Save controls.
 
-Part previews in both the editor and Parts cards use the same ordered transport: Play/Pause/
+Selected-measure actions remain in their reserved contextual bar. Nested editing replaces the
+parent form and its actions, and returning restores keyboard focus to the measure's Edit action.
+Measure playback sits beside the live preview's collapse control. The measure form explains
+that Apply updates the part draft before a parent save; its save icon also exposes that
+explanation to assistive technology. At constrained heights the preview starts collapsed and
+the explanation remains accessible without taking space from the fields.
+
+Part previews in both the editor and the Parts selection bar use the same ordered transport: Play/Pause/
 Resume, Previous measure, Next measure, Stop. Close and part editing actions are separate.
 Preparation disables play/seek while retaining Stop; ready/error recovery stays with the
-existing shell or modal media controls and the existing audio session. Modal recovery notices
-live in the scrolling body so ready/retry feedback cannot push Save or Apply off screen. Parts card surfaces
+existing media controls and audio session. Sheet lists own recovery notices when no editor
+is open. In-page and modal editor recovery notices live in the scrolling body so ready/retry feedback cannot push Save or Apply off screen. Parts card surfaces
 inherit their idle Bootstrap card color throughout preview; playback adds no white surface.
 
 Part-editor notation and the nested measure editor's live preview reuse their existing drawings.

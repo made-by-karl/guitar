@@ -1,5 +1,5 @@
 @if (selected; as current) {
-  <section class="editor-preview" aria-label="Live measure preview"
+  <section class="editor-preview" [class.is-collapsed]="collapsed()" aria-label="Live measure preview"
     [attr.aria-description]="current.label + ', ' + current.measure.timeSignature"
     [attr.data-measure-index]="selectedIndex() ?? 0">
     @if (collapsed()) {
@@ -13,11 +13,14 @@
           [appPlaybackHighlight]="(selectedIndex() ?? 0) === playbackPosition()?.measureIndex ? playbackPosition() : undefined" />
       </div>
     }
+    <div class="preview-controls">
+    <ng-content select="[preview-actions]" />
     <button type="button" class="btn btn-outline-secondary btn-sm preview-toggle"
       [attr.aria-label]="collapsed() ? 'Expand preview' : 'Collapse preview'"
       [title]="collapsed() ? 'Expand preview' : 'Collapse preview'"
       [attr.aria-expanded]="!collapsed()" (click)="toggle()">
       <i class="bi" [class.bi-chevron-down]="collapsed()" [class.bi-chevron-up]="!collapsed()" aria-hidden="true"></i>
     </button>
+    </div>
   </section>
 }

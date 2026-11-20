@@ -42,3 +42,15 @@ button { min-height: 44px; }
   .measure-editor-hint { font-size: .75rem; }
   .modal-footer { padding: .5rem 1rem max(.5rem, env(safe-area-inset-bottom)); }
 }
+
+.is-embedded .modal-header { justify-content: flex-end; padding: .25rem .5rem; }
+:host { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+.part-measure-editor-modal.is-embedded { flex: 1 1 0; height: auto; min-height: 0; overflow: hidden; }
+
+.embedded-measure-transport .btn { width: 44px; height: 44px; padding: .25rem; }
+@media (max-height: 480px) { .is-embedded .modal-body { padding: .5rem; } }
+
+@media (max-height: 480px) {
+  #measure-editor-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
+}

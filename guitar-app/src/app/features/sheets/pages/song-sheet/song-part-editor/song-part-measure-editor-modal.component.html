@@ -1,6 +1,7 @@
-<div class="part-measure-editor-modal" role="dialog" aria-modal="true" aria-labelledby="measure-editor-title" [cdkTrapFocus]="!selectingGrip()" [cdkTrapFocusAutoCapture]="true">
+<div class="part-measure-editor-modal" [class.is-embedded]="data.embedded" [attr.role]="data.embedded ? null : 'dialog'" [attr.aria-modal]="data.embedded ? null : true" aria-labelledby="measure-editor-title" [cdkTrapFocus]="!data.embedded && !selectingGrip()" [cdkTrapFocusAutoCapture]="!data.embedded">
+  @if (!data.embedded) {
   <div class="modal-header">
-    <div>
+    <div [hidden]="data.embedded">
       <div class="small text-uppercase text-muted">Editing Measure</div>
       <h5 id="measure-editor-title" class="modal-title mb-0">{{ data.measureLabel }}</h5>
     </div>
@@ -8,14 +9,23 @@
       <button type="button" class="btn btn-outline-primary btn-sm"
         [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'" [disabled]="!isPlaying && !canPlay" (click)="togglePlayback()">
         <i aria-hidden="true" class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying"></i>
-        {{ isPlaying ? 'Stop' : 'Play' }}
+        <span class="measure-play-label">{{ isPlaying ? 'Stop' : 'Play' }}</span>
       </button>
     </div>
     <button type="button" class="btn-close" aria-label="Close measure editor" cdkFocusInitial (click)="cancel()"></button>
   </div>
 
-  <app-measure-editor-preview [appPlaybackHighlight]="playbackPosition" [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true" />
+  }
+  <app-measure-editor-preview [appPlaybackHighlight]="playbackPosition" [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true">
+    <div preview-actions [hidden]="!data.embedded" class="embedded-measure-transport" role="group" aria-label="Measure playback">
+      <button type="button" class="btn btn-outline-primary" [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'"
+        [title]="isPlaying ? 'Stop measure' : 'Play measure'" [disabled]="!isPlaying && !canPlay" (click)="togglePlayback()">
+        <i class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying" aria-hidden="true"></i>
+      </button>
+    </div>
+  </app-measure-editor-preview>
   <div class="modal-body" #previewContent>
+    @if (data.embedded) { <p id="measure-editor-hint" class="small text-muted">Apply this measure to the draft, then save the part.</p> }
     <app-media-playback-controls [channels]="['finite:song-part-playback']" />
     <div data-preview-measure="0">
     <app-playing-measure-editor
@@ -26,13 +36,15 @@
     </div>
   </div>
 
+  @if (!data.embedded) {
   <div class="modal-footer">
     <span class="small text-muted measure-editor-hint">Apply this measure, then save the part.</span>
     <div class="measure-editor-actions" role="group" aria-label="Measure editing actions">
-      <button class="btn btn-outline-secondary" type="button" (click)="cancel()">Back to part</button>
+      <button class="btn btn-outline-secondary" type="button" (click)="cancel()" aria-label="Cancel measure">Cancel<span class="measure-cancel-context"> measure</span></button>
       <button class="btn btn-success" type="button" (click)="save()">
-        <i class="bi bi-check-lg"></i> Apply to part
+        <i aria-hidden="true" class="bi bi-check-lg"></i> Apply to part
       </button>
     </div>
   </div>
+  }
 </div>
