@@ -17,7 +17,7 @@
 
 .measure-transport { flex: 0 0 auto; margin-left: auto; padding-right: 1rem; border-right: 1px solid var(--bs-border-color); }
 .modal-header { gap: 1rem; }
-button { min-height: 44px; }
+
 .btn-close { width: 44px; height: 44px; margin: 0; box-sizing: border-box; }
 .modal-footer {
   display: grid;
@@ -48,7 +48,7 @@ button { min-height: 44px; }
 
 .part-measure-editor-modal.is-embedded { flex: 1 1 0; height: auto; min-height: 0; overflow: hidden; }
 
-.embedded-measure-transport .btn { width: 44px; height: 44px; padding: .25rem; }
+
 @media (max-height: 480px) { .is-embedded .modal-body { padding: .5rem; } }
 
 @media (max-height: 480px) {

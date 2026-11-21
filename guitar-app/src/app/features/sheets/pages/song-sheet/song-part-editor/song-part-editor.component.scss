@@ -192,8 +192,8 @@
   }
 
   &.is-selected {
-    border-left-color: #0d6efd;
-    background: #f3f8ff;
+    border-left-color: var(--app-selection-color);
+    background: var(--app-selection-bg);
   }
 
   &.is-drag-collapsed {
@@ -248,33 +248,6 @@
   font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.selected-measure-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin: .5rem;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 0.5rem;
-  background: #e9ecef;
-  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.12);
-}
-
-.selected-measure-label {
-  display: grid;
-  gap: 0.05rem;
-  min-width: 5.5rem;
-}
-
-.selected-measure-actions {
-  .btn { min-width: 44px; min-height: 44px; }
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .rhythm-preview {
@@ -372,30 +345,13 @@
     padding: 0.25rem;
   }
 
-  .selected-measure-toolbar {
-    flex-wrap: nowrap;
-    gap: .25rem;
-    padding: .5rem .25rem;
-  }
-  .selected-measure-label {
-    min-width: 0;
-    font-size: .75rem;
-    .small { display: none; }
-  }
-  .selected-measure-actions {
-    flex-wrap: nowrap;
-    gap: .25rem;
-    margin-left: auto;
-    .btn { width: 44px; min-height: 44px; padding: .25rem; }
-    span { display: none; }
-  }
 
 }
 
 .parent-editor { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .parent-editor[hidden] { display: none !important; }
 .workspace-path { display: flex; flex: 0 0 auto; align-items: center; gap: .35rem; padding: .4rem; border-bottom: 1px solid var(--bs-border-color); background: var(--bs-body-bg); min-width: 0; scroll-margin-top: var(--sheet-tabs-height); position: sticky; top: var(--sheet-tabs-height); z-index: 3; }
-.workspace-path .btn { min-width: 44px; min-height: 44px; padding: .25rem; }
+
 .path-ancestor { border: 0; background: transparent; color: var(--bs-primary-text-emphasis); padding: .25rem; min-height: 44px; }
 .path-ancestor:focus-visible { outline: 2px solid var(--bs-primary); }
 .part-path, .path-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -403,7 +359,7 @@
 .path-current { flex: 1 1 auto; font-weight: 600; }
 .has-child .path-current { flex: 0 1 auto; }
 .path-current:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
-.workspace-save { flex: 0 0 44px; width: 44px; margin-left: auto; }
+.workspace-save { margin-left: auto; }
 .notes-workspace { padding: .75rem; }
 .notes-workspace .btn { min-height: 44px; }
 .part-editor-modal.is-embedded.has-child-editor {
@@ -418,3 +374,7 @@
   .part-editor-tab { scroll-margin-top: calc(var(--sheet-tabs-height) + 58px); }
   .part-save-status { font-size: .75rem; }
 }
+
+// A child editor owns a fixed preview and a separate form scroller. Keep its path
+// in the same flow so outer-page scrolling cannot slide the path over notation.
+.has-child-editor .workspace-path { position: static; }

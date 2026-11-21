@@ -2,7 +2,7 @@ import { NgComponentOutlet } from '@angular/common';
 import { MODAL_DATA, MODAL_REF, ModalRef } from '@/app/core/services/modal.service';
 import { SongPatternWorkspaceComponent, SongPatternWorkspaceData } from '../song-pattern-workspace/song-pattern-workspace.component';
 import { ExportButtonComponent } from '@/app/core/ui/export-button/export-button.component';
-import { afterNextRender, Component, ElementRef, HostListener, Injector, OnDestroy, ViewChild, inject, input, output, signal } from '@angular/core';
+import { afterNextRender, Component, computed, ElementRef, HostListener, Injector, OnDestroy, ViewChild, inject, input, output, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ModalService } from '@/app/core/services/modal.service';
 import { DialogService } from '@/app/core/services/dialog.service';
@@ -35,6 +35,8 @@ import { SongSheetChoice, SongSheetChoiceModalComponent, SongSheetChoiceModalDat
 export class SongPatternsTabComponent implements OnDestroy {
   readonly sheet = input.required<SongSheetWithData>();
   readonly changed = output<void>();
+  readonly selectedId = signal<string | undefined>(undefined);
+  readonly selectedPattern = computed(() => this.sheet().patterns.find(pattern => pattern.id === this.selectedId()));
   readonly editorInjector = signal<Injector | undefined>(undefined);
   readonly editorComponent = SongPatternWorkspaceComponent;
   readonly editingName = signal('');

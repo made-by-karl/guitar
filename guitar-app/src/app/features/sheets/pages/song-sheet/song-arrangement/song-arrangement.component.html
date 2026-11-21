@@ -3,16 +3,16 @@
     <div><h2>Song</h2><p class="text-muted mb-0">{{ occurrences().length }} {{ occurrences().length === 1 ? 'section' : 'sections' }} in playback order</p></div>
     <div class="song-transport d-flex flex-wrap gap-2">
       <button #playViewOpener type="button" class="btn btn-primary btn-sm" [disabled]="busy() || enteringPlayView() || (playbackState().type !== 'song' && !canPlay())" (click)="openPlayView(playViewOpener)">Play view</button>
-      <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="busy() || playbackState().status === 'preparing' || (playbackState().type !== 'song' && !canPlay())" [attr.aria-label]="songPlaybackLabel()" [title]="canPlay() ? songPlaybackLabel() : 'Add playable content to every section'" (click)="toggleSong()">
+      <button type="button" class="btn btn-outline-primary btn-sm app-icon-button" [disabled]="busy() || playbackState().status === 'preparing' || (playbackState().type !== 'song' && !canPlay())" [attr.aria-label]="songPlaybackLabel()" [title]="canPlay() ? songPlaybackLabel() : 'Add playable content to every section'" (click)="toggleSong()">
         <i aria-hidden="true" class="bi" [class.bi-play-fill]="playbackState().type !== 'song' || playbackState().status === 'paused'" [class.bi-hourglass-split]="playbackState().type === 'song' && playbackState().status === 'preparing'" [class.bi-pause-fill]="playbackState().type === 'song' && playbackState().status === 'playing'"></i>
       </button>
-      <button class="btn btn-outline-secondary btn-sm song-part-navigation" type="button" aria-label="Previous part" title="First measure of the preceding section in song order" aria-description="Seek to the first measure of the preceding section in song order." [disabled]="!playbackState().canPreviousPart" (click)="playback.seekSongOccurrence(-1)">
+      <button class="btn btn-outline-secondary btn-sm app-icon-button song-part-navigation" type="button" aria-label="Previous part" title="First measure of the preceding section in song order" aria-description="Seek to the first measure of the preceding section in song order." [disabled]="!playbackState().canPreviousPart" (click)="playback.seekSongOccurrence(-1)">
         <i aria-hidden="true" class="bi bi-skip-backward-fill"></i>
       </button>
-      <button class="btn btn-outline-secondary btn-sm song-part-navigation" type="button" aria-label="Next part" title="First measure of the following section in song order" aria-description="Seek to the first measure of the following section in song order." [disabled]="!playbackState().canNextPart" (click)="playback.seekSongOccurrence(1)">
+      <button class="btn btn-outline-secondary btn-sm app-icon-button song-part-navigation" type="button" aria-label="Next part" title="First measure of the following section in song order" aria-description="Seek to the first measure of the following section in song order." [disabled]="!playbackState().canNextPart" (click)="playback.seekSongOccurrence(1)">
         <i aria-hidden="true" class="bi bi-skip-forward-fill"></i>
       </button>
-      @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm" type="button" aria-label="Stop song" title="Stop song" (click)="playback.stopSong()"><i aria-hidden="true" class="bi bi-stop-fill"></i></button> }
+      @if (playbackState().type === 'song') { <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" aria-label="Stop song" title="Stop song" (click)="playback.stopSong()"><i aria-hidden="true" class="bi bi-stop-fill"></i></button> }
     </div>
   </div>
   @if (playbackState().type === 'part' && playbackState().source === 'song') {
@@ -38,7 +38,7 @@
         <div class="occurrence-list" cdkDropList (cdkDropListDropped)="drop($event)" aria-label="Song order">
           @for (occurrence of occurrences(); track occurrence.id; let index = $index) {
             <div class="occurrence-entry" cdkDrag [cdkDragDisabled]="busy()" (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)">
-              <div class="occurrence-row" [class.is-selected]="selectedId() === occurrence.id" [class.is-editing]="editingId() === occurrence.id" [class.is-playing]="playbackState().actionIndex !== undefined && playbackState().source === 'song' && playbackState().occurrenceId === occurrence.id">
+              <div class="occurrence-row app-selectable" [class.is-selected]="selectedId() === occurrence.id" [class.is-editing]="editingId() === occurrence.id" [class.is-playing]="playbackState().actionIndex !== undefined && playbackState().source === 'song' && playbackState().occurrenceId === occurrence.id">
                 <span class="occurrence-drag" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
                 <button class="occurrence-select" type="button" [disabled]="busy()" [attr.aria-label]="(part(occurrence)?.section || 'Missing part') + ', occurrence ' + number(occurrence)" [attr.aria-pressed]="selectedId() === occurrence.id" (click)="selectOccurrence(occurrence.id)">
                   <span class="occurrence-title">@if (playbackState().actionIndex !== undefined && playbackState().source === 'song' && playbackState().occurrenceId === occurrence.id) { <span class="small">{{ playbackState().status === 'paused' ? 'Paused' : 'Playing' }} ▸</span> }<strong>{{ part(occurrence)?.section || 'Missing part' }}</strong><span class="occurrence-number">{{ number(occurrence) }}</span></span>
@@ -58,14 +58,14 @@
         </div>
 
         @if (selectedOccurrence(); as selected) {
-          <div class="selection-actions" role="region" aria-label="Selected occurrence actions">
+          <div class="selection-actions app-selection-actions" role="region" aria-label="Selected occurrence actions">
             <strong>{{ part(selected)?.section || 'Missing part' }} · Occurrence {{ number(selected) }}</strong>
             <app-song-part-transport [state]="playbackState()" [partId]="selected.partId" [occurrenceId]="selected.id" [measureCount]="part(selected)?.measures?.length || 0" [playable]="canPlayOccurrence(selected)"
               (play)="toggleOccurrence(selected)" (pause)="playback.pauseSongPart()" (resume)="playback.resumeSongPart()" (previous)="playback.seekSongPartMeasure(-1)" (next)="playback.seekSongPartMeasure(1)" (stop)="playback.stopSongPart()" />
-            <div class="d-flex flex-wrap gap-2">
-              <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="busy() || !part(selected)" (click)="editOccurrence(selected.id)">Edit</button>
-              <button class="btn btn-outline-danger btn-sm" type="button" [disabled]="busy()" (click)="remove(selected)">Remove occurrence</button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="selectedId.set(undefined)">Clear selection</button>
+            <div class="app-selection-buttons">
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" [disabled]="busy() || !part(selected)" (click)="editOccurrence(selected.id)" aria-label="Edit" title="Edit section"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+              <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" [disabled]="busy()" (click)="remove(selected)" aria-label="Remove occurrence" title="Remove occurrence"><i class="bi bi-trash" aria-hidden="true"></i></button>
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
             </div>
             @if (!canPlayOccurrence(selected)) { <small>Assign a grip or add playable notes to enable playback.</small> }
           </div>
@@ -74,7 +74,7 @@
       @if (editorInjector(); as injector) {
         <div class="occurrence-editor"><ng-container *ngComponentOutlet="editorComponent; injector: injector" /></div>
       } @else {
-        <div class="occurrence-editor-placeholder"><i aria-hidden="true" class="bi bi-music-note-beamed"></i><p>Select a section, then choose Edit to write its music or lyrics.</p></div>
+        <div class="occurrence-editor-placeholder app-workspace-placeholder"><i aria-hidden="true" class="bi bi-music-note-beamed"></i><p>Select a section, then choose Edit to write its music or lyrics.</p></div>
       }
     </div>
   }

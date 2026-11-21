@@ -174,7 +174,7 @@ describe('SongArrangementComponent', () => {
     state.next({ type: 'part', status: 'playing', partId: 'verse', occurrenceId: 'v2' });
     const remove = jest.spyOn(fixture.componentInstance, 'remove');
     fixture.componentInstance.selectOccurrence('v2'); fixture.detectChanges();
-    const removeButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(button => button.textContent?.trim() === 'Remove occurrence')!;
+    const removeButton = fixture.nativeElement.querySelector('[aria-label="Remove occurrence"]') as HTMLButtonElement;
     removeButton.click();
     await remove.mock.results[0].value;
     expect(service.removeOccurrence).toHaveBeenCalledWith('song', 'v2');

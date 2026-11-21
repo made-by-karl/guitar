@@ -1,6 +1,6 @@
 <div class="part-editor-modal song-sheet-page" [style.--workspace-height]="workspaceHeight() + 'px'" [class.is-embedded]="data.embedded" [class.has-child-editor]="childEditorOpen()" [attr.inert]="activeSaving() ? '' : null" [attr.aria-busy]="activeSaving()">
   <nav class="workspace-path" [class.has-child]="childEditorOpen() || notesOpen()" aria-label="Editor navigation">
-    <button class="btn btn-outline-secondary" type="button" [attr.aria-label]="childEditorOpen() || notesOpen() ? 'Back to part' : 'Back to ' + origin.toLowerCase()" (click)="childEditorOpen() || notesOpen() ? returnToPart() : cancel()"><i class="bi bi-arrow-left" aria-hidden="true"></i></button>
+    <button class="btn btn-outline-secondary app-icon-button" type="button" [attr.aria-label]="childEditorOpen() || notesOpen() ? 'Back to part' : 'Back to ' + origin.toLowerCase()" [title]="childEditorOpen() || notesOpen() ? 'Back to part' : 'Back to ' + origin.toLowerCase()" (click)="childEditorOpen() || notesOpen() ? returnToPart() : cancel()"><i class="bi bi-arrow-left" aria-hidden="true"></i></button>
     <button class="path-ancestor" type="button" (click)="cancel()">{{ origin }}</button><span aria-hidden="true">›</span>
     @if (childEditorOpen() || notesOpen()) {
       <button class="path-ancestor part-path" type="button" [title]="partLabel" (click)="returnToPart()">{{ partLabel }}</button><span aria-hidden="true">›</span>
@@ -9,7 +9,7 @@
     @if (!childEditorOpen()) {
       <span class="part-save-status visually-hidden" role="status">{{ saving() ? 'Saving…' : saveError() || (hasPartChanges() ? 'Unsaved changes' : 'All changes saved') }}</span>
     }
-    <button class="btn workspace-save" [class.btn-success]="!activeError()" [class.btn-danger]="activeError()" type="button" [attr.aria-label]="activeSaveLabel" [title]="activeSaveTitle"
+    <button class="btn workspace-save app-icon-button" [class.btn-success]="!activeError()" [class.btn-danger]="activeError()" type="button" [attr.aria-label]="activeSaveLabel" [title]="activeSaveTitle"
       [attr.aria-describedby]="childEditorOpen() && activeSaveLabel === 'Apply to part' ? 'measure-editor-hint' : null"
       [disabled]="activeSaving() || (!childEditorOpen() && !hasPartChanges())" (click)="saveActive()">
       <i class="bi" [class.bi-check-lg]="!activeSaving() && !activeError()" [class.bi-exclamation-triangle]="!activeSaving() && activeError()" [class.bi-hourglass-split]="activeSaving()" aria-hidden="true"></i>
@@ -111,7 +111,7 @@
                   (cdkDragStarted)="startMeasureDrag()"
                   (cdkDragEnded)="isDraggingMeasure.set(false)">
                   <div
-                    class="measure-row"
+                    class="measure-row app-selectable"
                     role="button"
                     tabindex="0"
                     [attr.aria-label]="'Select measure ' + (measureIndex + 1)"
@@ -212,54 +212,50 @@
   <div class="part-editor-actions">
     @if (activeTab() === 'music') {
       @if (getSelectedMeasure(); as selectedMeasure) {
-        <div class="selected-measure-toolbar" aria-label="Selected measure actions">
-          <div class="selected-measure-label">
+        <div class="selected-measure-toolbar app-selection-actions" role="region" aria-label="Selected measure actions">
+          <div class="selected-measure-label app-selection-label">
             <span class="small text-uppercase text-muted">Selected</span>
             <strong>{{ getSelectedMeasureLabel() }}</strong>
           </div>
 
-          <div class="selected-measure-actions">
+          <div class="selected-measure-actions app-selection-buttons">
             <button
-              class="btn btn-sm"
+              class="btn btn-sm app-icon-button"
               type="button"
               [class.btn-danger]="isMeasurePlaybackActive(selectedMeasure)"
               [class.btn-outline-primary]="!isMeasurePlaybackActive(selectedMeasure)"
               [disabled]="!isMeasurePlaybackActive(selectedMeasure) && !canPlaySelectedMeasure()"
               [attr.aria-label]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : 'Play measure'"
-              [title]="canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
+              [title]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
               (click)="toggleSelectedMeasurePlayback(tempPart())">
               <i aria-hidden="true" class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(selectedMeasure)" [class.bi-play-fill]="!isMeasurePlaybackActive(selectedMeasure)"></i>
-              <span>{{ isMeasurePlaybackActive(selectedMeasure) ? 'Stop' : 'Play' }}</span>
             </button>
             <button
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-outline-secondary btn-sm app-icon-button"
               type="button"
               title="Edit measure"
               aria-label="Edit selected measure" [disabled]="musicLocked()"
               (click)="editSelectedMeasure()">
               <i aria-hidden="true" class="bi bi-pencil"></i>
-              <span>Edit</span>
             </button>
             <button
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-outline-secondary btn-sm app-icon-button"
               type="button"
               title="Duplicate measure"
               aria-label="Duplicate selected measure" [disabled]="musicLocked()"
               (click)="duplicateSelectedMeasure()">
               <i aria-hidden="true" class="bi bi-copy"></i>
-              <span>Duplicate</span>
             </button>
             <button
-              class="btn btn-outline-danger btn-sm"
+              class="btn btn-outline-danger btn-sm app-icon-button"
               type="button"
               title="Remove measure"
               aria-label="Remove selected measure" [disabled]="musicLocked()"
               (click)="removeSelectedMeasure()">
               <i aria-hidden="true" class="bi bi-trash"></i>
-              <span>Delete</span>
             </button>
             <button
-              class="btn btn-outline-secondary btn-sm"
+              class="btn btn-outline-secondary btn-sm app-icon-button"
               type="button"
               title="Clear selection"
               aria-label="Clear measure selection"

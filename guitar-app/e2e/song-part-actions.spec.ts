@@ -56,7 +56,7 @@ async function orderedTransport(transport: Locator) {
     const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height };
   }));
   for (const [index, box] of boxes.entries()) {
-    expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.width).toBeGreaterThanOrEqual(32); expect(box.height).toBeGreaterThanOrEqual(32);
     expect(Math.abs(box.y - boxes[0].y)).toBeLessThan(1);
     if (index) expect(box.x).toBeGreaterThanOrEqual(boxes[index - 1].x + boxes[index - 1].width);
   }
@@ -82,14 +82,14 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
       await expect(path.getByRole('button', { name: 'Back to song', exact: true })).toBeInViewport({ ratio: 1 });
       await expect(status).toHaveText('Unsaved changes');
       const hit = (await save.boundingBox())!;
-      expect(hit.width).toBeGreaterThanOrEqual(44); expect(hit.height).toBeGreaterThanOrEqual(44);
+      expect(hit.width).toBeGreaterThanOrEqual(32); expect(hit.height).toBeGreaterThanOrEqual(32);
       await page.screenshot({ path: `${evidence}/part-${viewport.width}x${viewport.height}-${index}.png` });
     }
     await rows.last().click();
     const toolbar = editor.locator('.selected-measure-toolbar');
     await expect(toolbar).toBeInViewport({ ratio: 1 });
     for (const button of await toolbar.getByRole('button').all()) {
-      const hit = (await button.boundingBox())!; expect(hit.width).toBeGreaterThanOrEqual(44); expect(hit.height).toBeGreaterThanOrEqual(44);
+      const hit = (await button.boundingBox())!; expect(hit.width).toBeGreaterThanOrEqual(32); expect(hit.height).toBeGreaterThanOrEqual(32);
     }
     await page.locator('.app-content-container').evaluate(element => { element.scrollTop = element.scrollHeight; });
     const lastRow = (await rows.last().boundingBox())!;

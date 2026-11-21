@@ -181,11 +181,13 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await page.getByRole('button', { name: 'Save Pattern', exact: true }).click();
     await expect(pattern).toHaveCount(0);
     expect((await stored(page)).patterns[0].name).toBe('Local draft');
+    await page.getByRole('button', { name: 'Select pattern Local draft', exact: true }).click();
     await page.getByRole('button', { name: 'Edit Local draft', exact: true }).click();
     await pattern.getByRole('textbox').first().fill('Canceled change');
     await cancelSongPattern(page);
     expect((await stored(page)).patterns[0].name).toBe('Local draft');
     const patternId = (await stored(page)).patterns[0].id;
+    await page.getByRole('button', { name: 'Select pattern Local draft', exact: true }).click();
     await page.getByRole('button', { name: 'Edit Local draft', exact: true }).click();
     await pattern.getByRole('textbox').first().fill('Updated local pattern');
     await page.getByRole('button', { name: 'Save Pattern', exact: true }).click();

@@ -1,0 +1,86 @@
+// Shared interaction roles. Brand colors remain separate from selection feedback.
+:root {
+  --app-selection-color: #0d6efd;
+  --app-selection-bg: #e7f1ff;
+  --app-icon-button-size: 2rem;
+}
+
+.btn.app-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--app-icon-button-size);
+  height: var(--app-icon-button-size);
+  min-width: var(--app-icon-button-size);
+  min-height: var(--app-icon-button-size);
+  padding: 0;
+  line-height: 1;
+}
+
+.app-selectable.is-selected {
+  background: var(--app-selection-bg);
+  border-color: var(--app-selection-color);
+  box-shadow: inset 3px 0 var(--app-selection-color);
+}
+
+.app-selection-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem .75rem;
+  padding: .75rem;
+  padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+  border: 1px solid #495057;
+  border-radius: .5rem;
+  background: #343a40;
+  color: #fff;
+  box-shadow: 0 -.25rem 1rem #0003;
+  overflow-anchor: none;
+
+  > strong { flex: 1 1 100%; overflow-wrap: anywhere; }
+  > small { flex-basis: 100%; }
+  .text-muted { color: #dee2e6 !important; }
+  .btn.btn-outline-primary,
+  .btn.btn-outline-secondary {
+    --bs-btn-color: #fff;
+    --bs-btn-border-color: #adb5bd;
+    --bs-btn-hover-color: #212529;
+    --bs-btn-hover-bg: #fff;
+    --bs-btn-hover-border-color: #fff;
+    --bs-btn-active-color: #212529;
+    --bs-btn-active-bg: #dee2e6;
+    --bs-btn-active-border-color: #fff;
+    --bs-btn-disabled-color: #dee2e6;
+    --bs-btn-disabled-border-color: #adb5bd;
+  }
+  .btn.btn-outline-danger {
+    --bs-btn-color: #ffb4bd;
+    --bs-btn-border-color: #ffb4bd;
+    --bs-btn-hover-bg: #842029;
+    --bs-btn-hover-border-color: #ffb4bd;
+    --bs-btn-active-bg: #842029;
+  }
+  .btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+}
+
+.app-selection-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
+.app-selection-label { flex: 1; min-width: 0; strong { display: block; } }
+.app-selection-actions:has(.app-selection-label) { margin: .5rem; }
+
+.app-workspace-placeholder {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: .5rem;
+  color: var(--bs-secondary-color);
+  p { margin: .5rem 0 0; }
+  > .bi { font-size: 1.5rem; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :root { --app-icon-button-size: 2.75rem; }
+}

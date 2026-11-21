@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { SongSheet, SongSheetGrip } from '../src/app/features/sheets/services/song-sheets.model';
 
 for (const width of [390, 1280]) {
-  test(`keeps long grip names and buttons inside their cards at ${width}px`, async ({ page }, testInfo) => {
+  test(`keeps long grip names inside cards and actions in the selection bar at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/sheets');
     await page.getByPlaceholder('New Song Sheet Name').fill('Grip card layout');
@@ -45,17 +45,21 @@ for (const width of [390, 1280]) {
       expect(await title.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
       const cardBox = (await card.boundingBox())!;
       const diagramBox = (await card.locator('svg').boundingBox())!;
-      const play = card.getByRole('button', { name: `Play grip ${grip.name}`, exact: true });
-      const remove = card.getByRole('button', { name: `Delete grip ${grip.name}`, exact: true });
+      await title.click();
+      const actions = library.getByRole('region', { name: 'Selected grip actions' });
+      const play = actions.getByRole('button', { name: `Play grip ${grip.name}`, exact: true });
+      const remove = actions.getByRole('button', { name: `Delete grip ${grip.name}`, exact: true });
       const playBox = (await play.boundingBox())!;
       const removeBox = (await remove.boundingBox())!;
       expect(Math.abs(playBox.y - removeBox.y)).toBeLessThan(1);
+      const actionsBox = (await actions.boundingBox())!;
       for (const box of [playBox, removeBox]) {
-        expect(box.y).toBeGreaterThanOrEqual(diagramBox.y + diagramBox.height);
-        expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
-        expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
-        expect(box.y + box.height).toBeLessThanOrEqual(cardBox.y + cardBox.height);
+        expect(box.x).toBeGreaterThanOrEqual(actionsBox.x);
+        expect(box.x + box.width).toBeLessThanOrEqual(actionsBox.x + actionsBox.width);
+        expect(box.y + box.height).toBeLessThanOrEqual(actionsBox.y + actionsBox.height);
       }
+      expect(diagramBox.x).toBeGreaterThanOrEqual(cardBox.x);
+      expect(diagramBox.x + diagramBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
       await expect(card.getByTitle('Drag to reorder')).toBeVisible();
       expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     }

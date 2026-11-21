@@ -18,7 +18,7 @@
       @if (sheet().parts.length > 0) {
         <div cdkDropList (cdkDropListDropped)="dropPart($event)">
           @for (part of sheet().parts; track part.id) {
-            <div class="card mb-3" cdkDrag (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)" [class.is-selected]="selectedId() === part.id" [class.is-editing]="editingId() === part.id">
+            <div class="card mb-3 app-selectable" cdkDrag (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)" [class.is-selected]="selectedId() === part.id" [class.is-editing]="editingId() === part.id">
               <div class="card-body d-flex gap-2">
                 <span class="drag-handle text-muted" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
                 <button class="part-select" type="button" [attr.aria-label]="'Select ' + (part.section || 'Untitled part')" [attr.aria-pressed]="selectedId() === part.id" (click)="selectPart(part.id)">
@@ -32,15 +32,15 @@
         </div>
       } @else { <p class="alert alert-info">No song parts yet. Add a part and compose it measure by measure.</p> }
       @if (selectedPart(); as part) {
-        <div class="selection-actions" role="region" aria-label="Selected part actions">
+        <div class="selection-actions app-selection-actions" role="region" aria-label="Selected part actions">
           <strong>{{ part.section || 'Untitled part' }}</strong>
           <app-song-part-transport [state]="playbackState" [partId]="part.id" [measureCount]="part.measures.length" [playable]="canPlayPart(part)"
             (play)="playPart(part)" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
-          <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="editPart(selectedIndex())">Edit</button>
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyPart(selectedIndex())">Copy</button>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePart(selectedIndex())">Remove part</button>
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="selectedId.set(undefined)">Clear selection</button>
+          <div class="app-selection-buttons">
+            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="editPart(selectedIndex())" aria-label="Edit" title="Edit part"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="copyPart(selectedIndex())" aria-label="Copy" title="Copy part"><i class="bi bi-copy" aria-hidden="true"></i></button>
+            <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" (click)="removePart(selectedIndex())" aria-label="Remove part" title="Remove part"><i class="bi bi-trash" aria-hidden="true"></i></button>
+            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
           </div>
           @if (!canPlayPart(part)) { <small>Assign a grip or add playable notes to enable playback.</small> }
         </div>
@@ -48,6 +48,6 @@
     </div>
     @if (editorInjector(); as injector) {
       <div class="part-workspace"><ng-container *ngComponentOutlet="editorComponent; injector: injector" /></div>
-    } @else { <p class="workspace-placeholder">Select a part, then choose Edit.</p> }
+    } @else { <div class="workspace-placeholder app-workspace-placeholder"><i class="bi bi-music-note-list" aria-hidden="true"></i><p>Select a part, then choose Edit to write its music or notes.</p></div> }
   </div>
 </section>

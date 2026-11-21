@@ -122,7 +122,7 @@ for (const viewport of viewports) {
     await expect(preview).not.toContainText('undefined');
     const chevron = (await preview.getByRole('button', { name: 'Collapse preview', exact: true }).boundingBox())!;
     expect(chevron.width).toBe(32);
-    expect(chevron.height).toBe(31);
+    expect(chevron.height).toBe(32);
     await assertMapping(editor);
     for (const card of [1, 3, 7]) {
       await scrollToCard(editor, card);

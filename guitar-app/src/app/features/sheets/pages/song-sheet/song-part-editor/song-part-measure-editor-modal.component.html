@@ -18,7 +18,7 @@
   }
   <app-measure-editor-preview [appPlaybackHighlight]="playbackPosition" [measures]="previewMeasures" [content]="previewContent" [alwaysAvailable]="true">
     <div preview-actions [hidden]="!data.embedded" class="embedded-measure-transport" role="group" aria-label="Measure playback">
-      <button type="button" class="btn btn-outline-primary" [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'"
+      <button type="button" class="btn btn-outline-primary btn-sm app-icon-button" [attr.aria-label]="isPlaying ? 'Stop measure' : 'Play measure'"
         [title]="isPlaying ? 'Stop measure' : 'Play measure'" [disabled]="!isPlaying && !canPlay" (click)="togglePlayback()">
         <i class="bi" [class.bi-play-fill]="!isPlaying" [class.bi-stop-fill]="isPlaying" aria-hidden="true"></i>
       </button>

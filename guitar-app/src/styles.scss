@@ -9,6 +9,7 @@
   $card-bg: #F3E3D3
 );
 @use 'bootstrap-icons/font/bootstrap-icons.css';
+@use './app/core/ui/interaction-styles';
 
 /* Custom global styles */
 html, body {
@@ -29,7 +30,7 @@ body {
 }
 
 // Keep music-workspace action text readable on the light sheet surfaces.
-.song-sheet-page :is(app-song-arrangement, app-song-sheet-parts-tab, app-song-sheet-patterns-tab) {
+:where(.song-sheet-page) :is(app-song-arrangement, app-song-sheet-parts-tab, app-song-sheet-patterns-tab) {
   .btn-outline-primary { --bs-btn-color: var(--bs-primary-text-emphasis); }
   .btn-outline-danger { --bs-btn-color: var(--bs-danger-text-emphasis); }
 }

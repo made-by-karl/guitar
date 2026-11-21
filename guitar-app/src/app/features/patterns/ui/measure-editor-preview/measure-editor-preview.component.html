@@ -15,7 +15,7 @@
     }
     <div class="preview-controls">
     <ng-content select="[preview-actions]" />
-    <button type="button" class="btn btn-outline-secondary btn-sm preview-toggle"
+    <button type="button" class="btn btn-outline-secondary btn-sm app-icon-button preview-toggle"
       [attr.aria-label]="collapsed() ? 'Expand preview' : 'Collapse preview'"
       [title]="collapsed() ? 'Expand preview' : 'Collapse preview'"
       [attr.aria-expanded]="!collapsed()" (click)="toggle()">

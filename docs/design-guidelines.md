@@ -26,9 +26,57 @@ the visual baseline; a task can explicitly request a broader design change.
 - Reuse chord, grip, tempo, and selection controls from `core/ui/` or their feature owners.
   Match local single/multiple-selection behavior and make the current selection clear.
 - Touch controls need adequate spacing and a usable hit area; aim for 44×44 CSS pixels for
-  primary and icon actions. Verify dense editor controls on a narrow touch viewport.
+  primary actions and use the shared touch size for icon actions. Verify dense editor controls
+  on a narrow touch viewport.
 - Global coarse-pointer styles keep text inputs/selects at least 16px to avoid iOS focus zoom.
   Preserve that behavior when adding small controls or local font-size overrides.
+
+
+### Selection and contextual actions
+
+- Blue is the application-wide selection role, independent of the warm brand/action colors.
+  Use `--app-selection-color` (`#0d6efd`) for the selection edge/indicator and
+  `--app-selection-bg` (`#e7f1ff`) for the selected surface. Import pickers and song sections,
+  parts, measures, grips, and patterns share these tokens. Pair the color with an accessible
+  pressed/checked state and a visible indicator or named contextual action bar.
+- Selecting an item reveals its actions; entering an editor requires the explicit Edit action.
+  Keep reorder handles separate from selection controls and track selection by stable identity.
+- Use `.app-selectable.is-selected` for selectable song cards/rows. Use
+  `.app-selection-actions` for the sticky contextual action surface and
+  `.app-selection-buttons` for its icon group. The opaque charcoal surface, light icons,
+  contrasting destructive icons, border, and shadow distinguish actions from the selected list.
+  Keep the selected item's name visible. Do not use selection blue as the action-bar background.
+- Contextual actions use Bootstrap Icons with accessible names and title tooltips, including
+  Edit, Copy/Duplicate, Delete, Play/Stop, Export, and Clear selection. Keep explanatory text
+  outside the buttons. Action bars wrap within their owning column and remain usable while
+  scrolling; selector dialogs hide or cover parent actions.
+
+### Button sizes
+
+- Reuse `.btn` and Bootstrap variants. Standard labeled actions use the normal Bootstrap size;
+  dense secondary actions use `.btn-sm`. Neighboring controls serving the same role use the
+  same size and spacing. Avoid component-specific minimum sizes that override shared controls.
+- Icon-only toolbar, breadcrumb, contextual, and preview controls use `.btn.app-icon-button`.
+  This is a centered **32×32 CSS pixel** control, matching the compact preview chevron.
+  The shared `--app-icon-button-size` increases to **44×44** on coarse touch pointers.
+  Play and expand/collapse in the measure preview must match in both states.
+- Keep icon buttons square, give them `aria-label` and `title`, hide decorative icons from
+  assistive technology, and show keyboard focus. Do not hide a visible label to compensate for
+  an undersized hit target. Use clear save/error/disabled states without changing geometry.
+
+The shared implementation is `guitar-app/src/app/core/ui/_interaction-styles.scss`, loaded by
+`src/styles.scss`. Extend these roles there before introducing another local variation.
+
+### Editor layout
+
+- Align the first list card and the adjacent workspace/empty-state box. Reserve insertion-button
+  space above both columns rather than adding an independent top margin to only the list.
+- Empty workspaces use `.app-workspace-placeholder`: a bordered box, contextual icon, and short
+  instruction, consistently across Song and Parts.
+- Child editors keep breadcrumb, preview, and preview controls in one flex flow above the
+  scrolling form. A sticky breadcrumb must not slide over a sibling notation preview when the
+  outer page scrolls. Verify both outer-page and inner-form scrolling.
+
 
 ## Dialogs and state
 
