@@ -1,0 +1,135 @@
+// Shared interaction roles. Brand colors remain separate from selection feedback.
+:root {
+  --app-selection-color: #0d6efd;
+  --app-selection-bg: #e7f1ff;
+  --app-icon-button-size: 2rem;
+}
+
+.btn.app-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--app-icon-button-size);
+  height: var(--app-icon-button-size);
+  min-width: var(--app-icon-button-size);
+  min-height: var(--app-icon-button-size);
+  padding: 0;
+  line-height: 1;
+}
+
+.btn.app-add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: var(--app-icon-button-size);
+  --bs-btn-color: var(--bs-primary-text-emphasis);
+}
+
+.app-selectable.is-selected {
+  background: var(--app-selection-bg);
+  border-color: var(--app-selection-color);
+  box-shadow: inset 3px 0 var(--app-selection-color);
+}
+
+.app-selection-actions {
+  --app-selection-gap: .5rem;
+  position: sticky;
+  bottom: .5rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  width: calc(100% - 1.5rem);
+  max-width: calc(100% - 1.5rem);
+  margin: .5rem auto;
+  gap: .5rem .75rem;
+  padding: .75rem;
+  padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+  border: 1px solid #9b7d61;
+  border-radius: .5rem;
+  // Fade only the surface; labels and icons remain fully opaque over notation.
+  background: rgba(250, 247, 242, .94);
+  color: var(--bs-body-color);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -.125rem .5rem rgba(98, 60, 35, .12);
+  overflow-anchor: none;
+
+  // Full-width headers wrap above controls without inflating intrinsic width.
+  > .app-selection-header { width: 0; flex: 1 1 100%; }
+  > small { width: 0; flex: 1 1 100%; }
+  .text-muted { color: #6b5746 !important; }
+  .btn { --bs-btn-disabled-opacity: 1; }
+  .btn.btn-outline-primary,
+  .btn.btn-outline-secondary {
+    --bs-btn-color: #623c23;
+    --bs-btn-border-color: #8b5e3c;
+    --bs-btn-hover-color: #4d2e1a;
+    --bs-btn-hover-bg: #f1e4d4;
+    --bs-btn-hover-border-color: #623c23;
+    --bs-btn-active-color: #4d2e1a;
+    --bs-btn-active-bg: #ead9c7;
+    --bs-btn-active-border-color: #623c23;
+    --bs-btn-disabled-color: #806b58;
+    --bs-btn-disabled-border-color: #a48f7c;
+  }
+  .btn.btn-outline-danger {
+    --bs-btn-color: #9c2934;
+    --bs-btn-border-color: #a83b45;
+    --bs-btn-hover-color: #842029;
+    --bs-btn-hover-bg: #f8e0e1;
+    --bs-btn-hover-border-color: #842029;
+    --bs-btn-active-color: #842029;
+    --bs-btn-active-bg: #f2cbd0;
+    --bs-btn-active-border-color: #842029;
+    --bs-btn-disabled-color: #916c6d;
+    --bs-btn-disabled-border-color: #b89a9a;
+  }
+  .btn:focus-visible { outline: 2px solid #623c23; outline-offset: 3px; }
+}
+
+.app-selection-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  > strong { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .app-selection-title { display: flex; align-items: center; gap: .5rem; }
+  .app-selection-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-selection-close { margin: 0 0 0 auto; border: 0; background: transparent; }
+}
+.app-selection-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-selection-gap) calc(var(--app-icon-button-size) + 2 * var(--app-selection-gap));
+}
+.app-selection-commands { display: flex; flex-wrap: wrap; gap: var(--app-selection-gap); min-width: 0; }
+.app-selection-label { flex: 1; min-width: 0; strong { display: block; } }
+
+@media (max-width: 700px) {
+  .app-selection-header > strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .app-selection-label .small { display: none; }
+  .app-selection-actions:has(> app-song-part-transport) {
+    // Keep playback and editing rows at the same starting column and button pitch.
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-selection-gap);
+    > .app-selection-header,
+    > small { width: auto; }
+  }
+}
+
+.app-workspace-placeholder {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: .5rem;
+  color: var(--bs-secondary-color);
+  p { margin: .5rem 0 0; }
+  > .bi { font-size: 1.5rem; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :root { --app-icon-button-size: 2.75rem; }
+}

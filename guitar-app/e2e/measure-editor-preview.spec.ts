@@ -1,3 +1,4 @@
+import { cancelMeasure, cancelSongPattern } from './song-workspace-actions';
 import { expect, Locator, Page, test } from '@playwright/test';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 import type { PlayingPattern } from '../src/app/features/patterns/services/playing-patterns.model';
@@ -50,6 +51,7 @@ async function seed(page: Page) {
 async function openSongMeasure(page: Page) {
   await page.getByRole('link', { name: 'Floating preview', exact: true }).click();
   await page.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.locator('app-song-part-editor');
   await editor.locator('.measure-row').last().click();
   await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
@@ -59,7 +61,7 @@ async function openSongMeasure(page: Page) {
 async function assertMapping(editor: Locator) {
   await expect.poll(() => editor.evaluate(element => {
     const panel = element.querySelector('app-measure-editor-preview')!.getBoundingClientRect();
-    const root = element.querySelector('.modal-body')!;
+    const root = element.querySelector('.modal-body, .pattern-content')!;
     const rootBounds = root.getBoundingClientRect();
     if (panel.bottom > rootBounds.top + 1) return { matches: false, reason: 'preview overlaps form viewport' };
     const top = Math.max(rootBounds.top, panel.bottom, 0);
@@ -97,7 +99,7 @@ async function assertMapping(editor: Locator) {
 
 async function scrollToCard(editor: Locator, index: number, inset = 12) {
   await editor.evaluate((element, options) => {
-    const root = element.querySelector('.modal-body')!;
+    const root = element.querySelector('.modal-body, .pattern-content')!;
     const card = element.querySelectorAll('.action-position')[options.index];
     const panel = element.querySelector('app-measure-editor-preview')!;
     root.scrollTop += card.getBoundingClientRect().top - Math.max(root.getBoundingClientRect().top, panel.getBoundingClientRect().bottom) - options.inset;
@@ -113,13 +115,14 @@ for (const viewport of viewports) {
     page.on('pageerror', error => errors.push(error.message));
     const editor = await openSongMeasure(page);
     const preview = editor.getByRole('region', { name: 'Live measure preview' });
+    if (viewport.height <= 480) await preview.getByRole('button', { name: 'Expand preview', exact: true }).click();
     await expect(preview).toBeVisible();
     await expect(preview).toHaveAttribute('aria-description', 'Measure 2, 4/4');
     await expect(preview).not.toContainText('In view');
     await expect(preview).not.toContainText('undefined');
     const chevron = (await preview.getByRole('button', { name: 'Collapse preview', exact: true }).boundingBox())!;
     expect(chevron.width).toBe(32);
-    expect(chevron.height).toBe(31);
+    expect(chevron.height).toBe(32);
     await assertMapping(editor);
     for (const card of [1, 3, 7]) {
       await scrollToCard(editor, card);
@@ -129,8 +132,8 @@ for (const viewport of viewports) {
     await editor.locator('.action-position').last().getByTitle('Add Technique', { exact: true }).click();
     await editor.locator('.action-position').last().getByRole('link', { name: /Strum Down$/ }).click();
     await assertMapping(editor);
-    await expect(editor.getByRole('button', { name: 'Apply to part', exact: false })).toBeInViewport({ ratio: 1 });
-    const root = editor.locator('.modal-body');
+    await expect(page.getByRole('button', { name: 'Apply to part', exact: false })).toBeInViewport({ ratio: 1 });
+    const root = editor.locator('.modal-body, .pattern-content');
     const scrollBefore = await root.evaluate(element => element.scrollTop);
     await preview.getByRole('button', { name: 'Collapse preview', exact: true }).click();
     await expect(preview.locator('app-playing-actions')).toHaveCount(0);
@@ -143,7 +146,7 @@ for (const viewport of viewports) {
     await expect(preview.locator('.preview-collapsed-label')).toHaveCount(0);
     await assertMapping(editor);
     await page.screenshot({ path: `../temp/ux/floating-measure-editor-preview/song-${viewport.width}x${viewport.height}.png` });
-    await editor.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await cancelMeasure(page);
     await page.locator('app-song-part-editor').getByRole('button', { name: 'Edit selected measure', exact: true }).click();
     await expect(editor.locator('.action-position').last().getByTitle('Add Technique', { exact: true })).toHaveCount(1);
     expect(errors).toEqual([]);
@@ -193,10 +196,10 @@ test('live edits, tall cards, subdivisions, grips and keyboard focus use accepte
   await page.keyboard.press('Tab');
   await expect.poll(() => editor.evaluate(element => {
     const target = document.activeElement!.getBoundingClientRect();
-    const body = element.querySelector('.modal-body')!.getBoundingClientRect();
+    const body = element.querySelector('.modal-body, .pattern-content')!.getBoundingClientRect();
     return target.top >= body.top && target.bottom <= body.bottom;
   })).toBe(true);
-  await editor.getByRole('button', { name: 'Apply to part', exact: false }).click();
+  await page.getByRole('button', { name: 'Apply to part', exact: false }).click();
   await page.locator('app-song-part-editor').getByRole('button', { name: 'Edit selected measure', exact: true }).click();
   await expect(editor.locator('#timeSignature option:checked')).toHaveText('3/4');
 });
@@ -227,7 +230,7 @@ for (const viewport of viewports) {
     await page.screenshot({ path: `../temp/ux/floating-measure-editor-preview/pattern-${viewport.width}x${viewport.height}.png` });
     await page.setViewportSize({ width: 375, height: 400 });
     await editor.locator('#playingPatternName').focus();
-    await editor.locator('.modal-body').evaluate(element => { element.scrollTop = 0; });
+    await editor.locator('.modal-body, .pattern-content').evaluate(element => { element.scrollTop = 0; });
     await expect(preview).toHaveCount(0);
     await editor.getByRole('button', { name: /Cancel$/ }).click();
   });
@@ -240,20 +243,21 @@ test('sheet and part pattern creation share the pane without saving canceled dra
   await page.getByRole('tab', { name: 'Patterns', exact: true }).click();
   await page.getByRole('button', { name: /Add Pattern$/ }).click();
   await page.getByRole('button', { name: 'Create first pattern', exact: true }).click();
-  const editor = page.locator('app-playing-pattern-editor-modal');
+  const editor = page.locator('app-song-pattern-workspace');
   await editor.locator('.action-position').first().locator('.action-grip-button').focus();
   await expect(editor.getByRole('region', { name: 'Live measure preview' })).toBeVisible();
   await assertMapping(editor);
-  await editor.getByRole('button', { name: /Cancel$/ }).click();
+  await cancelSongPattern(page);
   await page.getByRole('tab', { name: 'Song', exact: true }).click();
   await page.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).click();
+    await page.locator('app-song-arrangement .selection-actions').getByRole('button', { name: 'Edit', exact: true }).click();
   const part = page.locator('app-song-part-editor');
   await part.getByRole('button', { name: 'Add before first measure', exact: true }).click();
   await page.getByRole('button', { name: 'Create new pattern', exact: true }).click();
   await editor.locator('.action-position').first().locator('.action-grip-button').focus();
   await expect(editor.getByRole('region', { name: 'Live measure preview' })).toBeVisible();
   await assertMapping(editor);
-  await editor.getByRole('button', { name: /Cancel$/ }).click();
+  await cancelSongPattern(page);
   await expect(part.locator('.part-save-status')).not.toHaveText('Unsaved changes');
 });
 

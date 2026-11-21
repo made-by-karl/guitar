@@ -32,3 +32,29 @@
     flex-direction: column;
   }
 }
+
+.workspace-path { display: flex; align-items: center; gap: .35rem; padding: .4rem; min-width: 0; background: var(--bs-body-bg); }
+.workspace-path .btn-link { min-height: 44px; }
+.workspace-path .btn-link { color: var(--bs-primary-text-emphasis); }
+.path-current { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+[hidden] { display: none !important; }
+
+.workspace-save { margin-left: auto; }
+
+.library-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  min-width: 0;
+  padding: .25rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  &:focus-visible { outline: 2px solid var(--app-selection-color); outline-offset: 2px; }
+}
+.library-select.grip-preview { justify-content: center; }
+.library-select.pattern-measures-preview { display: grid; }

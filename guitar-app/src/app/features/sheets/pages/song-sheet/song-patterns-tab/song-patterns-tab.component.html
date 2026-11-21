@@ -1,11 +1,23 @@
+@if (editorInjector(); as injector) {
+  <nav class="workspace-path" aria-label="Editor navigation">
+    <button class="btn btn-outline-secondary app-icon-button" type="button" aria-label="Back to patterns" title="Back to patterns" (click)="closeEditor()"><i aria-hidden="true" class="bi bi-arrow-left"></i></button>
+    <button class="btn btn-link" type="button" (click)="closeEditor()">Patterns</button><span aria-hidden="true">›</span>
+    <span class="path-current" aria-current="page" [title]="editingName()">{{ editingName() }}</span>
+    <button type="button" class="btn workspace-save app-icon-button" [class.btn-success]="!patternError()" [class.btn-danger]="patternError()" aria-label="Save Pattern" [title]="patternError() || 'Save pattern'" [disabled]="patternSaving()" (click)="savePattern()">
+      <i class="bi" [class.bi-check-lg]="!patternSaving() && !patternError()" [class.bi-exclamation-triangle]="!patternSaving() && patternError()" [class.bi-hourglass-split]="patternSaving()" aria-hidden="true"></i>
+    </button>
+  </nav>
+  <ng-container *ngComponentOutlet="editorComponent; injector: injector" />
+}
+<div [hidden]="editorInjector()">
 <div class="sheet-section">
   <div class="section-header">
     <div>
       <h5 class="mb-0">Pattern Library</h5>
       <p class="section-copy mb-0">Sheet-local playing patterns reused by song parts.</p>
     </div>
-    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatterns()">
-      <i class="bi bi-plus"></i> Add Pattern
+    <button class="btn btn-outline-primary btn-sm app-add-button" type="button" (click)="addPatterns()">
+      <i aria-hidden="true" class="bi bi-plus"></i> Add Pattern
     </button>
   </div>
 
@@ -13,47 +25,33 @@
   <div class="row" cdkDropList (cdkDropListDropped)="dropPattern($event)">
     @for (pattern of sheet().patterns; track pattern.id) {
     <div class="col-12 col-xl-6 mb-3" cdkDrag>
-      <div class="card h-100">
+      <div class="card h-100 app-selectable" [class.is-selected]="selectedId() === pattern.id">
         <div class="card-body">
           <div class="d-flex align-items-start gap-2 mb-3">
             <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
-              <i class="bi bi-grip-vertical"></i>
+              <i aria-hidden="true" class="bi bi-grip-vertical"></i>
             </div>
             <div class="flex-grow-1">
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
+                <button class="library-select" type="button" [attr.aria-label]="'Select pattern ' + (pattern.name || 'Untitled Pattern')" [attr.aria-pressed]="selectedId() === pattern.id" (click)="selectedId.set(pattern.id)">
+                  <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
+                </button>
                 @for (measure of pattern.measures; track $index) {
                 <span class="badge bg-info">{{ measure.timeSignature }}</span>
                 }
               </div>
               <div class="small text-muted mt-1">{{ pattern.description || 'No description' }}</div>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-              <app-export-button [id]="pattern.id" type="guitar-playing-pattern" [sheetId]="sheet().id" />
-              <button
-                class="btn btn-sm"
-                type="button"
-                [class.btn-danger]="isPatternPlaybackActive(pattern)"
-                [class.btn-outline-primary]="!isPatternPlaybackActive(pattern)"
-                (click)="playPattern(pattern)">
-                <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)"></i>
-              </button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyPattern(pattern.id)">
-                <i class="bi bi-copy"></i>
-              </button>
-              <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePattern(pattern.id)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
+
           </div>
 
-          <div class="pattern-measures-preview">
+          <button class="library-select pattern-measures-preview" type="button" [attr.aria-label]="'Select preview for pattern ' + (pattern.name || 'Untitled Pattern')" [attr.aria-pressed]="selectedId() === pattern.id" (click)="selectedId.set(pattern.id)">
             <app-playing-actions
               [measures]="pattern.measures"
               [showActionIndex]="true"
               [measureWidth]="'100%'"
               [notationContexts]="getPatternMeasureNotationContexts(pattern)" />
-          </div>
+          </button>
         </div>
       </div>
     </div>
@@ -62,4 +60,24 @@
   } @else {
   <div class="alert alert-info mb-0">No patterns yet. Create or import a pattern, then reuse it inside song parts.</div>
   }
+  @if (selectedPattern(); as pattern) {
+    <div class="selection-actions app-selection-actions" role="region" aria-label="Selected pattern actions">
+      <div class="app-selection-header">
+        <strong [title]="pattern.name || 'Untitled Pattern'">{{ pattern.name || 'Untitled Pattern' }}</strong>
+        <button class="btn btn-outline-secondary app-icon-button app-selection-close" type="button" aria-label="Clear selection" title="Close actions and clear selection" (click)="selectedId.set(undefined)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>
+      <div class="app-selection-buttons">
+        <div class="app-selection-commands">
+          <button class="btn btn-outline-secondary app-icon-button" type="button" [attr.aria-label]="'Edit ' + (pattern.name || 'Untitled Pattern')" title="Edit pattern" (click)="editPattern(pattern)"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+          <app-export-button [id]="pattern.id" type="guitar-playing-pattern" [sheetId]="sheet().id" [iconOnly]="true" />
+          <button class="btn btn-outline-primary app-icon-button" type="button" [attr.aria-label]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" [title]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" (click)="playPattern(pattern)"><i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)" aria-hidden="true"></i></button>
+          <button class="btn btn-outline-secondary app-icon-button" type="button" aria-label="Copy pattern" title="Copy pattern" (click)="copyPattern(pattern.id)"><i class="bi bi-copy" aria-hidden="true"></i></button>
+        </div>
+        <button class="btn btn-outline-danger app-icon-button" type="button" aria-label="Delete pattern" title="Delete pattern" (click)="removePattern(pattern.id)"><i class="bi bi-trash" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  }
+
+</div>
+
 </div>

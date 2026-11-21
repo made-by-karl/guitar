@@ -1,3 +1,4 @@
+import { SongPartTransportComponent } from '@/app/features/sheets/ui/song-part-transport/song-part-transport.component';
 import { SongPlayViewComponent } from '@/app/features/sheets/ui/song-play-view/song-play-view.component';
 import { SongPlaybackComponent } from '@/app/features/sheets/ui/song-playback/song-playback.component';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
@@ -17,7 +18,7 @@ import { cloneSongPart } from '../song-sheet.helpers';
 
 @Component({
   selector: 'app-song-arrangement',
-  imports: [SongPlaybackComponent, CommonModule, DragDropModule, NgComponentOutlet],
+  imports: [SongPartTransportComponent, SongPlaybackComponent, CommonModule, DragDropModule, NgComponentOutlet],
   templateUrl: './song-arrangement.component.html',
   styleUrl: './song-arrangement.component.scss'
 })
@@ -28,6 +29,8 @@ export class SongArrangementComponent implements OnDestroy {
   readonly currentSheet = computed(() => this.storedSheet() ?? this.sheet());
   readonly occurrences = computed(() => getSongArrangement(this.currentSheet()));
   readonly selectedId = signal<string | undefined>(undefined);
+  readonly editingId = signal<string | undefined>(undefined);
+  readonly selectedOccurrence = computed(() => this.occurrences().find(item => item.id === this.selectedId()));
   readonly editorInjector = signal<Injector | undefined>(undefined);
   readonly isDragging = signal(false);
   readonly busy = signal(false);
@@ -68,7 +71,7 @@ export class SongArrangementComponent implements OnDestroy {
 
   @HostListener('window:beforeunload', ['$event'])
   beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.editor()?.hasUnsavedChanges()) event.returnValue = '';
+    if (this.editor()?.hasUnsavedChanges()) { event.preventDefault(); event.returnValue = ''; }
   }
 
   private editor(): SongPartEditorComponent | undefined {
@@ -100,7 +103,12 @@ export class SongArrangementComponent implements OnDestroy {
     return `${part.measures.length} ${part.measures.length === 1 ? 'measure' : 'measures'}`;
   }
 
-  async selectOccurrence(id: string): Promise<void> {
+  selectOccurrence(id: string): void {
+    if (!this.isDragging()) this.selectedId.set(id);
+  }
+
+  async editOccurrence(id: string): Promise<void> {
+    if (this.editingId() === id) return;
     if (!await this.confirmNavigation()) return;
     const occurrence = this.occurrences().find(item => item.id === id);
     const part = occurrence && this.part(occurrence);
@@ -118,6 +126,7 @@ export class SongArrangementComponent implements OnDestroy {
       afterClosed: async () => false
     };
     this.selectedId.set(id);
+    this.editingId.set(id);
     this.editorInjector.set(Injector.create({ parent: this.injector, providers: [
       { provide: MODAL_DATA, useValue: data }, { provide: MODAL_REF, useValue: ref }
     ] }));
@@ -126,7 +135,7 @@ export class SongArrangementComponent implements OnDestroy {
   async closeEditor(): Promise<void> {
     if (!await this.confirmNavigation()) return;
     this.editorInjector.set(undefined);
-    this.selectedId.set(undefined);
+    this.editingId.set(undefined);
   }
 
   async startWriting(): Promise<void> { await this.addOccurrence(); }
@@ -150,7 +159,7 @@ export class SongArrangementComponent implements OnDestroy {
       const occurrence = await this.service.addOccurrence(this.currentSheet().id, partId, afterId);
       await this.refresh();
       this.busy.set(false);
-      await this.selectOccurrence(occurrence.id);
+      await this.editOccurrence(occurrence.id);
     } catch {
       this.notifications.error('Could not add this section. Please try again.');
     } finally { this.busy.set(false); }
@@ -162,8 +171,6 @@ export class SongArrangementComponent implements OnDestroy {
     try {
       await this.service.moveOccurrence(this.currentSheet().id, from, to);
       await this.refresh();
-      const selected = this.selectedId();
-      if (selected) await this.selectOccurrence(selected);
     } catch { this.notifications.error('Could not move this section. Please try again.'); }
   }
 
@@ -172,14 +179,13 @@ export class SongArrangementComponent implements OnDestroy {
   async remove(occurrence: SongPartOccurrence): Promise<void> {
     const confirmed = await this.dialogs.confirm('Remove this occurrence and its lyrics from the song? Its music stays available in Parts.', 'Remove occurrence', 'Remove', 'Cancel', { variant: 'danger' });
     if (!confirmed) return;
-    if (this.selectedId() !== occurrence.id && !await this.confirmNavigation()) return;
+    if (!await this.confirmNavigation()) return;
     try {
       await this.service.removeOccurrence(this.currentSheet().id, occurrence.id);
       if (this.isOccurrencePlaybackActive(occurrence)) this.playback.stopSongPart();
-      if (this.selectedId() === occurrence.id) { this.editorInjector.set(undefined); this.selectedId.set(undefined); }
+      if (this.editingId() === occurrence.id) { this.editorInjector.set(undefined); this.editingId.set(undefined); }
+      if (this.selectedId() === occurrence.id) this.selectedId.set(undefined);
       await this.refresh();
-      const selected = this.selectedId();
-      if (selected) await this.selectOccurrence(selected);
     } catch { this.notifications.error('Could not remove this occurrence. Please try again.'); }
   }
 
@@ -198,7 +204,6 @@ export class SongArrangementComponent implements OnDestroy {
       else this.playback.pauseSongPart();
       return;
     }
-    if (!await this.confirmNavigation()) return;
     const current = this.occurrences().find(item => item.id === occurrence.id);
     const part = current && this.part(current);
     if (part) await this.playback.playSongPart(this.currentSheet(), part, occurrence.id, 'song');
@@ -238,13 +243,12 @@ export class SongArrangementComponent implements OnDestroy {
       else this.playback.pauseSong();
       return;
     }
-    if (!await this.confirmNavigation()) return;
     await this.playback.playSong(this.currentSheet());
   }
 
   private async refresh(): Promise<void> {
     const sheet = await this.service.getByIdWithData(this.currentSheet().id);
-    if (sheet) this.storedSheet.set(sheet);
+    if (sheet) { this.storedSheet.set(sheet); this.editor()?.updateSheet(sheet); }
     this.changed.emit();
   }
 }

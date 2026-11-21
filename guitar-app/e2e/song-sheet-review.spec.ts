@@ -1,3 +1,4 @@
+import { cancelMeasure } from './song-workspace-actions';
 import { expect, Page, test } from '@playwright/test';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 
@@ -73,7 +74,8 @@ for (const width of [390, 1280]) {
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const overview = page.locator('app-song-sheet-parts-tab');
     await expect(overview.locator('.slide-line')).toHaveCount(0);
-    const transport = overview.getByRole('group', { name: 'Part playback', exact: true });
+    await overview.locator('.part-select').first().click();
+    const transport = overview.getByRole('region', { name: 'Selected part actions' }).getByRole('group', { name: 'Part playback', exact: true });
     await transport.getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
     await transport.getByRole('button', { name: 'Pause', exact: true }).click();
     await expect(overview.locator('.slide-line')).toHaveCount(8);
@@ -115,7 +117,7 @@ for (const width of [390, 1280]) {
     const editor = page.locator('app-song-part-measure-editor-modal');
     await editor.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
     await expect(editor.getByRole('button', { name: 'Stop measure', exact: true })).toBeEnabled();
-    await editor.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await cancelMeasure(page);
     await expect(toolbar.getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
     expect(warnings).toEqual([]);
   });
@@ -170,8 +172,10 @@ for (const width of [390, 768, 1280]) {
     const parts = page.locator('app-song-sheet-parts-tab');
     const flow = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Flow', exact: true }) });
     await expect(flow.locator('.notation-scroll')).toHaveCount(0);
-    await flow.getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
-    await flow.getByRole('button', { name: 'Pause', exact: true }).click();
+    await flow.locator('.part-select').click();
+    const actions = parts.getByRole('region', { name: 'Selected part actions' });
+    await actions.getByRole('button', { name: 'Play', exact: true }).click(); await started(page);
+    await actions.getByRole('button', { name: 'Pause', exact: true }).click();
     const pane = parts.getByRole('region', { name: 'Playback notation' });
     await expect(pane.locator('.notation-scroll')).toHaveCount(1);
     await expect(pane.locator('.measure-divider')).toHaveCount(3);
@@ -180,18 +184,21 @@ for (const width of [390, 768, 1280]) {
       expect((await segments.nth(4).boundingBox())!.y).toBeCloseTo((await segments.first().boundingBox())!.y, 0);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(flow.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
+    await expect(actions.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
     const silent = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Needs grip', exact: true }) });
-    await expect(silent.getByRole('button', { name: /Play$/ })).toBeDisabled();
-    await expect(silent).toContainText('Assign a grip');
+    await silent.locator('.part-select').click();
+    await expect(actions.getByRole('button', { name: /Play$/ })).toBeDisabled();
+    await expect(actions).toContainText('Assign a grip');
     const pick = parts.locator('.card').filter({ has: page.getByRole('heading', { name: 'Picking', exact: true }) });
-    await expect(pick.getByRole('button', { name: /Play$/ })).toBeEnabled();
+    await pick.locator('.part-select').click();
+    await expect(actions.getByRole('button', { name: /Play$/ })).toBeEnabled();
     await page.screenshot({ path: testInfo.outputPath(`part-flow-${width}.png`), fullPage: true });
     await expect(pane.locator('.legato-line')).toHaveCount(12);
     expect(await page.evaluate(() => window.reviewAudio.filter(audio => !!audio.getAttribute('src')).length)).toBe(1);
-    await flow.getByRole('button', { name: 'Stop', exact: true }).click();
+    await flow.locator('.part-select').click();
+    await actions.getByRole('button', { name: 'Stop', exact: true }).click();
 
-    await flow.getByRole('button', { name: /Edit$/ }).click();
+    await actions.getByRole('button', { name: /Edit$/ }).click();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
     await page.locator('.measure-row').nth(1).click();
     await page.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
@@ -207,10 +214,13 @@ for (const width of [390, 768, 1280]) {
     await measure.getByLabel('Slide scope', { exact: true }).selectOption('grip');
     await measure.getByLabel('Fret shift', { exact: true }).fill('-1');
     await measure.getByRole('button', { name: 'Play measure', exact: true }).click(); await started(page);
-    await measure.getByRole('button', { name: /Apply to part$/ }).click();
+    await page.getByRole('button', { name: /Apply to part$/ }).click();
     await expect(page.locator('.selected-measure-toolbar').getByRole('button', { name: 'Play measure', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: /Save and close$/ }).click();
-    await silent.getByRole('button', { name: /Edit$/ }).click();
+    await page.locator('app-song-part-editor').getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page.locator('.part-save-status')).toHaveText('All changes saved');
+    await page.getByRole('button', { name: 'Back to parts', exact: true }).click();
+    await silent.locator('.part-select').click();
+    await actions.getByRole('button', { name: 'Edit', exact: true }).click();
     await expect(page.locator('app-song-part-editor').getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
     await page.getByRole('tab', { name: 'Music', exact: true }).click();
     await page.locator('.measure-row').click();
@@ -270,7 +280,7 @@ test('passes song tuning and saved grips through the pattern editor', async ({ p
   await expect(custom.getByRole('group', { name: 'String notes' }).locator('.note'))
     .toHaveText(['E2,', 'x,', 'x,', 'x,', 'x,', 'F#4']);
   await custom.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.locator('app-playing-pattern-editor-modal').getByRole('button', { name: /Save Pattern$/ }).click();
+  await page.getByRole('button', { name: /Save Pattern$/ }).click();
   await expect(editor).toHaveCount(0);
   await expect(page.locator('app-song-sheet-patterns-tab')).toContainText('Song pattern');
 });
@@ -318,14 +328,15 @@ test('edits and plays a part with legato diagnostics without signal errors', asy
   });
   await page.getByRole('link', { name: 'Legato diagnostics', exact: true }).click();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-  await page.getByRole('button', { name: /Edit$/ }).click();
+  await page.locator('app-song-sheet-parts-tab .part-select').first().click();
+  await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
   const editor = page.locator('app-song-part-editor');
   const play = editor.getByRole('group', { name: 'Part playback', exact: true }).getByRole('button', { name: 'Play', exact: true });
   await expect(play).toBeEnabled();
   await editor.getByRole('tab', { name: 'Music', exact: true }).click();
   await editor.locator('.measure-row').click();
   await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
-  await page.locator('app-song-part-measure-editor-modal').getByRole('button', { name: /Apply to part$/ }).click();
+  await page.getByRole('button', { name: /Apply to part$/ }).click();
   await expect(page.locator('app-song-part-measure-editor-modal')).toHaveCount(0);
   await expect(play).toBeEnabled();
   expect(diagnostics).toEqual([]);

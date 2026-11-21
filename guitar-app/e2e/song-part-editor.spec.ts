@@ -43,18 +43,12 @@ for (const width of [1280, 390]) {
 
     await page.getByRole('link', { name: 'Insertion test', exact: true }).click();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-    await page.getByRole('button', { name: /\bEdit$/ }).click();
+    await page.locator('app-song-sheet-parts-tab .part-select').first().click();
+    await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
     const editor = page.locator('app-song-part-editor');
-    const title = editor.getByRole('heading', { name: 'Edit Song Part' });
+    await expect(editor.getByRole('navigation', { name: 'Editor navigation' })).toContainText('Parts');
     const transport = editor.getByRole('group', { name: 'Part playback', exact: true });
     await expect(transport.getByRole('button')).toHaveCount(4);
-    const close = editor.getByRole('button', { name: 'Close song part editor' });
-    const titleBox = (await title.boundingBox())!;
-    for (const button of [close]) {
-      const box = (await button.boundingBox())!;
-      expect(Math.abs((box.y + box.height / 2) - (titleBox.y + titleBox.height / 2))).toBeLessThan(2);
-      expect(box.x).toBeGreaterThan(titleBox.x + titleBox.width);
-    }
     await expect(editor).not.toContainText('Build the part measure by measure');
 
     const tabBar = editor.getByRole('tablist', { name: 'Song part sections' });
@@ -67,9 +61,9 @@ for (const width of [1280, 390]) {
     expect(await tabBar.evaluate(element => getComputedStyle(element).borderRadius)).toBe('0px');
     await editor.getByRole('textbox', { name: 'Part name', exact: true }).fill('Bridge');
     await editor.getByRole('button', { name: 'Notes, empty', exact: true }).click();
-    const notesDialog = page.locator('app-song-part-notes-modal');
+    const notesDialog = editor.locator('.notes-workspace');
     await notesDialog.getByRole('textbox', { name: 'Notes', exact: true }).fill('Play softly');
-    await notesDialog.getByRole('button', { name: 'Apply notes', exact: true }).click();
+    await editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true }).click();
     await page.screenshot({ path: testInfo.outputPath(`song-part-details-${width}.png`), fullPage: true });
     await editor.getByRole('tab', { name: 'Music', exact: true }).click();
     await expect(editor.getByRole('textbox')).toHaveCount(1);
@@ -113,6 +107,7 @@ for (const width of [1280, 390]) {
     const choice = page.locator('app-song-sheet-choice-modal');
     await firstAdd.click();
     await choice.getByRole('button', { name: 'New measure', exact: true }).click();
+    await page.getByRole('button', { name: 'Apply to part', exact: true }).click();
     await expect(editor.locator('.measure-time-signature')).toHaveText(['4/4', '3/4', '4/4']);
     await expect(editor.locator('.measure-row.is-selected')).toHaveAttribute('aria-label', 'Select measure 1');
     await editor.getByRole('button', { name: 'Remove selected measure', exact: true }).click();
@@ -121,6 +116,7 @@ for (const width of [1280, 390]) {
     await add.click();
     await expect(choice.getByRole('button')).toHaveCount(4);
     await choice.getByRole('button', { name: 'New measure', exact: true }).click();
+    await page.getByRole('button', { name: 'Apply to part', exact: true }).click();
     await expect(editor.locator('.measure-time-signature')).toHaveText(['3/4', '3/4', '4/4']);
     await expect(editor.locator('.measure-row.is-selected')).toHaveAttribute('aria-label', 'Select measure 2');
 
@@ -132,9 +128,10 @@ for (const width of [1280, 390]) {
     // The final boundary remains reachable and appends after the final measure.
     await editor.getByRole('button', { name: 'Add after measure 4', exact: true }).click();
     await choice.getByRole('button', { name: 'New measure', exact: true }).click();
+    await page.getByRole('button', { name: 'Apply to part', exact: true }).click();
     await expect(editor.locator('.measure-time-signature')).toHaveText(['3/4', '6/8', '3/4', '4/4', '4/4']);
     const handle = editor.locator('.measure-entry .drag-handle').first();
-    await handle.scrollIntoViewIfNeeded();
+    await handle.evaluate(element => element.scrollIntoView({ block: 'center' }));
     const handleBox = (await handle.boundingBox())!;
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
     await page.mouse.down();
@@ -154,15 +151,18 @@ for (const width of [1280, 390]) {
     await expect(toolbar).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`song-part-no-selection-${width}.png`), fullPage: true });
 
-    await editor.getByRole('button', { name: 'Save and close' }).click();
+    await editor.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(editor.locator('.part-save-status')).toHaveText('All changes saved');
+    await editor.getByRole('button', { name: 'Back to parts', exact: true }).click();
     await expect(editor).toHaveCount(0);
     await page.reload();
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
-    await page.getByRole('button', { name: /\bEdit$/ }).click();
+    await page.locator('app-song-sheet-parts-tab .part-select').first().click();
+    await page.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
     await expect(editor.getByRole('textbox', { name: 'Part name', exact: true })).toHaveValue('Bridge');
     await editor.getByRole('button', { name: 'Notes, contains notes', exact: true }).click();
     await expect(notesDialog.getByRole('textbox', { name: 'Notes', exact: true })).toHaveValue('Play softly');
-    await notesDialog.getByRole('button', { name: 'Close notes', exact: true }).click();
+    await editor.locator('.workspace-path').getByRole('button', { name: 'Back to part', exact: true }).click();
     await editor.getByRole('tab', { name: 'Music', exact: true }).click();
     await editor.getByRole('tab', { name: 'Music', exact: true }).press('ArrowRight');
     await expect(editor.getByRole('tab', { name: 'Music', exact: true })).toBeFocused();

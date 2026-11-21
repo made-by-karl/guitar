@@ -41,3 +41,21 @@
     flex-direction: column;
   }
 }
+
+.library-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  min-width: 0;
+  padding: .25rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  &:focus-visible { outline: 2px solid var(--app-selection-color); outline-offset: 2px; }
+}
+.library-select.grip-preview { justify-content: center; }
+.library-select.pattern-measures-preview { display: grid; }

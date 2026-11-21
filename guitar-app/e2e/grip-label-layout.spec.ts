@@ -12,6 +12,7 @@ async function importExample(page: Page) {
   await page.getByRole('button', { name: 'Import copy', exact: true }).click();
   await page.getByRole('link', { name: 'Long grip labels', exact: true }).click();
   await page.getByRole('tab', { name: 'Parts', exact: true }).click();
+  await page.locator('app-song-sheet-parts-tab .part-select').first().click();
 }
 
 async function assertReadable(notation: Locator, expectedNames: string[], actionIndices: number[], slotSpacing = 22) {
@@ -112,7 +113,7 @@ test('reflows a live assignment longer than the narrow row, then clears the labe
   }
   await custom.getByLabel('Grip Name', { exact: true }).fill(longName);
   await custom.getByRole('button', { name: 'Save Grip', exact: true }).click();
-  await modal.getByRole('button', { name: /Apply to part$/ }).click();
+  await page.getByRole('button', { name: /Apply to part$/ }).click();
   const notation = editor.locator('app-playing-actions').first();
   await assertReadable(notation, [longName, ...names.slice(1, 4)], strumIndices.filter(index => index < 16));
   expect(await notation.locator('.action-grip-label').first().evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(15);
@@ -122,7 +123,7 @@ test('reflows a live assignment longer than the narrow row, then clears the labe
   await editor.locator('.measure-row').first().click();
   await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
   await modal.getByRole('button', { name: 'Clear Grips', exact: true }).click();
-  await modal.getByRole('button', { name: /Apply to part$/ }).click();
+  await page.getByRole('button', { name: /Apply to part$/ }).click();
   await expect(notation.locator('.action-grip-label')).toHaveCount(0);
   await expect(notation.locator('.action-svg').first()).toHaveAttribute('viewBox', / 104$/);
 });

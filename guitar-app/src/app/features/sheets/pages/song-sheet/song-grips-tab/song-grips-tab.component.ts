@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { PlaybackService } from '@/app/core/services/playback.service';
 import { ModalService } from '@/app/core/services/modal.service';
@@ -29,6 +29,8 @@ import {
 export class SongGripsTabComponent {
   readonly sheet = input.required<SongSheetWithData>();
   readonly changed = output<void>();
+  readonly selectedId = signal<string | undefined>(undefined);
+  readonly selectedGrip = computed(() => this.sheet().grips.find(grip => grip.gripId === this.selectedId()));
 
   private readonly songSheetService = inject(SongSheetsService);
   private readonly playback = inject(PlaybackService);

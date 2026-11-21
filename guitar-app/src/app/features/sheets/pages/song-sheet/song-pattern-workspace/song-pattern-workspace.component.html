@@ -1,0 +1,9 @@
+<section class="pattern-workspace" [attr.inert]="saving() ? '' : null" [attr.aria-busy]="saving()" aria-label="Song pattern editor">
+  <app-measure-editor-preview [measures]="previewMeasures()" [content]="content" />
+  <div class="pattern-content" #content>
+    @if (error()) { <p class="alert alert-danger" role="alert">{{ error() }}</p> }
+    <app-media-playback-controls [channels]="['finite:pattern-preview']" />
+    <app-playing-pattern-editor [(pattern)]="draft" [savedGrips]="data.sheet.grips" [tuning]="data.sheet.tuning" [capodaster]="data.sheet.capodaster" [tempo]="data.sheet.tempo" />
+  </div>
+  <span class="pattern-save-status visually-hidden" role="status">{{ saving() ? 'Saving…' : error() || (hasUnsavedChanges() ? 'Unsaved pattern changes' : 'All changes saved') }}</span>
+</section>

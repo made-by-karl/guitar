@@ -1,68 +1,57 @@
-<div class="sheet-section">
+<section class="sheet-section" [class.has-editor]="editorInjector()">
   <div class="section-header">
-    <div>
-      <h5 class="mb-0">Song Parts</h5>
-      <p class="section-copy mb-0">A part is a reusable section of your song.</p>
-    </div>
-    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPart()">
-      <i aria-hidden="true" class="bi bi-plus-lg"></i> Add Part
-    </button>
+    <div><h5 class="mb-0">Song Parts</h5><p class="section-copy mb-0">A part is a reusable section of your song.</p></div>
+    <button class="btn btn-outline-primary btn-sm app-add-button" type="button" (click)="addPart()"><i aria-hidden="true" class="bi bi-plus"></i> Add Part</button>
   </div>
-
-  <app-song-playback source="parts" [state]="playbackState" />
-  @if (sheet().parts.length > 0) {
-  <div cdkDropList (cdkDropListDropped)="dropPart($event)">
-    @for (part of sheet().parts; track part.id; let partIndex = $index) {
-    <div class="card mb-3" cdkDrag>
-      <div class="card-body">
-        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-          <div class="d-flex gap-2">
-            <div class="drag-handle text-muted mt-1" cdkDragHandle title="Drag to reorder">
-              <i aria-hidden="true" class="bi bi-grip-vertical"></i>
-            </div>
-            <div>
-              <h6 class="mb-1">{{ part.section }}</h6>
-              <div class="small text-muted">{{ part.measures.length }} measure(s)</div>
-            </div>
-          </div>
-
-          <div class="d-flex flex-column align-items-start align-items-sm-end gap-2">
-            <app-song-part-transport [state]="playbackState" [partId]="part.id" [measureCount]="part.measures.length" [playable]="canPlayPart(part)"
-              (play)="playPart(part)" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
-            <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Part actions">
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="editPart(partIndex)">
-                <i aria-hidden="true" class="bi bi-pencil"></i> Edit
-              </button>
-              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="copyPart(partIndex)">
-                <i aria-hidden="true" class="bi bi-copy"></i> Copy
-              </button>
-              <button class="btn btn-outline-danger btn-sm" type="button" (click)="removePart(partIndex)" [attr.aria-label]="'Remove ' + part.section">
-                <i aria-hidden="true" class="bi bi-trash"></i>
-              </button>
-            </div>
-            @if (!canPlayPart(part)) {
-            <div class="small text-muted">Assign a grip or add playable notes to enable playback.</div>
-            }
-
-          </div>
-        </div>
-
-        @if (part.measures.length > 0) {
-        <div class="part-detail-list mt-3">
-          @if (hasPartNotes(part)) {
-          <div class="part-notes">{{ part.notes }}</div>
-          }
-
-          @if (hasPartLyrics(part)) {
-          <div class="part-lyrics">{{ part.lyrics }}</div>
-          }
-        </div>
-        }
+  @if (playbackState.type === 'part' && playbackState.source === 'parts') {
+    @if (playbackState.presentation; as presentation) {
+      <div class="preview-transport" aria-label="Part preview transport">
+        <strong>{{ presentation.part.section }}</strong>
+        <app-song-part-transport [state]="playbackState" [partId]="presentation.part.id" [measureCount]="presentation.part.measures.length" [playable]="true"
+          (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
       </div>
-    </div>
     }
-  </div>
-  } @else {
-  <div class="alert alert-info mb-0">No song parts yet. Add a part and compose it measure by measure.</div>
   }
-</div>
+  <app-song-playback source="parts" [state]="playbackState" />
+  <div class="parts-layout">
+    <div class="parts-outline">
+      @if (sheet().parts.length > 0) {
+        <div cdkDropList (cdkDropListDropped)="dropPart($event)">
+          @for (part of sheet().parts; track part.id) {
+            <div class="card mb-3 app-selectable" cdkDrag (cdkDragStarted)="isDragging.set(true)" (cdkDragEnded)="isDragging.set(false)" [class.is-selected]="selectedId() === part.id" [class.is-editing]="editingId() === part.id">
+              <div class="card-body d-flex gap-2">
+                <span class="drag-handle text-muted" cdkDragHandle title="Drag to reorder"><i aria-hidden="true" class="bi bi-grip-vertical"></i></span>
+                <button class="part-select" type="button" [attr.aria-label]="'Select ' + (part.section || 'Untitled part')" [attr.aria-pressed]="selectedId() === part.id" (click)="selectPart(part.id)">
+                  <h6 class="mb-1">{{ part.section || 'Untitled part' }}</h6>
+                  <span class="small text-muted d-block">{{ part.measures.length }} measure(s) @if (editingId() === part.id) { · Editing }</span>
+                  @if (hasPartNotes(part)) { <span class="part-notes d-block">{{ part.notes }}</span> }
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else { <p class="alert alert-info">No song parts yet. Add a part and compose it measure by measure.</p> }
+      @if (selectedPart(); as part) {
+        <div class="selection-actions app-selection-actions" role="region" aria-label="Selected part actions">
+          <div class="app-selection-header">
+            <strong [title]="part.section || 'Untitled part'">{{ part.section || 'Untitled part' }}</strong>
+            <button class="btn btn-outline-secondary btn-sm app-icon-button app-selection-close" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Close actions and clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+          </div>
+          <app-song-part-transport [state]="playbackState" [partId]="part.id" [measureCount]="part.measures.length" [playable]="canPlayPart(part)"
+            (play)="playPart(part)" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
+          <div class="app-selection-buttons">
+            <div class="app-selection-commands">
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="editPart(selectedIndex())" aria-label="Edit" title="Edit part"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="copyPart(selectedIndex())" aria-label="Copy" title="Copy part"><i class="bi bi-copy" aria-hidden="true"></i></button>
+            </div>
+            <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" (click)="removePart(selectedIndex())" aria-label="Remove part" title="Remove part"><i class="bi bi-trash" aria-hidden="true"></i></button>
+          </div>
+          @if (!canPlayPart(part)) { <small>Assign a grip or add playable notes to enable playback.</small> }
+        </div>
+      }
+    </div>
+    @if (editorInjector(); as injector) {
+      <div class="part-workspace"><ng-container *ngComponentOutlet="editorComponent; injector: injector" /></div>
+    } @else { <div class="workspace-placeholder app-workspace-placeholder"><i class="bi bi-music-note-list" aria-hidden="true"></i><p>Select a part, then choose Edit to write its music or notes.</p></div> }
+  </div>
+</section>

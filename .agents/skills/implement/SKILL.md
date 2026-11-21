@@ -13,3 +13,8 @@ Preserve existing user work. When a ticket is supplied, assign it to the user. A
 verification and reviews pass, commit on a feature branch, push it, and create a pull request.
 Follow any explicit user limit on delivery scope; merging and deployment require separate scope.
 Report the PR URL, validation, and remaining limits.
+
+For UI work, read the application-wide design document linked by `AGENTS.md` before editing
+or reviewing controls. Reuse its selection, contextual-action, button-size, and editor-layout
+roles; check the rendered result against those rules. Keep application-specific values in that
+document rather than duplicating them in this skill.

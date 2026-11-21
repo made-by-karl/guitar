@@ -9,6 +9,7 @@
   $card-bg: #F3E3D3
 );
 @use 'bootstrap-icons/font/bootstrap-icons.css';
+@use './app/core/ui/interaction-styles';
 
 /* Custom global styles */
 html, body {
@@ -26,6 +27,12 @@ body {
 .app-page {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
+}
+
+// Keep music-workspace action text readable on the light sheet surfaces.
+:where(.song-sheet-page) :is(app-song-arrangement, app-song-sheet-parts-tab, app-song-sheet-patterns-tab) {
+  .btn-outline-primary { --bs-btn-color: var(--bs-primary-text-emphasis); }
+  .btn-outline-danger { --bs-btn-color: var(--bs-danger-text-emphasis); }
 }
 
 /* iOS Safari auto-zooms focused form controls below 16px. Keep mobile inputs at or above 16px. */

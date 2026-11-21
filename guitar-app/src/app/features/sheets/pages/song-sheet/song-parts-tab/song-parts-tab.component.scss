@@ -51,3 +51,14 @@
   min-height: 44px;
 }
 [aria-label='Part actions'] .btn-outline-secondary { --bs-btn-color: var(--bs-secondary-text-emphasis); }
+
+:host { display: block; min-width: 0; }
+.parts-layout { display: grid; grid-template-columns: minmax(15rem, .8fr) minmax(0, 1.2fr); gap: 1rem; align-items: start; }
+.parts-outline { min-width: 0; align-self: stretch; }
+.part-workspace { min-width: 0; border: 1px solid var(--bs-border-color); border-radius: .5rem; overflow: clip; }
+.part-select { background: transparent; border: 0; color: inherit; flex: 1; min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.part-select:focus-visible { outline: 2px solid var(--bs-primary); }
+
+.preview-transport { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+@media (min-width: 701px) and (max-width: 900px) { .parts-layout { grid-template-columns: minmax(12rem, .65fr) minmax(0, 1.35fr); } }
+@media (max-width: 700px) { .parts-layout { grid-template-columns: minmax(0, 1fr); } .workspace-placeholder { display: none; } .has-editor { .parts-outline, .section-header { display: none; } } .part-workspace { border: 0; } }

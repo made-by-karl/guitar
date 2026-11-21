@@ -2,10 +2,11 @@
 .part-transport {
   display: flex;
   flex-wrap: nowrap;
-  gap: .5rem;
-  button { min-width: 44px; min-height: 44px; white-space: nowrap; }
+  gap: var(--app-selection-gap, .5rem);
+
 }
 .part-transport-status { margin-top: .25rem; }
+:host-context(.app-selection-actions) .part-transport { flex-wrap: wrap; }
 
 // Bootstrap's warm primary needs its emphasis shade for small outline text.
 .btn-outline-primary {

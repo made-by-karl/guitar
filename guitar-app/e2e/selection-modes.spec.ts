@@ -62,7 +62,6 @@ for (const width of [390, 1280]) {
     const editor = page.locator('app-song-part-editor');
     await editor.getByRole('button', { name: 'Add', exact: true }).click();
     await page.getByRole('button', { name: 'New measure', exact: true }).click();
-    await editor.getByRole('button', { name: 'Edit selected measure', exact: true }).click();
     const measure = page.locator('app-song-part-measure-editor-modal');
     await measure.locator('.action-grip-button').first().click();
     await page.getByRole('button', { name: /Grip From Chord/ }).click();
@@ -75,7 +74,7 @@ for (const width of [390, 1280]) {
     await page.screenshot({ path: testInfo.outputPath(`single-grip-${width}.png`), fullPage: true });
     await picker.getByRole('button', { name: 'Apply Grip', exact: true }).click();
     await expect(measure.locator('.action-grip-button').first()).toContainText('D');
-    await measure.getByRole('button', { name: /Apply to part$/ }).click();
+    await page.getByRole('button', { name: /Apply to part$/ }).click();
     await expect(editor.locator('.part-save-status')).toHaveText('Unsaved changes');
     expect((await storedSheet(page)).parts[0].measures).toHaveLength(0);
     await editor.getByRole('button', { name: 'Save changes', exact: true }).click();

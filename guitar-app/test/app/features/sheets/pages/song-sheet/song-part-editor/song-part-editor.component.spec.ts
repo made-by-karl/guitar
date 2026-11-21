@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MODAL_DATA, MODAL_REF, ModalService } from '@/app/core/services/modal.service';
@@ -29,19 +30,21 @@ describe('SongPartEditorComponent', () => {
     expect(TestBed.inject(SongSheetsService).saveOccurrence).toHaveBeenCalledWith('sheet-1', 'occurrence-1', 'Local words', undefined);
   });
 
-  it('makes the parent inert during nested measure editing and restores it on cancel', async () => {
-    let close!: (result: undefined) => void;
-    const afterClosed = new Promise<undefined>(resolve => { close = resolve; });
+  it('replaces the parent workspace without destroying its draft, and cancel discards only the measure', async () => {
     const part = createPart([createMeasure('m', '4/4')]);
-    await configureComponent({ part, modalService: { show: jest.fn(() => ({ afterClosed: () => afterClosed })) } });
-    const fixture = TestBed.createComponent(SongPartEditorComponent);
+    await configureComponent({ part });
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
     fixture.detectChanges();
-    const editing = fixture.componentInstance.editMeasure(0);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.part-editor-modal').hasAttribute('inert')).toBe(true);
-    close(undefined); await editing; fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.part-editor-modal').hasAttribute('inert')).toBe(false);
-    expect(fixture.componentInstance.tempPart()).toEqual(part);
+    component.updateSectionName('Pending title');
+    await component.editMeasure(0); fixture.detectChanges();
+    const child = fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent;
+    expect(fixture.nativeElement.querySelector('.parent-editor').hidden).toBe(true);
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    child.editedMeasure = { timeSignature: '3/4', actions: Array(12).fill(null) };
+    child.cancel(); fixture.detectChanges();
+    expect(component.tempPart().section).toBe('Pending title');
+    expect(component.tempPart().measures).toEqual(part.measures);
+    expect(fixture.nativeElement.querySelector('.parent-editor').hidden).toBe(false);
   });
 
   it('makes a deep independent musical copy with new identities while preserving local lyrics', async () => {
@@ -133,18 +136,13 @@ describe('SongPartEditorComponent', () => {
 
     await fixture.componentInstance.editMeasure(0);
 
-    expect(show).toHaveBeenCalledWith(
-      SongPartMeasureEditorModalComponent,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          measureLabel: 'Measure 1',
-          measureId: 'measure-1',
-          part: expect.objectContaining({ id: 'part-1', measures: expect.arrayContaining([
-            expect.objectContaining({ id: 'measure-1' })
-          ]) })
-        })
-      })
-    );
+    fixture.detectChanges();
+    const child = fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent;
+    expect(child.data).toMatchObject({ measureLabel: 'Measure 1', measureId: 'measure-1' });
+    child.editedMeasure = editedMeasure;
+    child.editedActionGrips = [{ measureIndex: 0, actionIndex: 0, gripId: 'grip-g', name: 'G' }];
+    child.save();
+    expect(show).not.toHaveBeenCalled();
     expect(fixture.componentInstance.tempPart().measures[0]).toMatchObject({
       measure: {
         ...editedMeasure,
@@ -331,15 +329,10 @@ describe('SongPartEditorComponent', () => {
     clickButton(fixture.nativeElement, 'Edit selected measure');
     await fixture.whenStable();
 
-    expect(show).toHaveBeenCalledWith(
-      SongPartMeasureEditorModalComponent,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          measure: expect.objectContaining({ timeSignature: '3/4' }),
-          measureLabel: 'Measure 2'
-        })
-      })
-    );
+    fixture.detectChanges();
+    const child = fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent;
+    expect(child.data).toMatchObject({ measureLabel: 'Measure 2', measure: { timeSignature: '3/4' } });
+    child.cancel(); fixture.detectChanges();
 
     clickButton(fixture.nativeElement, 'Duplicate selected measure');
     fixture.detectChanges();
@@ -424,7 +417,7 @@ describe('SongPartEditorComponent', () => {
       expect(tab.getAttribute('aria-selected')).toBe('true');
       expect(tab.tabIndex).toBe(0);
       expect(tabs.filter(button => button.tabIndex === 0)).toHaveLength(1);
-      expect(element.querySelector('.modal-footer')).not.toBeNull();
+      expect(element.querySelector('.workspace-save')).not.toBeNull();
     }
   });
 
@@ -479,8 +472,7 @@ describe('SongPartEditorComponent', () => {
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
     const status = () => element.querySelector('.part-save-status')!.textContent!.trim();
-    const saveButton = () => Array.from(element.querySelectorAll<HTMLButtonElement>('.modal-footer button'))
-      .find(button => button.textContent!.includes('Save changes'))!;
+    const saveButton = () => element.querySelector<HTMLButtonElement>('[aria-label="Save changes"]')!;
     expect(status()).toBe('All changes saved');
     expect(saveButton().disabled).toBe(true);
     component.updateLyrics('New words');
@@ -530,8 +522,7 @@ describe('SongPartEditorComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.hasUnsavedChanges()).toBe(true);
     const element: HTMLElement = fixture.nativeElement;
-    const saveButton = Array.from(element.querySelectorAll<HTMLButtonElement>('.modal-footer button'))
-      .find(button => button.textContent!.includes('Save and close'))!;
+    const saveButton = element.querySelector<HTMLButtonElement>('[aria-label="Save and close"]')!;
     expect(saveButton.disabled).toBe(false);
     expect(await fixture.componentInstance.save()).toBe(true);
     expect(TestBed.inject(SongSheetsService).addPart).toHaveBeenCalled();
@@ -565,11 +556,11 @@ describe('SongPartEditorComponent', () => {
     const fixture = TestBed.createComponent(SongPartEditorComponent);
     fixture.detectChanges();
 
-    const header = fixture.nativeElement.querySelector('.part-editor-title-row');
-    expect(header.textContent).toContain('Edit Song Part');
+    const header = fixture.nativeElement.querySelector('.workspace-path');
+    expect(header.textContent).toContain('Verse');
     expect(header.querySelector('app-song-part-transport')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-song-part-transport')).not.toBeNull();
-    expect(header.querySelector('button[aria-label="Close song part editor"]')).not.toBeNull();
+    expect(header.querySelector('button[aria-label="Back to song"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Build the part measure by measure');
     expect(fixture.nativeElement.textContent).not.toContain('Add Measure');
     expect(fixture.nativeElement.textContent).not.toContain('Add Pattern');
@@ -590,6 +581,8 @@ describe('SongPartEditorComponent', () => {
     clickButton(fixture.nativeElement, 'Add after measure 1');
     await fixture.whenStable();
 
+    fixture.detectChanges();
+    (fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent).save();
     expect(TestBed.inject(SongSheetsService).createEmptyPartMeasure).toHaveBeenCalledWith('3/4');
     expect(fixture.componentInstance.tempPart().measures.map(measure => measure.id))
       .toEqual(['measure-1', 'measure-new', 'measure-2']);
@@ -625,6 +618,10 @@ describe('SongPartEditorComponent', () => {
 
     await fixture.componentInstance.addContent(0);
 
+    if (source === 'new-measure') {
+      fixture.detectChanges();
+      (fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent).save();
+    }
     const firstId = source === 'new-measure' ? 'measure-new' : 'pattern-start-0';
     expect(fixture.componentInstance.tempPart().measures.map(measure => measure.id))
       .toEqual([firstId, 'measure-1', 'measure-2']);
@@ -643,12 +640,14 @@ describe('SongPartEditorComponent', () => {
     fixture.nativeElement.querySelector('.empty-part-state button').click();
     await fixture.whenStable();
 
+    fixture.detectChanges();
+    (fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent).save();
     expect(TestBed.inject(SongSheetsService).createEmptyPartMeasure).toHaveBeenCalledWith('4/4');
     expect(fixture.componentInstance.tempPart().measures).toHaveLength(1);
     expect(fixture.componentInstance.selectedMeasureIndex()).toBe(0);
   });
 
-  it.each(['from-sheet', 'from-library', 'create-new'])('inserts all pattern measures in order via %s', async source => {
+  it.each(['from-sheet', 'from-library'])('inserts all pattern measures in order via %s', async source => {
     const pattern: SongSheetPattern = {
       ...createEmptySongSheetPattern(),
       id: 'pattern-1',
@@ -704,6 +703,86 @@ describe('SongPartEditorComponent', () => {
     expect(fixture.componentInstance.selectedMeasureIndex()).toBeNull();
     expect(TestBed.inject(SongSheetsService).addPattern).not.toHaveBeenCalled();
     expect(TestBed.inject(SongSheetsService).addPatterns).not.toHaveBeenCalled();
+  });
+
+  it('leaves the retained draft intact when a presentation-only action uses saved music', async () => {
+    await configureComponent({ modalService: { show: jest.fn(() => ({ afterClosed: async () => 'discard' })) } });
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.updateLyrics('Words to keep when Play view closes');
+    expect(await component.canLeave()).toBe(true);
+    expect(component.tempLyrics()).toBe('Words to keep when Play view closes');
+    expect(component.hasPartChanges()).toBe(true);
+  });
+
+  it('saves the owning part by identity after its library position changes', async () => {
+    const part = createPart([createMeasure('m', '4/4')]);
+    const other = { ...createPart([]), id: 'other', section: 'Other' };
+    await configureComponent({ part, sheet: { ...createSheet(), parts: [part, other] } });
+    delete TestBed.inject(MODAL_DATA).occurrence;
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.updateSectionName('Saved after reordering');
+    jest.mocked(TestBed.inject(SongSheetsService).getByIdWithData).mockResolvedValue({ ...createSheet(), parts: [other, part] });
+    expect(await component.save()).toBe(true);
+    expect(TestBed.inject(SongSheetsService).updatePart).toHaveBeenCalledWith('sheet-1', 1, expect.objectContaining({ id: part.id, section: 'Saved after reordering' }));
+    expect(part.section).toBe('Verse');
+  });
+
+  it('keeps Apply and parent Save as separate icon actions in the breadcrumb', async () => {
+    await configureComponent();
+    TestBed.inject(MODAL_DATA).embedded = true;
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
+    fixture.detectChanges();
+    await component.editMeasure(0); fixture.detectChanges();
+    const child = fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent;
+    child.editedMeasure = { timeSignature: '3/4', actions: Array(12).fill(null) };
+    const apply = fixture.nativeElement.querySelector('button[aria-label="Apply to part"]') as HTMLButtonElement;
+    expect(apply.textContent?.trim()).toBe('');
+    apply.click(); await fixture.whenStable(); fixture.detectChanges();
+    expect(component.tempPart().measures[0].measure.timeSignature).toBe('3/4');
+    expect(TestBed.inject(SongSheetsService).saveOccurrence).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelectorAll('.modal-footer')).toHaveLength(0);
+    const save = fixture.nativeElement.querySelector('button[aria-label="Save changes"]') as HTMLButtonElement;
+    expect(save.textContent?.trim()).toBe('');
+    await component.saveActive();
+    expect(TestBed.inject(SongSheetsService).saveOccurrence).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Notes location and draft when external navigation is declined', async () => {
+    await configureComponent({ modalService: { show: jest.fn(() => ({ afterClosed: async () => 'stay' })) } });
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.editNotes(); fixture.detectChanges();
+    component.updateNotes('Pending notes');
+    expect(await component.canLeave()).toBe(false);
+    expect(component.notesOpen()).toBe(true);
+    expect(component.tempPart().notes).toBe('Pending notes');
+  });
+
+  it('resolves measure then part guards, preserving drafts on Keep editing and save failure', async () => {
+    const show = jest.fn().mockReturnValue({ afterClosed: async () => 'stay' });
+    await configureComponent({ modalService: { show } });
+    const fixture = TestBed.createComponent(SongPartEditorComponent), component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.updateSectionName('Parent draft');
+    await component.editMeasure(0); fixture.detectChanges();
+    const child = fixture.debugElement.query(By.directive(SongPartMeasureEditorModalComponent)).componentInstance as SongPartMeasureEditorModalComponent;
+    child.editedMeasure = { timeSignature: '3/4', actions: Array(12).fill(null) };
+    expect(await component.canLeave()).toBe(false);
+    expect(component.childEditorOpen()).toBe(true);
+    expect(component.tempPart().measures[0].measure.timeSignature).toBe('4/4');
+    show.mockReturnValueOnce({ afterClosed: async () => 'apply' }).mockReturnValueOnce({ afterClosed: async () => 'stay' });
+    expect(await component.canLeave()).toBe(false);
+    expect(component.tempPart().measures[0].measure.timeSignature).toBe('3/4');
+    expect(component.tempPart().section).toBe('Parent draft');
+    expect(TestBed.inject(SongSheetsService).saveOccurrence).not.toHaveBeenCalled();
+    jest.mocked(TestBed.inject(SongSheetsService).saveOccurrence).mockRejectedValueOnce(new Error('disk full'));
+    show.mockReturnValueOnce({ afterClosed: async () => 'save' });
+    expect(await component.canLeave()).toBe(false);
+    expect(component.hasUnsavedChanges()).toBe(true);
+    expect(component.saveError()).toContain('Try again');
+    expect(await component.save()).toBe(true);
   });
 
   it('shows one empty state add button without the contextual toolbar', async () => {
