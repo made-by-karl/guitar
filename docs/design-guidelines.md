@@ -39,6 +39,8 @@ the visual baseline; a task can explicitly request a broader design change.
   `--app-selection-bg` (`#e7f1ff`) for the selected surface. Import pickers and song sections,
   parts, measures, grips, and patterns share these tokens. Pair the color with an accessible
   pressed/checked state and a visible indicator or named contextual action bar.
+- Sheet grip/pattern cards use the blue selected surface and named action bar without extra
+  checkbox/check-circle decorations. Selection checkboxes remain appropriate in import pickers.
 - Selecting an item reveals its actions; entering an editor requires the explicit Edit action.
   Keep reorder handles separate from selection controls and track selection by stable identity.
 - Use `.app-selectable.is-selected` for selectable song cards/rows. Use
@@ -49,10 +51,19 @@ the visual baseline; a task can explicitly request a broader design change.
   bar and its controls. The near-opaque surface must remain readable without blur support.
   Hover/pressed states use warm light fills. Disabled icons use muted brown/red with explicit
   colors rather than reduced button opacity, so unavailable actions stay identifiable.
-  Keep the selected item's name visible. Do not use selection blue as the action-bar background.
-- Contextual action bars fit their controls and stay centered with space around their edges.
-  Keep their footprint distinct from the cards underneath; do not stretch them to card width.
-  Wrap controls within the available width on narrow screens.
+  Keep the selected item's name visible. Song headings reuse the list's numbered circle; use
+  `(x)` in the tooltip rather than visible “Occurrence x” wording. Do not use selection blue
+  as the action-bar background.
+- Contextual action bars follow the width of their owning list area, inset by 12px on each
+  side. This slight inset distinguishes the overlay from the list without shrinking it to
+  the buttons. Wrap controls within the available width on narrow screens.
+- Put the borderless, transparent close/clear-selection icon in the header's top-right corner,
+  vertically centered with the heading and without vertical margins, retaining the standard
+  hit area and visible keyboard focus. Keep it separate from editing
+  actions. Leave one empty button slot before Delete, including the normal gutter on both
+  sides. Playback and editing rows share button-column spacing. On phones, stack the rows
+  so Edit starts under Play and Delete aligns with a playback button. Use shared icon/gutter
+  sizes for touch controls; allow groups to wrap when a column is too narrow.
 - Contextual actions use Bootstrap Icons with accessible names and title tooltips, including
   Edit, Copy/Duplicate, Delete, Play/Stop, Export, and Clear selection. Keep explanatory text
   outside the buttons. Action bars wrap within their owning column and remain usable while
@@ -63,6 +74,9 @@ the visual baseline; a task can explicitly request a broader design change.
 - Reuse `.btn` and Bootstrap variants. Standard labeled actions use the normal Bootstrap size;
   dense secondary actions use `.btn-sm`. Neighboring controls serving the same role use the
   same size and spacing. Avoid component-specific minimum sizes that override shared controls.
+- Sheet header Add controls share `.btn.app-add-button`, a `bi-plus` icon, and “Add Part”,
+  “Add Pattern”, or “Add Grip” text. Keep their text color, padding, icon spacing and height
+  consistent; the shared minimum height also follows the touch icon size.
 - Icon-only toolbar, breadcrumb, contextual, and preview controls use `.btn.app-icon-button`.
   This is a centered **32×32 CSS pixel** control, matching the compact preview chevron.
   The shared `--app-icon-button-size` increases to **44×44** on coarse touch pointers.

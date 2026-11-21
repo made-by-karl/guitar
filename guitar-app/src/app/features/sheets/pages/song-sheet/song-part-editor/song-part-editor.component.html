@@ -213,39 +213,51 @@
     @if (activeTab() === 'music') {
       @if (getSelectedMeasure(); as selectedMeasure) {
         <div class="selected-measure-toolbar app-selection-actions" role="region" aria-label="Selected measure actions">
-          <div class="selected-measure-label app-selection-label">
-            <span class="small text-uppercase text-muted">Selected</span>
-            <strong>{{ getSelectedMeasureLabel() }}</strong>
+          <div class="app-selection-header">
+            <div class="selected-measure-label app-selection-label">
+              <span class="small text-uppercase text-muted">Selected</span>
+              <strong>{{ getSelectedMeasureLabel() }}</strong>
+            </div>
+            <button
+              class="btn btn-outline-secondary btn-sm app-icon-button app-selection-close"
+              type="button"
+              title="Close actions and clear selection"
+              aria-label="Clear measure selection"
+              (click)="clearMeasureSelection()">
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
           </div>
 
           <div class="selected-measure-actions app-selection-buttons">
-            <button
-              class="btn btn-sm app-icon-button"
-              type="button"
-              [class.btn-danger]="isMeasurePlaybackActive(selectedMeasure)"
-              [class.btn-outline-primary]="!isMeasurePlaybackActive(selectedMeasure)"
-              [disabled]="!isMeasurePlaybackActive(selectedMeasure) && !canPlaySelectedMeasure()"
-              [attr.aria-label]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : 'Play measure'"
-              [title]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
-              (click)="toggleSelectedMeasurePlayback(tempPart())">
-              <i aria-hidden="true" class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(selectedMeasure)" [class.bi-play-fill]="!isMeasurePlaybackActive(selectedMeasure)"></i>
-            </button>
-            <button
-              class="btn btn-outline-secondary btn-sm app-icon-button"
-              type="button"
-              title="Edit measure"
-              aria-label="Edit selected measure" [disabled]="musicLocked()"
-              (click)="editSelectedMeasure()">
-              <i aria-hidden="true" class="bi bi-pencil"></i>
-            </button>
-            <button
-              class="btn btn-outline-secondary btn-sm app-icon-button"
-              type="button"
-              title="Duplicate measure"
-              aria-label="Duplicate selected measure" [disabled]="musicLocked()"
-              (click)="duplicateSelectedMeasure()">
-              <i aria-hidden="true" class="bi bi-copy"></i>
-            </button>
+            <div class="app-selection-commands">
+              <button
+                class="btn btn-sm app-icon-button"
+                type="button"
+                [class.btn-danger]="isMeasurePlaybackActive(selectedMeasure)"
+                [class.btn-outline-primary]="!isMeasurePlaybackActive(selectedMeasure)"
+                [disabled]="!isMeasurePlaybackActive(selectedMeasure) && !canPlaySelectedMeasure()"
+                [attr.aria-label]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : 'Play measure'"
+                [title]="isMeasurePlaybackActive(selectedMeasure) ? 'Stop measure' : canPlaySelectedMeasure() ? 'Play measure' : 'Assign a grip or add playable notes'"
+                (click)="toggleSelectedMeasurePlayback(tempPart())">
+                <i aria-hidden="true" class="bi" [class.bi-stop-fill]="isMeasurePlaybackActive(selectedMeasure)" [class.bi-play-fill]="!isMeasurePlaybackActive(selectedMeasure)"></i>
+              </button>
+              <button
+                class="btn btn-outline-secondary btn-sm app-icon-button"
+                type="button"
+                title="Edit measure"
+                aria-label="Edit selected measure" [disabled]="musicLocked()"
+                (click)="editSelectedMeasure()">
+                <i aria-hidden="true" class="bi bi-pencil"></i>
+              </button>
+              <button
+                class="btn btn-outline-secondary btn-sm app-icon-button"
+                type="button"
+                title="Duplicate measure"
+                aria-label="Duplicate selected measure" [disabled]="musicLocked()"
+                (click)="duplicateSelectedMeasure()">
+                <i aria-hidden="true" class="bi bi-copy"></i>
+              </button>
+            </div>
             <button
               class="btn btn-outline-danger btn-sm app-icon-button"
               type="button"
@@ -253,14 +265,6 @@
               aria-label="Remove selected measure" [disabled]="musicLocked()"
               (click)="removeSelectedMeasure()">
               <i aria-hidden="true" class="bi bi-trash"></i>
-            </button>
-            <button
-              class="btn btn-outline-secondary btn-sm app-icon-button"
-              type="button"
-              title="Clear selection"
-              aria-label="Clear measure selection"
-              (click)="clearMeasureSelection()">
-              <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
           </div>
         </div>

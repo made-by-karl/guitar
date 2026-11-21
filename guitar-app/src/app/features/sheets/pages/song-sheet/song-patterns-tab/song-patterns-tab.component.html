@@ -16,7 +16,7 @@
       <h5 class="mb-0">Pattern Library</h5>
       <p class="section-copy mb-0">Sheet-local playing patterns reused by song parts.</p>
     </div>
-    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPatterns()">
+    <button class="btn btn-outline-primary btn-sm app-add-button" type="button" (click)="addPatterns()">
       <i aria-hidden="true" class="bi bi-plus"></i> Add Pattern
     </button>
   </div>
@@ -34,7 +34,7 @@
             <div class="flex-grow-1">
               <div class="d-flex flex-wrap align-items-center gap-2">
                 <button class="library-select" type="button" [attr.aria-label]="'Select pattern ' + (pattern.name || 'Untitled Pattern')" [attr.aria-pressed]="selectedId() === pattern.id" (click)="selectedId.set(pattern.id)">
-                  <strong>{{ pattern.name || 'Untitled Pattern' }}</strong> <i class="bi" [class.bi-check-circle-fill]="selectedId() === pattern.id" [class.bi-circle]="selectedId() !== pattern.id" aria-hidden="true"></i>
+                  <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
                 </button>
                 @for (measure of pattern.measures; track $index) {
                 <span class="badge bg-info">{{ measure.timeSignature }}</span>
@@ -62,14 +62,18 @@
   }
   @if (selectedPattern(); as pattern) {
     <div class="selection-actions app-selection-actions" role="region" aria-label="Selected pattern actions">
-      <strong>{{ pattern.name || 'Untitled Pattern' }}</strong>
+      <div class="app-selection-header">
+        <strong [title]="pattern.name || 'Untitled Pattern'">{{ pattern.name || 'Untitled Pattern' }}</strong>
+        <button class="btn btn-outline-secondary app-icon-button app-selection-close" type="button" aria-label="Clear selection" title="Close actions and clear selection" (click)="selectedId.set(undefined)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>
       <div class="app-selection-buttons">
-        <button class="btn btn-outline-secondary app-icon-button" type="button" [attr.aria-label]="'Edit ' + (pattern.name || 'Untitled Pattern')" title="Edit pattern" (click)="editPattern(pattern)"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-        <app-export-button [id]="pattern.id" type="guitar-playing-pattern" [sheetId]="sheet().id" [iconOnly]="true" />
-        <button class="btn btn-outline-primary app-icon-button" type="button" [attr.aria-label]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" [title]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" (click)="playPattern(pattern)"><i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)" aria-hidden="true"></i></button>
-        <button class="btn btn-outline-secondary app-icon-button" type="button" aria-label="Copy pattern" title="Copy pattern" (click)="copyPattern(pattern.id)"><i class="bi bi-copy" aria-hidden="true"></i></button>
+        <div class="app-selection-commands">
+          <button class="btn btn-outline-secondary app-icon-button" type="button" [attr.aria-label]="'Edit ' + (pattern.name || 'Untitled Pattern')" title="Edit pattern" (click)="editPattern(pattern)"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+          <app-export-button [id]="pattern.id" type="guitar-playing-pattern" [sheetId]="sheet().id" [iconOnly]="true" />
+          <button class="btn btn-outline-primary app-icon-button" type="button" [attr.aria-label]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" [title]="isPatternPlaybackActive(pattern) ? 'Stop pattern' : 'Play pattern'" (click)="playPattern(pattern)"><i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive(pattern)" [class.bi-play-fill]="!isPatternPlaybackActive(pattern)" aria-hidden="true"></i></button>
+          <button class="btn btn-outline-secondary app-icon-button" type="button" aria-label="Copy pattern" title="Copy pattern" (click)="copyPattern(pattern.id)"><i class="bi bi-copy" aria-hidden="true"></i></button>
+        </div>
         <button class="btn btn-outline-danger app-icon-button" type="button" aria-label="Delete pattern" title="Delete pattern" (click)="removePattern(pattern.id)"><i class="bi bi-trash" aria-hidden="true"></i></button>
-        <button class="btn btn-outline-secondary app-icon-button" type="button" aria-label="Clear selection" title="Clear selection" (click)="selectedId.set(undefined)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
       </div>
     </div>
   }

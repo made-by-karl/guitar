@@ -260,8 +260,10 @@ Section-navigation screenshots are under `temp/ux/song-sheet-editing-consistency
 action bars in Song, Parts, Measures, Grips, and Patterns. It measures enabled and disabled icon
 contrast over black/white underlays of the translucent surface, including hover, pressed and
 keyboard-focus states. It also checks keyboard selection, contextual copy/delete/clear, aligned
-desktop boxes, matching 32px preview controls and 44px touch targets, and breadcrumb/preview
-separation during outer-page scrolling.
+desktop boxes, matching 32px preview controls and 44px touch targets, top-right close buttons,
+an empty button column before Delete, shared mobile playback/editing columns, vertically
+aligned headings/close icons, a slight list-width inset, and breadcrumb/preview separation
+during outer-page scrolling.
 Screenshots at 375×667, 768×1024 and 1280×800 are retained under `temp/ux/selection-design/`.
 Run it with the workspace, grip-card, selection-mode, measure-toolbar, part-action and live-preview
 suites when changing these shared interaction styles. Resized Chromium and touch emulation do

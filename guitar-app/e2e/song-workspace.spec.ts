@@ -73,7 +73,7 @@ for (const [width, height] of [[375, 667], [768, 1024], [1280, 800], [700, 800],
     await select.focus(); await select.press('Space');
     await expect(editor).toHaveCount(0);
     const selected = song.getByRole('region', { name: 'Selected occurrence actions' });
-    await expect(selected).toContainText('Occurrence 2');
+    await expect(selected.locator('.occurrence-number')).toHaveText('2');
     await expect(song.locator('.occurrence-actions')).toHaveCount(0);
     await song.getByRole('button', { name: 'Chorus, occurrence 1', exact: true }).press('Enter');
     await expect(selected).toContainText('Chorus');

@@ -2,7 +2,7 @@
 .part-transport {
   display: flex;
   flex-wrap: nowrap;
-  gap: .5rem;
+  gap: var(--app-selection-gap, .5rem);
 
 }
 .part-transport-status { margin-top: .25rem; }

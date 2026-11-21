@@ -56,7 +56,6 @@
   color: inherit;
   text-align: left;
   &:focus-visible { outline: 2px solid var(--app-selection-color); outline-offset: 2px; }
-  .bi { color: var(--app-selection-color); flex-shrink: 0; }
 }
 .library-select.grip-preview { justify-content: center; }
 .library-select.pattern-measures-preview { display: grid; }

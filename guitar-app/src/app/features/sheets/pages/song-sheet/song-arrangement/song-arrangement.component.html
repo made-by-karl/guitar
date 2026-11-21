@@ -59,13 +59,20 @@
 
         @if (selectedOccurrence(); as selected) {
           <div class="selection-actions app-selection-actions" role="region" aria-label="Selected occurrence actions">
-            <strong>{{ part(selected)?.section || 'Missing part' }} · Occurrence {{ number(selected) }}</strong>
+            <div class="app-selection-header">
+              <strong class="app-selection-title" [title]="(part(selected)?.section || 'Missing part') + ' (' + number(selected) + ')'">
+                <span class="app-selection-title-text">{{ part(selected)?.section || 'Missing part' }}</span>
+                <span class="occurrence-number" [attr.aria-label]="'Occurrence ' + number(selected)">{{ number(selected) }}</span>
+              </strong>
+              <button class="btn btn-outline-secondary btn-sm app-icon-button app-selection-close" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Close actions and clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </div>
             <app-song-part-transport [state]="playbackState()" [partId]="selected.partId" [occurrenceId]="selected.id" [measureCount]="part(selected)?.measures?.length || 0" [playable]="canPlayOccurrence(selected)"
               (play)="toggleOccurrence(selected)" (pause)="playback.pauseSongPart()" (resume)="playback.resumeSongPart()" (previous)="playback.seekSongPartMeasure(-1)" (next)="playback.seekSongPartMeasure(1)" (stop)="playback.stopSongPart()" />
             <div class="app-selection-buttons">
-              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" [disabled]="busy() || !part(selected)" (click)="editOccurrence(selected.id)" aria-label="Edit" title="Edit section"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+              <div class="app-selection-commands">
+                <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" [disabled]="busy() || !part(selected)" (click)="editOccurrence(selected.id)" aria-label="Edit" title="Edit section"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+              </div>
               <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" [disabled]="busy()" (click)="remove(selected)" aria-label="Remove occurrence" title="Remove occurrence"><i class="bi bi-trash" aria-hidden="true"></i></button>
-              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
             </div>
             @if (!canPlayOccurrence(selected)) { <small>Assign a grip or add playable notes to enable playback.</small> }
           </div>

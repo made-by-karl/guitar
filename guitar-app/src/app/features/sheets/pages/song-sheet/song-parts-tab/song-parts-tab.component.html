@@ -1,7 +1,7 @@
 <section class="sheet-section" [class.has-editor]="editorInjector()">
   <div class="section-header">
     <div><h5 class="mb-0">Song Parts</h5><p class="section-copy mb-0">A part is a reusable section of your song.</p></div>
-    <button class="btn btn-outline-primary btn-sm" type="button" (click)="addPart()"><i aria-hidden="true" class="bi bi-plus-lg"></i> Add Part</button>
+    <button class="btn btn-outline-primary btn-sm app-add-button" type="button" (click)="addPart()"><i aria-hidden="true" class="bi bi-plus"></i> Add Part</button>
   </div>
   @if (playbackState.type === 'part' && playbackState.source === 'parts') {
     @if (playbackState.presentation; as presentation) {
@@ -33,14 +33,18 @@
       } @else { <p class="alert alert-info">No song parts yet. Add a part and compose it measure by measure.</p> }
       @if (selectedPart(); as part) {
         <div class="selection-actions app-selection-actions" role="region" aria-label="Selected part actions">
-          <strong>{{ part.section || 'Untitled part' }}</strong>
+          <div class="app-selection-header">
+            <strong [title]="part.section || 'Untitled part'">{{ part.section || 'Untitled part' }}</strong>
+            <button class="btn btn-outline-secondary btn-sm app-icon-button app-selection-close" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Close actions and clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+          </div>
           <app-song-part-transport [state]="playbackState" [partId]="part.id" [measureCount]="part.measures.length" [playable]="canPlayPart(part)"
             (play)="playPart(part)" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
           <div class="app-selection-buttons">
-            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="editPart(selectedIndex())" aria-label="Edit" title="Edit part"><i class="bi bi-pencil" aria-hidden="true"></i></button>
-            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="copyPart(selectedIndex())" aria-label="Copy" title="Copy part"><i class="bi bi-copy" aria-hidden="true"></i></button>
+            <div class="app-selection-commands">
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="editPart(selectedIndex())" aria-label="Edit" title="Edit part"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+              <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="copyPart(selectedIndex())" aria-label="Copy" title="Copy part"><i class="bi bi-copy" aria-hidden="true"></i></button>
+            </div>
             <button class="btn btn-outline-danger btn-sm app-icon-button" type="button" (click)="removePart(selectedIndex())" aria-label="Remove part" title="Remove part"><i class="bi bi-trash" aria-hidden="true"></i></button>
-            <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" (click)="selectedId.set(undefined)" aria-label="Clear selection" title="Clear selection"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
           </div>
           @if (!canPlayPart(part)) { <small>Assign a grip or add playable notes to enable playback.</small> }
         </div>

@@ -69,20 +69,55 @@ async function checkActionContrast(actions: Locator) {
   return samples;
 }
 
+async function checkActionLayout(actions: Locator, buttonSize: number): Promise<void> {
+  const box = (await actions.boundingBox())!;
+  const close = actions.locator('.app-selection-close');
+  await expect(close).toHaveCount(1);
+  await expect(close).toHaveCSS('border-top-width', '0px');
+  await expect(close).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(close).toHaveCSS('margin-top', '0px');
+  await expect(close).toHaveCSS('margin-bottom', '0px');
+  const closeBox = (await close.boundingBox())!;
+  const header = (await actions.locator('.app-selection-header').boundingBox())!;
+  expect(Math.abs(closeBox.y + closeBox.height / 2 - header.y - header.height / 2)).toBeLessThan(1);
+  expect(Math.abs(box.x + box.width - closeBox.x - closeBox.width - 13)).toBeLessThan(1);
+  const commands = actions.locator('.app-selection-commands');
+  const regular = (await commands.boundingBox())!;
+  const remove = (await actions.locator('.app-selection-buttons > .btn-outline-danger').boundingBox())!;
+  expect(regular.y).toBeGreaterThanOrEqual(closeBox.y + closeBox.height);
+  if (Math.abs(regular.y - remove.y) < 1) {
+    expect(Math.abs(remove.x - regular.x - regular.width - buttonSize - 16)).toBeLessThan(1);
+  } else {
+    expect(remove.y).toBeGreaterThanOrEqual(regular.y + regular.height);
+  }
+  const playback = actions.locator('.part-transport');
+  if (await playback.count()) {
+    const playButtons = await playback.getByRole('button').evaluateAll(buttons => buttons.map(button => {
+      const { x, y, height } = button.getBoundingClientRect(); return { x, y, height };
+    }));
+    if (actions.page().viewportSize()!.width <= 700) {
+      expect(regular.y).toBeGreaterThanOrEqual(Math.max(...playButtons.map(button => button.y + button.height)));
+    }
+    if (regular.y >= playButtons[0].y + playButtons[0].height) {
+      expect(Math.abs(regular.x - playButtons[0].x)).toBeLessThan(1);
+      expect(Math.min(...playButtons.map(button => Math.abs(button.x - remove.x)))).toBeLessThan(1);
+    }
+  }
+}
+
 async function checkActions(actions: Locator, selected: Locator): Promise<void> {
   await expect(actions).toBeVisible();
+  await checkActionLayout(actions, 32);
   const footprint = await actions.evaluate(element => {
     const box = element.getBoundingClientRect(), parent = element.parentElement!.getBoundingClientRect();
-    const groups = Array.from(element.children).filter(child => !['STRONG', 'SMALL'].includes(child.tagName)).map(child => child.getBoundingClientRect());
-    const singleRow = groups.every(group => Math.abs(group.y - groups[0].y) < 1);
-    const controlWidth = Math.max(...groups.map(group => group.right)) - Math.min(...groups.map(group => group.left));
-    return { left: box.left - parent.left, right: parent.right - box.right, overflow: element.scrollWidth > element.clientWidth, extraWidth: singleRow ? box.width - controlWidth : 0 };
+    return { left: box.left - parent.left, right: parent.right - box.right, overflow: element.scrollWidth > element.clientWidth };
   });
   expect(footprint.left).toBeGreaterThanOrEqual(12);
   expect(footprint.right).toBeGreaterThanOrEqual(12);
   expect(Math.abs(footprint.left - footprint.right)).toBeLessThan(1);
   expect(footprint.overflow).toBe(false);
-  expect(footprint.extraWidth).toBeLessThanOrEqual(40);
+  expect(footprint.left).toBeLessThanOrEqual(13);
+  expect(footprint.right).toBeLessThanOrEqual(13);
   await expect(selected).toHaveCSS('background-color', 'rgb(231, 241, 255)');
   await expect(actions).toHaveCSS('opacity', '1');
   const surface = await actions.evaluate(element => getComputedStyle(element).backgroundColor.match(/[\d.]+/g)!.map(Number));
@@ -96,6 +131,14 @@ async function checkActions(actions: Locator, selected: Locator): Promise<void> 
   }
 }
 
+async function addButtonAppearance(button: Locator) {
+  await expect(button.locator('i')).toHaveClass('bi bi-plus');
+  return button.evaluate(element => {
+    const style = getComputedStyle(element);
+    return { height: element.getBoundingClientRect().height, color: style.color, border: style.borderColor, font: style.font, padding: style.padding, gap: style.gap, radius: style.borderRadius };
+  });
+}
+
 for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
   test(`shared selection, icons and aligned workspaces at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport); await seed(page);
@@ -105,10 +148,15 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
       expect(Math.abs(left.y - right.y)).toBeLessThan(1);
     }
     await song.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).press('Enter');
+    const songHeader = song.locator('.app-selection-header');
+    await expect(songHeader.locator('.occurrence-number')).toHaveText('1');
+    await expect(songHeader).not.toContainText('Occurrence');
+    await expect(songHeader.locator('strong')).toHaveAttribute('title', 'Verse (1)');
     await checkActions(song.getByRole('region', { name: 'Selected occurrence actions' }), song.locator('.is-selected'));
     await page.screenshot({ path: `${evidence}/song-${viewport.width}.png` });
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const parts = page.locator('app-song-sheet-parts-tab');
+    const partAdd = await addButtonAppearance(parts.getByRole('button', { name: 'Add Part', exact: true }));
     if (viewport.width > 700) {
       await expect(parts.locator('.workspace-placeholder .bi')).toBeVisible();
       const left = (await parts.locator('.card').first().boundingBox())!, right = (await parts.locator('.workspace-placeholder').boundingBox())!;
@@ -146,12 +194,19 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await editor.getByRole('button', { name: 'Back to parts', exact: true }).click();
     await page.getByRole('tab', { name: 'Grips', exact: true }).click();
     const grips = page.locator('app-song-sheet-grips-tab');
+    expect(await addButtonAppearance(grips.getByRole('button', { name: 'Add Grip', exact: true }))).toEqual(partAdd);
+    await expect(grips.locator('.library-select .bi-circle, .library-select .bi-check-circle-fill')).toHaveCount(0);
     await expect(grips.getByRole('region')).toHaveCount(0);
     await grips.getByRole('button', { name: 'Select grip C', exact: true }).press('Space');
     await checkActions(grips.getByRole('region', { name: 'Selected grip actions' }), grips.locator('.is-selected'));
     await page.screenshot({ path: `${evidence}/grips-${viewport.width}.png` });
+    await grips.locator('.app-selection-close').click();
+    await expect(grips.locator('.is-selected')).toHaveCount(0);
+    await expect(grips.getByRole('region', { name: 'Selected grip actions' })).toHaveCount(0);
     await page.getByRole('tab', { name: 'Patterns', exact: true }).click();
     const patterns = page.locator('app-song-sheet-patterns-tab');
+    expect(await addButtonAppearance(patterns.getByRole('button', { name: 'Add Pattern', exact: true }))).toEqual(partAdd);
+    await expect(patterns.locator('.library-select .bi-circle, .library-select .bi-check-circle-fill')).toHaveCount(0);
     await patterns.getByRole('button', { name: 'Select pattern One', exact: true }).click();
     const actions = patterns.getByRole('region', { name: 'Selected pattern actions' });
     await checkActions(actions, patterns.locator('.is-selected'));
@@ -178,6 +233,8 @@ test('touch preview controls share the larger hit target', async ({ browser, bas
     await seed(page);
     await page.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).click();
     const actions = page.getByRole('region', { name: 'Selected occurrence actions' });
+    await checkActionLayout(actions, 44);
+    await page.screenshot({ path: `${evidence}/touch-action-columns.png` });
     for (const button of await actions.getByRole('button').all()) {
       const box = (await button.boundingBox())!; expect([box.width, box.height]).toEqual([44, 44]);
     }
@@ -195,6 +252,7 @@ test('touch preview controls share the larger hit target', async ({ browser, bas
     await page.getByRole('button', { name: 'Select Verse', exact: true }).click();
     const partActions = page.getByRole('region', { name: 'Selected part actions' });
     await expect(partActions).toBeInViewport({ ratio: 1 });
+    await checkActionLayout(partActions, 44);
     expect(await partActions.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   } finally { await context.close(); }
 });
@@ -210,7 +268,7 @@ test('warm translucent actions retain contrast when disabled, hovered, pressed a
   await expect(actions.getByRole('button', { name: 'Stop', exact: true })).toBeDisabled();
   const edit = actions.getByRole('button', { name: 'Edit', exact: true });
   const remove = actions.getByRole('button', { name: 'Remove occurrence', exact: true });
-  for (const button of [edit, remove]) {
+  for (const button of [actions.locator('.app-selection-close'), edit, remove]) {
     await button.hover();
     states[`${await button.getAttribute('aria-label')}-hover`] = await checkActionContrast(actions);
     await page.mouse.down();
