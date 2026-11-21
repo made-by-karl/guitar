@@ -257,9 +257,11 @@ Section-navigation screenshots are under `temp/ux/song-sheet-editing-consistency
 ## Song-sheet editor workspace
 
 `e2e/selection-design.spec.ts` checks the shared blue selection surface and contrasting icon
-action bars in Song, Parts, Measures, Grips, and Patterns. It measures enabled icon contrast,
-keyboard selection, contextual copy/delete/clear, aligned desktop boxes, matching 32px preview
-controls and 44px touch targets, and breadcrumb/preview separation during outer-page scrolling.
+action bars in Song, Parts, Measures, Grips, and Patterns. It measures enabled and disabled icon
+contrast over black/white underlays of the translucent surface, including hover, pressed and
+keyboard-focus states. It also checks keyboard selection, contextual copy/delete/clear, aligned
+desktop boxes, matching 32px preview controls and 44px touch targets, and breadcrumb/preview
+separation during outer-page scrolling.
 Screenshots at 375×667, 768×1024 and 1280×800 are retained under `temp/ux/selection-design/`.
 Run it with the workspace, grip-card, selection-mode, measure-toolbar, part-action and live-preview
 suites when changing these shared interaction styles. Resized Chromium and touch emulation do

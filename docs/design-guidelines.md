@@ -43,8 +43,12 @@ the visual baseline; a task can explicitly request a broader design change.
   Keep reorder handles separate from selection controls and track selection by stable identity.
 - Use `.app-selectable.is-selected` for selectable song cards/rows. Use
   `.app-selection-actions` for the sticky contextual action surface and
-  `.app-selection-buttons` for its icon group. The opaque charcoal surface, light icons,
-  contrasting destructive icons, border, and shadow distinguish actions from the selected list.
+  `.app-selection-buttons` for its icon group. Use a translucent warm cream surface, opaque
+  dark brown icons, dark red destructive icons, a warm border, and a soft shadow. Apply alpha
+  only to the surface, with backdrop blur to soften notation underneath; never fade the whole
+  bar and its controls. The near-opaque surface must remain readable without blur support.
+  Hover/pressed states use warm light fills. Disabled icons use muted brown/red with explicit
+  colors rather than reduced button opacity, so unavailable actions stay identifiable.
   Keep the selected item's name visible. Do not use selection blue as the action-bar background.
 - Contextual actions use Bootstrap Icons with accessible names and title tooltips, including
   Edit, Copy/Duplicate, Delete, Play/Stop, Export, and Clear selection. Keep explanatory text

@@ -34,37 +34,46 @@
   gap: .5rem .75rem;
   padding: .75rem;
   padding-bottom: max(.75rem, env(safe-area-inset-bottom));
-  border: 1px solid #495057;
+  border: 1px solid #9b7d61;
   border-radius: .5rem;
-  background: #343a40;
-  color: #fff;
-  box-shadow: 0 -.25rem 1rem #0003;
+  // Fade only the surface; labels and icons remain fully opaque over notation.
+  background: rgba(250, 247, 242, .94);
+  color: var(--bs-body-color);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -.125rem .5rem rgba(98, 60, 35, .12);
   overflow-anchor: none;
 
   > strong { flex: 1 1 100%; overflow-wrap: anywhere; }
   > small { flex-basis: 100%; }
-  .text-muted { color: #dee2e6 !important; }
+  .text-muted { color: #6b5746 !important; }
+  .btn { --bs-btn-disabled-opacity: 1; }
   .btn.btn-outline-primary,
   .btn.btn-outline-secondary {
-    --bs-btn-color: #fff;
-    --bs-btn-border-color: #adb5bd;
-    --bs-btn-hover-color: #212529;
-    --bs-btn-hover-bg: #fff;
-    --bs-btn-hover-border-color: #fff;
-    --bs-btn-active-color: #212529;
-    --bs-btn-active-bg: #dee2e6;
-    --bs-btn-active-border-color: #fff;
-    --bs-btn-disabled-color: #dee2e6;
-    --bs-btn-disabled-border-color: #adb5bd;
+    --bs-btn-color: #623c23;
+    --bs-btn-border-color: #8b5e3c;
+    --bs-btn-hover-color: #4d2e1a;
+    --bs-btn-hover-bg: #f1e4d4;
+    --bs-btn-hover-border-color: #623c23;
+    --bs-btn-active-color: #4d2e1a;
+    --bs-btn-active-bg: #ead9c7;
+    --bs-btn-active-border-color: #623c23;
+    --bs-btn-disabled-color: #806b58;
+    --bs-btn-disabled-border-color: #a48f7c;
   }
   .btn.btn-outline-danger {
-    --bs-btn-color: #ffb4bd;
-    --bs-btn-border-color: #ffb4bd;
-    --bs-btn-hover-bg: #842029;
-    --bs-btn-hover-border-color: #ffb4bd;
-    --bs-btn-active-bg: #842029;
+    --bs-btn-color: #9c2934;
+    --bs-btn-border-color: #a83b45;
+    --bs-btn-hover-color: #842029;
+    --bs-btn-hover-bg: #f8e0e1;
+    --bs-btn-hover-border-color: #842029;
+    --bs-btn-active-color: #842029;
+    --bs-btn-active-bg: #f2cbd0;
+    --bs-btn-active-border-color: #842029;
+    --bs-btn-disabled-color: #916c6d;
+    --bs-btn-disabled-border-color: #b89a9a;
   }
-  .btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .btn:focus-visible { outline: 2px solid #623c23; outline-offset: 3px; }
 }
 
 .app-selection-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }

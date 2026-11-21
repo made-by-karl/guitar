@@ -1,5 +1,5 @@
 import { expect, Locator, Page, test } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 
 const evidence = '../temp/ux/selection-design';
@@ -29,23 +29,58 @@ async function seed(page: Page): Promise<void> {
   await mkdir(evidence, { recursive: true });
 }
 
+async function actionSamples(actions: Locator) {
+  // Wait for actual hover/pressed transitions before measuring their final colors.
+  await actions.evaluate(async element => {
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished.catch(() => undefined)));
+  });
+  return actions.getByRole('button').evaluateAll(buttons => {
+    const rgba = (color: string) => {
+      const values = color.match(/[\d.]+/g)!.map(Number);
+      return { rgb: values.slice(0, 3), alpha: values[3] ?? 1 };
+    };
+    const blend = (foreground: number[], background: number[], alpha: number) => foreground.map((v, i) => v * alpha + background[i] * (1 - alpha));
+    const luminance = (rgb: number[]) => rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+    const contrast = (a: number[], b: number[]) => (Math.max(luminance(a), luminance(b)) + .05) / (Math.min(luminance(a), luminance(b)) + .05);
+    return buttons.map(button => {
+      const style = getComputedStyle(button), rect = button.getBoundingClientRect();
+      const surface = rgba(getComputedStyle(button.closest('.app-selection-actions')!).backgroundColor);
+      const background = rgba(style.backgroundColor), foreground = rgba(style.color), opacity = Number(style.opacity);
+      // A translucent bar may pass over notation, a selected card or empty space.
+      // Black/white underlays bound its worst contrast without ignoring alpha.
+      const ratios = [[0, 0, 0], [255, 255, 255]].map(underlay => {
+        const panel = blend(surface.rgb, underlay, surface.alpha);
+        const buttonBg = blend(background.rgb, panel, background.alpha);
+        const icon = blend(foreground.rgb, buttonBg, foreground.alpha);
+        return contrast(blend(icon, panel, opacity), blend(buttonBg, panel, opacity));
+      });
+      return { label: button.getAttribute('aria-label'), text: button.textContent!.trim(), width: rect.width, height: rect.height, disabled: (button as HTMLButtonElement).disabled, opacity, ratio: Math.min(...ratios) };
+    });
+  });
+}
+
+async function checkActionContrast(actions: Locator) {
+  const samples = await actionSamples(actions);
+  for (const sample of samples) {
+    expect(sample.opacity, sample.label!).toBe(1);
+    expect(sample.ratio, sample.label!).toBeGreaterThanOrEqual(sample.disabled ? 3 : 4.5);
+  }
+  return samples;
+}
+
 async function checkActions(actions: Locator, selected: Locator): Promise<void> {
   await expect(actions).toBeVisible();
   await expect(selected).toHaveCSS('background-color', 'rgb(231, 241, 255)');
-  await expect(actions).toHaveCSS('background-color', 'rgb(52, 58, 64)');
-  const samples = await actions.getByRole('button').evaluateAll(buttons => {
-    const luminance = (color: string) => color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
-    return buttons.map(button => {
-      const style = getComputedStyle(button), rect = button.getBoundingClientRect();
-      const background = style.backgroundColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(button.closest('.app-selection-actions')!).backgroundColor : style.backgroundColor;
-      const a = luminance(style.color), b = luminance(background);
-      return { label: button.getAttribute('aria-label'), text: button.textContent!.trim(), width: rect.width, height: rect.height, disabled: (button as HTMLButtonElement).disabled, ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05) };
-    });
-  });
+  await expect(actions).toHaveCSS('opacity', '1');
+  const surface = await actions.evaluate(element => getComputedStyle(element).backgroundColor.match(/[\d.]+/g)!.map(Number));
+  expect(surface[0]).toBeGreaterThan(surface[2]); // Warm surface, independent of selection blue.
+  expect(surface[3]).toBeGreaterThanOrEqual(.9);
+  expect(surface[3]).toBeLessThan(1);
+  const samples = await checkActionContrast(actions);
   for (const sample of samples) {
     expect(sample.label).toBeTruthy(); expect(sample.text).toBe('');
     expect(sample.width).toBe(32); expect(sample.height).toBe(32);
-    if (!sample.disabled) expect(sample.ratio, sample.label!).toBeGreaterThanOrEqual(4.5);
   }
 }
 
@@ -144,4 +179,34 @@ test('touch preview controls share the larger hit target', async ({ browser, bas
       expect([box.width, box.height]).toEqual([44, 44]);
     }
   } finally { await context.close(); }
+});
+
+
+test('warm translucent actions retain contrast when disabled, hovered, pressed and focused', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await seed(page);
+  await page.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).click();
+  const actions = page.getByRole('region', { name: 'Selected occurrence actions' });
+  const states: Record<string, Awaited<ReturnType<typeof actionSamples>>> = {};
+  states['idle'] = await checkActionContrast(actions);
+  await expect(actions.getByRole('button', { name: 'Stop', exact: true })).toBeDisabled();
+  const edit = actions.getByRole('button', { name: 'Edit', exact: true });
+  const remove = actions.getByRole('button', { name: 'Remove occurrence', exact: true });
+  for (const button of [edit, remove]) {
+    await button.hover();
+    states[`${await button.getAttribute('aria-label')}-hover`] = await checkActionContrast(actions);
+    await page.mouse.down();
+    try { states[`${await button.getAttribute('aria-label')}-pressed`] = await checkActionContrast(actions); }
+    finally {
+      await page.mouse.move(0, 0); // Release outside so no editor/removal action runs.
+      await page.mouse.up();
+    }
+  }
+  await edit.focus(); await edit.press('Tab');
+  await expect(remove).toBeFocused();
+  await expect(remove).toHaveCSS('outline-style', 'solid');
+  await expect(remove).toHaveCSS('outline-width', '2px');
+  states['keyboard-focus'] = await checkActionContrast(actions);
+  await page.screenshot({ path: `${evidence}/warm-actions-keyboard.png` });
+  await writeFile(`${evidence}/warm-action-contrast.json`, JSON.stringify(states, null, 2));
 });
