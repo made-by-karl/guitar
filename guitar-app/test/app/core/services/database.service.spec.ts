@@ -240,7 +240,7 @@ describe('DatabaseService pattern initialization', () => {
     expect(bulkAdd).toHaveBeenCalledTimes(1);
 
     const defaults = bulkAdd.mock.calls[0][0];
-    expect(defaults).toHaveLength(16);
+    expect(defaults).toHaveLength(18);
     expect(defaults.every((pattern: { isCustom: boolean }) => pattern.isCustom === false)).toBe(true);
     expect(defaults.map((pattern: { name: string }) => pattern.name)).toEqual(expect.arrayContaining([
       'Steady Downstrokes (4/4)',
@@ -252,6 +252,8 @@ describe('DatabaseService pattern initialization', () => {
       'Bass + Brush Hybrid',
       'Two-Beat Country / Train Beat',
       'Campfire Backbeat Tap',
+      'Acoustic Backbeat Chuck',
+      'Folk Strum with Chucks',
       'Hammer-On Campfire Drive',
       'Waltz Bass + Brush (3/4)',
       '6/8 Ballad Strum',
@@ -267,7 +269,7 @@ describe('DatabaseService pattern initialization', () => {
       'Muted Funk-Folk Groove',
       'Relative Campfire Bass Walk'
     ]));
-    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Campfire')).toHaveLength(13);
+    expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Campfire')).toHaveLength(15);
     expect(defaults.filter((pattern: { category: string }) => pattern.category === 'Fingerstyle')).toHaveLength(3);
     expect(defaults.some((pattern: { measures: Array<{ actions: Array<any> }> }) =>
       pattern.measures.some(measure =>
@@ -301,7 +303,7 @@ describe('DatabaseService pattern initialization', () => {
       )
     )).toBe(true);
     const defaultIds = defaults.map((pattern: { id: string }) => pattern.id);
-    expect(new Set(defaultIds).size).toBe(16);
+    expect(new Set(defaultIds).size).toBe(18);
     expect(defaultIds).toEqual(expect.arrayContaining([
       'default-chorus-lift-strum',
       'default-country-roads-strum-d-dud-du',
