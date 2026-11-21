@@ -6,6 +6,7 @@
 
 }
 .part-transport-status { margin-top: .25rem; }
+:host-context(.app-selection-actions) .part-transport { flex-wrap: wrap; }
 
 // Bootstrap's warm primary needs its emphasis shade for small outline text.
 .btn-outline-primary {

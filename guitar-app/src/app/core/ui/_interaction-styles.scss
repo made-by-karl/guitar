@@ -26,11 +26,14 @@
 
 .app-selection-actions {
   position: sticky;
-  bottom: 0;
+  bottom: .5rem;
   z-index: 4;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  width: fit-content;
+  max-width: calc(100% - 1.5rem);
+  margin: .5rem auto;
   gap: .5rem .75rem;
   padding: .75rem;
   padding-bottom: max(.75rem, env(safe-area-inset-bottom));
@@ -44,8 +47,9 @@
   box-shadow: 0 -.125rem .5rem rgba(98, 60, 35, .12);
   overflow-anchor: none;
 
-  > strong { flex: 1 1 100%; overflow-wrap: anywhere; }
-  > small { flex-basis: 100%; }
+  // Full-width labels wrap above/below the controls without inflating intrinsic width.
+  > strong { width: 0; flex: 1 1 100%; overflow-wrap: anywhere; }
+  > small { width: 0; flex: 1 1 100%; }
   .text-muted { color: #6b5746 !important; }
   .btn { --bs-btn-disabled-opacity: 1; }
   .btn.btn-outline-primary,
@@ -78,7 +82,6 @@
 
 .app-selection-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
 .app-selection-label { flex: 1; min-width: 0; strong { display: block; } }
-.app-selection-actions:has(.app-selection-label) { margin: .5rem; }
 
 .app-workspace-placeholder {
   padding: 2.5rem 1.5rem;

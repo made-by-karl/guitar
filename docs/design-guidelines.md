@@ -50,6 +50,9 @@ the visual baseline; a task can explicitly request a broader design change.
   Hover/pressed states use warm light fills. Disabled icons use muted brown/red with explicit
   colors rather than reduced button opacity, so unavailable actions stay identifiable.
   Keep the selected item's name visible. Do not use selection blue as the action-bar background.
+- Contextual action bars fit their controls and stay centered with space around their edges.
+  Keep their footprint distinct from the cards underneath; do not stretch them to card width.
+  Wrap controls within the available width on narrow screens.
 - Contextual actions use Bootstrap Icons with accessible names and title tooltips, including
   Edit, Copy/Duplicate, Delete, Play/Stop, Export, and Clear selection. Keep explanatory text
   outside the buttons. Action bars wrap within their owning column and remain usable while

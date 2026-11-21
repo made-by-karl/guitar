@@ -71,6 +71,18 @@ async function checkActionContrast(actions: Locator) {
 
 async function checkActions(actions: Locator, selected: Locator): Promise<void> {
   await expect(actions).toBeVisible();
+  const footprint = await actions.evaluate(element => {
+    const box = element.getBoundingClientRect(), parent = element.parentElement!.getBoundingClientRect();
+    const groups = Array.from(element.children).filter(child => !['STRONG', 'SMALL'].includes(child.tagName)).map(child => child.getBoundingClientRect());
+    const singleRow = groups.every(group => Math.abs(group.y - groups[0].y) < 1);
+    const controlWidth = Math.max(...groups.map(group => group.right)) - Math.min(...groups.map(group => group.left));
+    return { left: box.left - parent.left, right: parent.right - box.right, overflow: element.scrollWidth > element.clientWidth, extraWidth: singleRow ? box.width - controlWidth : 0 };
+  });
+  expect(footprint.left).toBeGreaterThanOrEqual(12);
+  expect(footprint.right).toBeGreaterThanOrEqual(12);
+  expect(Math.abs(footprint.left - footprint.right)).toBeLessThan(1);
+  expect(footprint.overflow).toBe(false);
+  expect(footprint.extraWidth).toBeLessThanOrEqual(40);
   await expect(selected).toHaveCSS('background-color', 'rgb(231, 241, 255)');
   await expect(actions).toHaveCSS('opacity', '1');
   const surface = await actions.evaluate(element => getComputedStyle(element).backgroundColor.match(/[\d.]+/g)!.map(Number));
@@ -178,6 +190,12 @@ test('touch preview controls share the larger hit target', async ({ browser, bas
       const box = (await measure.getByRole('button', { name: label, exact: true }).boundingBox())!;
       expect([box.width, box.height]).toEqual([44, 44]);
     }
+    await page.getByRole('tab', { name: 'Parts', exact: true }).click();
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.getByRole('button', { name: 'Select Verse', exact: true }).click();
+    const partActions = page.getByRole('region', { name: 'Selected part actions' });
+    await expect(partActions).toBeInViewport({ ratio: 1 });
+    expect(await partActions.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   } finally { await context.close(); }
 });
 
