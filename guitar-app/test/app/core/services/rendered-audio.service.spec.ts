@@ -212,4 +212,51 @@ describe('Offline rendering, sample isolation and bounded cache', () => {
     controllers.forEach(controller => controller.abort());
     expect((await settled).every(result => result.status === 'rejected')).toBe(true);
   });
+  it('renders exact windows with preceding attacks, shared samples and uncached temporary PCM', async () => {
+    const load = jest.spyOn(Tone.ToneAudioBuffer, 'fromUrl'); load.mockClear();
+    const instructions = [{ ...clean, time: 3 }, { ...clean, time: 4.1 }, { ...clean, time: 8.1 }];
+    const controller = new AbortController();
+    const first = await service.renderWindow(instructions, 12, 4 * 44100, 8 * 44100, controller.signal);
+    expect(first.pcm.length).toBe(4 * 44100); expect(first.startFrame).toBe(4 * 44100);
+    expect(encoder.encode).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(7);
+    await service.renderWindow(instructions, 12, 8 * 44100, 12 * 44100, controller.signal);
+    expect(load).toHaveBeenCalledTimes(7);
+    const origin = Math.floor(3 * 44100 / 128) * 128 / 44100;
+    expect(tone.__samplerInstances[0].triggerAttackRelease.mock.calls.map(call => call[2])).toEqual([3 - origin, 4.1 - origin]);
+  });
+  it('lets interactive preparation overtake speculative windows between bounded jobs', async () => {
+    let finish!: () => void; const order: string[] = [];
+    const active = service.render('active', 1, () => new Promise<void>(resolve => { finish = resolve; }));
+    await Promise.resolve();
+    const speculative = service.render('speculative', 1, async () => { order.push('background'); }, undefined, 0, 1, undefined, 'pcm', 1, 2);
+    const preview = service.render('preview', 1, async () => { order.push('preview'); });
+    finish(); await Promise.all([active, speculative, preview]); expect(order).toEqual(['preview', 'background']);
+  });
+
+  it('uses one whole-plan gain for articulated audio rather than normalizing each window', async () => {
+    const original = { sampleRate: 44100, numberOfChannels: 1, length: 44100, duration: 1,
+      getChannelData: () => new Float32Array(44100).fill(0.5) } as AudioBuffer;
+    jest.mocked(Tone.ToneAudioBuffer.fromUrl).mockImplementation(async () => {
+      const buffer = new Tone.ToneAudioBuffer(); jest.spyOn(buffer, 'get').mockReturnValue(original); return buffer;
+    });
+    const chord = { ...clean, technique: 'palm-muted' as const, notes: Array(6).fill(clean.notes![0]) };
+    const instructions = [chord, { ...chord, time: 4 }];
+    const abort = new AbortController(), gain = await service.streamingGain(instructions, abort.signal);
+    expect(gain).toBeGreaterThan(0); expect(gain).toBeLessThan(1);
+    const first = await service.renderWindow(instructions, 8, 0, 4 * 44100, abort.signal, gain);
+    renderedBuffer = context => { const buffer = context.createBuffer(1, Math.round(context.duration * 44100), 44100); buffer.getChannelData(0).fill(0.9); return buffer; };
+    const second = await service.renderWindow(instructions, 8, 4 * 44100, 8 * 44100, abort.signal, gain);
+    expect(first.pcm.getChannelData(0)[0]).toBeCloseTo(0.1 * gain, 6);
+    expect(second.pcm.getChannelData(0)[0]).toBeCloseTo(0.9 * gain, 6);
+  });
+
+  it('allocates every PCM frame when a native context truncates floating-point seconds', async () => {
+    renderedBuffer = context => context.createBuffer(1, Math.floor(context.duration * 44100), 44100);
+    const instructions = Array.from({ length: 40 }, (_, index) => ({ ...clean, time: index * 60 / 76 }));
+    for (let start = 0; start < 36 * 44100; start += 4 * 44100) {
+      const window = await service.renderWindow(instructions, 40, start, start + 4 * 44100, new AbortController().signal);
+      expect(window.pcm.length).toBe(4 * 44100);
+    }
+  });
+
 });

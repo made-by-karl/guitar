@@ -60,12 +60,12 @@ export class SongPlayViewComponent implements ModalComponent<void>, ModalDataCom
     return { ...progress, handoff: state.status === 'playing' && progress.handoff };
   });
   readonly status = computed(() => !this.attached() ? 'Ready to play' : this.state().ended ? 'End of song'
-    : this.state().status === 'preparing' ? 'Preparing…' : this.state().status === 'playing' ? 'Playing'
+    : this.state().status === 'preparing' ? 'Preparing…' : this.state().status === 'buffering' ? 'Buffering…' : this.state().status === 'playing' ? 'Playing'
     : this.position() ? 'Paused' : 'Ready to play');
   readonly canPlay = computed(() => this.playback.canPlaySong(this.sheet()));
   readonly primaryLabel = computed(() => !this.attached() || this.state().ended ? 'Play'
     : this.state().status === 'preparing' ? 'Preparing…'
-    : this.state().status === 'playing' ? 'Pause' : 'Resume');
+    : (this.state().status === 'playing' || this.state().status === 'buffering') ? 'Pause' : 'Resume');
   readonly tuning = computed(() => this.sheet().tuning.map(note => note.semitone).join(' · '));
   readonly cards = computed<readonly { title: string; assignment: PlayViewGrip | undefined }[]>(() => [
     { title: 'Current grip', assignment: this.projection().current },

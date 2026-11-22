@@ -70,7 +70,7 @@ export class PatternPlaybackService {
     tempo: number = 80
   ): Promise<void> {
     const snapshot = this.getSnapshot();
-    if ((snapshot.status === 'playing' || snapshot.status === 'preparing') && snapshot.patternId === pattern.id) {
+    if (((snapshot.status === 'playing' || snapshot.status === 'buffering') || snapshot.status === 'preparing') && snapshot.patternId === pattern.id) {
       this.stopPatternPreview();
       return;
     }

@@ -285,3 +285,121 @@ Play view. Retain workspace screenshots and review captions under
 `temp/ux/song-sheet-editing-consistency/`. Resized Chromium viewports do not establish physical
 touch, virtual-keyboard or device safe-area behavior; browser playback does not establish
 heard-audio quality.
+
+## Incremental streaming playback (issue #29)
+
+Run the separate secure-origin suite for native media streaming in Chromium and desktop
+WebKit. The Docker hostname is not a secure context; a test-only localhost proxy preserves
+normal browser security settings and enables the same APIs available on HTTPS deployments.
+
+```bash
+docker compose -f compose.playwright.yml up -d app
+docker compose -f compose.playwright.yml run --rm e2e bash -lc "npm ci && npx playwright test --config=e2e/streaming-playback.config.ts --workers=2"
+# Opt-in complete 265-second playback at normal speed, with cold/warm timing and replay:
+docker compose -f compose.playwright.yml run --rm e2e bash -lc "STREAMING_ACCEPTANCE=1 npx playwright test --config=e2e/streaming-playback.config.ts --grep 'long example completes' --workers=2"
+# Opt-in complete-file baselines, explicitly forcing the original WAV strategy:
+docker compose -f compose.playwright.yml run --rm e2e bash -lc "STREAMING_BENCHMARK=1 npx playwright test --config=e2e/streaming-playback.config.ts --grep 'full-file baseline'"
+# Existing suites on the same secure origin (includes long metronome/highlight cases):
+docker compose -f compose.playwright.yml run --rm e2e bash -lc "npx playwright test --config=e2e/media-compatibility.config.ts --workers=2"
+docker compose -f compose.playwright.yml down
+```
+
+The ordinary stream suite proves prefix-only startup, continuity beyond the first window,
+playing/paused and rapid section seeks, same-element reuse, cache reappend after browser
+pruning, deliberate underrun/Pause/recovery, persistent-quota complete-WAV retry, and
+keyboard reachability at 375×667, 768×1024 and 1280×800. A real-media comparison concatenates
+window PCM and decodes independent FLAC/MP4 fragments against the complete WAV renderer
+across strum spreads, slides/legato, percussion, damping, rests and release. Frame counts
+must match (within two samples at release trimming) and sample error is limited to two
+16-bit PCM steps. These are signal/timing tests, not a physical-output listening claim.
+
+Jest adds controlled source demand/eviction, quota, abort/replacement, latest/native seeks,
+cache identity/reuse and immediate canceled-consumer recovery. Interactive preparation can
+overtake speculative windows between native renders. Stream buffering remains distinct from
+Pause, and old Playing/native-error events cannot restart stopped media or reclaim controls.
+Use `bash scripts/verify.sh` for the repository gate; type-check the browser harness with
+`npx tsc -p e2e/tsconfig.streaming.json` from `guitar-app/` and syntax-check its proxy with
+`node --check e2e/helpers/streaming-origin-proxy.cjs`.
+
+The retained AAC experiment is diagnostic. It exercises real encoding, MP4 append, startup,
+intentional prefix exhaustion, append-driven recovery and seek, separately for MediaSource
+and ManagedMediaSource. Unsupported combinations are explicitly skipped, not counted as
+streaming acceptance. It continuously encodes a synthetic signal before append and records
+its presentation deficit; it is not the production codec or an incremental-render test.
+Bundled Chromium 149 had no AAC encoder. WebKit 26.5 supported both source APIs but the raw
+experiment presented 528,384 frames for 529,200 input frames (approximately 18.5 ms short).
+The production FLAC strategy avoids that priming/padding problem and passes the PCM checks.
+
+Evidence lives under git-ignored `temp/ux/streaming-playback/`:
+
+- `baseline-{tears,openRoad,risingSun}-{chromium,webkit}.json`: planning, sample bank/decode,
+  articulation, Tone/native render, postprocess, WAV encode, first Playing and buffer data.
+- `production-smoke-*.json`, `pcm-comparison-*.json`, `long-stream-*.json`: actual streaming
+  startup, prefix generation, complete playback/underruns, buffer observations and replay.
+- `buffering-{375,768,1280}-{chromium,webkit}.png`: keyboard Pause, frozen notation and
+  visible Buffering status in the existing layouts.
+- `aac-{media,managed}-*.json`, `results/`, `regression-results/`: prototype diagnostics
+  and browser traces. `baseline-dialog.log` and `baseline-dialog-results/` retain the
+  comparison for four unrelated grip-dialog shell assertions also failing on untouched main
+  at `4d3a894` (375/1280px in both engines). Their preview startup/retry succeeds; the final
+  `.page-playback-feedback` restoration assertion expects one element and finds zero.
+
+The four known grip-dialog failures can be excluded with `--grep-invert 'blocked grip'`
+when checking the other regressions. Chromium's two three-minute clock checks pass.
+WebKit completes those runs with correct positions but fails the unchanged 50 ms marker
+limit: isolated maxima were 67 ms in the editor and 86 ms in Play view. A separate untouched
+`4d3a894` WAV comparison of the same opening two-second windows also fails (149/82 ms).
+`clock-isolated.log`, `baseline-clock.log`, `baseline-clock/` and `baseline-clock-results/`
+retain that evidence; these are disclosed desktop WebKit timing limits, not passing checks.
+Keep long timing checks isolated from other browser and build jobs to reduce contention.
+The WebKit touch-scrolling case is explicitly skipped because its swipe injection uses
+Chromium CDP; resizing a desktop WebKit page does not replace physical touch verification.
+
+The 2026-11-22 complete-file baseline for Tears in Heaven measured startup to Playing:
+
+| Engine | Fresh context | Warm samples, rerender | Cached WAV |
+| --- | ---: | ---: | ---: |
+| Docker Chromium 149 | 33.19 s | 31.57 s | 0.30 s |
+| Desktop WebKit 26.5 | 27.36 s | 26.09 s | 0.72 s |
+
+The final 265-second streaming run completed at normal speed with zero underruns in
+both engines. Only the opening four seconds had been generated at first Playing:
+
+| Engine | Fresh context | Warm samples, rerender | Encoded song cache | Decoded assets |
+| --- | ---: | ---: | ---: | ---: |
+| Docker Chromium 149 | 1.28 s | 0.65 s | 6.40 MB | 3.70 MB |
+| Desktop WebKit 26.5 | 2.45 s | 0.86 s | 6.48 MB | 3.74 MB |
+
+These cold runs include loading the codec and its compatibility probe. Warm runs clear
+encoded fragments but retain samples and codec libraries; neither makes another sample
+request. The largest native offline context was 8.87 seconds, including pre-window voice
+history, and observed main window PCM peaked at 1.56 MB. Chromium's optional heap reading
+peaked at 68 MB; WebKit does not expose that reading. The encoded cache remains capped at
+32 MiB across songs, decoded assets at 16 MiB, independently of these fixture measurements.
+
+This is an exploratory shared-host development run, not physical reference-device acceptance.
+Chromium's cold run overlapped the repository gate; warm and WebKit runs followed it.
+The main whole-song float buffer alone was 47,156,176 bytes, alongside an approximately
+23.4 MB WAV. Short sparse-stream smoke startup measured approximately 0.6 seconds, with
+only the opening four seconds generated. The 15-second threshold includes estimated release;
+four-second windows and a 24-second ahead target keep work bounded while preserving previews.
+The issue's two-second warm-start target remains a measured desktop target, not an iPhone
+or cold-network guarantee. Full-song streaming measurements are recorded separately above.
+
+Stage durations overlap: preparation includes bank loading, decode, articulation and
+scheduling; Tone rendering includes its clock plus native offline work. Do not sum those
+columns. The legacy `sampleBankMs` instrumentation applies to WAV sampler creation;
+streaming shared-asset loading is included in preparation, decode and resource observations.
+Main PCM/cache bytes and optional JS heap exclude other native allocations.
+First Playing is a media event; first advancing clock includes polling/gesture latency.
+Neither measures heard sound. Browser eviction is tested against actual buffered ranges.
+Fixture snapshots under `guitar-app/test/fixtures/streaming-playback/` preserve normal import
+normalization; local `examples/` remain untracked and are not read by the suite.
+
+The user clarified that foreground notation is primary, no additional reference devices
+are available, and stopping while locked is acceptable. Physical-device testing is therefore
+a disclosed limit, not a gate for uninterrupted background generation. When hardware is
+available, record model, OS/browser, tab/installed mode, output route, Silent Mode, cold/warm
+timing, interruption and listening results. Lock past the initial buffered interval, unlock
+and exercise recovery, Pause/Play/Stop, section/time seeks and route exit. Verify that stopped
+or superseded work cannot restart audio. Desktop WebKit does not certify iPhone behavior.

@@ -1,0 +1,4639 @@
+{
+  "format": "guitar-song-sheet",
+  "formatVersion": 1,
+  "modelVersion": 1,
+  "exportedAt": 1794956438184,
+  "appVersion": "1.1.0",
+  "data": {
+    "id": "rising-sun-rock-demo",
+    "name": "House of the Rising Sun (rock technique demo)",
+    "tuning": [
+      {
+        "semitone": "E",
+        "octave": 2
+      },
+      {
+        "semitone": "A",
+        "octave": 2
+      },
+      {
+        "semitone": "D",
+        "octave": 3
+      },
+      {
+        "semitone": "G",
+        "octave": 3
+      },
+      {
+        "semitone": "B",
+        "octave": 3
+      },
+      {
+        "semitone": "E",
+        "octave": 4
+      }
+    ],
+    "capodaster": 0,
+    "tempo": 108,
+    "links": [
+      {
+        "id": "rising-sun-rock-demo-rights",
+        "url": "https://www.bestlawyers.com/article/is-the-happy-birthday-song/1974",
+        "description": "Traditional Rising Sun Blues: public-domain background; commercial versions have separate rights."
+      }
+    ],
+    "grips": [
+      {
+        "name": "Am",
+        "gripId": "x|o|2|2|1|o"
+      },
+      {
+        "name": "C",
+        "gripId": "x|3|2|o|1|o"
+      },
+      {
+        "name": "D",
+        "gripId": "x|x|o|2|3|2"
+      },
+      {
+        "name": "F",
+        "gripId": "1b|3|3|2|1b|1b"
+      },
+      {
+        "name": "E",
+        "gripId": "o|2|2|1|o|o"
+      },
+      {
+        "name": "A5",
+        "gripId": "5|7|7|x|x|x"
+      },
+      {
+        "name": "C5",
+        "gripId": "8|10|10|x|x|x"
+      },
+      {
+        "name": "D5",
+        "gripId": "x|5|7|7|x|x"
+      },
+      {
+        "name": "F5",
+        "gripId": "x|8|10|10|x|x"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "rising-sun-rock-demo-pattern-arp",
+        "name": "Rising Sun - pinched 6/8 arpeggio",
+        "description": "Six eighth notes per bar; pinch bass and top, then inner and upper notes. Grip-relative picking follows chord changes.",
+        "category": "Fingerpicking",
+        "suggestedGenre": "Blues rock / folk rock",
+        "exampleSong": "House of the Rising Sun - fresh instrumental demo arrangement",
+        "measures": [
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  },
+                  {
+                    "mode": "relative",
+                    "string": "top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ],
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "second-from-bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  },
+                  {
+                    "mode": "relative",
+                    "string": "top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "upper-middle",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "Am",
+                "gripId": "x|o|2|2|1|o"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794956438184,
+        "updatedAt": 1794956438184,
+        "isCustom": true
+      },
+      {
+        "id": "rising-sun-rock-demo-pattern-rock",
+        "name": "Rising Sun - muted 6/8 rock groove",
+        "description": "Palm-muted bass, bright upstrokes, accented backbeat and a dead-note downstroke.",
+        "category": "Rock",
+        "suggestedGenre": "Blues rock / folk rock",
+        "exampleSong": "House of the Rising Sun - fresh instrumental demo arrangement",
+        "measures": [
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": {
+                    "from": "bass",
+                    "to": "second-from-bass"
+                  },
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "palm-mute",
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ],
+                "modifiers": [
+                  "palm-mute"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "treble",
+                  "mode": "normal"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "treble",
+                  "mode": "normal"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "dead-note"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "Am",
+                "gripId": "x|o|2|2|1|o"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794956438184,
+        "updatedAt": 1794956438184,
+        "isCustom": true
+      },
+      {
+        "id": "rising-sun-rock-demo-pattern-lead",
+        "name": "Rising Sun - original legato break",
+        "description": "Original four-bar A-minor lead: explicit and relative hammer-ons/pull-offs, single-string slides, body knock and string slap.",
+        "category": "Lead",
+        "suggestedGenre": "Blues rock / folk rock",
+        "exampleSong": "House of the Rising Sun - fresh instrumental demo arrangement",
+        "measures": [
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  }
+                ],
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "hammer-on",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 3,
+                  "toFret": 4
+                }
+              },
+              null,
+              {
+                "technique": "pull-off",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 3,
+                  "toFret": 2
+                }
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 5
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "slide",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 3,
+                  "toFret": 7
+                }
+              },
+              null,
+              {
+                "technique": "slide",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 3,
+                  "toFret": 5
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "Am",
+                "gripId": "x|o|2|2|1|o"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "hammer-on",
+                "legatoMode": "relative",
+                "legato": {
+                  "string": "top",
+                  "target": {
+                    "anchor": "grip-note",
+                    "fretOffset": 3
+                  }
+                }
+              },
+              null,
+              {
+                "technique": "pull-off",
+                "legatoMode": "relative",
+                "legato": {
+                  "string": "top",
+                  "target": {
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                }
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 3
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pull-off",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 4,
+                  "toFret": 1
+                }
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "Am",
+                "gripId": "x|o|2|2|1|o"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 1
+                  }
+                ],
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "hammer-on",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 4,
+                  "toFret": 3
+                }
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 5,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 3
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pull-off",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 4,
+                  "toFret": 1
+                }
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "C",
+                "gripId": "x|3|2|o|1|o"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 1
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 5,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "body-knock"
+                }
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "E",
+                "gripId": "o|2|2|1|o|o"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794956438184,
+        "updatedAt": 1794956438184,
+        "isCustom": true
+      },
+      {
+        "id": "rising-sun-rock-demo-pattern-slides",
+        "name": "Rising Sun - movable power-chord slides",
+        "description": "Clear strings, strike a three-note power chord, slide every fretted voice by three frets, then restrike the destination grip. A5-C5-A5 and D5-F5-D5.",
+        "category": "Rock",
+        "suggestedGenre": "Blues rock / folk rock",
+        "exampleSong": "House of the Rising Sun - fresh instrumental demo arrangement",
+        "measures": [
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "slide",
+                "slide": {
+                  "fretOffset": 3
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "palm-mute"
+                ]
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "A5",
+                "gripId": "5|7|7|x|x|x"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 4,
+                "name": "C5",
+                "gripId": "8|10|10|x|x|x"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "slide",
+                "slide": {
+                  "fretOffset": -3
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "palm-mute"
+                ]
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "C5",
+                "gripId": "8|10|10|x|x|x"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 4,
+                "name": "A5",
+                "gripId": "5|7|7|x|x|x"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "slide",
+                "slide": {
+                  "fretOffset": 3
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "palm-mute"
+                ]
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "D5",
+                "gripId": "x|5|7|7|x|x"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 4,
+                "name": "F5",
+                "gripId": "x|8|10|10|x|x"
+              }
+            ]
+          },
+          {
+            "timeSignature": "6/8",
+            "actions": [
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "slide",
+                "slide": {
+                  "fretOffset": -3
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "accent"
+                ]
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all",
+                  "mode": "normal"
+                },
+                "modifiers": [
+                  "palm-mute"
+                ]
+              },
+              null,
+              {
+                "technique": "percussive",
+                "percussive": {
+                  "technique": "string-slap"
+                }
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "F5",
+                "gripId": "x|8|10|10|x|x"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 4,
+                "name": "D5",
+                "gripId": "x|5|7|7|x|x"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794956438184,
+        "updatedAt": 1794956438184,
+        "isCustom": true
+      }
+    ],
+    "parts": [
+      {
+        "id": "rising-sun-rock-demo-intro",
+        "section": "Intro - fingerpicked",
+        "notes": "Fresh instrumental demo arrangement of the traditional public-domain song. Standard tuning, no capo, quarter note = 108; count 6/8 ONE-two-three FOUR-five-six (dotted-quarter pulse = 72). Am | C | D | E. Pinch bass and top together; let notes ring. This is accompaniment with original fills, rather than a transcription of a commercial recording or its vocal melody. Rights/background link is in Links.",
+        "measures": [
+          {
+            "id": "rising-sun-rock-demo-intro-bar-1",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-intro-bar-2",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-intro-bar-3",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-intro-bar-4",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "rising-sun-rock-demo-verse",
+        "section": "Theme - arpeggio accompaniment",
+        "notes": "Am | C | D | F | Am | C | E | E | Am | C | D | F | Am | E | Am | E. Same local picking pattern follows every chord through grip-relative string selection. F uses a full first-fret barre. Instrumental accompaniment; no lyrics or recorded audio included.",
+        "measures": [
+          {
+            "id": "rising-sun-rock-demo-verse-bar-1",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-2",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-3",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-4",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F",
+                  "gripId": "1b|3|3|2|1b|1b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-5",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-6",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-7",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-8",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-9",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-10",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-11",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-12",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F",
+                  "gripId": "1b|3|3|2|1b|1b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-13",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-14",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-15",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-verse-bar-16",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "rising-sun-rock-demo-rock",
+        "section": "Rock variation - palm mute and accents",
+        "notes": "Am | C | D | F | Am | C | E | Am. Keep the bass strokes short; open the hand for the accented chord on eighth-note 4. Dead-note strum on eighth-note 6. Repeated occurrence in the arrangement demonstrates reusable parts.",
+        "measures": [
+          {
+            "id": "rising-sun-rock-demo-rock-bar-1",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-2",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-3",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-4",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F",
+                  "gripId": "1b|3|3|2|1b|1b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-5",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-6",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-7",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-rock-bar-8",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "rising-sun-rock-demo-lead",
+        "section": "Lead break - legato and power slides",
+        "notes": "Original demonstration fills, not a quoted recorded solo. Bars 1-4: G string 2h4p2, 5/7/5; high E 0h3p0, B 3p1; C/E turnaround and percussion. Bars 5-8: A5-C5, C5-A5, D5-F5, F5-D5 with synchronized three-string slides. String slaps clear the previous chord before each slide. These power grips reach fret 10. All techniques have a picked or strummed source before the destination.",
+        "measures": [
+          {
+            "id": "rising-sun-rock-demo-lead-bar-1",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "hammer-on",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 3,
+                    "toFret": 4
+                  }
+                },
+                null,
+                {
+                  "technique": "pull-off",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 3,
+                    "toFret": 2
+                  }
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 5
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 3,
+                    "toFret": 7
+                  }
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 3,
+                    "toFret": 5
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-2",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "hammer-on",
+                  "legatoMode": "relative",
+                  "legato": {
+                    "string": "top",
+                    "target": {
+                      "anchor": "grip-note",
+                      "fretOffset": 3
+                    }
+                  }
+                },
+                null,
+                {
+                  "technique": "pull-off",
+                  "legatoMode": "relative",
+                  "legato": {
+                    "string": "top",
+                    "target": {
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  }
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 3
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pull-off",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 4,
+                    "toFret": 1
+                  }
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-3",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 1
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "hammer-on",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 4,
+                    "toFret": 3
+                  }
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 5,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 3
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pull-off",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 4,
+                    "toFret": 1
+                  }
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-4",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 1
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 5,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "body-knock"
+                  }
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-5",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "slide": {
+                    "fretOffset": 3
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A5",
+                  "gripId": "5|7|7|x|x|x"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 4,
+                  "name": "C5",
+                  "gripId": "8|10|10|x|x|x"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-6",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "slide": {
+                    "fretOffset": -3
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C5",
+                  "gripId": "8|10|10|x|x|x"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 4,
+                  "name": "A5",
+                  "gripId": "5|7|7|x|x|x"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-7",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "slide": {
+                    "fretOffset": 3
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D5",
+                  "gripId": "x|5|7|7|x|x"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 4,
+                  "name": "F5",
+                  "gripId": "x|8|10|10|x|x"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-lead-bar-8",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "slide",
+                  "slide": {
+                    "fretOffset": -3
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F5",
+                  "gripId": "x|8|10|10|x|x"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 4,
+                  "name": "D5",
+                  "gripId": "x|5|7|7|x|x"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "rising-sun-rock-demo-outro",
+        "section": "Outro - resolve and ring",
+        "notes": "F | E | Am | Am. Fingerpick F, build on E, knock then stop the penultimate Am with a string slap, and let the last Am ring. Empty action slots contain no new attack; they do not command a rest or choke.",
+        "measures": [
+          {
+            "id": "rising-sun-rock-demo-outro-bar-1",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F",
+                  "gripId": "1b|3|3|2|1b|1b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-outro-bar-2",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": {
+                      "from": "bass",
+                      "to": "second-from-bass"
+                    },
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "palm-mute",
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ],
+                  "modifiers": [
+                    "palm-mute"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "treble",
+                    "mode": "normal"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "dead-note"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-outro-bar-3",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "body-knock"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "percussive",
+                  "percussive": {
+                    "technique": "string-slap"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rising-sun-rock-demo-outro-bar-4",
+            "measure": {
+              "timeSignature": "6/8",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all",
+                    "mode": "normal"
+                  },
+                  "modifiers": [
+                    "accent"
+                  ]
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "arrangement": [
+      {
+        "id": "rising-sun-rock-demo-occurrence-1",
+        "partId": "rising-sun-rock-demo-intro",
+        "lyrics": ""
+      },
+      {
+        "id": "rising-sun-rock-demo-occurrence-2",
+        "partId": "rising-sun-rock-demo-verse",
+        "lyrics": ""
+      },
+      {
+        "id": "rising-sun-rock-demo-occurrence-3",
+        "partId": "rising-sun-rock-demo-rock",
+        "lyrics": ""
+      },
+      {
+        "id": "rising-sun-rock-demo-occurrence-4",
+        "partId": "rising-sun-rock-demo-lead",
+        "lyrics": ""
+      },
+      {
+        "id": "rising-sun-rock-demo-occurrence-5",
+        "partId": "rising-sun-rock-demo-rock",
+        "lyrics": ""
+      },
+      {
+        "id": "rising-sun-rock-demo-occurrence-6",
+        "partId": "rising-sun-rock-demo-outro",
+        "lyrics": ""
+      }
+    ],
+    "created": 1794956438184,
+    "updated": 1794956438184
+  }
+}

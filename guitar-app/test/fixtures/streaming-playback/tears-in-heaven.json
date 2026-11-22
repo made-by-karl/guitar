@@ -1,0 +1,6119 @@
+{
+  "format": "guitar-song-sheet",
+  "formatVersion": 1,
+  "modelVersion": 1,
+  "exportedAt": 1794955585392,
+  "appVersion": "1.1.0",
+  "data": {
+    "id": "tears-in-heaven-simplified",
+    "name": "Tears in Heaven - Eric Clapton (opening melody excerpts + accompaniment)",
+    "tuning": [
+      {
+        "semitone": "E",
+        "octave": 2
+      },
+      {
+        "semitone": "A",
+        "octave": 2
+      },
+      {
+        "semitone": "D",
+        "octave": 3
+      },
+      {
+        "semitone": "G",
+        "octave": 3
+      },
+      {
+        "semitone": "B",
+        "octave": 3
+      },
+      {
+        "semitone": "E",
+        "octave": 4
+      }
+    ],
+    "capodaster": 0,
+    "tempo": 76,
+    "links": [
+      {
+        "id": "tears-in-heaven-link-chords",
+        "url": "https://www.aucklandguitarschool.co.nz/wp-content/uploads/Tears-in-Heaven-chord-sequence-Eric-Clapton.pdf",
+        "description": "Chord-sequence reference from Auckland Guitar School; this file uses simplified voicings, timing and picking."
+      },
+      {
+        "id": "tears-in-heaven-link-form",
+        "url": "https://www.thirdcoastmusic.com/Images/TCM%20Songsheets/Songsheet%20PDFs/Tears%20In%20Heaven%20-%20Eric%20Clapton.pdf",
+        "description": "Additional chord/form reference. Song by Eric Clapton and Will Jennings. Only short vocal opening cues are included in this practice sheet."
+      },
+      {
+        "id": "tears-in-heaven-link-vocal-preview",
+        "url": "https://www.virtualsheetmusic.com/score/HL-1969.html",
+        "description": "Hal Leonard licensed vocal-score preview, used to check only the brief opening sung phrase; played an octave lower on guitar."
+      },
+      {
+        "id": "tears-in-heaven-link-guitar-opening",
+        "url": "https://guitaralliance.net/wp-content/uploads/2023/08/Tears-In-Heaven-Eric-Clapton-Unplugged-Full-Score.pdf",
+        "description": "Opening guitar figure reference; only a short excerpt is included, with the triplet ornament approximated to the sixteenth-note grid."
+      }
+    ],
+    "grips": [
+      {
+        "name": "A",
+        "gripId": "x|o|2|2|2|o"
+      },
+      {
+        "name": "E/G#",
+        "gripId": "4|x|2|4|o|o"
+      },
+      {
+        "name": "F#m",
+        "gripId": "2b|4|4|2b|2b|2b"
+      },
+      {
+        "name": "A/E",
+        "gripId": "o|o|2|2|2|o"
+      },
+      {
+        "name": "D/F#",
+        "gripId": "2|x|o|2|3|2"
+      },
+      {
+        "name": "E7sus4",
+        "gripId": "o|2|o|2|o|o"
+      },
+      {
+        "name": "E7",
+        "gripId": "o|2|o|1|o|o"
+      },
+      {
+        "name": "E",
+        "gripId": "o|2|2|1|o|o"
+      },
+      {
+        "name": "C#/E#",
+        "gripId": "x|x|3|1b|2|1b"
+      },
+      {
+        "name": "A7/E",
+        "gripId": "o|o|2|o|2|o"
+      },
+      {
+        "name": "F#7",
+        "gripId": "2b|4|2b|3|2b|2b"
+      },
+      {
+        "name": "Bm7",
+        "gripId": "x|2|o|2|o|2"
+      },
+      {
+        "name": "Bm7/E",
+        "gripId": "o|2|o|2|o|2"
+      },
+      {
+        "name": "C",
+        "gripId": "x|3|2|o|1|o"
+      },
+      {
+        "name": "G/B",
+        "gripId": "x|2|o|o|o|3"
+      },
+      {
+        "name": "Am",
+        "gripId": "x|o|2|2|1|o"
+      },
+      {
+        "name": "G",
+        "gripId": "3|2|o|o|o|3"
+      },
+      {
+        "name": "Em",
+        "gripId": "o|2|2|o|o|o"
+      },
+      {
+        "name": "D",
+        "gripId": "x|x|o|2|3|2"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "tears-in-heaven-pattern-eighths",
+        "name": "Gentle eighth-note fingerpicking",
+        "description": "Generic accompaniment: bass + second-from-top, upper-middle, top, second-from-top; repeat for beats 3 and 4. Relative notes follow the assigned grip, including slash-chord bass notes. This is not the recorded guitar part.",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  },
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "upper-middle",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "bass",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  },
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "upper-middle",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "relative",
+                    "string": "second-from-top",
+                    "anchor": "grip-note",
+                    "fretOffset": 0
+                  }
+                ]
+              },
+              null
+            ]
+          }
+        ],
+        "category": "Fingerpicking",
+        "suggestedGenre": "Acoustic ballad",
+        "exampleSong": "Tears in Heaven - simplified practice arrangement",
+        "createdAt": 1794955043868,
+        "updatedAt": 1794955043868,
+        "isCustom": true
+      },
+      {
+        "id": "tears-in-heaven-pattern-ending",
+        "name": "Final chord - let ring",
+        "description": "Downstroke on beat 1. Let the chord ring for the full bar.",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        ],
+        "category": "Fingerpicking",
+        "suggestedGenre": "Acoustic ballad",
+        "exampleSong": "Tears in Heaven - simplified practice arrangement",
+        "createdAt": 1794955043868,
+        "updatedAt": 1794955043868,
+        "isCustom": true
+      },
+      {
+        "id": "tears-in-heaven-pattern-guitar-opening",
+        "name": "Opening guitar figure - brief excerpt",
+        "description": "The first bar now includes a brief opening guitar figure, with explicit string/fret notes and a hammer-on/pull-off ornament. Its triplet ornament is approximated on the app's sixteenth-note grid. The following bars keep the simplified accompaniment. Guitar string indices run from 0 (low E) to 5 (high E). The F#m chord is anticipated on the last eighth note of bar 1. This is a short excerpt, not a full transcription of the guitar part.",
+        "category": "Fingerpicking",
+        "suggestedGenre": "Acoustic ballad",
+        "exampleSong": "Tears in Heaven - short excerpt",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 1,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 2
+                  }
+                ]
+              },
+              {
+                "technique": "hammer-on",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 4,
+                  "toFret": 3
+                }
+              },
+              {
+                "technique": "pull-off",
+                "legatoMode": "explicit",
+                "legato": {
+                  "string": 4,
+                  "toFret": 2
+                }
+              },
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  }
+                ]
+              },
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 4
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 4
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 5
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 4
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 4
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 5
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 2
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 2
+                  }
+                ]
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "A",
+                "gripId": "x|o|2|2|2|o"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 8,
+                "name": "E/G#",
+                "gripId": "4|x|2|4|o|o"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 14,
+                "name": "F#m",
+                "gripId": "2b|4|4|2b|2b|2b"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794955585392,
+        "updatedAt": 1794955585392,
+        "isCustom": true
+      },
+      {
+        "id": "tears-in-heaven-pattern-vocal-opening",
+        "name": "Opening sung melody - brief excerpt",
+        "description": "The first two bars include only a brief opening sung-melody excerpt, played on guitar above a reduced bass accompaniment. It is in the lower guitar register, an octave below the published vocal staff. The tied note across the barline is not struck again. Other bars and subsequent verses remain accompaniment; the complete vocal melody is not included. Explicit fret -1 actions damp the previous melody string when the tune moves to a lower string. The original short lyric cue stays on this occurrence.",
+        "category": "Fingerpicking",
+        "suggestedGenre": "Acoustic ballad",
+        "exampleSong": "Tears in Heaven - short excerpt",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 1,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 2
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": -1
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 4
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 5,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 5,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 5,
+                    "fret": -1
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 2
+                  }
+                ]
+              },
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "A",
+                "gripId": "x|o|2|2|2|o"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 8,
+                "name": "E/G#",
+                "gripId": "4|x|2|4|o|o"
+              }
+            ]
+          },
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 2
+                  }
+                ]
+              },
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": 0
+                  }
+                ]
+              },
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 4,
+                    "fret": -1
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": 2
+                  }
+                ]
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 3,
+                    "fret": -1
+                  },
+                  {
+                    "mode": "explicit",
+                    "string": 0,
+                    "fret": 0
+                  }
+                ]
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "pick",
+                "pick": [
+                  {
+                    "mode": "explicit",
+                    "string": 2,
+                    "fret": 2
+                  }
+                ]
+              },
+              null,
+              null,
+              null
+            ],
+            "actionGrips": [
+              {
+                "measureIndex": 0,
+                "actionIndex": 0,
+                "name": "F#m",
+                "gripId": "2b|4|4|2b|2b|2b"
+              },
+              {
+                "measureIndex": 0,
+                "actionIndex": 8,
+                "name": "A/E",
+                "gripId": "o|o|2|2|2|o"
+              }
+            ]
+          }
+        ],
+        "createdAt": 1794955585392,
+        "updatedAt": 1794955585392,
+        "isCustom": true
+      }
+    ],
+    "parts": [
+      {
+        "id": "tears-in-heaven-part-theme",
+        "section": "Intro / interlude",
+        "notes": "Simplified practice accompaniment, not a note-for-note transcription. Standard tuning, no capo; practice tempo 76 BPM. Each bar is 4/4 with sixteen sixteenth-note slots. The fingerpicking sounds on every eighth note (1 & 2 & 3 & 4 &). Thumb plays the lowest unmuted string; fingers play the indicated relative upper strings. Chord changes at slots 0, 8 and 12 mean beats 1, 3 and 4. The picking pattern restarts its bass on beat 3; a beat-4 chord change continues the upper notes. Lyric text is only a short opening cue; add your own full text. Some shapes use a barre, marked b in the grip encoding. Progression: A - E/G# | F#m - A/E | D/F# - E7sus4 - E7 | A.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-theme-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-theme-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-theme-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7sus4",
+                  "gripId": "o|2|o|2|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 12,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-theme-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-verse",
+        "section": "Verse / instrumental",
+        "notes": "Two passes of A - E/G# | F#m - A/E | D/F# - A/E | E - E7. Each pair lasts two beats per chord. Reused for the vocal verses and instrumental accompaniment. The arrangement keeps independent lyric cues for each occurrence.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-verse-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-7",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-verse-measure-8",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-refrain",
+        "section": "Refrain",
+        "notes": "Simplified six-bar turnaround: F#m - C#/E# | A7/E - F#7 | Bm7 | Bm7/E | A | E7sus4 - E7. Two chords in a bar receive two beats each; a single chord lasts all four beats. This is a practice form with regularized durations.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-refrain-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "C#/E#",
+                  "gripId": "x|x|3|1b|2|1b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-refrain-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A7/E",
+                  "gripId": "o|o|2|o|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "F#7",
+                  "gripId": "2b|4|2b|3|2b|2b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-refrain-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Bm7",
+                  "gripId": "x|2|o|2|o|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-refrain-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Bm7/E",
+                  "gripId": "o|2|o|2|o|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-refrain-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-refrain-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E7sus4",
+                  "gripId": "o|2|o|2|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-bridge",
+        "section": "Bridge",
+        "notes": "Simplified eight-bar bridge: C - G/B | Am - D/F# | G - D/F# | Em - D/F# | C - G/B | Am - D/F# | G - D/F# | E - E7. Each chord receives two beats. Keep the same fingerpicking pulse.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-bridge-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "G/B",
+                  "gripId": "x|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "G/B",
+                  "gripId": "x|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Am",
+                  "gripId": "x|o|2|2|1|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-7",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-bridge-measure-8",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-outro",
+        "section": "Outro",
+        "notes": "A - E/G# | F#m - A/E | Bm7 - Bm7/E | A. Fingerpick the first three bars. Strum A once at the start of the last bar and let it ring for four beats.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-outro-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-outro-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-outro-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Bm7",
+                  "gripId": "x|2|o|2|o|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "Bm7/E",
+                  "gripId": "o|2|o|2|o|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-outro-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-opening-guitar-excerpt",
+        "section": "Intro - guitar opening excerpt",
+        "notes": "The first bar now includes a brief opening guitar figure, with explicit string/fret notes and a hammer-on/pull-off ornament. Its triplet ornament is approximated on the app's sixteenth-note grid. The following bars keep the simplified accompaniment. Guitar string indices run from 0 (low E) to 5 (high E). The F#m chord is anticipated on the last eighth note of bar 1. This is a short excerpt, not a full transcription of the guitar part.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-opening-guitar-excerpt-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 1,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 2
+                    }
+                  ]
+                },
+                {
+                  "technique": "hammer-on",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 4,
+                    "toFret": 3
+                  }
+                },
+                {
+                  "technique": "pull-off",
+                  "legatoMode": "explicit",
+                  "legato": {
+                    "string": 4,
+                    "toFret": 2
+                  }
+                },
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    }
+                  ]
+                },
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 4
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 4
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 5
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 4
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 4
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 5
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 2
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 14,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-opening-guitar-excerpt-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-opening-guitar-excerpt-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7sus4",
+                  "gripId": "o|2|o|2|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 12,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-opening-guitar-excerpt-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tears-in-heaven-part-vocal-opening-excerpt",
+        "section": "Verse 1 - sung opening excerpt",
+        "notes": "The first two bars include only a brief opening sung-melody excerpt, played on guitar above a reduced bass accompaniment. It is in the lower guitar register, an octave below the published vocal staff. The tied note across the barline is not struck again. Other bars and subsequent verses remain accompaniment; the complete vocal melody is not included. Explicit fret -1 actions damp the previous melody string when the tune moves to a lower string. The original short lyric cue stays on this occurrence.",
+        "measures": [
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 1,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": -1
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 4
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 5,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 5,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 5,
+                      "fret": -1
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 2
+                    }
+                  ]
+                },
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": 0
+                    }
+                  ]
+                },
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 4,
+                      "fret": -1
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 3,
+                      "fret": -1
+                    },
+                    {
+                      "mode": "explicit",
+                      "string": 0,
+                      "fret": 0
+                    }
+                  ]
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "explicit",
+                      "string": 2,
+                      "fret": 2
+                    }
+                  ]
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "A",
+                  "gripId": "x|o|2|2|2|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E/G#",
+                  "gripId": "4|x|2|4|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "F#m",
+                  "gripId": "2b|4|4|2b|2b|2b"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-7",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D/F#",
+                  "gripId": "2|x|o|2|3|2"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "A/E",
+                  "gripId": "o|o|2|2|2|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tears-in-heaven-part-vocal-opening-excerpt-measure-8",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "bass",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    },
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "upper-middle",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null,
+                {
+                  "technique": "pick",
+                  "pick": [
+                    {
+                      "mode": "relative",
+                      "string": "second-from-top",
+                      "anchor": "grip-note",
+                      "fretOffset": 0
+                    }
+                  ]
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "E",
+                  "gripId": "o|2|2|1|o|o"
+                },
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 8,
+                  "name": "E7",
+                  "gripId": "o|2|o|1|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "arrangement": [
+      {
+        "id": "tears-in-heaven-occurrence-intro",
+        "partId": "tears-in-heaven-part-opening-guitar-excerpt",
+        "lyrics": ""
+      },
+      {
+        "id": "tears-in-heaven-occurrence-verse-1",
+        "partId": "tears-in-heaven-part-vocal-opening-excerpt",
+        "lyrics": "Would…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-refrain-1",
+        "partId": "tears-in-heaven-part-refrain",
+        "lyrics": "I must…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-interlude-1",
+        "partId": "tears-in-heaven-part-theme",
+        "lyrics": ""
+      },
+      {
+        "id": "tears-in-heaven-occurrence-verse-2",
+        "partId": "tears-in-heaven-part-verse",
+        "lyrics": "Would…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-refrain-2",
+        "partId": "tears-in-heaven-part-refrain",
+        "lyrics": "I'll…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-interlude-2",
+        "partId": "tears-in-heaven-part-theme",
+        "lyrics": ""
+      },
+      {
+        "id": "tears-in-heaven-occurrence-bridge",
+        "partId": "tears-in-heaven-part-bridge",
+        "lyrics": "Time…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-instrumental",
+        "partId": "tears-in-heaven-part-verse",
+        "lyrics": ""
+      },
+      {
+        "id": "tears-in-heaven-occurrence-refrain-3",
+        "partId": "tears-in-heaven-part-refrain",
+        "lyrics": "Beyond the…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-interlude-3",
+        "partId": "tears-in-heaven-part-theme",
+        "lyrics": ""
+      },
+      {
+        "id": "tears-in-heaven-occurrence-verse-3",
+        "partId": "tears-in-heaven-part-verse",
+        "lyrics": "Would…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-refrain-4",
+        "partId": "tears-in-heaven-part-refrain",
+        "lyrics": "I…"
+      },
+      {
+        "id": "tears-in-heaven-occurrence-outro",
+        "partId": "tears-in-heaven-part-outro",
+        "lyrics": ""
+      }
+    ],
+    "created": 1794955043868,
+    "updated": 1794955585392
+  }
+}

@@ -1,4 +1,5 @@
 import { HtmlAudioPlaybackService } from '@/app/core/services/html-audio-playback.service';
+import type { StreamingAudioSource } from '@/app/core/services/streaming-audio-source';
 import { RenderedAudio } from '@/app/core/services/rendered-audio.service';
 
 class MediaElement extends EventTarget {
@@ -252,4 +253,58 @@ describe('HTML media lifecycle', () => {
     service.stop('a');
     expect(session.metadata).toBeNull();
   });
+  it('distinguishes stream buffering, keeps paused seeks and ignores late Playing after pause', async () => {
+    const stream: StreamingAudioSource = { kind: 'stream', durationSeconds: 40,
+      attach: jest.fn(async element => { element.src = 'blob:stream'; }), request: jest.fn(), dispose: jest.fn() };
+    await service.play('song', async () => stream);
+    elements[0].currentTime = 4; elements[0].dispatchEvent(new Event('waiting'));
+    expect(service.getSnapshot('song')).toMatchObject({ status: 'buffering', currentTime: 4, duration: 40 });
+    service.pause('song'); service.seek('song', 30); elements[0].dispatchEvent(new Event('playing'));
+    expect(service.getSnapshot('song')).toMatchObject({ status: 'paused', currentTime: 30 });
+    expect(elements[0].paused).toBe(true); expect(stream.request).toHaveBeenCalledWith(30);
+    await service.resume('song'); expect(service.getSnapshot('song').status).toBe('playing');
+    service.stop('song'); expect(stream.dispose).toHaveBeenCalledTimes(1);
+  });
+  it('uses section callbacks for system Previous/Next and clears them for previews', async () => {
+    const previous = jest.fn(), next = jest.fn();
+    await service.play('song', async () => audio, { previousSection: previous, nextSection: next });
+    const stale = handlers.get('nexttrack')!;
+    handlers.get('previoustrack')!({ action: 'previoustrack' }); stale({ action: 'nexttrack' });
+    expect(previous).toHaveBeenCalledTimes(1); expect(next).toHaveBeenCalledTimes(1);
+    await service.play('preview', async () => audio);
+    expect(handlers.has('nexttrack')).toBe(false); stale({ action: 'nexttrack' }); expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a retained stream recoverable if replay encounters a native media error', async () => {
+    const stream: StreamingAudioSource = { kind: 'stream', durationSeconds: 40,
+      attach: jest.fn(async element => { element.src = 'blob:stream'; }), request: jest.fn(), dispose: jest.fn(), onPlaybackError: jest.fn() };
+    let count = 0;
+    const prepare = jest.fn(async () => count++ ? audio : stream);
+    await service.play('song', prepare);
+    elements[0].ended = true; elements[0].dispatchEvent(new Event('ended'));
+    expect(service.getSnapshot('song').ended).toBe(true);
+    elements[0].dispatchEvent(new Event('error'));
+    expect(stream.onPlaybackError).toHaveBeenCalledTimes(1);
+    await service.resume('song');
+    expect(prepare).toHaveBeenCalledTimes(2); expect(service.getSnapshot('song').status).toBe('playing');
+  });
+
+  it('invalidates a completed stream when another channel takes system ownership', async () => {
+    const stream: StreamingAudioSource = { kind: 'stream', durationSeconds: 40,
+      attach: jest.fn(async element => { element.src = 'blob:stream'; }), request: jest.fn(), dispose: jest.fn() };
+    const prepare = jest.fn(async () => stream);
+    await service.play('song', prepare); elements[0].ended = true; elements[0].dispatchEvent(new Event('ended'));
+    await service.play('preview', async () => audio); await service.resume('song');
+    expect(prepare).toHaveBeenCalledTimes(1); expect(elements).toHaveLength(2);
+  });
+
+  it('returns preview ownership to the most recently playing channel, regardless of creation order', async () => {
+    service.progress$('metronome').subscribe();
+    await service.play('song', async () => audio, { label: 'Song' });
+    await service.play('metronome', async () => audio, { label: 'Metronome', loop: true });
+    await service.play('preview', async () => audio, { label: 'Preview' });
+    elements[2].ended = true; elements[2].dispatchEvent(new Event('ended'));
+    expect(session.metadata?.title).toBe('Metronome'); expect(session.playbackState).toBe('playing');
+  });
+
 });

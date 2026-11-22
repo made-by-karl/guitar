@@ -7,12 +7,13 @@
           @case ('preparing') { Preparing audio… }
           @case ('starting') { Starting… }
           @case ('ready') { Ready. Select Play to start. }
+          @case ('buffering') { Buffering audio… }
           @case ('playing') { Playing }
           @case ('paused') { Paused }
           @case ('error') { Could not prepare audio. }
         }
       </p>
-      @if (notice.error) { <p class="text-danger mb-2" role="alert">{{ notice.error }}</p> }
+      @if (notice.error) { <p class="text-danger-emphasis mb-2" role="alert">{{ notice.error }}</p> }
       <div class="d-flex gap-2">
         @if (notice.status === 'ready' || notice.status === 'paused' || notice.status === 'error') {
           @let label = notice.status === 'error' ? 'Retry playback' : notice.status === 'paused' ? 'Resume playback' : 'Play prepared audio';

@@ -47,7 +47,7 @@ export class SongArrangementComponent implements OnDestroy {
   readonly canPlay = computed(() => this.playback.canPlaySong(this.currentSheet()));
   readonly songPlaybackLabel = computed(() => this.playbackState().type !== 'song' ? 'Play song'
     : this.playbackState().status === 'preparing' ? 'Preparing…'
-    : this.playbackState().status === 'playing' ? 'Pause song' : 'Resume song');
+    : (this.playbackState().status === 'playing' || this.playbackState().status === 'buffering') ? 'Pause song' : 'Resume song');
   private readonly playableOccurrenceIds = computed(() => new Set(this.occurrences().filter(occurrence => {
     const part = this.part(occurrence);
     return part && this.playback.canPlaySongPart(this.currentSheet(), part, occurrence.id);

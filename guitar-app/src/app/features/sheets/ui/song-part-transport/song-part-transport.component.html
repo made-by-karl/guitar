@@ -1,7 +1,7 @@
 <div class="part-transport" role="group" aria-label="Part playback">
   <button class="btn btn-outline-primary btn-sm app-icon-button" type="button" [attr.aria-label]="primaryLabel()" [title]="primaryLabel()"
     [disabled]="preparing() || needsRecovery() || (!active() && !playable())" (click)="toggle()">
-    <i aria-hidden="true" class="bi" [class.bi-pause-fill]="active() && state().status === 'playing'" [class.bi-play-fill]="!active() || (!preparing() && state().status !== 'playing')" [class.bi-hourglass-split]="preparing()"></i>
+    <i aria-hidden="true" class="bi" [class.bi-pause-fill]="active() && (state().status === 'playing' || state().status === 'buffering')" [class.bi-play-fill]="!active() || (!preparing() && state().status !== 'playing' && state().status !== 'buffering')" [class.bi-hourglass-split]="preparing()"></i>
   </button>
   <button class="btn btn-outline-secondary btn-sm app-icon-button" type="button" aria-label="Previous measure" title="Previous measure" [disabled]="!canPrevious()" (click)="previous.emit()">
     <i aria-hidden="true" class="bi bi-skip-backward-fill"></i>
