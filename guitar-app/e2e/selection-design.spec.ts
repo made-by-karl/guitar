@@ -101,8 +101,45 @@ async function checkActionLayout(actions: Locator, buttonSize: number): Promise<
     if (regular.y >= playButtons[0].y + playButtons[0].height) {
       expect(Math.abs(regular.x - playButtons[0].x)).toBeLessThan(1);
       expect(Math.min(...playButtons.map(button => Math.abs(button.x - remove.x)))).toBeLessThan(1);
+    } else {
+      expect(Math.abs(regular.y - playButtons[0].y)).toBeLessThan(1);
+      expect(Math.abs(remove.y - playButtons[0].y)).toBeLessThan(1);
     }
   }
+}
+
+for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
+  test(`active transport status preserves action alignment at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport); await seed(page);
+    for (const tab of ['Song', 'Parts']) {
+      await page.getByRole('tab', { name: tab, exact: true }).click();
+      const owner = page.locator(tab === 'Song' ? 'app-song-arrangement' : 'app-song-sheet-parts-tab');
+      await owner.getByRole('button', { name: tab === 'Song' ? 'Verse, occurrence 1' : 'Select Verse', exact: true }).click();
+      const actions = owner.getByRole('region', { name: tab === 'Song' ? 'Selected occurrence actions' : 'Selected part actions' });
+      await checkActionLayout(actions, 32);
+      let release!: () => void;
+      const held = new Promise<void>(resolve => { release = resolve; });
+      await page.route('**/samples/**', async route => { await held; await route.continue().catch(() => {}); });
+      await actions.getByRole('button', { name: 'Play', exact: true }).click();
+      if (tab === 'Song') {
+        await expect(actions.locator('.part-transport-status')).toContainText('Preparing');
+        await checkActionLayout(actions, 32);
+      }
+      release(); await page.unroute('**/samples/**');
+      await expect.poll(async () => {
+        const recovery = page.getByRole('button', { name: 'Play prepared audio', exact: true }).first();
+        if (await recovery.isVisible()) await recovery.click();
+        return actions.locator('.part-transport-status').textContent();
+      }, { timeout: 45_000 }).toContain('Playing');
+      await checkActionLayout(actions, 32);
+      await actions.getByRole('button', { name: 'Pause', exact: true }).click();
+      await expect(actions.locator('.part-transport-status')).toContainText('Paused');
+      await checkActionLayout(actions, 32);
+      await page.screenshot({ path: `${evidence}/active-${tab.toLowerCase()}-${viewport.width}.png` });
+      await actions.getByRole('button', { name: 'Stop', exact: true }).click();
+      await checkActionLayout(actions, 32);
+    }
+  });
 }
 
 async function checkActions(actions: Locator, selected: Locator): Promise<void> {

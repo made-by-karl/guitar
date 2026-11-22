@@ -38,7 +38,9 @@
   bottom: .5rem;
   z-index: 4;
   display: flex;
-  align-items: center;
+  // Status/counters may extend a transport below its buttons. Keep neighboring
+  // editing controls on the button baseline in every contextual action bar.
+  align-items: flex-start;
   flex-wrap: wrap;
   width: calc(100% - 1.5rem);
   max-width: calc(100% - 1.5rem);

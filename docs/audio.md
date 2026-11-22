@@ -309,6 +309,15 @@ The continuous notation renderer indexes actions, measure coordinates and SVG se
 its immutable score inputs. Angular OnPush detection keeps media frame polling from repeatedly
 checking an unchanged score. Position updates reuse those indexes and preserve the drawing's
 DOM across boundaries; only the highlight and local horizontal viewport follow playback.
+The Song/Parts playback pane and full-screen play view bind the resolved position stream
+directly to the highlight directive. After the initial render, each discrete emission checks
+only that drawing immediately, avoiding another coalesced application render before the marker
+updates. Signal/value bindings remain available for editor previews. The directive releases
+stream subscriptions with the view; neither binding advances or offsets media time.
+Compact drawings follow each slot near the left edge, retaining up to two previous slots
+(at most a quarter of the viewport) so upcoming notation gets most of the width. Scrolling
+is immediate and local to the drawing, including seeks, resume and viewport resizing. At the
+end of a score, the viewport stops at its natural scroll limit.
 
 Finite sessions also expose `clock$`, with run identity and continuous samples of the same
 media time. Discrete `state$` updates remain limited to transport/slot changes so continuous

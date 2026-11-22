@@ -64,6 +64,8 @@ the visual baseline; a task can explicitly request a broader design change.
   sides. Playback and editing rows share button-column spacing. On phones, stack the rows
   so Edit starts under Play and Delete aligns with a playback button. Use shared icon/gutter
   sizes for touch controls; allow groups to wrap when a column is too narrow.
+  Align neighboring action groups by their top edges so playback status and measure counters
+  below a transport never lower the editing buttons.
 - Contextual actions use Bootstrap Icons with accessible names and title tooltips, including
   Edit, Copy/Duplicate, Delete, Play/Stop, Export, and Clear selection. Keep explanatory text
   outside the buttons. Action bars wrap within their owning column and remain usable while

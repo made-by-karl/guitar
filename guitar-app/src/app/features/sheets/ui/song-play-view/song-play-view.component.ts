@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component, ElementRef, HostListener, OnDestroy, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
+import { map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MODAL_DATA, MODAL_REF, ModalComponent, ModalDataComponent, ModalRef } from '@/app/core/services/modal.service';
 import { GripDiagramComponent } from '@/app/core/ui/grip-diagram/grip-diagram.component';
@@ -17,6 +18,7 @@ export interface SongPlayViewData { sheet: SongSheet; }
 
 @Component({
   selector: 'app-song-play-view',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [A11yModule, GripDiagramComponent, MediaPlaybackControlsComponent, PlayingActionsComponent, PlaybackHighlightDirective],
   templateUrl: './song-play-view.component.html',
   styleUrl: './song-play-view.component.scss'
@@ -47,6 +49,8 @@ export class SongPlayViewComponent implements ModalComponent<void>, ModalDataCom
   readonly contexts = computed(() => this.measures().map(measure => ({ actionGrips: measure.actionGrips })));
   readonly history = computed(() => this.sequence()?.precedingMeasures.map(measure => ({ measure, context: { actionGrips: measure.actionGrips } })) ?? []);
   readonly position = computed(() => this.attached() ? songPlaybackHighlight(this.state(), { source: 'song' }) : undefined);
+  readonly highlight$ = this.playback.state$.pipe(map(state => state.songSnapshot?.id === this.data.sheet.id
+    ? songPlaybackHighlight(state, { source: 'song' }) : undefined));
   private readonly timing = computed(() => this.attached() ? this.state().sequence?.timing : undefined);
   private readonly progressTimeline = computed(() => buildSongPlayViewProgress(this.timeline(), this.timing()));
   readonly progress = computed(() => {

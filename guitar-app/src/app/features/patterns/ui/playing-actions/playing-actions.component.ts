@@ -260,17 +260,19 @@ export class PlayingActionsComponent implements PlaybackHighlightView {
     // Resume reanchors a score browsed while paused, even within the same slot.
     this.playbackPosition();
     this.playbackSlot();
+    this.layoutRevision();
     if (!this.compact()) return;
     const scroller = this.notationElement()?.nativeElement.parentElement;
     const marker = scroller?.querySelector<SVGRectElement>('.playback-action-slot');
     if (!scroller || !marker || scroller.clientWidth === 0) return;
     const bounds = marker.getBoundingClientRect();
     const viewport = scroller.getBoundingClientRect();
-    // Only move this drawing's horizontal viewport. Never scroll the page or an
-    // editor's forms, even when the user has moved away from the playing view.
-    if (bounds.left < viewport.left || bounds.right > viewport.right) {
-      scroller.scrollLeft += bounds.left - viewport.left - scroller.clientWidth * 0.6;
-    }
+    // Leave at most two slots of history so most of the viewport previews what
+    // comes next. Reanchor each slot, including backwards seeks and resume.
+    // Only this drawing's x viewport moves; page and editor scroll stay intact.
+    const left = bounds.left - viewport.left - scroller.clientLeft + scroller.scrollLeft;
+    const historyWidth = Math.min((bounds.width + 2) * 2, scroller.clientWidth * 0.25);
+    scroller.scrollLeft = Math.max(0, left - historyWidth - 1);
   }
 
   private revealVisibleActions(): void {
