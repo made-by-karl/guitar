@@ -680,6 +680,30 @@ describe('PlayingPatternPlaybackPlannerService', () => {
     });
   });
 
+  it.each([
+    { name: 'Acoustic Backbeat Chuck', times: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75] },
+    { name: 'Folk Strum with Chucks', times: [0, 0.5, 0.75, 1.25, 1.5, 1.75] }
+  ])('plays $name with accented dead backbeats that choke ringing chords', ({ name, times }) => {
+    const pattern = createDefaultPlayingPatterns(1).find(value => value.name === name)!;
+    const plan = new PlayingPatternPlaybackPlannerService().buildPlaybackPlan([
+      { measure: pattern.measures[0] }
+    ], tuning, 120, grip as any);
+
+    expect(plan.diagnostics).toEqual([]);
+    expect(plan.notationDuration).toBe(2);
+    expect(plan.instructions.map(instruction => instruction.time)).toEqual(times);
+    const deadStrums = plan.instructions.filter(instruction => instruction.technique === 'dead-note');
+    expect(deadStrums.map(instruction => instruction.time)).toEqual([0.5, 1.5]);
+    for (const deadStrum of deadStrums) {
+      expect(deadStrum).toMatchObject({ playNotes: 'sequential', velocity: 0.9 });
+      expect(deadStrum.notes).toHaveLength(6);
+      const precedingChord = plan.instructions[plan.instructions.indexOf(deadStrum) - 1];
+      expect(precedingChord.chokeAt).toBe(deadStrum.time);
+      expect(precedingChord.velocity).toBeLessThan(deadStrum.velocity!);
+    }
+    expect(plan.instructions.at(-1)).toMatchObject({ technique: 'normal', playNotes: 'reversed' });
+  });
+
   it('extends total duration to include the final strum tail', () => {
     const service = new PlayingPatternPlaybackPlannerService();
     const pattern = createDefaultPlayingPatterns(1).find(value => value.name === 'Chorus Lift Strum');

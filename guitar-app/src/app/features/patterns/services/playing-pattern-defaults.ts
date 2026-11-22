@@ -213,6 +213,54 @@ export function createDefaultPlayingPatterns(now: number = Date.now()): PlayingP
       isCustom: false
     },
     {
+      id: 'default-acoustic-backbeat-chuck',
+      name: 'Acoustic Backbeat Chuck',
+      description: 'Steady eighth-note strums with accented dead downstrokes on beats two and four for a dry, snare-like backbeat.',
+      category: 'Campfire',
+      suggestedGenre: 'Acoustic Pop / Folk',
+      exampleSong: '',
+      measures: [{
+        timeSignature: '4/4',
+        actions: onEighthSlots(16, [
+          strum('D', range('bass', 'top')),
+          strum('U', range('top', 'lower-middle')),
+          { ...strum('D', range('bass', 'top'), ['accent']), articulation: 'dead-note' },
+          strum('U', range('top', 'lower-middle')),
+          strum('D', range('bass', 'top')),
+          strum('U', range('top', 'lower-middle')),
+          { ...strum('D', range('bass', 'top'), ['accent']), articulation: 'dead-note' },
+          strum('U', range('top', 'lower-middle'))
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
+      id: 'default-folk-strum-with-chucks',
+      name: 'Folk Strum with Chucks',
+      description: 'A spacious singalong groove with ringing upstrokes between accented dead downstrokes on beats two and four. Keep the hand moving through the gaps.',
+      category: 'Campfire',
+      suggestedGenre: 'Folk Singalong',
+      exampleSong: '',
+      measures: [{
+        timeSignature: '4/4',
+        actions: onEighthSlots(16, [
+          strum('D', range('bass', 'top')),
+          null,
+          { ...strum('D', range('bass', 'top'), ['accent']), articulation: 'dead-note' },
+          strum('U', range('top', 'lower-middle')),
+          null,
+          strum('U', range('top', 'lower-middle')),
+          { ...strum('D', range('bass', 'top'), ['accent']), articulation: 'dead-note' },
+          strum('U', range('top', 'lower-middle'))
+        ])
+      }],
+      createdAt: now,
+      updatedAt: now,
+      isCustom: false
+    },
+    {
       id: 'default-hammer-on-campfire-drive',
       name: 'Hammer-On Campfire Drive',
       description: 'Upbeat hammer-on groove with quick down/up brush fills for lifting a campfire song into a more driving chorus feel.',
