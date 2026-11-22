@@ -153,9 +153,10 @@ export class SongPartPlaybackService {
     for (const message of preview.diagnostics) console.warn(message);
     if (preview.instructions.length === 0) return;
 
+    this.session.setSectionNavigation?.();
     this.activate('measure', [this.rowsForPart(sheet, part, occurrenceId)[targetMeasureIndex]], 'editor');
 
-    await this.session.play(preview, 0);
+    await this.session.play(preview, 0, { completeFile: true });
   }
 
   stopMeasurePreview(): void {
@@ -187,6 +188,7 @@ export class SongPartPlaybackService {
     for (const message of plan.diagnostics) console.warn(message);
     if (plan.instructions.length === 0) return;
 
+    this.session.setSectionNavigation?.();
     this.activate('part', this.rowsForPart(sheet, part, occurrenceId), source);
 
     await this.session.play(plan, 0);
@@ -280,6 +282,7 @@ export class SongPartPlaybackService {
     }
     const plan = this.planner.buildPlaybackPlan(measures, this.getTuningForSheet(sheet), sheet.tempo);
     for (const message of plan.diagnostics) console.warn(message);
+    this.session.setSectionNavigation?.({ previous: () => this.seekSongOccurrence(-1), next: () => this.seekSongOccurrence(1) });
     this.activate('song', rows, 'song', sheet, {
       slots: plan.slots, segmentStartTimes: plan.segmentStartTimes, notationDuration: plan.notationDuration
     });

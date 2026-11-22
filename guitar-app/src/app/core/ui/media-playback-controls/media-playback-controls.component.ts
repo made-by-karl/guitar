@@ -18,6 +18,6 @@ export class MediaPlaybackControlsComponent {
   readonly channels = input<readonly string[]>();
   readonly notices = computed(() => this.media.notices().filter(notice =>
     (!this.channels() || this.channels()!.includes(notice.channel)) &&
-    (!this.attentionOnly() || notice.status === 'ready' || notice.status === 'error')
+    (!this.attentionOnly() || notice.status === 'ready' || notice.status === 'buffering' || notice.status === 'error')
   ));
 }

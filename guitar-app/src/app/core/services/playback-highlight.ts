@@ -2,7 +2,7 @@
 export interface PlaybackHighlight {
   measureIndex: number;
   actionIndex: number;
-  status: 'playing' | 'paused';
+  status: 'playing' | 'buffering' | 'paused';
 }
 
 /** Drawing components implement this contract; playback owners supply positions. */

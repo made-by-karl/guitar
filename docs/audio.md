@@ -1,6 +1,7 @@
 # Audio overview
 
-Playback renders Tone.js instruments into WAV media, then plays through `HTMLAudioElement`.
+Playback renders Tone.js instruments into HTML media: complete WAVs for short clips and
+metronome loops, or incremental lossless FLAC in fragmented MP4 for long finite plans.
 The tuner retains its independent microphone pipeline.
 
 ## Action articulation
@@ -19,7 +20,8 @@ samples, processing profiles, gains, timing or rendered instruction meanings.
 
 ## Playback pipeline
 
-`RenderedAudioService` prepares a mono 44.1 kHz, PCM 16-bit WAV with `WavEncoderService`.
+`RenderedAudioService` prepares mono 44.1 kHz PCM. The complete-file strategy encodes
+16-bit WAV with `WavEncoderService`; streaming encodes bounded PCM windows separately.
 It uses an explicit `Tone.OfflineContext`, so preparation does not redirect Tone's global
 context or send a second copy to a live Web Audio destination. Only banks required by the
 instructions are loaded, with 20-second loading deadlines and cancellation checks between banks. Temporary samplers, decoded slide anchors, independent slide
@@ -39,7 +41,8 @@ pause/resume drive state; focus/visibility events never restart a stopped media 
 
 The [Media Session API](https://www.w3.org/TR/mediasession/) supplies the playback label, app name, original 1024px artwork and
 media position to system/lock-screen controls. Play, Pause, Stop and supported seek actions
-delegate to the same channel. The most recently playing channel owns those controls;
+delegate to the same channel. Full-song Previous/Next actions use the same occurrence navigation as the page; unsupported
+actions are ignored, and boundary requests do nothing. The most recently playing channel owns those controls;
 when it stops or finishes while another channel plays, ownership returns to that channel.
 Unsupported actions/position reporting do not block playback.
 
@@ -78,6 +81,99 @@ explains gesture restrictions. Neither WAV encoding nor desktop emulation certif
 behavior. Real-device verification remains required; no minimum iOS version or background/
 lock-screen continuation is promised by this implementation.
 
+## Incremental long playback
+
+`StreamingAudioService` selects incremental preparation when the estimated duration,
+including release, exceeds 15 seconds. Chord/grip and isolated-measure previews remain
+complete WAVs; the standalone metronome retains its exact native WAV loop. There is
+no user-facing backend setting. Both strategies use `HtmlAudioPlaybackService`, one
+persistent media element per active channel and the same media clock/finite timeline.
+
+The selected format is mono 44.1 kHz, 16-bit **FLAC in fragmented MP4**. AAC was evaluated
+first: bundled Chromium lacked an AAC encoder, while the raw WebKit prototype exposed
+encoder/presentation padding that required additional handling. Opus encoding/decoding
+was available in both desktop engines, but lossless independent FLAC windows avoid
+codec priming/state at musical and random-access boundaries and preserve sample counts.
+`mediabunny` and `@mediabunny/flac-encoder` are pinned to 1.66.2 (MPL-2.0). The latter
+bundles a local libFLAC WASM encoder; neither sends practice data to a server.
+The shipped `licenses/streaming-audio.txt` preserves MPL/libFLAC notices and pinned source links. Encoding
+runs in disposable workers, finalized/canceled after each window. See the maintained
+[encoder documentation](https://mediabunny.dev/guide/extensions/flac-encoder) and
+[fragmented MP4 output API](https://mediabunny.dev/guide/output-formats).
+
+Capability detection proves encode, append, clock advancement and seek on a muted,
+disposable media element before selecting a source. This probe does not claim system
+controls or bypass the actual player's gesture/retry rules. Secure-context, worker/WASM,
+codec or source failures retain complete-WAV playback. ManagedMediaSource is preferred
+when its probe succeeds; ordinary MediaSource is also probed. Streaming elements set
+`disableRemotePlayback`, satisfying ManagedMediaSource activation without an AirPlay
+alternative. This opts those elements out of remote playback, independently of Media
+Session/lock-screen controls. The WAV/metronome elements keep their existing behavior.
+
+### Windows, gain and scheduling
+
+The complete plain-data musical plan and notation timeline are retained from startup.
+The first window covers four seconds; generation then aims for 24 seconds ahead of
+actual media time. Each render includes earlier attacks whose hold, strum spread or
+release can reach the requested interval, including pitch automation and dead-strum
+chokes. The context origin is aligned to the full render's 128-sample quantum and the
+result is cropped at exact integer sample positions. No whole-song PCM buffer or file
+is prepared before streaming starts. A sustained voice needing over 30 seconds of
+context exposes a recoverable complete-file retry rather than allocating an unbounded
+window. Finite plans retain the existing approximately ten-minute limit.
+
+A single plan-wide gain bounds articulated mixes using required sample peaks and
+simultaneous voices. That fixed gain is applied to every window; there is no per-window
+normalization or pumping. It can produce a more conservative overall level than the
+legacy complete-WAV whole-buffer peak normalization, while preserving relative dynamics.
+Clean plans keep the existing unity gain. PCM comparisons cover attacks crossing window
+edges, slides/legato, percussion, damping, rests and final release, allowing only 16-bit
+quantization tolerance. Musical/listening verification on physical output remains separate.
+
+Offline jobs are serialized, bounded and ordered: interactive WAV previews/metronome
+changes first, then seeks/imminent underruns, then speculative windows. Cancellation skips
+queued allocation and prevents late render/encode work from starting audio or entering
+fragment caches. A native offline render already underway still finishes and disposes.
+An aborted consumer does not wait for that native work before reusing a cached seek.
+
+Decoded samples and processed pitch/articulation buffers use a shared 16 MiB LRU; temporary
+Tone wrappers/voices belong to each offline context. Encoded fragments use a separate
+32 MiB LRU shared across finite sessions, alongside the existing 32 MiB WAV cache. Keys
+include a SHA-256 identity of full musical/render inputs, score duration, sample revision,
+codec/encoder configuration, gain, window bounds and render rate. Temporary window PCM
+is not cached. Browser buffers are pruned to approximately eight seconds behind and
+32 seconds ahead; their ownership is independent of encoded-cache eviction.
+
+### Buffering, seeking and recovery
+
+An exhausted stream reports **Buffering**, retaining an operable Pause/Stop and the frozen
+media-clock notation position. Playing seeks resume through native media recovery; paused
+seeks prepare their target without calling Play. Rapid/native/system seeks accept the
+latest target on the existing element/session. Buffered seeks use actual `TimeRanges`;
+cached unbuffered windows are reappended, while missing windows are prioritized. Managed
+demand/eviction notifications wake the same range-based pump; generated audio is never
+assumed still present in the browser buffer. Quota failure prunes ranges and retries once.
+
+The initial duration includes a release estimate. Rendering the final window preserves
+written rests, trims unused release padding and reconciles both media and Media Session
+duration. Completion comes from native `ended`, after the actual release. The last owned
+completed stream remains replayable, including reappend/regeneration of missing ranges.
+Stop/navigation/replacement invalidate preparation, append work, retries, metadata ownership
+and replay, pause output and revoke URLs. Cache eviction never revokes an active player URL.
+
+Unrecoverable stream/native-media errors stop the source and expose an explicit Retry that
+uses the complete-file strategy; there is no attempted seamless switch during playback.
+Gesture rejection keeps prepared media ready for a direct Play action. A later pause or Stop
+always wins over background preparation or an old play promise.
+
+Issue [#29](https://github.com/made-by-karl/guitar/issues/29) was clarified during implementation:
+foreground notation is primary, and stopping while locked is acceptable. Background
+JavaScript/appending is not guaranteed. Interrupted playback must remain recoverable and
+must not restart after Pause/Stop. No minimum iPhone/iOS version, Silent Mode behavior or
+physical-device listening has been certified. Automated Chromium/WebKit checks, measurements,
+raw evidence and the remaining device procedure are in
+[testing.md](testing.md#incremental-streaming-playback-issue-29).
+
 ## Finite playback and ownership
 
 `PlaybackService` supplies finite sessions and chord previews; `MidiService` supplies maintenance
@@ -86,9 +182,9 @@ and full-song callers use the same media path. Sessions in the existing finite-p
 still compete with each other; the metronome and one-shot channels retain separate ownership.
 
 Finite sessions derive cursor/occurrence highlights from media `currentTime`, preserve the
-same rendered waveform during pause/resume/seek, and finish on the actual `ended` event.
+same media timeline during pause/resume/seek, and finish on the actual `ended` event.
 Rendering includes sequential spread and instrument release beyond the last musical event.
-Finite WAVs discard unused release padding after the final sample above the 16-bit PCM
+Finite WAVs and the final streaming window discard unused release padding after the final sample above the 16-bit PCM
 noise floor, retaining 20 ms of silence after the decay. Trimming never shortens the
 score duration (including final rests), and reported media duration matches the encoded
 buffer. Native metronome loops retain their exact duration and repeating phase.
@@ -124,7 +220,7 @@ notes stay audible. These are processed guitar sounds, not recorded dead-note pe
 `guitar-articulation.ts` transposes each required note before applying its own filter/envelope
 in a short offline render. Prepared voices are reused by pitch/articulation within the main
 render job. Attack energy is calibrated per pitched voice; velocity retains accent dynamics.
-The main mix applies a peak ceiling to avoid clipping. All output still uses WAV media and
+The main mix applies a peak ceiling to avoid clipping. Short output uses WAV and long output uses lossless streaming through
 the existing HTML audio lifecycle; no live Web Audio output is introduced.
 
 Strum actions have optional `strum.mode`: `normal` (also the default when absent) or

@@ -1,0 +1,1714 @@
+{
+  "format": "guitar-song-sheet",
+  "formatVersion": 1,
+  "modelVersion": 1,
+  "exportedAt": 1794954599627,
+  "appVersion": "1.1.0",
+  "data": {
+    "id": "open-road-original-beginner-rock",
+    "name": "Open Road (original beginner rock)",
+    "tuning": [
+      {
+        "semitone": "E",
+        "octave": 2
+      },
+      {
+        "semitone": "A",
+        "octave": 2
+      },
+      {
+        "semitone": "D",
+        "octave": 3
+      },
+      {
+        "semitone": "G",
+        "octave": 3
+      },
+      {
+        "semitone": "B",
+        "octave": 3
+      },
+      {
+        "semitone": "E",
+        "octave": 4
+      }
+    ],
+    "capodaster": 0,
+    "tempo": 90,
+    "links": [],
+    "grips": [
+      {
+        "name": "Em",
+        "gripId": "o|2|2|o|o|o"
+      },
+      {
+        "name": "G",
+        "gripId": "3|2|o|o|o|3"
+      },
+      {
+        "name": "D",
+        "gripId": "x|x|o|2|3|2"
+      },
+      {
+        "name": "C",
+        "gripId": "x|3|2|o|1|o"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "open-road-pattern-quarter",
+        "name": "Easy rock - four downstrokes",
+        "description": "Downstroke on beats 1, 2, 3, 4. One chord per bar.",
+        "category": "Strumming",
+        "suggestedGenre": "Beginner rock",
+        "exampleSong": "Open Road (original)",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null
+            ]
+          }
+        ],
+        "createdAt": 1794954599627,
+        "updatedAt": 1794954599627,
+        "isCustom": true
+      },
+      {
+        "id": "open-road-pattern-chorus",
+        "name": "Easy rock - chorus strum",
+        "description": "Count 1 & 2 & 3 & 4 &. Strum D - D U - U D U; keep the hand moving evenly.",
+        "category": "Strumming",
+        "suggestedGenre": "Beginner rock",
+        "exampleSong": "Open Road (original)",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "U",
+                  "strings": "all"
+                }
+              },
+              null
+            ]
+          }
+        ],
+        "createdAt": 1794954599627,
+        "updatedAt": 1794954599627,
+        "isCustom": true
+      },
+      {
+        "id": "open-road-pattern-ending",
+        "name": "Final chord - let ring",
+        "description": "One downstroke on beat 1; let the chord ring for the rest of the bar.",
+        "category": "Strumming",
+        "suggestedGenre": "Beginner rock",
+        "exampleSong": "Open Road (original)",
+        "measures": [
+          {
+            "timeSignature": "4/4",
+            "actions": [
+              {
+                "technique": "strum",
+                "strum": {
+                  "direction": "D",
+                  "strings": "all"
+                }
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        ],
+        "createdAt": 1794954599627,
+        "updatedAt": 1794954599627,
+        "isCustom": true
+      }
+    ],
+    "parts": [
+      {
+        "id": "open-road-intro",
+        "section": "Intro",
+        "notes": "Original practice song, not a cover. Standard tuning, no capo. Count four before starting. Four downstrokes per bar: 1, 2, 3, 4. Chords: Em | C | G | D. Grip encodings run from low E to high E; x means do not play that string.",
+        "measures": [
+          {
+            "id": "open-road-intro-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-intro-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-intro-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-intro-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "open-road-verse",
+        "section": "Verse",
+        "notes": "Four downstrokes per bar. Chords: Em | C | G | D | Em | C | G | D. Sing one lyric line over each pair of bars. This music is reused with different lyrics in verse 2.",
+        "measures": [
+          {
+            "id": "open-road-verse-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-7",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-verse-measure-8",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "open-road-chorus",
+        "section": "Chorus",
+        "notes": "Chords: G | D | Em | C | G | D | C | D. Count 1 & 2 & 3 & 4 &: D - D U - U D U. Sing one lyric line over each pair of bars. For an easier version, use four downstrokes per bar.",
+        "measures": [
+          {
+            "id": "open-road-chorus-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-5",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "G",
+                  "gripId": "3|2|o|o|o|3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-6",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-7",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-chorus-measure-8",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "U",
+                    "strings": "all"
+                  }
+                },
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "open-road-outro",
+        "section": "Outro",
+        "notes": "Chords: Em | C | D | Em. Four downstrokes per bar for the first three bars. On the final Em, strum once on beat 1 and let it ring for the full bar.",
+        "measures": [
+          {
+            "id": "open-road-outro-measure-1",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-outro-measure-2",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "C",
+                  "gripId": "x|3|2|o|1|o"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-outro-measure-3",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "D",
+                  "gripId": "x|x|o|2|3|2"
+                }
+              ]
+            }
+          },
+          {
+            "id": "open-road-outro-measure-4",
+            "measure": {
+              "timeSignature": "4/4",
+              "actions": [
+                {
+                  "technique": "strum",
+                  "strum": {
+                    "direction": "D",
+                    "strings": "all"
+                  }
+                },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "actionGrips": [
+                {
+                  "measureIndex": 0,
+                  "actionIndex": 0,
+                  "name": "Em",
+                  "gripId": "o|2|2|o|o|o"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "arrangement": [
+      {
+        "id": "open-road-occurrence-intro",
+        "partId": "open-road-intro",
+        "lyrics": ""
+      },
+      {
+        "id": "open-road-occurrence-verse-1",
+        "partId": "open-road-verse",
+        "lyrics": "Old guitar and a worn-out case,\nMorning wind upon my face.\nOne more mile beyond the tracks,\nNothing here is holding us back."
+      },
+      {
+        "id": "open-road-occurrence-chorus-1",
+        "partId": "open-road-chorus",
+        "lyrics": "Take the open road tonight,\nTurn the dark into a light.\nSide by side, we sing out loud,\nFour small chords can shake this town."
+      },
+      {
+        "id": "open-road-occurrence-verse-2",
+        "partId": "open-road-verse",
+        "lyrics": "Streetlights fade behind the hill,\nWe keep moving, singing still.\nEvery turn becomes a song,\nFind the beat and come along."
+      },
+      {
+        "id": "open-road-occurrence-chorus-2",
+        "partId": "open-road-chorus",
+        "lyrics": "Take the open road tonight,\nTurn the dark into a light.\nSide by side, we sing out loud,\nFour small chords can shake this town."
+      },
+      {
+        "id": "open-road-occurrence-outro",
+        "partId": "open-road-outro",
+        "lyrics": "Let it ring, then let it go."
+      }
+    ],
+    "created": 1794954599627,
+    "updated": 1794954599627
+  }
+}

@@ -32,17 +32,17 @@ export class SongPartTransportComponent {
   readonly preparing = computed(() => this.active() && this.state().status === 'preparing');
   readonly needsRecovery = computed(() => this.mediaStatus() === 'ready' || this.mediaStatus() === 'error');
   readonly primaryLabel = computed(() => !this.active() ? 'Play' : this.preparing() ? 'Preparing…'
-    : this.state().status === 'playing' ? 'Pause' : 'Resume');
+    : (this.state().status === 'playing' || this.state().status === 'buffering') ? 'Pause' : 'Resume');
   readonly canPrevious = computed(() => this.active() && !this.preparing() && !this.needsRecovery() && canRewindPart(this.state(), this.partId()));
   readonly canNext = computed(() => this.active() && !this.preparing() && !this.needsRecovery() && canForwardPart(this.state(), this.partId()));
   readonly counter = computed(() => getPartMeasureCounter(this.state(), this.partId(), this.measureCount()));
   readonly status = computed(() => !this.active() ? '' : this.preparing() ? 'Preparing…'
     : this.mediaStatus() === 'ready' ? 'Ready to play' : this.mediaStatus() === 'error' ? 'Playback needs attention'
-    : this.state().status === 'playing' ? 'Playing' : 'Paused');
+    : this.state().status === 'buffering' ? 'Buffering…' : this.state().status === 'playing' ? 'Playing' : 'Paused');
 
   toggle(): void {
     if (!this.active()) this.play.emit();
-    else if (this.state().status === 'playing') this.pause.emit();
+    else if ((this.state().status === 'playing' || this.state().status === 'buffering')) this.pause.emit();
     else this.resume.emit();
   }
 }

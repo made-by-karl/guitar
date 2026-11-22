@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "files": ["streaming-playback.spec.ts", "streaming-playback.config.ts", "media-compatibility.config.ts"]
+}

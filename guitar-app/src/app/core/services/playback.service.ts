@@ -1,11 +1,12 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, Optional } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { MidiInstruction, MidiNote, MidiTechnique } from '@/app/core/services/midi.model';
 import { noteNameToNote } from '@/app/core/music/semitones';
 import { RenderedAudioService } from '@/app/core/services/rendered-audio.service';
+import { StreamingAudioService } from '@/app/core/services/streaming-audio.service';
 import { HtmlAudioPlaybackService, HtmlAudioProgress } from '@/app/core/services/html-audio-playback.service';
 
-export type PlaybackStatus = 'idle' | 'preparing' | 'playing' | 'paused';
+export type PlaybackStatus = 'idle' | 'preparing' | 'playing' | 'buffering' | 'paused';
 
 export interface PlaybackSlot {
   time: number; segmentIndex: number; actionIndex: number;
@@ -33,12 +34,13 @@ export interface PlaybackSession {
   readonly state$: Observable<PlaybackSessionState>;
   readonly clock$: Observable<PlaybackClockPosition>;
   getSnapshot(): PlaybackSessionState;
-  play(plan: PlaybackPlan, startCursor?: number): Promise<void>;
+  play(plan: PlaybackPlan, startCursor?: number, options?: { completeFile?: boolean }): Promise<void>;
   pause(): void;
   resume(): void;
   stop(): void;
   seek(cursor: number): void;
   destroy(): void;
+  setSectionNavigation?(navigation?: { previous(): void; next(): void }): void;
 }
 
 class FinitePlaybackSession implements PlaybackSession {
@@ -50,6 +52,7 @@ class FinitePlaybackSession implements PlaybackSession {
   private readonly progress: Subscription;
   private destroyed = false;
   private runId = 0;
+  private navigation?: { previous(): void; next(): void };
 
   constructor(
     private readonly sessionId: string,
@@ -57,7 +60,8 @@ class FinitePlaybackSession implements PlaybackSession {
     private readonly rendered: RenderedAudioService,
     private readonly media: HtmlAudioPlaybackService,
     private readonly beforePlay: (session: FinitePlaybackSession) => void,
-    private readonly onDestroySession: (id: string) => void
+    private readonly onDestroySession: (id: string) => void,
+    private readonly streaming?: StreamingAudioService
   ) {
     this.stateSubject = new BehaviorSubject<PlaybackSessionState>({ sessionId, scope,
       status: 'idle', cursor: 0, total: 0, canPause: false, canSeek: false, ended: false });
@@ -65,16 +69,20 @@ class FinitePlaybackSession implements PlaybackSession {
     this.progress = media.progress$(this.channel).subscribe(state => this.onProgress(state));
   }
   getSnapshot(): PlaybackSessionState { return this.stateSubject.value; }
-  async play(plan: PlaybackPlan, startCursor = 0): Promise<void> {
+  async play(plan: PlaybackPlan, startCursor = 0, options: { completeFile?: boolean } = {}): Promise<void> {
     if (this.destroyed) return;
     if (!plan.instructions.length || !plan.totalSegments) { this.stop(); return; }
     this.beforePlay(this);
     this.runId++;
+    plan = { ...plan, instructions: JSON.parse(JSON.stringify(plan.instructions)) as MidiInstruction[],
+      segmentStartTimes: [...plan.segmentStartTimes], slots: plan.slots?.map(slot => ({ ...slot })) };
     this.plan = plan;
     const startTime = plan.segmentStartTimes[this.clamp(startCursor)] ?? 0;
-    await this.media.play(this.channel, signal => this.rendered.renderInstructions(plan.instructions, plan.totalDuration, signal),
-      { label: this.sessionId === 'pattern-preview' ? 'Pattern preview' : 'Song playback', startTime });
+    await this.media.play(this.channel, async signal => (!options.completeFile ? await this.streaming?.prepare(plan, signal) : undefined)
+      ?? this.rendered.renderInstructions(plan.instructions, plan.totalDuration, signal),
+      { previousSection: this.navigation?.previous, nextSection: this.navigation?.next, label: this.sessionId === 'pattern-preview' ? 'Pattern preview' : 'Song playback', startTime });
   }
+  setSectionNavigation(navigation?: { previous(): void; next(): void }): void { this.navigation = navigation; }
   pause(): void { this.media.pause(this.channel); }
   resume(): void { if (this.plan) void this.media.resume(this.channel); }
   stop(): void { this.media.stop(this.channel); this.plan = null; }
@@ -111,10 +119,10 @@ class FinitePlaybackSession implements PlaybackSession {
       else high = middle;
     }
     const slot = slots[low - 1];
-    const actionIndex = (status === 'playing' || progress.status === 'paused') && slot?.segmentIndex === cursor
+    const actionIndex = (status === 'playing' || status === 'buffering' || progress.status === 'paused') && slot?.segmentIndex === cursor
       ? slot.actionIndex : undefined;
     const next: PlaybackSessionState = { ...this.getSnapshot(), runId: this.runId, actionIndex, status, cursor: status === 'idle' ? 0 : this.clamp(cursor),
-      total: plan.totalSegments, canPause: status === 'playing', canSeek: progress.status === 'playing' || progress.status === 'paused', ended: progress.ended };
+      total: plan.totalSegments, canPause: status === 'playing' || status === 'buffering', canSeek: progress.status === 'playing' || progress.status === 'buffering' || progress.status === 'paused', ended: progress.ended };
     if (Object.keys(next).some(key => next[key as keyof PlaybackSessionState] !== this.getSnapshot()[key as keyof PlaybackSessionState])) {
       this.stateSubject.next(next);
     }
@@ -135,7 +143,7 @@ class FinitePlaybackSession implements PlaybackSession {
 export class PlaybackService implements OnDestroy {
   private readonly finiteSessions = new Map<string, FinitePlaybackSession>();
 
-  constructor(private rendered: RenderedAudioService, private media: HtmlAudioPlaybackService) {}
+  constructor(private rendered: RenderedAudioService, private media: HtmlAudioPlaybackService, @Optional() private streaming?: StreamingAudioService) {}
 
   /**
    * Returns a stable finite playback session for the given identifier.
@@ -152,7 +160,8 @@ export class PlaybackService implements OnDestroy {
       this.rendered,
       this.media,
       (nextSession) => this.stopOtherFiniteSessionsInScope(nextSession),
-      (destroyedSessionId) => this.finiteSessions.delete(destroyedSessionId)
+      (destroyedSessionId) => this.finiteSessions.delete(destroyedSessionId),
+      this.streaming
     );
 
     this.finiteSessions.set(sessionId, session);

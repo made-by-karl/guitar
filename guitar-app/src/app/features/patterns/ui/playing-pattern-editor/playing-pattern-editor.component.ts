@@ -129,7 +129,7 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   }
 
   isPatternPlaybackActive(): boolean {
-    return (this.playbackState.status === 'playing' || this.playbackState.status === 'preparing') && this.playbackState.patternId === this.pattern()?.id;
+    return ((this.playbackState.status === 'playing' || this.playbackState.status === 'buffering') || this.playbackState.status === 'preparing') && this.playbackState.patternId === this.pattern()?.id;
   }
 
   private updatePattern(updatedPattern: PlayingPattern) {
