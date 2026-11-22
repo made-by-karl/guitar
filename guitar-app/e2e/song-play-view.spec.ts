@@ -92,7 +92,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(page.locator('app-song-playback')).toHaveCount(0);
     expect(await mode.boundingBox()).toMatchObject({ x: 0, y: 0, width: viewport.width, height: viewport.height });
     await expect(mode.getByRole('status')).toHaveText('Ready to play');
-    await expect(measure.getByRole('heading', { level: 2 })).toHaveText('VerseSong measure 1 / 5');
+    await expect(measure.getByRole('heading', { level: 2 })).toHaveText('Verse (1)Song measure 1 / 5');
     const exit = mode.getByRole('button', { name: 'Exit play view', exact: true });
     expect(await exit.boundingBox()).toMatchObject({ width: 44, height: 44 });
     await expect(mode.locator('.grip-location')).toHaveCount(0);
@@ -123,11 +123,12 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(mode.getByRole('progressbar', { name: 'Current part progress' })).toHaveAttribute('aria-valuenow', '35');
     await expect(mode.getByRole('progressbar', { name: 'Next grip progress', exact: true })).toHaveAttribute('aria-valuenow', '33');
     await expect(mode.getByRole('progressbar', { name: 'After next grip progress', exact: true })).toHaveAttribute('aria-valuenow', '29');
-    await expect(measure.getByRole('heading', { level: 2 })).toHaveText('VerseSong measure 1 / 5');
+    await expect(measure.getByRole('heading', { level: 2 })).toHaveText('Verse (1)Song measure 1 / 5');
     const marker = await mode.locator('.playback-action-slot').boundingBox();
     const bounds = await notation.boundingBox();
     expect(marker!.x).toBeGreaterThanOrEqual(bounds!.x);
     expect(marker!.x + marker!.width).toBeLessThanOrEqual(bounds!.x + bounds!.width + 1);
+    expect(marker!.x - bounds!.x).toBeLessThanOrEqual((marker!.width + 2) * 2 + 2);
     await mkdir('../temp/ux/song-play-view-continuous', { recursive: true });
     await page.screenshot({ path: `../temp/ux/song-play-view-continuous/paused-${viewport.width}x${viewport.height}.png` });
     const lyrics = mode.getByLabel('Scrollable section lyrics', { exact: true });

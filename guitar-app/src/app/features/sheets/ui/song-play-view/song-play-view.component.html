@@ -11,11 +11,11 @@
     @if (row(); as row) {
       <section class="notation-panel" aria-label="Song notation" [attr.data-occurrence-id]="row.occurrence.id" [attr.data-measure-id]="row.part.measures[row.measureIndex].id" [attr.data-song-measure-index]="attached() ? state().currentMeasureIndex ?? 0 : 0">
         <div class="measure-heading">
-          <h2><span>{{ row.part.section || 'Untitled part' }}</span><span class="song-measure">Song measure {{ (attached() ? state().currentMeasureIndex ?? 0 : 0) + 1 }} / {{ timeline().measures.length }}</span></h2>
+          <h2><span>{{ row.part.section || 'Untitled part' }} ({{ row.occurrenceNumber }})</span><span class="song-measure">Song measure {{ (attached() ? state().currentMeasureIndex ?? 0 : 0) + 1 }} / {{ timeline().measures.length }}</span></h2>
           <p class="position visually-hidden">Measure {{ row.measureIndex + 1 }} of {{ row.part.measures.length }} · Song measure {{ (attached() ? state().currentMeasureIndex ?? 0 : 0) + 1 }} of {{ timeline().measures.length }}@if (position(); as position) { · Action {{ position.actionIndex + 1 }} }</p>
         </div>
         <div class="notation-frame" #notationFrame>
-          <app-playing-actions [measures]="measures()" [notationContexts]="contexts()" [notationHistory]="history()" [compact]="true" [showActionIndex]="true" scrollLabel="Scrollable song notation" [appPlaybackHighlight]="position()" />
+          <app-playing-actions [measures]="measures()" [notationContexts]="contexts()" [notationHistory]="history()" [compact]="true" [showActionIndex]="true" scrollLabel="Scrollable song notation" [appPlaybackHighlight]="highlight$" />
         </div>
       </section>
       <section class="lyrics-panel" aria-label="Section lyrics">

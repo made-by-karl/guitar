@@ -79,12 +79,26 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     const segmentCount = await pane.locator('.action-svg').count();
     await seekPaused(page, 0.25);
     await expect(pane.locator('.playback-position')).toHaveText('Paused · Measure 1 of 2 · Action 3');
+    await expect(pane.locator('strong')).toHaveText('Verse (1)');
     await song.getByRole('button', { name: 'Resume song', exact: true }).focus();
     for (const [time, occurrence, measure, slot] of [[1.875, 'v1', 'v-m1', '15'], [2, 'v1', 'v-rest', '16'], [4.25, 'c1', 'c-m1', '34'], [6.25, 'v2', 'v-m1', '50']] as const) {
       await seekPaused(page, time);
       await expect(pane).toHaveAttribute('data-occurrence-id', occurrence);
       await expect(pane).toHaveAttribute('data-measure-id', measure);
       await expect(pane.locator('.playback-action-slot')).toHaveAttribute('data-slot-index', slot);
+      const preview = await pane.locator('.notation-measure').evaluate(element => {
+        const viewport = element.getBoundingClientRect();
+        const marker = element.querySelector('.playback-action-slot')!.getBoundingClientRect();
+        return { left: marker.left - viewport.left, width: marker.width, viewport: element.clientWidth,
+          atEnd: element.scrollLeft >= element.scrollWidth - element.clientWidth - 1 };
+      });
+      // Two slots of history, with the remaining width available for upcoming
+      // actions even when seeking backwards within the same mounted drawing.
+      expect(preview.left).toBeGreaterThanOrEqual(0);
+      if (!preview.atEnd) {
+        expect(preview.left).toBeLessThanOrEqual((preview.width + 2) * 2 + 2);
+        expect(preview.left).toBeLessThan(preview.viewport * 0.3);
+      }
       await expect(song.locator('.occurrence-row.is-playing')).toHaveCount(1);
       expect(await firstSegment!.evaluate(element => element.isConnected)).toBe(true);
       await expect(pane.locator('.action-svg')).toHaveCount(segmentCount);
