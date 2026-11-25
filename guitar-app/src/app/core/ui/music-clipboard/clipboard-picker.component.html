@@ -1,0 +1,20 @@
+<section class="clipboard-dialog" role="dialog" aria-modal="true" aria-labelledby="clipboard-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+  <div class="modal-header">
+    <h5 id="clipboard-title" class="m-0">Paste {{ data.kind === 'measures' ? 'measures' : 'action' }}</h5>
+    <button class="btn btn-outline-secondary app-icon-button" type="button" #closeButton aria-label="Close clipboard" title="Close clipboard" cdkFocusInitial (click)="modalRef.close()"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+  </div>
+  <div class="modal-body">
+    <p class="small text-muted">Copies stay available until you reload or close the app. Relative notes use the destination context.</p>
+    @for (entry of entries; track entry.id) {
+      <div class="clipboard-entry">
+        <button class="btn btn-outline-secondary clipboard-choice" type="button" (click)="modalRef.close(entry.id)">
+          <strong>{{ entry.source }}</strong><span class="small">{{ entry.preview }}</span>
+        </button>
+        <button class="btn btn-outline-danger app-icon-button" type="button" [attr.aria-label]="'Remove clipboard entry: ' + entry.source" title="Remove clipboard entry" (click)="remove(entry.id)"><i class="bi bi-trash" aria-hidden="true"></i></button>
+      </div>
+    } @empty {
+      <p role="status">No {{ data.kind === 'measures' ? 'measures' : 'actions' }} copied yet. Use Copy on {{ data.kind === 'measures' ? 'a measure or a measure selection' : 'an existing action' }} to add an entry here.</p>
+    }
+  </div>
+  <div class="modal-footer"><button class="btn btn-secondary" type="button" (click)="modalRef.close()">Cancel</button></div>
+</section>

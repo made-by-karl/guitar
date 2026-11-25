@@ -1,3 +1,4 @@
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PlayingPatternEditorComponent } from '@/app/features/patterns/ui/playing-pattern-editor/playing-pattern-editor.component';
 import { PlayingPattern } from '@/app/features/patterns/services/playing-patterns.model';
@@ -325,8 +326,8 @@ describe('PlayingPatternEditorComponent', () => {
       actions: Array(12).fill(null)
     });
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: '3|2|o|o|o|3', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }
     ]);
     expect(mockDialogService.confirm).not.toHaveBeenCalled();
   });
@@ -339,47 +340,69 @@ describe('PlayingPatternEditorComponent', () => {
     const pattern = component.pattern();
     expect(pattern.measures).toHaveLength(2);
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: '3|2|o|o|o|3', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }
     ]);
     expect(mockNotificationService.success).toHaveBeenCalledWith('Copied measure 1');
   });
 
-  it('asks whether to use a copied measure when adding a measure', async () => {
-    component.pattern.set(createMultiMeasurePattern());
-    component.copyMeasure(0);
-    mockDialogService.confirm.mockResolvedValue(false);
-
-    await component.addMeasure();
-
-    expect(mockDialogService.confirm).toHaveBeenCalledWith(
-      'Use the copied measure, or create a new empty measure?',
-      'Add Measure',
-      'Use Copy',
-      'New Measure'
-    );
-    expect(component.pattern().measures[2]).toEqual({
-      timeSignature: '3/4',
-      actions: Array(12).fill(null)
-    });
+  it('preserves native checkbox editing when measure selection is inactive', () => {
+    component.pattern.set({ ...component.pattern(), measures: [{ timeSignature: '4/4', actions: [
+      { technique: 'strum', strum: { direction: 'D', strings: 'all' }, modifiers: [] }, ...Array(15).fill(null)
+    ] }] });
+    fixture.detectChanges();
+    const checkbox = Array.from(fixture.nativeElement.querySelectorAll('label')).map(label => label as HTMLLabelElement)
+      .find(label => label.textContent?.trim() === 'Accent')!.querySelector('input')!;
+    checkbox.click();
+    fixture.detectChanges();
+    expect(checkbox.checked).toBe(true);
+    expect(component.pattern().measures[0].actions[0]!.modifiers).toEqual(['accent']);
+    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    checkbox.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
   });
 
-  it('adds the copied measure with actions and grips when confirmed', async () => {
+  it('inserts a copied group at the chosen position repeatedly, shifting all grip references', async () => {
     component.pattern.set(createMultiMeasurePattern());
-    component.copyMeasure(0);
-    mockDialogService.confirm.mockResolvedValue(true);
-
-    await component.addMeasure();
-
+    component.selection.start(component.pattern().measures[1]);
+    component.selection.toggle(component.pattern().measures[0]);
+    component.copySelectedMeasures();
+    const clipboard = TestBed.inject(MusicClipboardService);
+    const id = clipboard.entries()[0].id;
+    mockModalService.show.mockReturnValue({ afterClosed: async () => id } as never);
+    await component.pasteMeasures(1);
+    await component.pasteMeasures(0);
     const pattern = component.pattern();
-    expect(pattern.measures).toHaveLength(3);
-    expect(pattern.measures[2]).toEqual(pattern.measures[0]);
-    expect(pattern.measures[2]).not.toBe(pattern.measures[0]);
-    expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' },
-      { measureIndex: 2, actionIndex: 0, gripId: 'g', name: 'G' }
-    ]);
+    expect(pattern.measures.map(m => m.timeSignature)).toEqual(['4/4', '3/4', '4/4', '4/4', '3/4', '3/4']);
+    expect(pattern.actionGrips).toEqual(expect.arrayContaining([
+      expect.objectContaining({ measureIndex: 0, gripId: '3|2|o|o|o|3' }),
+      expect.objectContaining({ measureIndex: 1, gripId: 'x|3|2|o|1|o' }),
+      expect.objectContaining({ measureIndex: 5, gripId: 'x|3|2|o|1|o' })
+    ]));
+    expect(pattern.measures[0]).not.toBe(pattern.measures[3]);
+    expect(clipboard.entries()).toHaveLength(1);
+    expect(component.selection.active()).toBe(false);
+  });
+
+  it('preserves selection on delete cancellation, then deletes a nonadjacent group and remaps grips', async () => {
+    component.pattern.set(createMultiMeasurePattern());
+    await component.addMeasure();
+    component.selection.start(component.pattern().measures[2]);
+    component.selection.toggle(component.pattern().measures[0]);
+    await component.deleteSelectedMeasures();
+    expect(component.selection.selected().size).toBe(2);
+    expect(component.pattern().measures).toHaveLength(3);
+    mockDialogService.confirm.mockResolvedValue(true);
+    await component.deleteSelectedMeasures();
+    expect(component.pattern().measures).toHaveLength(1);
+    expect(component.pattern().actionGrips).toEqual([{ measureIndex: 0, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }]);
+  });
+
+  it('leaves the destination unchanged when the clipboard picker is canceled', async () => {
+    const previous = component.pattern();
+    mockModalService.show.mockReturnValue({ afterClosed: async () => undefined } as never);
+    await component.pasteMeasures(0);
+    expect(component.pattern()).toBe(previous);
   });
 
   it('keeps the private moveMeasure helper for measure reordering behavior', () => {
@@ -391,8 +414,8 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures[0].timeSignature).toBe('3/4');
     expect(pattern.measures[1].timeSignature).toBe('4/4');
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 1, actionIndex: 0, gripId: 'g', name: 'G' },
-      { measureIndex: 0, actionIndex: 0, gripId: 'c', name: 'C' }
+      { measureIndex: 1, actionIndex: 0, gripId: '3|2|o|o|o|3', name: 'G' },
+      { measureIndex: 0, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }
     ]);
   });
 
@@ -405,7 +428,7 @@ describe('PlayingPatternEditorComponent', () => {
     expect(pattern.measures).toHaveLength(1);
     expect(pattern.measures[0].timeSignature).toBe('3/4');
     expect(pattern.actionGrips).toEqual([
-      { measureIndex: 0, actionIndex: 0, gripId: 'c', name: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }
     ]);
   });
 });
@@ -438,8 +461,8 @@ function createMultiMeasurePattern(): PlayingPattern {
       }
     ],
     actionGrips: [
-      { measureIndex: 0, actionIndex: 0, gripId: 'g', name: 'G' },
-      { measureIndex: 1, actionIndex: 0, gripId: 'c', name: 'C' }
+      { measureIndex: 0, actionIndex: 0, gripId: '3|2|o|o|o|3', name: 'G' },
+      { measureIndex: 1, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }
     ],
     createdAt: 1,
     updatedAt: 1,

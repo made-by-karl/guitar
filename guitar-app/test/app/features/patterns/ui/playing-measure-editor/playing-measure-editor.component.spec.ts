@@ -1,3 +1,6 @@
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
+import { ModalService } from '@/app/core/services/modal.service';
+import { NotificationService } from '@/app/core/services/notification.service';
 import { it } from '@jest/globals';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Measure } from '@/app/features/patterns/services/playing-patterns.model';
@@ -50,6 +53,50 @@ describe('PlayingMeasureEditorComponent', () => {
     component.measure.set(createMeasure());
     component.actionGrips.set([]);
     fixture.detectChanges();
+  });
+
+  it('copies only actual actions, pastes at an empty slot without shifting rhythm, and remaps an explicit grip', async () => {
+    const clipboard = TestBed.inject(MusicClipboardService);
+    component.measure.set({ timeSignature: '4/4', actions: Array(16).fill(null) });
+    component.copyAction(2);
+    expect(clipboard.entries()).toHaveLength(0);
+    component.addAction(0, 'pick');
+    component.actionGrips.set([{ measureIndex: 0, actionIndex: 0, gripId: 'x|3|2|o|1|o', name: 'C' }]);
+    component.copyAction(0);
+    const id = clipboard.entries()[0].id;
+    jest.spyOn(TestBed.inject(ModalService), 'show').mockReturnValue({ afterClosed: async () => id } as never);
+    await component.pasteAction(6);
+    await component.pasteAction(10);
+    expect(component.measure().actions).toHaveLength(16);
+    expect(component.measure().actions[6]).toEqual(component.measure().actions[0]);
+    expect(component.measure().actions[6]).not.toBe(component.measure().actions[10]);
+    expect(component.measure().actions[4]).toBeNull();
+    expect(component.actionGrips().map(g => g.actionIndex)).toEqual([0, 6, 10]);
+    const previous = component.measure();
+    await component.pasteAction(6);
+    expect(component.measure()).toBe(previous);
+  });
+
+  it('preserves destination context for relative actions and leaves canceled/changed destinations untouched', async () => {
+    const clipboard = TestBed.inject(MusicClipboardService);
+    component.addAction(0, 'pick');
+    component.copyAction(0);
+    const id = clipboard.entries()[0].id;
+    component.actionGrips.set([{ measureIndex: 0, actionIndex: 2, gripId: 'x|3|2|o|1|o', name: 'C' }]);
+    const show = jest.spyOn(TestBed.inject(ModalService), 'show');
+    show.mockReturnValue({ afterClosed: async () => undefined } as never);
+    const previous = component.measure();
+    await component.pasteAction(2);
+    expect(component.measure()).toBe(previous);
+    show.mockReturnValue({ afterClosed: async () => id } as never);
+    await component.pasteAction(2);
+    expect(component.actionGrips()[0].actionIndex).toBe(2);
+    expect(component.measure().actions[2]!.pick![0]).toMatchObject({ mode: 'relative', anchor: 'grip-note' });
+    show.mockReturnValue({ afterClosed: async () => { component.addAction(4, 'percussive'); return id; } } as never);
+    const error = jest.spyOn(TestBed.inject(NotificationService), 'error');
+    await component.pasteAction(4);
+    expect(component.measure().actions[4]!.technique).toBe('percussive');
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('no longer empty'));
   });
 
   it.each(['4/4', '6/8'] as const)('labels every sixteenth position uniquely in %s', timeSignature => {

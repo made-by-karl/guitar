@@ -2,7 +2,9 @@
   @if (pattern(); as patternValue) {
     <div class="card">
       <div class="card-body">
-        <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex justify-content-end gap-2 mb-3">
+          @if (!selection.active() && patternValue.measures.length) { <button class="btn btn-outline-secondary btn-sm" type="button" data-measure-select-start (click)="startMeasureSelection(patternValue.measures[0])">Select measures</button> }
+          @if (!selection.active()) {
           <button
             class="btn btn-sm"
             [class.btn-danger]="isPatternPlaybackActive()"
@@ -11,18 +13,18 @@
             (click)="playPattern()">
             <i class="bi" [class.bi-stop-fill]="isPatternPlaybackActive()" [class.bi-play-fill]="!isPatternPlaybackActive()"></i>
             {{ isPatternPlaybackActive() ? 'Stop' : 'Play' }}
-          </button>
+          </button> }
         </div>
 
-        <div class="mb-2">
+        <div class="mb-2" [hidden]="selection.active()">
           <label class="form-label" for="playingPatternName">Name</label>
           <input id="playingPatternName" class="form-control" [(ngModel)]="patternValue.name" name="name" type="text" autocomplete="off" required />
         </div>
-        <div class="mb-2">
+        <div class="mb-2" [hidden]="selection.active()">
           <label class="form-label" for="playingPatternDescription">Description</label>
           <input id="playingPatternDescription" class="form-control" [(ngModel)]="patternValue.description" name="description" type="text" autocomplete="off" />
         </div>
-        <div class="mb-2 row g-2">
+        <div class="mb-2 row g-2" [hidden]="selection.active()">
           <div class="col-12 col-md-4">
             <label class="form-label" for="playingPatternCategory">Category</label>
             <input id="playingPatternCategory" class="form-control" [(ngModel)]="patternValue.category" name="category" type="text" autocomplete="off" />
@@ -39,43 +41,59 @@
 
         <div class="mb-2">
           @for (measureData of measuresForDisplay(); track measureData.measureIndex) {
-            <div class="card card-body p-3 bg-light mb-3" [attr.data-preview-measure]="measureData.measureIndex">
+            @if (measureData.measureIndex === 0 && !selection.active()) {
+              <div class="d-flex gap-2 mb-2 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" (click)="addMeasure(0)">Add before first measure</button><button class="btn btn-outline-secondary btn-sm" type="button" (click)="pasteMeasures(0)">Paste measures before first…</button></div>
+            }
+            <div class="card card-body p-3 mb-3 app-selectable" appMeasureHold (measureHold)="startMeasureSelection(measureData.measure)"
+              [class.is-selected]="selection.selected().has(measureData.measure)" [attr.data-preview-measure]="measureData.measureIndex"
+              [attr.role]="selection.active() ? 'button' : null" [attr.tabindex]="selection.active() ? 0 : null"
+              [attr.aria-label]="selection.active() ? 'Select measure ' + (measureData.measureIndex + 1) : null"
+              [attr.aria-pressed]="selection.active() ? selection.selected().has(measureData.measure) : null"
+              (click)="toggleMeasureSelection(measureData.measure)"
+              (keydown.enter)="toggleMeasureSelection(measureData.measure, $event)"
+              (keydown.space)="toggleMeasureSelection(measureData.measure, $event)">
               <div class="d-flex justify-content-between align-items-center mb-3" data-preview-controls>
-                <h5 class="mb-0">Measure {{ measureData.measureIndex + 1 }}</h5>
+                <h5 class="mb-0">Measure {{ measureData.measureIndex + 1 }} @if (selection.selected().has(measureData.measure)) { <span aria-hidden="true">✓</span> }</h5>
+                @if (!selection.active()) {
                 <div class="btn-group" role="group">
                   <button
-                    class="btn btn-outline-secondary btn-sm"
+                    class="btn btn-outline-secondary app-icon-button"
                     type="button"
                     (click)="copyMeasure(measureData.measureIndex)"
-                    title="Copy measure">
+                    aria-label="Copy measure" title="Copy measure">
                     <i class="bi bi-copy"></i>
                   </button>
                   <button
-                    class="btn btn-outline-danger btn-sm"
+                    class="btn btn-outline-danger app-icon-button"
                     type="button"
                     (click)="removeMeasure(measureData.measureIndex)"
-                    title="Remove measure">
+                    aria-label="Remove measure" title="Remove measure">
                     <i class="bi bi-x"></i>
                   </button>
-                </div>
+                </div> }
               </div>
 
-              <app-playing-measure-editor
+              @if (!selection.active()) { <app-playing-measure-editor
                 [measure]="measureData.measure"
                 (measureChange)="updateMeasure(measureData.measureIndex, $event)"
                 [actionGrips]="getMeasureActionGrips(measureData.measureIndex)"
                 (actionGripsChange)="updateMeasureActionGrips(measureData.measureIndex, $event)"
                 [measureLabel]="'Measure ' + (measureData.measureIndex + 1)"
+                [clipboardSource]="patternValue.name"
                 (assignActionGrip)="assignActionGrip(measureData.measureIndex, $event)" />
+              } @else { <app-playing-actions [measures]="[measureData.measure]" [measureWidth]="'100%'" [notationContexts]="[previewMeasures()[measureData.measureIndex].context]" /> }
             </div>
+            @if (!selection.active()) { <div class="d-flex gap-2 mb-3 flex-wrap"><button class="btn btn-outline-primary btn-sm" type="button" (click)="addMeasure(measureData.measureIndex + 1)">Add after measure {{ measureData.measureIndex + 1 }}</button><button class="btn btn-outline-secondary btn-sm" type="button" (click)="pasteMeasures(measureData.measureIndex + 1)">Paste measures after {{ measureData.measureIndex + 1 }}…</button></div> }
           }
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <button class="btn btn-outline-primary btn-sm" type="button" (click)="addMeasure()">
+        @if (!selection.active() && !patternValue.measures.length) { <div class="d-flex gap-2 flex-wrap mt-3">
+          <button class="btn btn-outline-primary btn-sm" type="button" data-empty-measure-add (click)="addMeasure()">
             <i class="bi bi-plus"></i> Add Measure
           </button>
-        </div>
+          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="pasteMeasures(0)">Paste measures…</button>
+        </div> }
+        @if (selection.active()) { <app-measure-selection-bar [count]="selection.selected().size" (copySelection)="copySelectedMeasures()" (deleteSelection)="deleteSelectedMeasures()" (exitSelection)="exitMeasureSelection()" /> }
       </div>
     </div>
   }

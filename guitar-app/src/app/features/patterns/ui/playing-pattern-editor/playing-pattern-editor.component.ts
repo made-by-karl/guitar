@@ -1,4 +1,10 @@
-import { Component, computed, input, model, OnDestroy } from '@angular/core';
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
+import { pickClipboardEntry } from '@/app/core/ui/music-clipboard/clipboard-picker';
+import { MeasureSelection } from '@/app/core/ui/music-clipboard/measure-selection';
+import { MeasureHoldDirective } from '@/app/core/ui/music-clipboard/measure-hold.directive';
+import { MeasureSelectionBarComponent } from '@/app/core/ui/music-clipboard/measure-selection-bar.component';
+import { PlayingActionsComponent } from '@/app/features/patterns/ui/playing-actions/playing-actions.component';
+import { Component, computed, input, model, OnDestroy, inject, ElementRef, Injector, afterNextRender } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -62,15 +68,9 @@ interface ActionDisplayData {
   subdivision: ActionSubdivision;
 }
 
-interface CopiedMeasure {
-  measure: Measure;
-  actionGrips: PlayingPatternActionGrip[];
-  useSixteenthSteps: boolean;
-}
-
 @Component({
   selector: 'app-playing-pattern-editor',
-  imports: [CommonModule, FormsModule, PlayingMeasureEditorComponent],
+  imports: [CommonModule, FormsModule, PlayingMeasureEditorComponent, MeasureHoldDirective, MeasureSelectionBarComponent, PlayingActionsComponent],
   templateUrl: './playing-pattern-editor.component.html',
   styleUrl: './playing-pattern-editor.component.scss'
 })
@@ -96,7 +96,26 @@ export class PlayingPatternEditorComponent implements OnDestroy {
   
   // Internal display model to manage UI state per measure
   private measureDisplayStates = new Map<number, boolean>();
-  private copiedMeasure?: CopiedMeasure;
+  private readonly clipboard = inject(MusicClipboardService);
+  readonly selection = new MeasureSelection<Measure>();
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
+  startMeasureSelection(measure: Measure): void {
+    this.selection.start(measure);
+    afterNextRender(() => this.element.nativeElement.querySelector<HTMLElement>('[data-preview-measure][aria-pressed="true"]')?.focus({ preventScroll: true }), { injector: this.injector });
+  }
+
+  toggleMeasureSelection(measure: Measure, event?: Event): void {
+    if (!this.selection.active()) return;
+    event?.preventDefault();
+    this.selection.toggle(measure);
+  }
+
+  exitMeasureSelection(): void {
+    this.selection.clear();
+    afterNextRender(() => this.element.nativeElement.querySelector<HTMLElement>('[data-measure-select-start], [data-empty-measure-add]')?.focus({ preventScroll: true }), { injector: this.injector });
+  }
   private readonly playbackStateSubscription: Subscription;
 
   // Use a computed signal that recalculates when pattern changes
@@ -148,60 +167,64 @@ export class PlayingPatternEditorComponent implements OnDestroy {
     this.patternPlayback.stopPatternPreview();
   }
 
-  async addMeasure(): Promise<void> {
-    const useCopiedMeasure = this.copiedMeasure
-      ? await this.dialogService.confirm(
-        'Use the copied measure, or create a new empty measure?',
-        'Add Measure',
-        'Use Copy',
-        'New Measure'
-      )
-      : false;
-
-    this.insertMeasureAtEnd(useCopiedMeasure);
-  }
-
-  copyMeasure(measureIndex: number): void {
+  async addMeasure(insertionIndex = this.pattern().measures.length): Promise<void> {
+    if (this.selection.active()) return;
     const pattern = this.pattern();
-    const measure = pattern?.measures[measureIndex];
-    if (!pattern || !measure) return;
-
-    this.copiedMeasure = {
-      measure: this.cloneMeasure(measure),
-      actionGrips: (pattern.actionGrips ?? [])
-        .filter(grip => grip.measureIndex === measureIndex)
-        .map(grip => ({ ...grip, measureIndex: 0 })),
-      useSixteenthSteps: this.measureDisplayStates.get(measureIndex) ?? this.measureRequiresSixteenthSteps(measure)
-    };
-    this.notificationService.success(`Copied measure ${measureIndex + 1}`);
+    const timeSignature = pattern.measures[insertionIndex - 1]?.timeSignature ?? '4/4';
+    this.insertMeasures(insertionIndex, [this.createEmptyMeasure(timeSignature)]);
   }
 
-  private insertMeasureAtEnd(useCopiedMeasure: boolean): void {
-    const pattern = this.pattern()
-    if (!pattern) return;
-    
-    const insertIndex = pattern.measures.length;
-    const referenceMeasure = pattern.measures[pattern.measures.length - 1];
-    const timeSignature: TimeSignature = referenceMeasure?.timeSignature || '4/4';
-    const copiedMeasure = useCopiedMeasure ? this.copiedMeasure : undefined;
-    const newMeasure = copiedMeasure ? this.cloneMeasure(copiedMeasure.measure) : this.createEmptyMeasure(timeSignature);
-    
-    const updatedMeasures = [...pattern.measures];
-    updatedMeasures.splice(insertIndex, 0, newMeasure);
+  copyMeasure(measureIndex: number): void { this.copyMeasures([measureIndex]); }
 
-    const updatedPattern = {
-      ...pattern,
-      measures: updatedMeasures,
+  copySelectedMeasures(): void {
+    const indices = this.pattern().measures.flatMap((measure, index) => this.selection.selected().has(measure) ? [index] : []);
+    if (this.copyMeasures(indices)) this.exitMeasureSelection();
+  }
+
+  private copyMeasures(indices: number[]): boolean {
+    if (!indices.length) return false;
+    const pattern = this.pattern();
+    try {
+      this.clipboard.copyMeasures(indices.map(index => ({ ...pattern.measures[index], actionGrips: this.getMeasureActionGrips(index) })),
+        `${pattern.name || 'Untitled pattern'} · Measures ${indices.map(i => i + 1).join(', ')}`);
+      this.notificationService.success(indices.length === 1 ? `Copied measure ${indices[0] + 1}` : `Copied ${indices.length} measures`);
+      return true;
+    } catch (error) {
+      this.notificationService.error((error as Error).message);
+      return false;
+    }
+  }
+
+  async pasteMeasures(insertionIndex: number): Promise<void> {
+    if (this.selection.active()) return;
+    const id = await pickClipboardEntry(this.modalService, 'measures');
+    const measures = id === undefined ? undefined : this.clipboard.read(id, 'measures');
+    if (measures && !this.selection.active()) this.insertMeasures(insertionIndex, measures);
+  }
+
+  private insertMeasures(insertionIndex: number, measures: Measure[]): void {
+    const pattern = this.pattern();
+    this.measureDisplayStates.clear();
+    this.updatePattern({ ...pattern,
+      measures: [...pattern.measures.slice(0, insertionIndex), ...measures.map(({ actionGrips, ...measure }) => measure), ...pattern.measures.slice(insertionIndex)],
       actionGrips: [
-        ...this.shiftMeasureReferencesForInsert(pattern.actionGrips ?? [], insertIndex),
-        ...(copiedMeasure?.actionGrips ?? []).map(grip => ({ ...grip, measureIndex: insertIndex }))
+        ...(pattern.actionGrips ?? []).map(grip => ({ ...grip, measureIndex: grip.measureIndex >= insertionIndex ? grip.measureIndex + measures.length : grip.measureIndex })),
+        ...measures.flatMap((measure, index) => (measure.actionGrips ?? []).map(grip => ({ ...grip, measureIndex: insertionIndex + index })))
       ]
-    };
-    
-    this.measureDisplayStates = this.shiftDisplayStatesForInsert(insertIndex);
-    this.measureDisplayStates.set(insertIndex, copiedMeasure?.useSixteenthSteps ?? false);
-    
-    this.updatePattern(updatedPattern);
+    });
+  }
+
+  async deleteSelectedMeasures(): Promise<void> {
+    const selected = this.selection.selected();
+    if (!selected.size || !await this.dialogService.confirm(`Delete ${selected.size} selected measures?`, 'Delete measures', 'Delete', 'Cancel', { variant: 'danger' })) return;
+    const pattern = this.pattern();
+    const keptIndices = pattern.measures.flatMap((measure, index) => selected.has(measure) ? [] : [index]);
+    this.measureDisplayStates.clear();
+    this.updatePattern({ ...pattern, measures: keptIndices.map(index => pattern.measures[index]), actionGrips: (pattern.actionGrips ?? []).flatMap(grip => {
+      const measureIndex = keptIndices.indexOf(grip.measureIndex);
+      return measureIndex < 0 ? [] : [{ ...grip, measureIndex }];
+    }) });
+    this.exitMeasureSelection();
   }
 
   private moveMeasure(fromIndex: number, toIndex: number): void {
@@ -1325,70 +1348,6 @@ export class PlayingPatternEditorComponent implements OnDestroy {
       timeSignature,
       actions: Array(actionLength).fill(null)
     };
-  }
-
-  private cloneMeasure(measure: Measure): Measure {
-    return {
-      ...measure,
-      actions: measure.actions.map(action => this.cloneAction(action))
-    };
-  }
-
-  private cloneAction(action: PlayingAction | null): PlayingAction | null {
-    if (!action) {
-      return null;
-    }
-
-    return {
-      ...action,
-      modifiers: action.modifiers ? [...action.modifiers] : undefined,
-      strum: action.strum ? {
-        ...action.strum,
-        strings: this.cloneStrumRange(action.strum.strings)
-      } : undefined,
-      pick: action.pick ? action.pick.map(note => ({ ...note })) : undefined,
-      legato: action.legato ? this.cloneLegato(action.legato) : undefined,
-      slide: action.slide ? { ...action.slide } : undefined,
-      percussive: action.percussive ? { ...action.percussive } : undefined
-    };
-  }
-
-  private cloneStrumRange(strings: StrumRange): StrumRange {
-    if (Array.isArray(strings)) {
-      return [...strings];
-    }
-
-    if (isRelativeStrumRange(strings)) {
-      return { ...strings };
-    }
-
-    return strings;
-  }
-
-  private cloneLegato(legato: LegatoNote): LegatoNote {
-    if (this.isRelativeLegato(legato)) {
-      return {
-        ...legato,
-        target: { ...legato.target }
-      };
-    }
-
-    return { ...legato };
-  }
-
-  private shiftMeasureReferencesForInsert<T extends { measureIndex: number }>(references: T[], insertIndex: number): T[] {
-    return references.map(reference => ({
-      ...reference,
-      measureIndex: reference.measureIndex >= insertIndex ? reference.measureIndex + 1 : reference.measureIndex
-    }));
-  }
-
-  private shiftDisplayStatesForInsert(insertIndex: number): Map<number, boolean> {
-    const updatedDisplayStates = new Map<number, boolean>();
-    this.measureDisplayStates.forEach((value, key) => {
-      updatedDisplayStates.set(key >= insertIndex ? key + 1 : key, value);
-    });
-    return updatedDisplayStates;
   }
 
   private moveDisplayState(fromIndex: number, toIndex: number): Map<number, boolean> {
