@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { SongSheet } from '../src/app/features/sheets/services/song-sheets.model';
 
@@ -31,34 +31,53 @@ async function seed(page: Page) {
   await page.getByRole('link', { name: 'Fixup fixture', exact: true }).click();
 }
 
+async function expectReachable(control: Locator): Promise<void> {
+  await expect(control).toBeInViewport({ ratio: 1 });
+  expect(await control.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+  })).toBe(true);
+}
+
 for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) {
   test(`compact lists and reachable part editor header at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await seed(page);
     const song = page.locator('app-song-arrangement');
+    const editor = page.locator('app-song-part-editor');
     await expect(song.locator('.occurrence-summary')).toHaveText('18 measures');
     await expect(song.locator('.song-outline')).not.toContainText('Chord enumeration sentinel');
     await song.getByRole('button', { name: 'Verse, occurrence 1', exact: true }).click();
-    const editor = page.locator('app-song-part-editor');
+    await expect(editor).toHaveCount(0);
+    await song.getByRole('region', { name: 'Selected occurrence actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(editor.locator('.measure-row')).toHaveCount(18);
     await editor.locator('.measure-row').last().scrollIntoViewIfNeeded();
+    const path = editor.getByRole('navigation', { name: 'Editor navigation' });
     const header = editor.locator('.part-editor-header');
+    const transport = header.getByRole('group', { name: 'Part playback', exact: true });
     const tabs = page.getByRole('tablist', { name: 'Song sheet sections' });
+    const pathBox = (await path.boundingBox())!;
     const headerBox = (await header.boundingBox())!;
     const tabBox = (await tabs.boundingBox())!;
-    expect(Math.abs(headerBox.y - tabBox.y - tabBox.height)).toBeLessThan(2);
-    for (const button of [header.getByRole('button', { name: 'Play', exact: true }), header.getByRole('button', { name: 'Close song part editor' })]) {
-      expect(await button.evaluate(element => {
-        const box = element.getBoundingClientRect();
-        return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
-      })).toBe(true);
-    }
+    expect(Math.abs(pathBox.y - tabBox.y - tabBox.height)).toBeLessThan(2);
+    expect(headerBox.y).toBeGreaterThanOrEqual(pathBox.y + pathBox.height - 2);
+    const backToSong = path.getByRole('button', { name: 'Back to song', exact: true });
+    await expectReachable(backToSong);
+    await expectReachable(transport.getByRole('button', { name: 'Play', exact: true }));
+    await expect(path.getByRole('button', { name: 'Save changes', exact: true })).toBeInViewport({ ratio: 1 });
     await page.screenshot({ path: `../temp/ux/17-fixup/embedded-scrolled-${viewport.width}.png` });
-    await header.getByRole('button', { name: 'Play', exact: true }).click();
-    await expect(header.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
-    await header.getByRole('button', { name: 'Stop', exact: true }).click();
-    const close = header.getByRole('button', { name: 'Close song part editor' });
-    await close.focus(); await page.keyboard.press('Enter');
+    await transport.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect.poll(async () => {
+      const prepared = editor.getByRole('button', { name: 'Play prepared audio', exact: true });
+      if (await prepared.isVisible()) await prepared.click();
+      return transport.getByRole('button', { name: 'Pause', exact: true }).isVisible();
+    }).toBe(true);
+    await expect(transport.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+    await transport.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(transport.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    await expect(transport.getByRole('button', { name: 'Stop', exact: true })).toBeDisabled();
+    await backToSong.focus(); await page.keyboard.press('Enter');
     await expect(editor).toHaveCount(0);
     await page.getByRole('tab', { name: 'Parts', exact: true }).click();
     const parts = page.locator('app-song-sheet-parts-tab');
@@ -66,13 +85,18 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 
     await expect(parts).toContainText('Keep these notes');
     await expect(parts.locator('app-playing-actions')).toHaveCount(0);
     await page.screenshot({ path: `../temp/ux/17-fixup/parts-${viewport.width}.png` });
-    await parts.getByRole('button', { name: 'Edit', exact: true }).click();
-    await header.getByRole('button', { name: 'Play', exact: true }).click({ trial: true });
-    const initialY = (await header.boundingBox())!.y;
+    await parts.getByRole('button', { name: 'Select Verse', exact: true }).click();
+    await expect(editor).toHaveCount(0);
+    await parts.getByRole('region', { name: 'Selected part actions' }).getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(editor.locator('.measure-row')).toHaveCount(18);
     await editor.locator('.measure-row').last().scrollIntoViewIfNeeded();
-    expect((await header.boundingBox())!.y).toBe(initialY);
-    await expect(header.getByRole('button', { name: 'Play', exact: true })).toBeInViewport();
-    await header.getByRole('button', { name: 'Close song part editor' }).click();
+    const initialY = (await path.boundingBox())!.y;
+    await editor.locator('.measure-row').nth(9).scrollIntoViewIfNeeded();
+    expect(Math.abs((await path.boundingBox())!.y - initialY)).toBeLessThan(2);
+    await expectReachable(transport.getByRole('button', { name: 'Play', exact: true }));
+    const backToParts = path.getByRole('button', { name: 'Back to parts', exact: true });
+    await expectReachable(backToParts);
+    await backToParts.click();
     await expect(editor).toHaveCount(0);
     expect(errors).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
