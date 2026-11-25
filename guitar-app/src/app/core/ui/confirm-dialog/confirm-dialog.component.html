@@ -1,6 +1,6 @@
-<div class="modal-content-wrapper">
+<div class="modal-content-wrapper" role="dialog" aria-modal="true" aria-labelledby="confirm-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
   <div class="modal-header" [ngClass]="'variant-' + (data.variant || 'primary')">
-    <h5 class="modal-title">{{ data.title }}</h5>
+    <h5 id="confirm-title" class="modal-title">{{ data.title }}</h5>
   </div>
   <div class="modal-body">
     <p>{{ data.message }}</p>
@@ -10,7 +10,7 @@
       <button 
         type="button" 
         class="btn btn-outline-secondary" 
-        (click)="onCancel()">
+        cdkFocusInitial (click)="onCancel()">
         {{ data.cancelText || 'Cancel' }}
       </button>
     }

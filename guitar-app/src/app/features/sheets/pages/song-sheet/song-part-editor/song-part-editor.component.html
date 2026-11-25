@@ -18,7 +18,7 @@
   @if (saveError() && !childEditorOpen()) { <p class="alert alert-danger m-2" role="alert">{{ saveError() }}</p> }
   @if ((childEditorOpen() || notesOpen()) && playbackState.type === 'part' && playbackState.source === 'editor') {
     <div class="px-2 py-1">
-      <app-song-part-transport [state]="playbackState" [partId]="tempPart().id" [occurrenceId]="data.occurrence?.id" [measureCount]="tempPart().measures.length" [playable]="canPlayPart()"
+      <app-song-part-transport [hidden]="selection.active()" [state]="playbackState" [partId]="tempPart().id" [occurrenceId]="data.occurrence?.id" [measureCount]="tempPart().measures.length" [playable]="canPlayPart()"
         (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
     </div>
   }
@@ -39,7 +39,7 @@
     @if (!canPlayPart()) {
       <div class="small text-muted">Assign a grip or add playable notes to enable playback.</div>
     }
-    <app-song-part-transport [state]="playbackState" [partId]="tempPart().id" [occurrenceId]="data.occurrence?.id" [measureCount]="tempPart().measures.length" [playable]="canPlayPart()"
+    <app-song-part-transport [hidden]="selection.active()" [state]="playbackState" [partId]="tempPart().id" [occurrenceId]="data.occurrence?.id" [measureCount]="tempPart().measures.length" [playable]="canPlayPart()"
       (play)="playPart(tempPart())" (pause)="pausePart()" (resume)="resumePart()" (previous)="rewindPart()" (next)="forwardPart()" (stop)="stopPart()" />
   </div>
 
@@ -83,7 +83,7 @@
         </div>
       } @else {
         <div class="part-editor" role="tabpanel" id="part-editor-panel-music" aria-labelledby="part-editor-tab-music" tabindex="0">
-          <div class="part-music-fields">
+          <div class="part-music-fields" [hidden]="selection.active()">
             <div class="part-name-field"><label class="form-label" for="partSectionName">Part name</label>
               <input id="partSectionName" class="form-control" [ngModel]="part.section" (ngModelChange)="updateSectionName($event)" [disabled]="musicLocked()" placeholder="Verse, Chorus, Bridge…" />
             </div>
@@ -92,11 +92,12 @@
               <span class="notes-dot" [class.has-notes]="part.notes.trim()" aria-hidden="true"></span>
             </button>
           </div>
-          @if (musicLocked()) {
+          @if (musicLocked() && !selection.active()) {
             <div class="music-unlock-row"><button class="btn btn-outline-primary btn-sm" type="button" (click)="unlockMusic()"><i aria-hidden="true" class="bi bi-unlock"></i> Unlock editing…</button></div>
           }
           @if (part.measures.length > 0) {
             <div class="measure-list-header">
+              @if (!selection.active()) { <button class="btn btn-outline-secondary btn-sm" type="button" data-measure-select-start (click)="startMeasureSelection(part.measures[0].id)">Select measures</button> }
               <div>
                 <div class="small text-uppercase text-muted">Measures</div>
                 <h6 class="mb-0">{{ part.measures.length }} {{ part.measures.length === 1 ? 'measure' : 'measures' }}</h6>
@@ -107,22 +108,22 @@
               @for (partMeasure of part.measures; track partMeasure.id; let measureIndex = $index) {
                 <div
                   class="measure-entry"
-                  cdkDrag
+                  cdkDrag [cdkDragDisabled]="musicLocked() || selection.active()"
                   (cdkDragStarted)="startMeasureDrag()"
                   (cdkDragEnded)="isDraggingMeasure.set(false)">
                   <div
-                    class="measure-row app-selectable"
+                    class="measure-row app-selectable" appMeasureHold (measureHold)="startMeasureSelection(partMeasure.id)"
                     role="button"
                     tabindex="0"
                     [attr.aria-label]="'Select measure ' + (measureIndex + 1)"
-                    [attr.aria-selected]="selectedMeasureIndex() === measureIndex"
-                    [class.is-selected]="selectedMeasureIndex() === measureIndex"
+                    [attr.aria-pressed]="selection.active() ? selection.selected().has(partMeasure.id) : selectedMeasureIndex() === measureIndex"
+                    [class.is-selected]="selection.active() ? selection.selected().has(partMeasure.id) : selectedMeasureIndex() === measureIndex"
                     [class.is-drag-collapsed]="isDraggingMeasure()"
                     (click)="selectMeasure(measureIndex)"
                     (keydown.enter)="selectMeasure(measureIndex)"
                     (keydown.space)="selectMeasure(measureIndex); $event.preventDefault()">
                     <div class="measure-rail">
-                      <div class="drag-handle text-muted" cdkDragHandle title="Drag to reorder" (click)="$event.stopPropagation()">
+                      <div class="drag-handle text-muted" [hidden]="selection.active() || musicLocked()" cdkDragHandle title="Drag to reorder" (click)="$event.stopPropagation()">
                         <i aria-hidden="true" class="bi bi-grip-vertical"></i>
                       </div>
                       <div class="measure-meta">
@@ -145,7 +146,7 @@
                     }
                   </div>
 
-                  @if (!isDraggingMeasure()) {
+                  @if (!isDraggingMeasure() && !selection.active()) {
                     @if (measureIndex === 0) {
                       <button
                         class="btn btn-outline-primary btn-sm measure-add-button measure-add-button-first"
@@ -210,7 +211,8 @@
   </div>
 
   <div class="part-editor-actions">
-    @if (activeTab() === 'music') {
+    @if (selection.active()) { <app-measure-selection-bar [count]="selection.selected().size" [locked]="musicLocked()" (copySelection)="copySelectedMeasures()" (deleteSelection)="deleteSelectedMeasures()" (exitSelection)="exitMeasureSelection()" /> }
+    @if (activeTab() === 'music' && !selection.active()) {
       @if (getSelectedMeasure(); as selectedMeasure) {
         <div class="selected-measure-toolbar app-selection-actions" role="region" aria-label="Selected measure actions">
           <div class="app-selection-header">
@@ -252,9 +254,9 @@
               <button
                 class="btn btn-outline-secondary btn-sm app-icon-button"
                 type="button"
-                title="Duplicate measure"
-                aria-label="Duplicate selected measure" [disabled]="musicLocked()"
-                (click)="duplicateSelectedMeasure()">
+                title="Copy measure"
+                aria-label="Copy selected measure"
+                (click)="copySelectedMeasure()">
                 <i aria-hidden="true" class="bi bi-copy"></i>
               </button>
             </div>

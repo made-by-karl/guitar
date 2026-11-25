@@ -32,6 +32,7 @@
       [(measure)]="editedMeasure"
       [(actionGrips)]="editedActionGrips"
       [measureLabel]="data.measureLabel"
+      [clipboardSource]="data.sheet.name + ' · ' + data.part.section"
       (assignActionGrip)="assignActionGrip($event)" />
     </div>
   </div>

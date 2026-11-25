@@ -1,4 +1,5 @@
-import { Component, Inject } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
+import { Component, Inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {MODAL_REF, ModalRef, MODAL_DATA, ModalComponent} from '@/app/core/services/modal.service';
 
@@ -14,7 +15,7 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, A11yModule],
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.scss']
 })
@@ -23,6 +24,8 @@ export class ConfirmDialogComponent implements ModalComponent<boolean> {
     @Inject(MODAL_REF) public modalRef: ModalRef<boolean>,
     @Inject(MODAL_DATA) public data: ConfirmDialogData
   ) {}
+
+  @HostListener('keydown.escape', ['$event']) dismiss(event: Event): void { event.stopPropagation(); this.onCancel(); }
 
   onConfirm() {
     this.modalRef.close(true);

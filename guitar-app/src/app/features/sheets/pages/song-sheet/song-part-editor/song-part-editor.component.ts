@@ -1,3 +1,9 @@
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
+import { DialogService } from '@/app/core/services/dialog.service';
+import { pickClipboardEntry } from '@/app/core/ui/music-clipboard/clipboard-picker';
+import { MeasureSelection } from '@/app/core/ui/music-clipboard/measure-selection';
+import { MeasureHoldDirective } from '@/app/core/ui/music-clipboard/measure-hold.directive';
+import { MeasureSelectionBarComponent } from '@/app/core/ui/music-clipboard/measure-selection-bar.component';
 import { SongPartTransportComponent } from '@/app/features/sheets/ui/song-part-transport/song-part-transport.component';
 import { PlaybackHighlightDirective } from '@/app/core/ui/playback-highlight/playback-highlight.directive';
 import { songPlaybackHighlight } from '@/app/features/sheets/services/song-playback-position';
@@ -25,7 +31,6 @@ import { Subscription } from 'rxjs';
 import {
   buildGripByIdMap,
   cloneSongPart,
-  cloneSongPartMeasure,
   cloneSongSheetPattern,
   createEmptySongSheetPattern,
   createSongSheetEntityId,
@@ -54,7 +59,7 @@ export interface SongPartEditorModalData {
 @Component({
   selector: 'app-song-part-editor',
   standalone: true,
-  imports: [NgComponentOutlet, SongPartTransportComponent, PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
+  imports: [MeasureHoldDirective, MeasureSelectionBarComponent, NgComponentOutlet, SongPartTransportComponent, PlaybackHighlightDirective, MediaPlaybackControlsComponent, CommonModule, FormsModule, DragDropModule, PlayingActionsComponent],
   templateUrl: './song-part-editor.component.html',
   styleUrl: './song-part-editor.component.scss'
 })
@@ -65,6 +70,9 @@ export class SongPartEditorComponent implements
   get tabs(): ReadonlyArray<{ id: SongPartEditorTab; label: string }> {
     return this.data.occurrence ? [{ id: 'music', label: 'Music' }, { id: 'lyrics', label: 'Lyrics' }] : [{ id: 'music', label: 'Music' }];
   }
+  readonly selection = new MeasureSelection<string>();
+  private readonly clipboard = inject(MusicClipboardService);
+  private readonly dialogs = inject(DialogService);
   readonly activeTab = signal<SongPartEditorTab>('music');
   readonly musicUnlocked = signal(false);
   readonly saving = signal(false);
@@ -319,25 +327,49 @@ export class SongPartEditorComponent implements
     this.selectNearestMeasureAfterRemoval(measureIndex, measureCount);
   }
 
-  duplicateMeasure(measureIndex: number): void {
-    if (this.musicLocked()) return;
-    const part = this.tempPart();
-    const measure = part.measures[measureIndex];
-    if (!measure) {
-      return;
-    }
+  startMeasureSelection(measureId: string): void {
+    this.selectedMeasureIndex.set(null);
+    this.selection.start(measureId);
+    afterNextRender(() => this.element.nativeElement.querySelector<HTMLElement>('.measure-row[aria-pressed="true"]')?.focus({ preventScroll: true }), { injector: this.injector });
+  }
 
-    const nextMeasures = [...part.measures];
-    nextMeasures.splice(measureIndex + 1, 0, {
-      ...cloneSongPartMeasure(measure),
-      id: createSongSheetEntityId('spm')
-    });
-    this.tempPart.set({
-      ...part,
-      measures: nextMeasures
-    });
-    this.selectedMeasureIndex.set(measureIndex + 1);
-    this.notificationService.success(`Copied measure ${measureIndex + 1}`);
+  exitMeasureSelection(): void {
+    this.selection.clear();
+    afterNextRender(() => this.element.nativeElement.querySelector<HTMLElement>('[data-measure-select-start], .empty-part-state button')?.focus({ preventScroll: true }), { injector: this.injector });
+  }
+
+  copyMeasure(measureIndex: number): void { this.copyMeasures([measureIndex]); }
+
+  copySelectedMeasures(): void {
+    const indices = this.tempPart().measures.flatMap((measure, index) => this.selection.selected().has(measure.id) ? [index] : []);
+    if (this.copyMeasures(indices)) this.exitMeasureSelection();
+  }
+
+  private copyMeasures(indices: number[]): boolean {
+    if (!indices.length) return false;
+    try {
+      this.clipboard.copyMeasures(indices.map(index => this.tempPart().measures[index].measure),
+        `${this.sheet().name} · ${this.tempPart().section} · Measures ${indices.map(i => i + 1).join(', ')}`);
+      this.notificationService.success(indices.length === 1 ? `Copied measure ${indices[0] + 1}` : `Copied ${indices.length} measures`);
+      return true;
+    } catch (error) { this.notificationService.error((error as Error).message); return false; }
+  }
+
+  async pasteMeasures(insertionIndex: number): Promise<void> {
+    if (this.musicLocked() || this.selection.active()) return;
+    const id = await pickClipboardEntry(this.modalService, 'measures');
+    const measures = id === undefined ? undefined : this.clipboard.read(id, 'measures');
+    if (!measures || this.musicLocked() || this.selection.active()) return;
+    this.insertMeasures(insertionIndex, measures.map(measure => ({ id: createSongSheetEntityId('spm'), measure })));
+  }
+
+  async deleteSelectedMeasures(): Promise<void> {
+    if (this.musicLocked()) return;
+    const selected = this.selection.selected();
+    if (!selected.size || !await this.dialogs.confirm(`Delete ${selected.size} selected measures?`, 'Delete measures', 'Delete', 'Cancel', { variant: 'danger' }) || this.musicLocked()) return;
+    this.tempPart.update(part => ({ ...part, measures: part.measures.filter(measure => !selected.has(measure.id)) }));
+    this.selectedMeasureIndex.set(null);
+    this.exitMeasureSelection();
   }
 
   async editMeasure(measureIndex: number, newMeasure?: SongPartMeasure): Promise<void> {
@@ -380,7 +412,7 @@ export class SongPartEditorComponent implements
   }
 
   dropMeasure(event: CdkDragDrop<SongPartMeasure[]>): void {
-    if (this.musicLocked()) return;
+    if (this.musicLocked() || this.selection.active()) return;
     this.isDraggingMeasure.set(false);
     const part = this.tempPart();
     if (event.previousIndex === event.currentIndex) {
@@ -399,6 +431,11 @@ export class SongPartEditorComponent implements
   }
 
   selectMeasure(measureIndex: number): void {
+    if (this.selection.active()) {
+      const measure = this.tempPart().measures[measureIndex];
+      if (measure) this.selection.toggle(measure.id);
+      return;
+    }
     if (!this.tempPart().measures[measureIndex]) {
       this.ensureSelectedMeasure();
       return;
@@ -443,13 +480,13 @@ export class SongPartEditorComponent implements
     await this.editMeasure(selectedIndex);
   }
 
-  duplicateSelectedMeasure(): void {
+  copySelectedMeasure(): void {
     const selectedIndex = this.selectedMeasureIndex();
     if (selectedIndex === null) {
       return;
     }
 
-    this.duplicateMeasure(selectedIndex);
+    this.copyMeasure(selectedIndex);
   }
 
   removeSelectedMeasure(): void {
@@ -506,7 +543,8 @@ export class SongPartEditorComponent implements
   async addContent(insertionIndex: number): Promise<void> {
     if (this.musicLocked()) return;
     const choices: SongSheetChoice[] = [
-      { value: 'new-measure', text: 'New measure' }
+      { value: 'new-measure', text: 'New measure' },
+      { value: 'paste-measures', text: 'Paste measures…' }
     ];
     if (this.sheet().patterns.length > 0) {
       choices.push({ value: 'from-sheet', text: 'Use existing sheet pattern' });
@@ -520,6 +558,9 @@ export class SongPartEditorComponent implements
       title: insertionIndex === 0 ? 'Add to Song Part' : `Add after Measure ${insertionIndex}`,
       choices
     });
+
+    if (source === 'paste-measures') { await this.pasteMeasures(insertionIndex); return; }
+    if (this.musicLocked() || this.selection.active()) return;
 
     if (source === 'new-measure') {
       const timeSignature = this.tempPart().measures[insertionIndex - 1]?.measure.timeSignature ?? '4/4';

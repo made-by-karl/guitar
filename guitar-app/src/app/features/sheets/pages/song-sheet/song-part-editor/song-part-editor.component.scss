@@ -378,3 +378,5 @@
 // A child editor owns a fixed preview and a separate form scroller. Keep its path
 // in the same flow so outer-page scrolling cannot slide the path over notation.
 .has-child-editor .workspace-path { position: static; }
+
+.part-editor-modal [hidden] { display: none !important; }

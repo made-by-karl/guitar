@@ -1,3 +1,4 @@
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
 import { By } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -22,12 +23,74 @@ describe('SongPartEditorComponent', () => {
     expect(component.musicLocked()).toBe(true);
     component.updateSectionName('Changed');
     component.updateNotes('Changed');
-    component.duplicateMeasure(0);
+    component.copyMeasure(0);
     component.removeMeasure(0);
     expect(component.tempPart()).toMatchObject({ section: 'Verse', notes: 'note', measures: [expect.objectContaining({ id: 'm' })] });
     component.updateLyrics('Local words');
     await component.save();
     expect(TestBed.inject(SongSheetsService).saveOccurrence).toHaveBeenCalledWith('sheet-1', 'occurrence-1', 'Local words', undefined);
+  });
+
+  it('copies locked music without mutation and blocks clipboard paste and group deletion until unlocked', async () => {
+    const part = createPart([createMeasure('m', '4/4')]);
+    const sheet = { ...createSheet(), parts: [part], arrangement: [
+      { id: 'occurrence-1', partId: part.id, lyrics: 'First' }, { id: 'occurrence-2', partId: part.id, lyrics: 'Second' }
+    ] };
+    await configureComponent({ part, sheet });
+    const component = TestBed.createComponent(SongPartEditorComponent).componentInstance;
+    component.copyMeasure(0);
+    expect(TestBed.inject(MusicClipboardService).entries()).toHaveLength(1);
+    component.selection.start('m');
+    await component.deleteSelectedMeasures();
+    component.selection.clear();
+    await component.pasteMeasures(0);
+    expect(TestBed.inject(ModalService).show).not.toHaveBeenCalled();
+    expect(component.tempPart().measures).toEqual(part.measures);
+  });
+
+  it('pastes portable groups into an empty draft repeatedly with fresh IDs, without saving or leaking to the source', async () => {
+    const show = jest.fn();
+    const part = createPart([]);
+    await configureComponent({ part, modalService: { show } });
+    const component = TestBed.createComponent(SongPartEditorComponent).componentInstance;
+    const clipboard = TestBed.inject(MusicClipboardService);
+    const source = [createMeasure('a', '6/8').measure, createMeasure('b', '3/4').measure];
+    source[0].actionGrips = [{ measureIndex: 0, actionIndex: 2, gripId: 'x|3|2|o|1|o', name: 'C' }];
+    clipboard.copyMeasures(source, 'Other sheet');
+    show.mockReturnValue({ afterClosed: async () => clipboard.entries()[0].id });
+    await component.pasteMeasures(0);
+    await component.pasteMeasures(1);
+    const measures = component.tempPart().measures;
+    expect(measures.map(m => m.measure.timeSignature)).toEqual(['6/8', '6/8', '3/4', '3/4']);
+    expect(new Set(measures.map(m => m.id)).size).toBe(4);
+    expect(measures[0].measure.actionGrips![0].actionIndex).toBe(2);
+    measures[0].measure.actionGrips![0].name = 'Edited';
+    expect(measures[1].measure.actionGrips![0].name).toBe('C');
+    expect(part.measures).toEqual([]);
+    component.cancel();
+    expect(TestBed.inject(SongSheetsService).saveOccurrence).not.toHaveBeenCalled();
+    expect(clipboard.read(clipboard.entries()[0].id, 'measures')![0].actionGrips![0].name).toBe('C');
+  });
+
+  it('copies nonadjacent measures in document order and preserves selection/content when group deletion is canceled', async () => {
+    const show = jest.fn(() => ({ afterClosed: async () => false }));
+    const part = createPart([createMeasure('a', '4/4'), createMeasure('b', '6/8'), createMeasure('c', '3/4')]);
+    await configureComponent({ part, modalService: { show } });
+    const component = TestBed.createComponent(SongPartEditorComponent).componentInstance;
+    component.selection.start('c');
+    component.selectMeasure(0);
+    await component.deleteSelectedMeasures();
+    expect(component.selection.selected().size).toBe(2);
+    expect(component.tempPart().measures).toHaveLength(3);
+    component.copySelectedMeasures();
+    const clipboard = TestBed.inject(MusicClipboardService);
+    expect(clipboard.read(clipboard.entries()[0].id, 'measures')!.map(m => m.timeSignature)).toEqual(['4/4', '3/4']);
+    expect(component.selection.active()).toBe(false);
+    component.selection.start('c'); component.selectMeasure(0);
+    show.mockReturnValue({ afterClosed: async () => true });
+    await component.deleteSelectedMeasures();
+    expect(component.tempPart().measures.map(m => m.id)).toEqual(['b']);
+    expect(part.measures).toHaveLength(3);
   });
 
   it('replaces the parent workspace without destroying its draft, and cancel discards only the measure', async () => {
@@ -257,7 +320,7 @@ describe('SongPartEditorComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.selectedMeasureIndex()).toBeNull();
     expect(element.querySelector('.selected-measure-toolbar')).toBeNull();
-    expect(row.getAttribute('aria-selected')).toBe('false');
+    expect(row.getAttribute('aria-pressed')).toBe('false');
 
     row.click();
     fixture.detectChanges();
@@ -303,7 +366,7 @@ describe('SongPartEditorComponent', () => {
     expect(component.tempPart().measures).toHaveLength(2);
   });
 
-  it('runs toolbar edit, duplicate, and remove actions against the selected measure', async () => {
+  it('runs toolbar edit, copy, and remove actions against the selected measure', async () => {
     const show = jest.fn(() => ({
       afterClosed: jest.fn().mockResolvedValue(undefined)
     }));
@@ -334,18 +397,17 @@ describe('SongPartEditorComponent', () => {
     expect(child.data).toMatchObject({ measureLabel: 'Measure 2', measure: { timeSignature: '3/4' } });
     child.cancel(); fixture.detectChanges();
 
-    clickButton(fixture.nativeElement, 'Duplicate selected measure');
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.tempPart().measures).toHaveLength(3);
-    expect(fixture.componentInstance.selectedMeasureIndex()).toBe(2);
-    expect(fixture.componentInstance.tempPart().measures[2].measure.timeSignature).toBe('3/4');
-
-    clickButton(fixture.nativeElement, 'Remove selected measure');
+    clickButton(fixture.nativeElement, 'Copy selected measure');
     fixture.detectChanges();
 
     expect(fixture.componentInstance.tempPart().measures).toHaveLength(2);
     expect(fixture.componentInstance.selectedMeasureIndex()).toBe(1);
+
+    clickButton(fixture.nativeElement, 'Remove selected measure');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.tempPart().measures).toHaveLength(1);
+    expect(fixture.componentInstance.selectedMeasureIndex()).toBe(0);
     expect(notification.success).toHaveBeenCalledWith('Copied measure 2');
   });
 

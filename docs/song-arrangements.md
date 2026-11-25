@@ -22,7 +22,7 @@ Database version 9 migrates each existing part into one occurrence, in its exist
 
 ## Writing and editing
 
-Start writing creates an untitled musical part and its first occurrence together, then opens the empty part editor. It does not open a measure modal or add a measure automatically. Add offers a new measure, a sheet pattern when available, a pattern-library import, or a new pattern. Naming and preparing reusable content are optional.
+Start writing creates an untitled musical part and its first occurrence together, then opens the empty part editor. It does not open a measure modal or add a measure automatically. Add offers a new measure, Paste measures, a sheet pattern when available, a pattern-library import, or a new pattern. Naming and preparing reusable content are optional.
 
 Music combines the name and measures. Notes open in the workspace through a button whose filled/empty indicator reflects whether notes exist. They update the retained part draft; use the breadcrumb Save action to persist them. Lyrics is a separate occurrence-specific tab. The Parts library edits musical definitions and has no Lyrics tab.
 
@@ -46,6 +46,43 @@ The existing multiple-measure pattern form keeps its own Save Pattern boundary; 
 Saving a pattern created from a part adds a song-local snapshot and inserts its measures into
 the parent draft, which still needs a part save. Pattern cancellation cannot mutate stored
 patterns or the global library. Standalone pattern-library editors retain their existing layout.
+
+## Session clipboard
+
+Measure Copy adds a snapshot to a shared in-memory history without inserting it. The history
+is available in song parts, song-local patterns, and standalone pattern editors until the app
+reloads or closes. It does not use IndexedDB or the OS clipboard.
+
+Select measures or a touch hold enters multi-selection. Taps, Enter, and Space toggle measures;
+scrolling cancels a pending hold. The selection bar shows the count, Copy, Delete, and exit.
+Copy groups nonadjacent selections in document order and exits selection. Delete asks for
+confirmation with the selected count; cancellation retains the selection and its music.
+Shared music can be copied while locked; paste and delete require an unlocked draft.
+
+Part Add menus offer Paste measures at that insertion position. Pattern editors offer Add and
+Paste before the first measure and after each measure, including insertion into an empty
+pattern. Paste inserts the entire group and creates new song-measure identities. Existing
+actions offer Copy; an empty position's technique menu offers Paste action without shifting
+other positions or changing the time signature. An occupied position cannot be overwritten.
+
+The clipboard picker filters entries by measures or actions, newest first, with source labels,
+musical summaries, individual removal, and an explanatory empty state. Entries survive paste
+and can be used repeatedly; removing an entry leaves its source and previous pastes intact.
+Escape, Cancel, and closing the picker leave the destination unchanged and restore focus.
+
+Snapshots deep-clone actions, rhythmic gaps, articulation, modifiers, and explicit grip
+assignments. Grip IDs encode the complete fingering, so pastes do not depend on a source
+sheet's grip library and do not add library records. Unresolvable explicit grips block copying
+with an error rather than dropping the assignment. Action references are local to each
+clipboard measure and remapped at insertion. Relative notes keep their destination context;
+identical sound under a different tuning or preceding grip is not guaranteed. Part notes and
+occurrence lyrics are excluded. Paste and Delete affect only the owning editor draft and keep
+the existing Apply, Save, and Discard boundaries.
+
+`MusicClipboardService` owns the session history and exposes cloned payloads. The shared
+picker and touch-hold directive live under `core/ui/music-clipboard/`. Jest covers snapshot
+ownership, references, session sharing, locks, and drafts; `e2e/music-clipboard.spec.ts` covers
+the integrated workflow, keyboard focus, responsive layouts, and Chromium touch gestures.
 
 ## Measure notation
 

@@ -1,5 +1,9 @@
+import { MusicClipboardService } from '@/app/core/services/music-clipboard.service';
+import { ModalService } from '@/app/core/services/modal.service';
+import { NotificationService } from '@/app/core/services/notification.service';
+import { pickClipboardEntry } from '@/app/core/ui/music-clipboard/clipboard-picker';
 import { CommonModule } from '@angular/common';
-import { Component, input, model, output } from '@angular/core';
+import { Component, input, model, output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   BaseRelativeLegatoEndpoint,
@@ -55,6 +59,37 @@ interface ActionDisplayData {
   styleUrl: './playing-measure-editor.component.scss'
 })
 export class PlayingMeasureEditorComponent {
+  private readonly clipboard = inject(MusicClipboardService);
+  private readonly modals = inject(ModalService);
+  private readonly notifications = inject(NotificationService);
+  readonly clipboardSource = input('Pattern');
+
+  copyAction(index: number): void {
+    const action = this.measure().actions[index];
+    if (!action) return;
+    try {
+      this.clipboard.copyAction(action, this.getActionGrip(index), `${this.clipboardSource()} · ${this.measureLabel()} · ${formatActionPosition(index, this.measure().timeSignature)}`);
+      this.notifications.success('Copied action');
+    } catch (error) { this.notifications.error((error as Error).message); }
+  }
+
+  async pasteAction(index: number): Promise<void> {
+    if (index < 0 || index >= this.measure().actions.length || this.measure().actions[index]) return;
+    const id = await pickClipboardEntry(this.modals, 'action');
+    const snapshot = id === undefined ? undefined : this.clipboard.read(id, 'action')?.[0];
+    if (!snapshot || !snapshot.actions[0]) return;
+    // Recheck after the dialog: a destination may have changed while it was open.
+    if (index >= this.measure().actions.length || this.measure().actions[index]) {
+      this.notifications.error('This position is no longer empty. Choose another position.');
+      return;
+    }
+    this.updateAction(index, () => snapshot.actions[0]);
+    if (snapshot.actionGrips?.length) {
+      const references = this.actionGrips().filter(grip => grip.actionIndex !== index);
+      this.actionGrips.set([...references, ...snapshot.actionGrips.map(grip => ({ ...grip, actionIndex: index, measureIndex: 0 }))]);
+    }
+  }
+
   readonly maxPickNotes = 6;
   readonly measure = model.required<Measure>();
   readonly actionGrips = model<PlayingPatternActionGrip[]>([]);
